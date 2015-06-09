@@ -3,7 +3,8 @@
 # By configuring and creating a droidbot instance,
 # droidbot will start interacting with Android in AVD like a human
 __author__ = 'liyc'
-
+from app_env import AppEnvManager
+from app_event import AppEventManager
 
 class droidbot(object):
     """

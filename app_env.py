@@ -7,6 +7,14 @@
 # instead we select a subset according to static analysis result of app.
 __author__ = 'liyc'
 
+ENV_POLICIES = {
+    "none" : "no environment",
+    "dummy" : "dummy basic envrionment",
+    "static" : "environment based on static analysis result",
+    "file" : "load environment from file",
+}
+
+
 class AppEnv(object):
     """
     This class describes a environment attribute of device

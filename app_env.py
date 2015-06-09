@@ -11,7 +11,7 @@ class AppEnv(object):
     """
     This class describes a environment attribute of device
     """
-    # TODO implement this method and its subclasses
+    # TODO implement this class and its subclasses
     pass
 
 
@@ -103,7 +103,7 @@ class AppEnvFactory(object):
     """
     This class is responsible for produce a list of static and dynamic AppEnv
     """
-    # TODO implement this method and its subclasses
+    # TODO implement this class and its subclasses
     pass
 
 

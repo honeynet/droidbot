@@ -3,8 +3,11 @@
 # By configuring and creating a droidbot instance,
 # droidbot will start interacting with Android in AVD like a human
 __author__ = 'liyc'
+import sys
+import argparse
 from app_env import AppEnvManager
 from app_event import AppEventManager
+
 
 class droidbot(object):
     """
@@ -33,3 +36,58 @@ class droidbot(object):
         """
         # TODO implement this method
         pass
+
+
+def parse_args():
+    """
+    parse command line input
+    generate options including host name, port number
+    """
+    usage = "python droidbot.py -p <package name> -n <number of event> " \
+            "[-env <env policy>] [-event <event policy>] [-d <output directory>]\n" \
+            "\t-p\tpackage name of target app\n" \
+            "\t-n\tnumber of event to generate during testing\n" \
+            "\t-env\tenvironment policy to use before app running\n" \
+            "\t\tnone\tno environment will be set. App will run in default environment of device\n" \
+            "\t\tdummy\tadd some fake contacts, SMS log, call log\n" \
+            "\t\tstatic\tset environment based on static analysis result\n" \
+            "\t\t<file>\tget environment policy from a json file\n" \
+            "\t-event\tpolicy of sending events during app running\n" \
+            "\t\tnone\tno event will be sent\n" \
+            "\t\tmonkey\tpseudo-random events, same as \"adb shell monkey ...\"\n" \
+            "\t\tstatic\tsend events based on static analysis result\n" \
+            "\t\tdynamic\tsend events based on dynamic app state, this policy requires framework instrumented\n" \
+            "\t\t<file>\tget event policy from a json file\n" \
+            "\t-d\tdirectory to dump env and event json file\n" \
+            "eg. python droidbot.py -p com.android.calendar -n 500 -env none -event monkey"
+    parser = argparse.ArgumentParser(description="start a robot to interact with Android app")
+    parser.add_argument("-p", action="store", dest="package", nargs=1,
+                      type="string", help="package name")
+    parser.add_argument("-n", action="store", dest="number", nargs=1,
+                      type="int", help="number of events")
+    parser.add_argument("-env", action="store", dest="env_policy", nargs=1,
+                      type="string", help="policy to set up environment")
+    parser.add_argument("-event", action="store", dest="event_policy", nargs=1,
+                      type="string", help="policy to generate events")
+    parser.add_argument("-d", action="store", dest="directory", nargs=1,
+                      type="string", help="directory of output")
+    options, args = parser.parse_args()
+    if len(args) > 0:
+        parser.error("command error")
+    if not (options.host and options.port):
+        parser.error("command error")
+    return options
+
+
+def main(opts):
+    """
+    the main function
+    it starts a HoneynetSocketServer according to
+     the host and port given in opts
+    :param opts: the options parsed by parse_args()
+    """
+    return
+
+if __name__ == "__main__":
+    opts = parse_args()
+    main(opts)

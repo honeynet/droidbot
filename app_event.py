@@ -5,6 +5,14 @@
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
 __author__ = 'liyc'
 
+event_policies = [
+    "none",
+    "monkey",
+    "static",
+    "dynamic",
+    "file"
+]
+
 class AppEvent(object):
     """
     The base class of all events
@@ -111,8 +119,15 @@ class StaticEventFactory(EventFactory):
     pass
 
 
-class AppStateEventFactory(EventFactory):
+class DynamicEventFactory(EventFactory):
     """
     A much wiser factory which produces events based on the current app state
+    """
+    pass
+
+
+class FileEventFactory(EventFactory):
+    """
+    factory which produces events from file
     """
     pass

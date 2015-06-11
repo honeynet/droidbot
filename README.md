@@ -23,8 +23,5 @@ python setup.py install
 ## Usage
 
 1. Run `droidbox`, and install target app.
-2. Start droidbot with:
-
-```shell
-python droidbot.py <avd_name> <package_name> [-env-policy <policy>] [-event-policy <policys>]
-```
+2. Start droidbot:
+`python droidbot.py -h`

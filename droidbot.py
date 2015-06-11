@@ -7,6 +7,7 @@ from utils.connection import ADB
 __author__ = 'liyc'
 import sys
 import argparse
+import logging
 from utils.types import App, Device
 from app_env import AppEnvManager
 from app_event import AppEventManager
@@ -53,8 +54,8 @@ def parse_args():
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial", nargs='?',
                         help="serial number of target device")
-    parser.add_argument("-p", action="store", dest="package_name", nargs='?',
-                        help="package name of target app")
+    parser.add_argument("-a", action="store", dest="app_path", nargs='?',
+                        help="file path of target app")
     parser.add_argument("-c", action="store", dest="event_count", nargs='?',
                         type=int, help="number of events to generate during testing")
     parser.add_argument("-env", action="store", dest="env_policy", nargs='?',
@@ -82,9 +83,12 @@ def main():
     the main function
     it starts a droidbot according to the arguments given in cmd line
     """
+    logging.basicConfig(level=logging.DEBUG)
     opts = parse_args()
     device = Device(opts.device_serial)
-    app = App(opts.package_name)
+    device.get_adb()
+    device.get_telnet()
+    app = App(opts.app_path)
     env_manager = AppEnvManager(device, app, opts.env_policy)
     event_manager = AppEventManager(device, app, opts.event_policy)
     return

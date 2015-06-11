@@ -1,6 +1,7 @@
 # utils for setting up Android environment and sending events
 __author__ = 'yuanchun'
 import connection
+import logging
 
 class Device(object):
     """
@@ -9,22 +10,22 @@ class Device(object):
     def __init__(self, device_serial):
         """
         create a device
-        :param device_name: name of target device
-        :param device_host: host of target device, default is localhost
-        :param device_port: port num of target device, default is 5554
+        :param device_serial: serial number of target device
         :return:
         """
-        self.device_serial = device_serial
+        self.logger = logging.getLogger('Device')
+        self.serial = device_serial
         # type 0 for real device, 1 for emulator
         self.type = 0
-        self.host = ""
-        self.port = ""
-        self.telnet = None
         self.adb = None
-        if self.device_serial.startswith("emulator-"):
-            self.type = 1
-            self.host = "localhost"
-            self.port = int(device_serial[9:])
+        self.telnet = None
+
+        try:
+            self.get_adb()
+            self.get_telnet()
+        except connection.TelnetException:
+            self.logger.warning("Cannot connect to telnet.")
+        self.check_connectivity()
         # print self.type, self.host, self.port
 
     def check_connectivity(self):
@@ -34,11 +35,21 @@ class Device(object):
         """
         try:
             # try connecting to device
-            # TODO find out how to check connectivity
-            print "try connecting to device"
+            self.logger.info("checking connectivity...")
+            result = True
+            if self.adb and self.adb.check_connectivity():
+                self.logger.info("ADB is connected")
+            else:
+                self.logger.warning("ADB is not connected")
+                result = False
+            if self.telnet and self.telnet.check_connectivity():
+                self.logger.info("Telnet is connected")
+            else:
+                self.logger.warning("Telnet is not connected")
+                result = False
+            return result
         except:
             return False
-        return True
 
     def get_telnet(self):
         """
@@ -46,8 +57,7 @@ class Device(object):
         note that only emulator have telnet connection
         """
         if self.telnet == None:
-            from telnetlib import Telnet
-            self.telnet = Telnet(self.host, self.port)
+            self.telnet = connection.TelnetConsole(self)
         return self.telnet
 
     def get_adb(self):
@@ -55,22 +65,21 @@ class Device(object):
         get adb connection of the device
         """
         if self.adb == None:
-            self.adb = connection.ADB(self.device_serial)
+            self.adb = connection.ADB(self)
         return self.adb
+
 
 class App(object):
     """
     this class describes an app
     """
-    def __init__(self, package_name, file_path = ""):
+    def __init__(self, app_path = ""):
         """
         create a App instance
-        :param package_name: package name of app
-        :param file_path: local file path of app
+        :param app_path: local file path of app
         :return:
         """
-        self.package_name = package_name
-        self.file_path = file_path
+        self.app_path = app_path
         self.static_result = {}
 
     def get_static_result(self):
@@ -84,10 +93,10 @@ class App(object):
         return self.static_result
 
 
-def add_contact(phonenum, first_name="", last_name="", email=""):
+def add_contact(phone_num, first_name="", last_name="", email=""):
     """
     add a contact to device
-    :param phonenum:
+    :param phone_num:
     :param first_name:
     :param last_name:
     :param email:
@@ -96,10 +105,10 @@ def add_contact(phonenum, first_name="", last_name="", email=""):
     # TODO implement this function
     return
 
-def add_sms_log(phonenum, content, send=0):
+def add_sms_log(phone_num, content, send=0):
     """
     add a SMS log to device
-    :param phonenum: phonenum of this SMS
+    :param phone_num: phone_num of this SMS
     :param content: SMS content
     :param send: 0 for send, 1 for receive
     :return:
@@ -128,7 +137,7 @@ def set_gps(start_axis, range = 10):
     return
 
 
-class UIevent(object):
+class UIEvent(object):
     """
     this class describes a UI event
     """
@@ -136,10 +145,10 @@ class UIevent(object):
     pass
 
 
-def send_UI_event(uievent):
+def send_UI_event(ui_event):
     """
     send a UI event to device via monkeyrunner
-    :param uievent: instance of UIevent
+    :param ui_event: instance of UIEvent
     :return:
     """
     # TODO implement this function

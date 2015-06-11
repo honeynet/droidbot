@@ -63,15 +63,19 @@ class AppEnvManager(object):
     AppEnvManager manages the environment of device in which an app will run.
     """
 
-    def __init__(self, package_name):
+    def __init__(self, device, app, env_policy):
         """
         construct a new AppEnvManager instance
-        :param package_name: tha package name of app
+        :param device: instance of Device
+        :param app: instance of App
+        :param env_policy: policy of setting up environment, string
         :return:
         """
-        self.package_name = package_name
+        self.device = device
+        self.app = app
+        self.policy = env_policy
         self.envs = []
-
+        self.env_factory = None
 
     def add_env(self, env):
         """

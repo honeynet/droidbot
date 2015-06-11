@@ -43,15 +43,19 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, package_name):
+    def __init__(self, device, app, event_policy):
         """
         construct a new AppEventManager instance
-        :param package_name: tha package name of app
+        :param device: instance of Device
+        :param app: instance of App
+        :param event_policy: policy of generating events, string
         :return:
         """
-        self.package_name = package_name
-        self.event_factory = None
+        self.device = device
+        self.app = app
+        self.policy = event_policy
         self.events = []
+        self.event_factory = None
 
     def add_event(self, event):
         """

@@ -1,12 +1,12 @@
 # utils for setting up Android environment and sending events
 __author__ = 'yuanchun'
-
+import connection
 
 class Device(object):
     """
     this class describes a connected device
     """
-    def __init__(self, device_name, device_host="localhost", device_port=5554):
+    def __init__(self, device_serial):
         """
         create a device
         :param device_name: name of target device
@@ -14,10 +14,18 @@ class Device(object):
         :param device_port: port num of target device, default is 5554
         :return:
         """
-        self.device_name = device_name
-        self.device_host = device_host
-        self.device_port = device_port
+        self.device_serial = device_serial
+        # type 0 for real device, 1 for emulator
+        self.type = 0
+        self.host = ""
+        self.port = ""
         self.telnet = None
+        self.adb = None
+        if self.device_serial.startswith("emulator-"):
+            self.type = 1
+            self.host = "localhost"
+            self.port = int(device_serial[9:])
+        # print self.type, self.host, self.port
 
     def check_connectivity(self):
         """
@@ -35,18 +43,26 @@ class Device(object):
     def get_telnet(self):
         """
         get telnet connection of the device
+        note that only emulator have telnet connection
         """
         if self.telnet == None:
             from telnetlib import Telnet
-            self.telnet = Telnet(self.device_host, self.device_port)
+            self.telnet = Telnet(self.host, self.port)
         return self.telnet
 
+    def get_adb(self):
+        """
+        get adb connection of the device
+        """
+        if self.adb == None:
+            self.adb = connection.ADB(self.device_serial)
+        return self.adb
 
 class App(object):
     """
     this class describes an app
     """
-    def __init__(self, package_name, file_path):
+    def __init__(self, package_name, file_path = ""):
         """
         create a App instance
         :param package_name: package name of app

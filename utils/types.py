@@ -3,6 +3,7 @@ __author__ = 'yuanchun'
 import connection
 import logging
 
+
 class Device(object):
     """
     this class describes a connected device
@@ -56,7 +57,7 @@ class Device(object):
         get telnet connection of the device
         note that only emulator have telnet connection
         """
-        if self.telnet == None:
+        if not self.telnet:
             self.telnet = connection.TelnetConsole(self)
         return self.telnet
 
@@ -64,33 +65,53 @@ class Device(object):
         """
         get adb connection of the device
         """
-        if self.adb == None:
+        if not self.adb:
             self.adb = connection.ADB(self)
         return self.adb
 
+    def set_env(self, env):
+        """
+        set env to the device
+        :param env: instance of AppEnv
+        """
+        # TODO implement this method
+
+    def send_event(self, event, state=None):
+        """
+        send one event to device
+        :param event: the event to be sent
+        :return:
+        """
+        # TODO implement this method
 
 class App(object):
     """
     this class describes an app
     """
-    def __init__(self, app_path = ""):
+    def __init__(self, package_name=None, app_path=None):
         """
         create a App instance
         :param app_path: local file path of app
         :return:
         """
+        self.logger = logging.getLogger('App')
+        self.package_name = package_name
         self.app_path = app_path
+
+        if not package_name and not app_path:
+            self.logger.warning("no app given")
+        elif app_path:
+            self.run_static_analysis()
+            self.package_name = self.static_result['package_name']
         self.static_result = {}
 
-    def get_static_result(self):
+    def run_static_analysis(self):
         """
-        get static analysis result of app
-        :return: a dict of static analysis result
+        run static analysis of app
+        :return:
         """
-        if self.static_result:
-            return self.static_result
-        # TODO do static analysis and get the result
-        return self.static_result
+        # TODO do static analysis
+        self.static_result = {}
 
 
 def add_contact(phone_num, first_name="", last_name="", email=""):

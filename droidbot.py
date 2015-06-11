@@ -54,8 +54,10 @@ def parse_args():
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial", nargs='?',
                         help="serial number of target device")
+    parser.add_argument("-p", action="store", dest="package_name", nargs='?',
+                        help="package name of a pre-installed app, otherwise use -a option")
     parser.add_argument("-a", action="store", dest="app_path", nargs='?',
-                        help="file path of target app")
+                        help="file path of target app, necessary for static analysis")
     parser.add_argument("-c", action="store", dest="event_count", nargs='?',
                         type=int, help="number of events to generate during testing")
     parser.add_argument("-env", action="store", dest="env_policy", nargs='?',
@@ -88,9 +90,12 @@ def main():
     device = Device(opts.device_serial)
     device.get_adb()
     device.get_telnet()
-    app = App(opts.app_path)
+    app = App(opts.package_name, opts.app_path)
     env_manager = AppEnvManager(device, app, opts.env_policy)
-    event_manager = AppEventManager(device, app, opts.event_policy)
+    event_manager = AppEventManager(device, app, opts.event_policy, opts.event_count)
+
+    env_manager.deploy()
+    event_manager.start()
     return
 
 

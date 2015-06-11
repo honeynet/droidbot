@@ -1,11 +1,13 @@
 # This file is responsible for setup up the executing environment of droidbox app
 # Here the executing environment includes:
-#    1. Static environments: contacts, call logs, SMS, pre-installed apps, etc
+# 1. Static environments: contacts, call logs, SMS, pre-installed apps, etc
 #    2. Dynamic environments: continuous GPS, Accelerometer, etc
 # The environment should be determined before app start running.
 # We don't need to set up all environment aspects for one app,
 # instead we select a subset according to static analysis result of app.
 __author__ = 'liyc'
+
+import logging
 
 ENV_POLICIES = [
     "none",
@@ -71,11 +73,23 @@ class AppEnvManager(object):
         :param env_policy: policy of setting up environment, string
         :return:
         """
+        self.logger = logging.getLogger('AppEnvManager')
         self.device = device
         self.app = app
         self.policy = env_policy
         self.envs = []
-        self.env_factory = None
+
+        if not self.policy or self == None:
+            self.policy = "none"
+
+        if self.policy == "none":
+            self.env_factory = None
+        elif self.policy == "dummy":
+            self.env_factory = DummyEnvFactory()
+        elif self.policy == "static":
+            self.env_factory = StaticEnvFactory(app)
+        else:
+            self.env_factory = FileEnvFactory(self.policy)
 
     def add_env(self, env):
         """
@@ -85,13 +99,17 @@ class AppEnvManager(object):
         """
         self.envs.append(env)
 
-    def deploy(self, device):
+    def deploy(self):
         """
         deploy the environments to device (Emulator)
         :param device:
         :return:
         """
-        # TODO implement this method
+        self.logger.info("deploying environment, policy is %s" % self.policy)
+        if self.env_factory != None:
+            self.envs = self.env_factory.produce_envs()
+        for env in self.envs:
+            self.device.set_env(env)
         return
 
     def dump(self, file):
@@ -116,7 +134,8 @@ class AppEnvFactory(object):
     This class is responsible for produce a list of static and dynamic AppEnv
     """
     # TODO implement this class and its subclasses
-    pass
+    def produce_envs(self):
+        return []
 
 
 class DummyEnvFactory(AppEnvFactory):
@@ -130,10 +149,23 @@ class StaticEnvFactory(AppEnvFactory):
     """
     A factory which generate ad hoc environment based on static analysis result of app
     """
-    pass
+
+    def __init__(self, app):
+        """
+        create a StaticEnvFactory from app analysis result
+        :param instance of App
+        """
+        self.app = app
+
 
 class FileEnvFactory(AppEnvFactory):
     """
     A factory which generate environment from file
     """
-    pass
+
+    def __init__(self, file):
+        """
+        create a FileEnvFactory from a json file
+        :param file path string
+        """
+        self.file = file

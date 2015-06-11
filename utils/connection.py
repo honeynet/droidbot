@@ -70,8 +70,12 @@ class ADB(object):
         run an adb command and return the output
         :return: output of adb command
         """
-        args = self.args
-        args.append(extra_args)
+        args = [] + self.args
+        if isinstance(extra_args, list):
+            args += extra_args
+        else:
+            args.append(extra_args)
+        print args
         r = subprocess.check_output(args)
         return r
 

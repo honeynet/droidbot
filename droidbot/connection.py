@@ -140,3 +140,10 @@ class TelnetConsole(object):
         except:
             return False
         return True
+
+
+class MonkeyRunner(object):
+    """
+    interface of monkey runner connection
+    """
+    # TODO implement this class

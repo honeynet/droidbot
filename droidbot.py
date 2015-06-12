@@ -2,18 +2,15 @@
 # It can be used after AVD was started, app was installed, and adb had been set up properly
 # By configuring and creating a droidbot instance,
 # droidbot will start interacting with Android in AVD like a human
-from utils.connection import ADB
 
 __author__ = 'liyc'
-import sys
 import argparse
 import logging
-from utils.types import App, Device
-from app_env import AppEnvManager
-from app_event import AppEventManager
 from argparse import RawTextHelpFormatter
-from app_env import AppEnvManager
-from app_event import AppEventManager
+
+from utils.types import App, Device
+from utils.app_env import AppEnvManager
+from utils.app_event import AppEventManager
 
 
 class droidbot(object):

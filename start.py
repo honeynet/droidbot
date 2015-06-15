@@ -8,9 +8,9 @@ import argparse
 import logging
 from argparse import RawTextHelpFormatter
 
-from utils.types import App, Device
-from utils.app_env import AppEnvManager
-from utils.app_event import AppEventManager
+from droidbot.types import App, Device
+from droidbot.app_env import AppEnvManager
+from droidbot.app_event import AppEventManager
 
 
 class droidbot(object):

@@ -20,10 +20,12 @@ class Device(object):
         self.type = 0
         self.adb = None
         self.telnet = None
+        self.monkeyrunner = None
 
         try:
             self.get_adb()
             self.get_telnet()
+            self.get_monkeyrunner()
         except connection.TelnetException:
             self.logger.warning("Cannot connect to telnet.")
         self.check_connectivity()
@@ -48,6 +50,11 @@ class Device(object):
             else:
                 self.logger.warning("Telnet is not connected")
                 result = False
+            if self.monkeyrunner and self.monkeyrunner.check_connectivity():
+                self.logger.info("monkeyrunner is connected")
+            else:
+                self.logger.warning("monkeyrunner is not connected")
+                result = False
             return result
         except:
             return False
@@ -68,6 +75,15 @@ class Device(object):
         if not self.adb:
             self.adb = connection.ADB(self)
         return self.adb
+
+    def get_monkeyrunner(self):
+        """
+        get monkeyrunner connection of the device
+        :return:
+        """
+        if not self.monkeyrunner:
+            self.monkeyrunner = connection.MonkeyRunner(self)
+        return self.monkeyrunner
 
     def set_env(self, env):
         """

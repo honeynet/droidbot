@@ -1,6 +1,7 @@
 # This is the interface for adb
 __author__ = 'liyc'
 import subprocess
+import logging
 
 
 class ADBException(Exception):
@@ -17,6 +18,12 @@ class TelnetException(Exception):
     pass
 
 
+class MonkeyException(Exception):
+    """
+    Exception in monkeyrunner connection
+    """
+    pass
+
 class ADB(object):
     """
     interface of ADB
@@ -30,6 +37,7 @@ class ADB(object):
         :param device: instance of Device
         :return:
         """
+        self.logger = logging.getLogger('ADB')
         self.device = device
         self.args = ['adb']
         self.shell = None
@@ -61,7 +69,7 @@ class ADB(object):
         self.args.append(device.serial)
 
         if self.check_connectivity():
-            print "adb successfully initiated, the device is %s" % device.serial
+            self.logger.info("adb successfully initiated, the device is %s" % device.serial)
         else:
             raise ADBException()
 
@@ -75,8 +83,11 @@ class ADB(object):
             args += extra_args
         else:
             args.append(extra_args)
-        print args
+        self.logger.debug('command:')
+        self.logger.debug(args)
         r = subprocess.check_output(args)
+        self.logger.debug('return:')
+        self.logger.debug(r)
         return r
 
     def check_connectivity(self):
@@ -99,6 +110,7 @@ class TelnetConsole(object):
         :param device: instance of Device
         :return:
         """
+        self.logger = logging.getLogger('TelnetConsole')
         self.host = "localhost"
         self.port = 5554
 
@@ -113,7 +125,11 @@ class TelnetConsole(object):
         self.console = None
         from telnetlib import Telnet
         self.console = Telnet(self.host, self.port)
-        self.check_connectivity()
+        if self.check_connectivity():
+            self.logger.info("telnet successfully initiated, the addr is (%s:%d)" % (self.host, self.port))
+        else:
+            raise TelnetException()
+
 
     def run_cmd(self, args):
         """
@@ -125,9 +141,13 @@ class TelnetConsole(object):
             cmd_line = " ".join(args)
         else:
             cmd_line = args
+        self.logger.debug('command:')
+        self.logger.debug(cmd_line)
         cmd_line += '\n'
         self.console.write(cmd_line)
         r = self.console.read_until('OK', 5)
+        self.logger.debug('return:')
+        self.logger.debug(r)
         return r.endswith('OK')
 
     def check_connectivity(self):
@@ -145,5 +165,58 @@ class TelnetConsole(object):
 class MonkeyRunner(object):
     """
     interface of monkey runner connection
+    http://developer.android.com/tools/help/monkeyrunner_concepts.html
     """
-    # TODO implement this class
+    def __init__(self, device):
+        """
+        initiate a monkeyrunner shell
+        :param device: instance of Device
+        :return:
+        """
+        self.logger = logging.getLogger('MonkeyRunner')
+        self.console = subprocess.Popen('monkeyrunner', stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.run_cmd('from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice')
+        self.run_cmd('device=MonkeyRunner.waitForConnection(5,%s)' % device.serial)
+        if self.check_connectivity():
+            self.logger.info("monkeyrunner successfully initiated, the device is %s" % device.serial)
+        else:
+            raise MonkeyException()
+
+    def run_cmd(self, args):
+        """
+        run a command via monkeyrunner
+        :param args: arguments to be executed in monkeyrunner console
+        :return:
+        """
+        if isinstance(args, list):
+            cmd_line = " ".join(args)
+        else:
+            cmd_line = args
+        self.logger.debug('command:')
+        self.logger.debug(cmd_line)
+        cmd_line += '\n'
+        self.console.stdin.write(cmd_line)
+        r=self.console.stdout.readline()
+        self.logger.debug('return:')
+        self.logger.debug(r)
+        return r
+
+    def check_connectivity(self):
+        """
+        check if console is connected
+        :return: True for connected
+        """
+        try:
+            self.run_cmd("r=device.getProperty(clock.millis)")
+            (out, err) = self.run_cmd("print r")
+            if err != None:
+                return False
+            segs = out.split('\n')
+            if int(segs[0]) <= 0:
+                return False
+            if not segs[1].startswith('>>>'):
+                return False
+        except:
+            return False
+        return True

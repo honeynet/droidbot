@@ -130,7 +130,7 @@ class ADB(object):
         """
         disconnect adb
         """
-        self.logger.info("ADB disconnected")
+        self.logger.info("disconnected")
 
 
 class TelnetConsole(object):
@@ -200,6 +200,7 @@ class TelnetConsole(object):
         disconnect telnet
         """
         self.console.close()
+        self.logger.info("disconnected")
 
 
 class MonkeyRunner(object):
@@ -224,16 +225,17 @@ class MonkeyRunner(object):
         else:
             raise MonkeyRunnerException()
 
-    def read_until(self, token, timeout=0):
-        lines = []
+    def get_output(self, timeout=0):
+        output = ""
         with Timeout(timeout):
             while True:
                 line = self.console.stdout.readline()
-                lines.append(line)
-                if line.startswith(token):
+                if line == '>>> \n':
                     break
-        return lines
-
+                if line.startswith('>>>'):
+                    continue
+                output += line
+        return output
 
     def run_cmd(self, args):
         """
@@ -247,11 +249,10 @@ class MonkeyRunner(object):
             cmd_line = args
         self.logger.debug('command:')
         self.logger.debug(cmd_line)
-        cmd_line += '\n'
+        cmd_line += '\n\n'
         self.console.stdin.write(cmd_line)
         self.console.stdin.flush()
-        time.sleep(2)
-        r=self.read_until('>>>')
+        r=self.get_output()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
@@ -263,13 +264,9 @@ class MonkeyRunner(object):
         """
         try:
             self.run_cmd("r=device.getProperty(\'clock.millis\')")
-            (out, err) = self.run_cmd("print r")
-            if err != None:
-                return False
+            out = self.run_cmd("print r")
             segs = out.split('\n')
             if int(segs[0]) <= 0:
-                return False
-            if not segs[1].startswith('>>>'):
                 return False
         except:
             return False
@@ -282,3 +279,4 @@ class MonkeyRunner(object):
         """
         self.running = False
         self.console.terminate()
+        self.logger.info("disconnected")

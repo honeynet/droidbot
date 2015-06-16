@@ -31,15 +31,13 @@ class DroidBot(object):
         start interacting
         :return:
         """
-        try:
-            device = Device(self.options.device_serial)
-            app = App(self.options.package_name, self.options.app_path)
-        except TelnetException as te:
-            # allow telnet not connected
-            self.logger.exception(te)
+        device = Device(self.options.device_serial)
+        app = App(self.options.package_name, self.options.app_path)
 
         env_manager = AppEnvManager(device, app, self.options.env_policy)
         event_manager = AppEventManager(device, app, self.options.event_policy, self.options.event_count)
 
         env_manager.deploy()
         event_manager.start()
+
+        device.disconnect()

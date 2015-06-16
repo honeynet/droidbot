@@ -22,12 +22,7 @@ class Device(object):
         self.telnet = None
         self.monkeyrunner = None
 
-        try:
-            self.get_adb()
-            self.get_telnet()
-            self.get_monkeyrunner()
-        except connection.TelnetException:
-            self.logger.warning("Cannot connect to telnet.")
+        self.connect()
         self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -58,6 +53,30 @@ class Device(object):
             return result
         except:
             return False
+
+    def connect(self):
+        """
+        connect this device via adb, telnet and monkeyrunner
+        :return:
+        """
+        try:
+            self.get_adb()
+            self.get_telnet()
+            self.get_monkeyrunner()
+        except connection.TelnetException:
+            self.logger.warning("Cannot connect to telnet.")
+
+    def disconnect(self):
+        """
+        disconnect current device
+        :return:
+        """
+        if self.adb:
+            self.adb.disconnect()
+        if self.telnet:
+            self.telnet.disconnect()
+        if self.monkeyrunner:
+            self.monkeyrunner.disconnect()
 
     def get_telnet(self):
         """

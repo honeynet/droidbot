@@ -45,11 +45,11 @@ class Device(object):
             else:
                 self.logger.warning("Telnet is not connected")
                 result = False
-            if self.monkeyrunner and self.monkeyrunner.check_connectivity():
-                self.logger.info("monkeyrunner is connected")
-            else:
-                self.logger.warning("monkeyrunner is not connected")
-                result = False
+            # if self.monkeyrunner and self.monkeyrunner.check_connectivity():
+            #     self.logger.info("monkeyrunner is connected")
+            # else:
+            #     self.logger.warning("monkeyrunner is not connected")
+            #     result = False
             return result
         except:
             return False
@@ -62,7 +62,7 @@ class Device(object):
         try:
             self.get_adb()
             self.get_telnet()
-            self.get_monkeyrunner()
+            # self.get_monkeyrunner()
         except connection.TelnetException:
             self.logger.warning("Cannot connect to telnet.")
 

@@ -1,46 +1,11 @@
-# This file contains the main class of droidbot
-# It can be used after AVD was started, app was installed, and adb had been set up properly
-# By configuring and creating a droidbot instance,
-# droidbot will start interacting with Android in AVD like a human
+# helper file of droidbot
+# it parses command arguments and send the options to droidbot
 
 __author__ = 'liyc'
 import argparse
 import logging
 from argparse import RawTextHelpFormatter
-
-from droidbot.types import App, Device
-from droidbot.app_env import AppEnvManager
-from droidbot.app_event import AppEventManager
-
-
-class droidbot(object):
-    """
-    The main class of droidbot
-    A robot which interact with Android automatically
-    """
-
-    def __init__(self, device, package_name, env_policy, event_policy):
-        """
-        initiate droidbot with configurations
-        :param device: name of device droidbot is going to interact with
-        :param package_name: package name of app droidbot is going to interact with
-        :param env_policy: the policy used to set up device environment
-        :param event_policy: the policy used to generate events at runtime
-        :return:
-        """
-        self.device = device
-        self.package_name = package_name
-        self.env_policy = env_policy
-        self.event_policy = event_policy
-
-    def start(self):
-        """
-        start interacting
-        :return:
-        """
-        # TODO implement this method
-        pass
-
+from droidbot.droidbot import DroidBot
 
 def parse_args():
     """
@@ -84,15 +49,9 @@ def main():
     """
     logging.basicConfig(level=logging.DEBUG)
     opts = parse_args()
-    device = Device(opts.device_serial)
-    device.get_adb()
-    device.get_telnet()
-    app = App(opts.package_name, opts.app_path)
-    env_manager = AppEnvManager(device, app, opts.env_policy)
-    event_manager = AppEventManager(device, app, opts.event_policy, opts.event_count)
 
-    env_manager.deploy()
-    event_manager.start()
+    droidbot = DroidBot(opts)
+    droidbot.start()
     return
 
 

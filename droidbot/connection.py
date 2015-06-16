@@ -2,6 +2,9 @@
 __author__ = 'liyc'
 import subprocess
 import logging
+import threading
+import time
+import signal
 
 
 class ADBException(Exception):
@@ -18,11 +21,36 @@ class TelnetException(Exception):
     pass
 
 
-class MonkeyException(Exception):
+class MonkeyRunnerException(Exception):
     """
     Exception in monkeyrunner connection
     """
     pass
+
+
+class TimeoutException(Exception):
+    """
+    Exception if connection has been waiting too long
+    """
+    pass
+
+
+class Timeout:
+    def __init__(self, seconds=0, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutException()
+
+    def __enter__(self):
+        if self.seconds != 0:
+            signal.signal(signal.SIGALRM, self.handle_timeout)
+            signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
 
 class ADB(object):
     """
@@ -98,6 +126,12 @@ class ADB(object):
         r = self.run_cmd("get-state")
         return r.startswith("device")
 
+    def disconnect(self):
+        """
+        disconnect adb
+        """
+        self.logger.info("ADB disconnected")
+
 
 class TelnetConsole(object):
     """
@@ -161,6 +195,12 @@ class TelnetConsole(object):
             return False
         return True
 
+    def disconnect(self):
+        """
+        disconnect telnet
+        """
+        self.console.close()
+
 
 class MonkeyRunner(object):
     """
@@ -176,12 +216,24 @@ class MonkeyRunner(object):
         self.logger = logging.getLogger('MonkeyRunner')
         self.console = subprocess.Popen('monkeyrunner', stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.running = True
         self.run_cmd('from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice')
-        self.run_cmd('device=MonkeyRunner.waitForConnection(5,%s)' % device.serial)
+        self.run_cmd('device=MonkeyRunner.waitForConnection(5,\'%s\')' % device.serial)
         if self.check_connectivity():
             self.logger.info("monkeyrunner successfully initiated, the device is %s" % device.serial)
         else:
-            raise MonkeyException()
+            raise MonkeyRunnerException()
+
+    def read_until(self, token, timeout=0):
+        lines = []
+        with Timeout(timeout):
+            while True:
+                line = self.console.stdout.readline()
+                lines.append(line)
+                if line.startswith(token):
+                    break
+        return lines
+
 
     def run_cmd(self, args):
         """
@@ -197,7 +249,9 @@ class MonkeyRunner(object):
         self.logger.debug(cmd_line)
         cmd_line += '\n'
         self.console.stdin.write(cmd_line)
-        r=self.console.stdout.readline()
+        self.console.stdin.flush()
+        time.sleep(2)
+        r=self.read_until('>>>')
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
@@ -208,7 +262,7 @@ class MonkeyRunner(object):
         :return: True for connected
         """
         try:
-            self.run_cmd("r=device.getProperty(clock.millis)")
+            self.run_cmd("r=device.getProperty(\'clock.millis\')")
             (out, err) = self.run_cmd("print r")
             if err != None:
                 return False
@@ -220,3 +274,11 @@ class MonkeyRunner(object):
         except:
             return False
         return True
+
+    def disconnect(self):
+        """
+        disconnect monkeyrunner
+        :return:
+        """
+        self.running = False
+        self.console.terminate()

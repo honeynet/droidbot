@@ -206,6 +206,7 @@ class TelnetConsole(object):
 class MonkeyRunner(object):
     """
     interface of monkey runner connection
+    we DO NOT use monkeyrunner because it conflicts with adb
     http://developer.android.com/tools/help/monkeyrunner_concepts.html
     """
     def __init__(self, device):

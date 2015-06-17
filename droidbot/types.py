@@ -2,28 +2,42 @@
 __author__ = 'yuanchun'
 import connection
 import logging
+from com.dtmilano.android.viewclient import ViewClient
 
 
 class Device(object):
     """
     this class describes a connected device
     """
-    def __init__(self, device_serial):
+    def __init__(self, device_serial, is_emulator=True):
         """
         create a device
         :param device_serial: serial number of target device
+        :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
         self.logger = logging.getLogger('Device')
         self.serial = device_serial
         # type 0 for real device, 1 for emulator
-        self.type = 0
+        self.is_emulator = is_emulator
         self.adb = None
         self.telnet = None
         self.monkeyrunner = None
+        self.view_client = None
+
+        if self.is_emulator:
+            self.adb_enabled = True
+            self.telnet_enabled = True
+            self.monkeyrunner_enabled = False
+            self.view_client_enabled = True
+        else:
+            self.adb_enabled = True
+            self.telnet_enabled = True
+            self.monkeyrunner_enabled = False
+            self.view_client_enabled = False
 
         self.connect()
-        self.check_connectivity()
+        # self.check_connectivity()
         # print self.type, self.host, self.port
 
     def check_connectivity(self):
@@ -35,21 +49,30 @@ class Device(object):
             # try connecting to device
             self.logger.info("checking connectivity...")
             result = True
-            if self.adb and self.adb.check_connectivity():
+
+            if self.adb_enabled and self.adb and self.adb.check_connectivity():
                 self.logger.info("ADB is connected")
             else:
                 self.logger.warning("ADB is not connected")
                 result = False
-            if self.telnet and self.telnet.check_connectivity():
+
+            if self.telnet_enabled and self.telnet and self.telnet.check_connectivity():
                 self.logger.info("Telnet is connected")
             else:
                 self.logger.warning("Telnet is not connected")
                 result = False
-            # if self.monkeyrunner and self.monkeyrunner.check_connectivity():
-            #     self.logger.info("monkeyrunner is connected")
-            # else:
-            #     self.logger.warning("monkeyrunner is not connected")
-            #     result = False
+
+            if self.monkeyrunner_enabled and self.monkeyrunner and self.monkeyrunner.check_connectivity():
+                self.logger.info("monkeyrunner is connected")
+            else:
+                self.logger.warning("monkeyrunner is not connected")
+                result = False
+
+            if self.view_client_enabled and self.view_client:
+                self.logger.info("view_client is connected")
+            else:
+                self.logger.warning("view_client is not connected")
+                result = False
             return result
         except:
             return False
@@ -60,9 +83,15 @@ class Device(object):
         :return:
         """
         try:
-            self.get_adb()
-            self.get_telnet()
-            # self.get_monkeyrunner()
+            if self.adb_enabled:
+                self.get_adb()
+            if self.telnet_enabled:
+                self.get_telnet()
+            if self.monkeyrunner_enabled:
+                self.get_monkeyrunner()
+            if self.view_client_enabled:
+                self.get_view_client()
+
         except connection.TelnetException:
             self.logger.warning("Cannot connect to telnet.")
 
@@ -77,13 +106,15 @@ class Device(object):
             self.telnet.disconnect()
         if self.monkeyrunner:
             self.monkeyrunner.disconnect()
+        if self.view_client:
+            self.view_client.__del__()
 
     def get_telnet(self):
         """
         get telnet connection of the device
         note that only emulator have telnet connection
         """
-        if not self.telnet:
+        if self.telnet_enabled and not self.telnet:
             self.telnet = connection.TelnetConsole(self)
         return self.telnet
 
@@ -91,7 +122,7 @@ class Device(object):
         """
         get adb connection of the device
         """
-        if not self.adb:
+        if self.adb_enabled and not self.adb:
             self.adb = connection.ADB(self)
         return self.adb
 
@@ -100,9 +131,20 @@ class Device(object):
         get monkeyrunner connection of the device
         :return:
         """
-        if not self.monkeyrunner:
+        if self.monkeyrunner_enabled and not self.monkeyrunner:
             self.monkeyrunner = connection.MonkeyRunner(self)
         return self.monkeyrunner
+
+    def get_view_client(self):
+        """
+        get view_client connection of the device
+        :return:
+        """
+        if self.view_client_enabled and not self.view_client:
+            kwargs1 = {'verbose': True, 'ignoresecuredevice': True, 'serialno': self.serial}
+            kwargs2 = {'startviewserver': True, 'forceviewserveruse': True, 'autodump': False, 'ignoreuiautomatorkilled': True}
+            self.view_client = ViewClient(*ViewClient.connectToDeviceOrExit(**kwargs1), **kwargs2)
+        return self.view_client
 
     def set_env(self, env):
         """
@@ -118,6 +160,7 @@ class Device(object):
         :return:
         """
         # TODO implement this method
+
 
 class App(object):
     """

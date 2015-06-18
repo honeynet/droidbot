@@ -267,6 +267,9 @@ class AdbClient:
             print >> sys.stderr, "    checkConnected: returning True"
         return True
 
+    def check_connectivity(self):
+        return self.checkConnected()
+
     def checkVersion(self, ignoreversioncheck=False, reconnect=True):
         if DEBUG:
             print >> sys.stderr, "checkVersion(reconnect=%s)   ignoreversioncheck=%s" % (reconnect, ignoreversioncheck)

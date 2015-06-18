@@ -34,7 +34,7 @@ class StaticAppEnv(AppEnv):
 
 class DynamicAppEnv(AppEnv):
     """
-    This class describes a static environment attribute of device
+    This class describes a dynamic environment attribute of device
     """
     pass
 
@@ -43,21 +43,29 @@ class ContactAppEnv(StaticAppEnv):
     """
     This class describes a contact inside device
     """
-    pass
+    def __init__(self, name='Lynn', phone_num="1234567", email="droidbot@honeynet.com"):
+        self.name = name
+        self.phone_num = phone_num
+        self.email = email
 
 
 class WifiStateAppEnv(StaticAppEnv):
     """
     This class describes the Wifi state of device
     """
-    pass
+    def __init__(self, enable = True):
+        self.enable = True
 
 
 class GPSAppEnv(DynamicAppEnv):
     """
     This class describes the continuous updating GPS data inside device
     """
-    pass
+    def __init__(self, center_x=50, center_y=50, delta_x=1, delta_y=1):
+        self.center_x = center_x
+        self.center_y = center_y
+        self.delta_x = delta_x
+        self.delta_y = delta_y
 
 
 class AppEnvManager(object):
@@ -142,7 +150,9 @@ class DummyEnvFactory(AppEnvFactory):
     """
     A dummy factory which generate randomized app environment
     """
-    pass
+    def produce_envs(self):
+        envs = []
+
 
 
 class StaticEnvFactory(AppEnvFactory):

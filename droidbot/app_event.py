@@ -124,11 +124,11 @@ class AppEventManager(object):
         if self.event_factory != None:
             self.event_factory.start(self)
         else:
-            monkey_cmd = ["shell", "monkey", "--throttle", "1000", "-v"]
+            monkey_cmd = ["monkey", "--throttle", "1000", "-v"]
             if self.app.package_name != None:
                 monkey_cmd += ["-p", self.app.package_name]
             monkey_cmd.append(str(self.count))
-            self.device.adb.run_cmd(monkey_cmd)
+            self.device.get_adb().shell(" ".join(monkey_cmd))
 
 
 class EventFactory(object):

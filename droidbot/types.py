@@ -37,6 +37,7 @@ class Device(object):
             self.view_client_enabled = False
 
         self.connect()
+        self.settings = {}
         # self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -122,9 +123,11 @@ class Device(object):
         """
         get adb connection of the device
         """
-        if self.adb_enabled and not self.adb:
-            self.adb = connection.ADB(self)
-        return self.adb
+        # if self.adb_enabled and not self.adb:
+        #     self.adb = connection.ADB(self)
+
+        # return viewclient.adb instead
+        return self.view_client.adb
 
     def get_monkeyrunner(self):
         """
@@ -160,6 +163,15 @@ class Device(object):
         :return:
         """
         # TODO implement this method
+
+    def get_settings(self):
+        """
+        get device settings via adb
+        """
+        db_name = "/data/data/com.android.provider.settings/database/settings.db"
+
+        global_settings = {}
+        self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "global"))
 
 
 class App(object):

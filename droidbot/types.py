@@ -175,6 +175,7 @@ class App(object):
         self.logger = logging.getLogger('App')
         self.package_name = package_name
         self.app_path = app_path
+        self.androguard = None
 
         if not package_name and not app_path:
             self.logger.warning("no app given")
@@ -188,8 +189,25 @@ class App(object):
         run static analysis of app
         :return:
         """
-        # TODO do static analysis
-        self.static_result = {}
+        self.androguard = AndroguardAnalysis(self.app_path)
+
+    def get_coverage(self):
+        """
+        calculate method coverage
+        """
+
+
+class AndroguardAnalysis(object):
+    """
+    analysis result of androguard
+    """
+    def __init__(self, app_path):
+        """
+        :param app_path: local file path of app
+        analyse app specified by app_path
+        """
+        from androguard.androlyze import AnalyzeAPK
+        self.a, self.d, self.dx = AnalyzeAPK(app_path)
 
 
 def add_contact(phone_num, first_name="", last_name="", email=""):

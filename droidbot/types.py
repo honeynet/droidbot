@@ -26,7 +26,7 @@ class Device(object):
         self.view_client = None
 
         if self.is_emulator:
-            self.adb_enabled = True
+            self.adb_enabled = False
             self.telnet_enabled = True
             self.monkeyrunner_enabled = False
             self.view_client_enabled = True
@@ -38,6 +38,8 @@ class Device(object):
 
         self.connect()
         self.settings = {}
+        self.get_settings()
+        print self.settings
         # self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -84,14 +86,14 @@ class Device(object):
         :return:
         """
         try:
+            if self.view_client_enabled:
+                self.get_view_client()
             if self.adb_enabled:
                 self.get_adb()
             if self.telnet_enabled:
                 self.get_telnet()
             if self.monkeyrunner_enabled:
                 self.get_monkeyrunner()
-            if self.view_client_enabled:
-                self.get_view_client()
 
         except connection.TelnetException:
             self.logger.warning("Cannot connect to telnet.")
@@ -123,11 +125,11 @@ class Device(object):
         """
         get adb connection of the device
         """
-        # if self.adb_enabled and not self.adb:
-        #     self.adb = connection.ADB(self)
-
-        # return viewclient.adb instead
-        return self.view_client.adb
+        if self.adb_enabled and not self.adb:
+            self.adb = connection.ADB(self)
+        else:
+            # return viewclient.adb instead
+            return self.view_client.device
 
     def get_monkeyrunner(self):
         """
@@ -168,10 +170,43 @@ class Device(object):
         """
         get device settings via adb
         """
-        db_name = "/data/data/com.android.provider.settings/database/settings.db"
+        db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
-        global_settings = {}
-        self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "global"))
+        system_settings = {}
+        out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "system"))
+        out_lines = out.splitlines()
+        for line in out.splitlines():
+            segs = line.split('|')
+            if len(segs) != 3:
+                continue
+            system_settings[segs[1]] = segs[2]
+
+        secure_settings = {}
+        out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "secure"))
+        out_lines = out.splitlines()
+        for line in out.splitlines():
+            segs = line.split('|')
+            if len(segs) != 3:
+                continue
+            secure_settings[segs[1]] = segs[2]
+
+        self.settings['system'] = system_settings
+        self.settings['secure'] = secure_settings
+        return self.settings
+
+    def change_settings(self, table_name, name, value):
+        """
+        dangerous method, by calling this, change settings.db in device
+        be very careful for sql injection
+        :param table_name: table name to work on, usually it is system or secure
+        :param name: settings name to set
+        :param value: settings value to set
+        """
+        db_name = "/data/data/com.android.providers.settings/databases/settings.db"
+
+        self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
+                             % (db_name, table_name, value, name))
+        self.get_settings()
 
 
 class App(object):

@@ -194,8 +194,18 @@ class App(object):
     def get_coverage(self):
         """
         calculate method coverage
+        idea:
+        in dalvik, the dvmFastMethodTraceEnter in profle.cpp will be called in each method
+        dvmFastMethodTraceEnter takes Method* as an argument
+        struct Method is defined in vm/oo/Object.cpp
+        Method has a field clazz (struct ClassObject)
+        ClassObject has a field pDvmDex (struct DvmDex in DvmDex.h)
+        DvmDex represent a dex file.
+        Hopefully, by monitoring method and comparing the belong dex file,
+        we are able to record each invoked method call of app.
+        coverage = (methods invoked) / (method declared)
         """
-
+        pass
 
 class AndroguardAnalysis(object):
     """

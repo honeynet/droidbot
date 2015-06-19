@@ -5,6 +5,7 @@ import app_env
 import logging
 import random
 import time
+import threading
 from com.dtmilano.android.viewclient import ViewClient
 
 
@@ -168,14 +169,21 @@ class Device(object):
             elif not env.call_in:
                 self.add_call_out_log_env(env)
 
-        if isinstance(env, app_env.ContactAppEnv):
+        elif isinstance(env, app_env.ContactAppEnv):
             self.add_contact_env(env)
 
-        if isinstance(env, app_env.SMSLogEnv):
-            if env.sms_in and self.telnet_enabled:
-                self.get_telnet().call_in(env)
-            elif not env.sms_in and self.get_adb() is not None:
-                self.get_adb().call_out(env)
+        elif isinstance(env, app_env.SMSLogEnv):
+            if env.sms_in:
+                self.receive_sms(env.phone, env.content)
+            else:
+                self.send_sms(env.phone, env.content)
+
+        elif isinstance(env, app_env.GPSAppEnv):
+            gps_thread = threading.Thread(target=self.add_gps_env(env))
+            gps_thread.start()
+
+        elif isinstance(env, app_env.SettingsAppEnv):
+            self.change_settings(env.table_name, env.name, env.value)
 
     def add_call_in_log_env(self, call_event):
         """
@@ -184,12 +192,25 @@ class Device(object):
         """
         assert isinstance(call_event, app_env.CallLogEnv)
         assert call_event.call_in
-        assert self.get_telnet() is not None
 
         if not self.receive_call(call_event.phone):
             return
+        time.sleep(1)
         if call_event.accepted:
             self.accept_call(call_event.phone)
+            time.sleep(1)
+        self.cancel_call(call_event.phone)
+
+    def add_call_out_log_env(self, call_event):
+        """
+        simulate a outcome phonecall log
+        :param call_event: CallLogEnv
+        """
+        assert isinstance(call_event, app_env.CallLogEnv)
+        assert not call_event.call_in
+
+        self.call(call_event.phone)
+        time.sleep(2)
         self.cancel_call(call_event.phone)
 
     def receive_call(self, phone):
@@ -225,8 +246,33 @@ class Device(object):
         :param phone: str, phonenum
         :return:
         """
+        call_intent = Intent(action="android.intent.action.CALL",
+                             data_uri="tel:%s" % phone)
+        self.send_intent(type='start', intent=call_intent)
+
+    def send_sms(self, phone, content=""):
+        """
+        send a SMS
+        :param phone: str, phone number of receiver
+        :param content: str, content of sms
+        :return:
+        """
+        send_sms_intent = Intent(action="android.intent.action.SENDTO",
+                                 data_uri="sms:%s" % phone,
+                                 extra_string={'sms_body':content},
+                                 extra_boolean={'exit_on_sent':'true'})
+        self.send_intent(type='start', intent=send_sms_intent)
+        # TODO click send button to send the message
+
+    def receive_sms(self, phone, content=""):
+        """
+        receive a SMS
+        :param phone: str, phone number of sender
+        :param content: str, content of sms
+        :return:
+        """
         assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("gsm call %s" % phone)
+        self.get_telnet().run_cmd("sms send %s '%s'" % (phone, content))
 
     def add_contact_env(self, contact_env):
         """
@@ -234,7 +280,6 @@ class Device(object):
         :param contact_env: ContactAppEnv
         :return:
         """
-        assert self.get_adb() is not None
         assert isinstance(contact_env, app_env.ContactAppEnv)
         extra_string = contact_env.__dict__
         extra_string.pop('env_type')
@@ -242,7 +287,7 @@ class Device(object):
                                 mime_type="vnd.android.cursor.dir/contact",
                                 extra_string=extra_string)
         self.send_intent(type='start', intent=contact_intent)
-        # after send intent, show have to send some more key events
+        # TODO click button and confirm adding
 
     def add_gps_env(self, gps_env):
         """
@@ -271,7 +316,8 @@ class Device(object):
         :param y: float
         :return:
         """
-        self.telnet.run_cmd("geo fix %s %s" % (x, y))
+        assert self.get_telnet() is not None
+        self.get_telnet().run_cmd("geo fix %s %s" % (x, y))
 
     def get_settings(self):
         """
@@ -324,7 +370,7 @@ class Device(object):
         """
         assert self.get_adb() is not None
         assert intent is not None
-        cmd = "am %s%s" % type, intent.get_cmd()
+        cmd = "am %s%s" % (type, intent.get_cmd())
         self.get_adb().shell(cmd)
 
     def send_event(self, event, state=None):
@@ -378,8 +424,6 @@ class App(object):
             self.logger.warning("no app given, will operate on whole device")
         elif app_path:
             self.get_androguard_analysis()
-            self.package_name = self.static_result['package_name']
-        self.static_result = {}
 
     def get_androguard_analysis(self):
         """

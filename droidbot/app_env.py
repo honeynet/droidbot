@@ -59,8 +59,8 @@ class SettingsAppEnv(StaticAppEnv):
     """
     This class describes settings of device
     """
-    def __init__(self, setting_category="system", name="screen_brightness", value="50"):
-        self.setting_category = setting_category
+    def __init__(self, table_name="system", name="screen_brightness", value="50"):
+        self.table_name = table_name
         self.name = name
         self.value = value
         self.env_type = 'settings'
@@ -163,7 +163,7 @@ class AppEnvManager(object):
         if self.envs is None:
             return
         for env in self.envs:
-            self.device.set_env(env)
+            self.device.add_env(env)
         return
 
     def dump(self, file):

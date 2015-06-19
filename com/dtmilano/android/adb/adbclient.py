@@ -36,6 +36,7 @@ import time
 import re
 import signal
 import os
+import logging
 import types
 import platform
 
@@ -133,6 +134,7 @@ class WifiManager:
 class AdbClient:
 
     def __init__(self, serialno=None, hostname=HOSTNAME, port=PORT, settransport=True, reconnect=True, ignoreversioncheck=False):
+        self.logger = logging.getLogger('AdbClient')
         self.Log = AdbClient.__Log(self)
         
         self.serialno = serialno
@@ -340,6 +342,8 @@ class AdbClient:
         return devices
 
     def shell(self, cmd=None):
+        self.logger.debug("command:")
+        self.logger.debug(cmd)
         if DEBUG:
             print >> sys.stderr, "shell(cmd=%s)" % cmd
         self.__checkTransport()
@@ -361,6 +365,8 @@ class AdbClient:
                 self.close()
                 self.__connect()
                 self.__setTransport()
+            self.logger.debug("return:")
+            self.logger.debug(out)
             return out
         else:
             self.__send('shell:')
@@ -368,6 +374,8 @@ class AdbClient:
             # sout = self.socket.makefile("r")
             # return (sin, sin)
             sout = adbClient.socket.makefile("r")
+            self.logger.debug("return:")
+            self.logger.debug(sout)
             return sout
 
     def __getRestrictedScreen(self):

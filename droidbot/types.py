@@ -1,7 +1,10 @@
 # utils for setting up Android environment and sending events
 __author__ = 'yuanchun'
 import connection
+import app_env
 import logging
+import random
+import time
 from com.dtmilano.android.viewclient import ViewClient
 
 
@@ -36,10 +39,10 @@ class Device(object):
             self.monkeyrunner_enabled = False
             self.view_client_enabled = False
 
+        self.is_connected = False
         self.connect()
         self.settings = {}
         self.get_settings()
-        print self.settings
         # self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -94,6 +97,7 @@ class Device(object):
                 self.get_telnet()
             if self.monkeyrunner_enabled:
                 self.get_monkeyrunner()
+            self.is_connected = True
 
         except connection.TelnetException:
             self.logger.warning("Cannot connect to telnet.")
@@ -103,6 +107,7 @@ class Device(object):
         disconnect current device
         :return:
         """
+        self.is_connected = False
         if self.adb:
             self.adb.disconnect()
         if self.telnet:
@@ -127,6 +132,7 @@ class Device(object):
         """
         if self.adb_enabled and not self.adb:
             self.adb = connection.ADB(self)
+            return self.adb
         else:
             # return viewclient.adb instead
             return self.view_client.device
@@ -151,20 +157,121 @@ class Device(object):
             self.view_client = ViewClient(*ViewClient.connectToDeviceOrExit(**kwargs1), **kwargs2)
         return self.view_client
 
-    def set_env(self, env):
+    def add_env(self, env):
         """
         set env to the device
         :param env: instance of AppEnv
         """
-        # TODO implement this method
+        if isinstance(env, app_env.CallLogEnv):
+            if env.call_in:
+                self.add_call_in_log_env(env)
+            elif not env.call_in:
+                self.add_call_out_log_env(env)
 
-    def send_event(self, event, state=None):
+        if isinstance(env, app_env.ContactAppEnv):
+            self.add_contact_env(env)
+
+        if isinstance(env, app_env.SMSLogEnv):
+            if env.sms_in and self.telnet_enabled:
+                self.get_telnet().call_in(env)
+            elif not env.sms_in and self.get_adb() is not None:
+                self.get_adb().call_out(env)
+
+    def add_call_in_log_env(self, call_event):
         """
-        send one event to device
-        :param event: the event to be sent
+        simulate a income phonecall log
+        :param call_event: CallLogEnv
+        """
+        assert isinstance(call_event, app_env.CallLogEnv)
+        assert call_event.call_in
+        assert self.get_telnet() is not None
+
+        if not self.receive_call(call_event.phone):
+            return
+        if call_event.accepted:
+            self.accept_call(call_event.phone)
+        self.cancel_call(call_event.phone)
+
+    def receive_call(self, phone):
+        """
+        simulate a income phonecall
+        :param phone: str, phonenum
         :return:
         """
-        # TODO implement this method
+        assert self.get_telnet() is not None
+        return self.get_telnet().run_cmd("gsm call %s" % phone)
+
+    def cancel_call(self, phone):
+        """
+        cancel phonecall
+        :param phone: str, phonenum
+        :return:
+        """
+        assert self.get_telnet() is not None
+        return self.get_telnet().run_cmd("gsm cancel %s" % phone)
+
+    def accept_call(self, phone):
+        """
+        accept phonecall
+        :param phone: str, phonenum
+        :return:
+        """
+        assert self.get_telnet() is not None
+        return self.get_telnet().run_cmd("gsm accept %s" % phone)
+
+    def call(self, phone):
+        """
+        simulate a outcome phonecall
+        :param phone: str, phonenum
+        :return:
+        """
+        assert self.get_telnet() is not None
+        return self.get_telnet().run_cmd("gsm call %s" % phone)
+
+    def add_contact_env(self, contact_env):
+        """
+        add a contact to the device
+        :param contact_env: ContactAppEnv
+        :return:
+        """
+        assert self.get_adb() is not None
+        assert isinstance(contact_env, app_env.ContactAppEnv)
+        extra_string = contact_env.__dict__
+        extra_string.pop('env_type')
+        contact_intent = Intent(action="android.intent.action.INSERT",
+                                mime_type="vnd.android.cursor.dir/contact",
+                                extra_string=extra_string)
+        self.send_intent(type='start', intent=contact_intent)
+        # after send intent, show have to send some more key events
+
+    def add_gps_env(self, gps_env):
+        """
+        simulate GPS on device via telnet
+        :param gps_env: GPSAppEnv
+        :return:
+        """
+        assert isinstance(gps_env, app_env.GPSAppEnv)
+        assert self.telnet_enabled and self.get_telnet() is not None
+
+        center_x = gps_env.center_x
+        center_y = gps_env.center_y
+        delta_x = gps_env.delta_x
+        delta_y = gps_env.delta_y
+
+        while self.is_connected:
+            x = random.random() * delta_x * 2 + center_x - delta_x
+            y = random.random() * delta_y * 2 + center_y - delta_y
+            self.set_gps(x, y)
+            time.sleep(3)
+
+    def set_gps(self, x, y):
+        """
+        set GPS positioning to x,y
+        :param x: float
+        :param y: float
+        :return:
+        """
+        self.telnet.run_cmd("geo fix %s %s" % (x, y))
 
     def get_settings(self):
         """
@@ -208,6 +315,49 @@ class Device(object):
                              % (db_name, table_name, value, name))
         self.get_settings()
 
+    def send_intent(self, type, intent):
+        """
+        send an intent to device via am (ActivityManager)
+        :param type: type of this intent, start, startservice, or broadcast
+        :param intent: instance of Intent
+        :return:
+        """
+        assert self.get_adb() is not None
+        assert intent is not None
+        cmd = "am %s%s" % type, intent.get_cmd()
+        self.get_adb().shell(cmd)
+
+    def send_event(self, event, state=None):
+        """
+        send one event to device
+        :param event: the event to be sent
+        :return:
+        """
+        # TODO implement this method
+
+    def start_app(self, app):
+        """
+        start an app on the device
+        :param app: instance of App, or str of package name
+        :return:
+        """
+        package_name = ""
+        if isinstance(app, str):
+            package_name = app
+        if isinstance(app, App):
+            package_name = app.get_package_name()
+        else:
+            self.logger.warning("unsupported param " + app + " with type: ", type(app))
+            return
+        self.get_adb().shell("am start %s" % package_name)
+
+    def send_UI_event(self, ui_event):
+        """
+        send a UI event to device via monkeyrunner
+        :param ui_event: instance of UIEvent
+        :return:
+        """
+        # TODO implement this function
 
 class App(object):
     """
@@ -225,18 +375,34 @@ class App(object):
         self.androguard = None
 
         if not package_name and not app_path:
-            self.logger.warning("no app given")
+            self.logger.warning("no app given, will operate on whole device")
         elif app_path:
-            self.run_static_analysis()
+            self.get_androguard_analysis()
             self.package_name = self.static_result['package_name']
         self.static_result = {}
 
-    def run_static_analysis(self):
+    def get_androguard_analysis(self):
         """
         run static analysis of app
         :return:
         """
-        self.androguard = AndroguardAnalysis(self.app_path)
+        if self.androguard is None:
+            self.androguard = AndroguardAnalysis(self.app_path)
+        return self.androguard
+
+    def get_package_name(self):
+        """
+        get package name of current app
+        :return:
+        """
+        if self.package_name is not None:
+            return self.package_name
+        elif self.get_androguard_analysis() is not None:
+            self.package_name = self.get_androguard_analysis().a.get_package()
+            return self.package_name
+        else:
+            self.logger.warning("can not get package name")
+            return None
 
     def get_coverage(self):
         """
@@ -260,55 +426,11 @@ class AndroguardAnalysis(object):
     """
     def __init__(self, app_path):
         """
-        :param app_path: local file path of app
+        :param app_path: local file path of app, should not be None
         analyse app specified by app_path
         """
         from androguard.androlyze import AnalyzeAPK
         self.a, self.d, self.dx = AnalyzeAPK(app_path)
-
-
-def add_contact(phone_num, first_name="", last_name="", email=""):
-    """
-    add a contact to device
-    :param phone_num:
-    :param first_name:
-    :param last_name:
-    :param email:
-    :return:
-    """
-    # TODO implement this function
-    return
-
-def add_sms_log(phone_num, content, send=0):
-    """
-    add a SMS log to device
-    :param phone_num: phone_num of this SMS
-    :param content: SMS content
-    :param send: 0 for send, 1 for receive
-    :return:
-    """
-    # TODO implement this function
-    return
-
-def set_system_setting(setting_name, setting_value):
-    """
-    set a system setting to a certain value
-    :param setting_name: name of setting, could be volume, brightness
-    :param setting_value: value of setting
-    :return:
-    """
-    # TODO figure how to, and implement
-    return
-
-def set_gps(start_axis, range = 10):
-    """
-    simulate GPS on device via telnet
-    :param start_axis: start position given by (latitude, longitude)
-    :param range: GPS range
-    :return:
-    """
-    # TODO implement this method
-    return
 
 
 class UIEvent(object):
@@ -319,28 +441,88 @@ class UIEvent(object):
     pass
 
 
-def send_UI_event(ui_event):
-    """
-    send a UI event to device via monkeyrunner
-    :param ui_event: instance of UIEvent
-    :return:
-    """
-    # TODO implement this function
-
-
-class IntentEvent(object):
+class Intent(object):
     """
     this class describes a intent event
     """
-    # TODO define this class
-    pass
+    def __init__(self, action=None, data_uri=None, mime_type=None, category=None,
+                 component=None, flag=None, extra_keys=[], extra_string={}, extra_boolean={},
+                 extra_int={}, extra_long={}, extra_float={}, extra_uri={}, extra_component={},
+                 extra_array_int={}, extra_array_long={}, extra_array_float={}, flags=[]):
+        self.action = action
+        self.data_uri = data_uri
+        self.mime_type = mime_type
+        self.category = category
+        self.component = component
+        self.flag = flag
+        self.extra_keys = extra_keys
+        self.extra_string = extra_string
+        self.extra_boolean = extra_boolean
+        self.extra_int = extra_int
+        self.extra_long = extra_long
+        self.extra_float = extra_float
+        self.extra_uri = extra_uri
+        self.extra_component = extra_component
+        self.extra_array_int = extra_array_int
+        self.extra_array_long = extra_array_long
+        self.extra_array_float = extra_array_float
+        self.flags = flags
+        self.cmd = None
+        self.get_cmd()
 
-
-def set_intent_event(intent_event):
-    """
-    send an intent to device via am (ActivityManager)
-    :param intent_event: instance of IntentEvent
-    :return:
-    """
-    # TODO implement this function
-    pass
+    def get_cmd(self):
+        """
+        convert this intent to cmd string
+        :return:
+        """
+        if self.cmd is not None:
+            return self.cmd
+        cmd = ""
+        if self.action is not None:
+            cmd += " -a " + self.action
+        if self.data_uri is not None:
+            cmd += " -d " + self.data_uri
+        if self.mime_type is not None:
+            cmd += " -t " + self.mime_type
+        if self.category is not None:
+            cmd += " -c " + self.category
+        if self.component is not None:
+            cmd += " -n " + self.component
+        if self.flag is not None:
+            cmd += " -f " + self.flag
+        if self.extra_keys:
+            for key in self.extra_keys:
+                cmd += " --esn '%s'" % key
+        if self.extra_string:
+            for key in self.extra_string.keys():
+                cmd += " -e '%s' '%s'" % (key, self.extra_string[key])
+        if self.extra_boolean:
+            for key in self.extra_boolean.keys():
+                cmd += " -ez '%s' %s" % (key, self.extra_boolean[key])
+        if self.extra_int:
+            for key in self.extra_int.keys():
+                cmd += " -ei '%s' %s" % (key, self.extra_int[key])
+        if self.extra_long:
+            for key in self.extra_long.keys():
+                cmd += " -el '%s' %s" % (key, self.extra_long[key])
+        if self.extra_float:
+            for key in self.extra_float.keys():
+                cmd += " -ef '%s' %s" % (key, self.extra_float[key])
+        if self.extra_uri:
+            for key in self.extra_uri.keys():
+                cmd += " -eu '%s' '%s'" % (key, self.extra_uri[key])
+        if self.extra_component:
+            for key in self.extra_component.keys():
+                cmd += " -ecn '%s' %s" % (key, self.extra_component[key])
+        if self.extra_array_int:
+            for key in self.extra_array_int.keys():
+                cmd += " -eia '%s' %s" % (key, ",".join(self.extra_array_int[key]))
+        if self.extra_array_long:
+            for key in self.extra_array_long.keys():
+                cmd += " -ela '%s' %s" % (key, ",".join(self.extra_array_long[key]))
+        if self.extra_array_float:
+            for key in self.extra_array_float.keys():
+                cmd += " -efa '%s' %s" % (key, ",".join(self.extra_array_float[key]))
+        if self.flags:
+            cmd += " " + " ".join(self.flags)
+        self.cmd = cmd

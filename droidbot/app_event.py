@@ -33,6 +33,7 @@ class UIEvent(AppEvent):
 class ExtendedUIEvent(UIEvent):
     """
     An extended UI event, which knows the UI state on which it is performing
+    This is reproducable
     """
     pass
 
@@ -125,7 +126,7 @@ class AppEventManager(object):
             self.event_factory.start(self)
         else:
             monkey_cmd = ["monkey", "--throttle", "1000", "-v"]
-            if self.app.package_name != None:
+            if self.app.get_package_name() != None:
                 monkey_cmd += ["-p", self.app.package_name]
             monkey_cmd.append(str(self.count))
             self.device.get_adb().shell(" ".join(monkey_cmd))

@@ -8,6 +8,7 @@
 __author__ = 'liyc'
 
 import logging
+import json
 
 ENV_POLICIES = [
     "none",
@@ -21,8 +22,11 @@ class AppEnv(object):
     """
     This class describes a environment attribute of device
     """
-    # TODO implement this class and its subclasses
-    pass
+    def to_json(self):
+        json.dumps(self.__dict__)
+
+    def __str__(self):
+        return self.__dict__.__str__()
 
 
 class StaticAppEnv(AppEnv):
@@ -35,6 +39,7 @@ class StaticAppEnv(AppEnv):
 class DynamicAppEnv(AppEnv):
     """
     This class describes a dynamic environment attribute of device
+    usually we need to start a thread for this
     """
     pass
 
@@ -43,18 +48,56 @@ class ContactAppEnv(StaticAppEnv):
     """
     This class describes a contact inside device
     """
-    def __init__(self, name='Lynn', phone_num="1234567", email="droidbot@honeynet.com"):
+    def __init__(self, name='Lynn', phone="1234567890", email="droidbot@honeynet.com"):
         self.name = name
-        self.phone_num = phone_num
+        self.phone = phone
         self.email = email
+        self.env_type = 'contact'
 
 
-class WifiStateAppEnv(StaticAppEnv):
+class SettingsAppEnv(StaticAppEnv):
     """
-    This class describes the Wifi state of device
+    This class describes settings of device
     """
-    def __init__(self, enable = True):
-        self.enable = True
+    def __init__(self, setting_category="system", name="screen_brightness", value="50"):
+        self.setting_category = setting_category
+        self.name = name
+        self.value = value
+        self.env_type = 'settings'
+
+
+class CallLogEnv(StaticAppEnv):
+    """
+    call log
+    """
+    def __init__(self, phone="1234567890", call_in=True, accepted=True):
+        """
+        a call log
+        :param phone: str, phone number of contact
+        :param call_in: bool, True for call in, False for call out
+        :param accepted: whether the call is accepted
+        """
+        self.phone = phone
+        self.call_in = call_in
+        self.accepted = accepted
+        self.env_type = 'calllog'
+
+
+class SMSLogEnv(StaticAppEnv):
+    """
+    SMS log
+    """
+    def __init__(self, phone="1234567890", sms_in=True, content="Hello world"):
+        """
+        a call log
+        :param phone: str, phone number of contact
+        :param sms_in: bool, True for income message, False for outcome
+        :param content: content of message
+        """
+        self.phone = phone
+        self.sms_in = sms_in
+        self.content = content
+        self.env_type = 'smslog'
 
 
 class GPSAppEnv(DynamicAppEnv):
@@ -66,6 +109,7 @@ class GPSAppEnv(DynamicAppEnv):
         self.center_y = center_y
         self.delta_x = delta_x
         self.delta_y = delta_y
+        self.env_type = 'gps'
 
 
 class AppEnvManager(object):
@@ -88,7 +132,7 @@ class AppEnvManager(object):
         self.envs = []
 
         if not self.policy or self == None:
-            self.policy = "none"
+            self.policy = "dummy"
 
         if self.policy == "none":
             self.env_factory = None
@@ -115,7 +159,9 @@ class AppEnvManager(object):
         """
         self.logger.info("deploying environment, policy is %s" % self.policy)
         if self.env_factory != None:
-            self.envs = self.env_factory.produce_envs()
+            self.envs = self.generateFromFactory(self.env_factory)
+        if self.envs is None:
+            return
         for env in self.envs:
             self.device.set_env(env)
         return
@@ -134,7 +180,7 @@ class AppEnvManager(object):
         :param app_env_factory: the AppEnvFactory instance used to generate
         :return:
         """
-        # TODO implement this method
+        return app_env_factory.produce_envs()
 
 
 class AppEnvFactory(object):
@@ -151,8 +197,16 @@ class DummyEnvFactory(AppEnvFactory):
     A dummy factory which generate randomized app environment
     """
     def produce_envs(self):
+        """
+        produce a list of dummy environment
+        """
         envs = []
-
+        envs.append(ContactAppEnv())
+        envs.append(SettingsAppEnv())
+        envs.append(CallLogEnv())
+        envs.append(SMSLogEnv())
+        envs.append(GPSAppEnv())
+        return envs
 
 
 class StaticEnvFactory(AppEnvFactory):
@@ -167,6 +221,14 @@ class StaticEnvFactory(AppEnvFactory):
         """
         self.app = app
 
+    def produce_envs(self):
+        """
+        generate app-specific envs
+        """
+        # TODO generate app-specific envs
+        envs = []
+        return envs
+
 
 class FileEnvFactory(AppEnvFactory):
     """
@@ -178,4 +240,13 @@ class FileEnvFactory(AppEnvFactory):
         create a FileEnvFactory from a json file
         :param file path string
         """
+        envs = []
         self.file = file
+
+    def produce_envs(self):
+        """
+        generate envs from file
+        """
+        # TODO generate envs from file
+        envs = []
+        return envs

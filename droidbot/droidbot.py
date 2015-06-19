@@ -5,6 +5,7 @@
 
 __author__ = 'liyc'
 import logging
+import sys
 from types import App, Device
 from app_env import AppEnvManager
 from app_event import AppEventManager
@@ -16,6 +17,8 @@ class DroidBot(object):
     The main class of droidbot
     A robot which interact with Android automatically
     """
+    # this is a single instance class
+    instance = None
 
     def __init__(self, options):
         """
@@ -25,6 +28,16 @@ class DroidBot(object):
         """
         self.logger = logging.getLogger('DroidBot')
         self.options = options
+        if self.options.output_dir is None:
+            self.options.output_dir = "droidbot_out"
+        DroidBot.instance = self
+
+    @staticmethod
+    def get_instance():
+        if DroidBot.instance is None:
+            print "Error: DroidBot is not initiated!"
+            sys.exit(-1)
+        return DroidBot.instance
 
     def start(self):
         """

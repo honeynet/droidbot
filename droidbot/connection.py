@@ -157,6 +157,7 @@ class TelnetConsole(object):
 
         self.device = device
         self.console = None
+        self.__lock__ = threading.Lock()
         from telnetlib import Telnet
         self.console = Telnet(self.host, self.port)
         if self.check_connectivity():
@@ -173,13 +174,22 @@ class TelnetConsole(object):
         """
         if isinstance(args, list):
             cmd_line = " ".join(args)
-        else:
+        elif isinstance(args, str):
             cmd_line = args
+        else:
+            self.logger.warning("unsupported command format:" + args)
+            return
+
         self.logger.debug('command:')
         self.logger.debug(cmd_line)
+
         cmd_line += '\n'
+
+        self.__lock__.acquire()
         self.console.write(cmd_line)
         r = self.console.read_until('OK', 5)
+        self.__lock__.release()
+
         self.logger.debug('return:')
         self.logger.debug(r)
         return r.endswith('OK')

@@ -153,10 +153,31 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and not self.view_client:
-            kwargs1 = {'verbose': True, 'ignoresecuredevice': True, 'serialno': self.serial}
-            kwargs2 = {'startviewserver': True, 'forceviewserveruse': True, 'autodump': False, 'ignoreuiautomatorkilled': True}
+            kwargs1 = {'verbose': True,
+                       'ignoresecuredevice': True,
+                       'serialno': self.serial}
+            kwargs2 = {'startviewserver': True,
+                       'forceviewserveruse': True,
+                       'autodump': False,
+                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(*ViewClient.connectToDeviceOrExit(**kwargs1), **kwargs2)
         return self.view_client
+
+    def device_prepare(self):
+        """
+        unlock screen
+        skip first-use tutorials
+        etc
+        :return:
+        """
+        assert self.get_adb() is not None
+        assert self.get_view_client() is not None
+
+        # unlock screen
+        self.get_adb().unlock()
+
+        # TODO set screen to never locked
+        # TODO skip first-use turorials
 
     def add_env(self, env):
         """
@@ -395,15 +416,16 @@ class Device(object):
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
-        self.get_adb().shell("am start %s" % package_name)
+        self.get_adb().startActivity(uri=package_name)
 
     def send_UI_event(self, ui_event):
         """
-        send a UI event to device via monkeyrunner
+        send a UI event to device via viewclient
         :param ui_event: instance of UIEvent
         :return:
         """
         # TODO implement this function
+
 
 class App(object):
     """

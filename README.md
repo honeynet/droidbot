@@ -37,7 +37,8 @@ keyevents, and simulated broadcasts, etc.
     the intent-filters of each app.
     + `dynamic` (to do) policy. It is actually the real human-like policy. It monitors the device 
     states, including the running activities, the foreground window, and the hierarchy of current 
-    window. It avoids going to same state too many times by comparing the window hierarchies, and 
+    window and sends events according to these information.
+    It avoids going to same state too many times by comparing the window hierarchies, and 
     it sends activity-specific intents based on static analysis of app.
     + `file` (to do) policy which generates events from a json file.
 

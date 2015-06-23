@@ -6,6 +6,8 @@
 __author__ = 'liyc'
 import logging
 import json
+import time
+import random
 from types import Intent
 
 event_policies = [
@@ -30,6 +32,11 @@ class AppEvent(object):
     def __str__(self):
         return self.to_dict().__str__()
 
+    @staticmethod
+    def get_random_instance():
+        # TODO implement this, including those in subclasses
+        raise NotImplementedError
+
 
 class KeyEvent(AppEvent):
     """
@@ -39,12 +46,18 @@ class KeyEvent(AppEvent):
         self.event_type = 'key'
         self.name = name
 
+    @staticmethod
+    def get_random_instance():
+        raise NotImplementedError
 
 class UIEvent(AppEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
-    pass
+
+    @staticmethod
+    def get_random_instance():
+        raise NotImplementedError
 
 
 class TouchEvent(UIEvent):
@@ -81,26 +94,6 @@ class DragEvent(UIEvent):
         self.duration = duration
 
 
-class ContextUIEvent(AppEvent):
-    """
-    An extended UI event, which knows the UI state on which it is performing
-    This is reproducable
-    """
-    def __init__(self, context, ui_event):
-        """
-        construct an UI event which knows its context
-        :param context: the context where the event happens
-        :param ui_event: the ui event to perform
-        """
-        assert isinstance(ui_event, UIEvent)
-        self.type = 'context_ui'
-        self.context = context
-        self.ui_event = ui_event
-
-    def to_dict(self):
-        return {'context' : self.context.__dict__, 'ui_event' : self.ui_event.__dict__}
-
-
 class IntentEvent(AppEvent):
     """
     An event describing an intent
@@ -111,12 +104,32 @@ class IntentEvent(AppEvent):
         self.intent = intent.get_cmd()
 
 
+class ContextEvent(AppEvent):
+    """
+    An extended event, which knows the device context in which it is performing
+    This is reproducable
+    """
+    def __init__(self, context, event):
+        """
+        construct an event which knows its context
+        :param context: the context where the event happens
+        :param event: the event to perform
+        """
+        assert isinstance(event, UIEvent)
+        self.type = 'context'
+        self.context = context
+        self.event = event
+
+    def to_dict(self):
+        return {'context' : self.context.__dict__, 'event' : self.event.__dict__}
+
+
 class AppEventManager(object):
     """
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count):
+    def __init__(self, device, app, event_policy, event_count, event_duration=2):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -131,6 +144,7 @@ class AppEventManager(object):
         self.events = []
         self.event_factory = None
         self.count = event_count
+        self.duration = event_duration
 
         if not self.count or self.count == None:
             self.count = 100
@@ -141,13 +155,13 @@ class AppEventManager(object):
         if self.policy == "none":
             self.event_factory = None
         elif self.policy == "monkey":
-            self.event_factory = DummyEventFactory()
+            self.event_factory = DummyEventFactory(device, app)
         elif self.policy == "static":
-            self.event_factory = StaticEventFactory(app)
+            self.event_factory = StaticEventFactory(device, app)
         elif self.policy == "dynamic":
-            self.event_factory = DynamicEventFactory(app)
+            self.event_factory = DynamicEventFactory(device, app)
         else:
-            self.event_factory = FileEventFactory(self.policy)
+            self.event_factory = FileEventFactory(device, app, self.policy)
 
     def add_event(self, event):
         """
@@ -203,7 +217,10 @@ class EventFactory(object):
     This class is responsible for generating events to stimulate more app behaviour
     It should call AppEventManager.send_event method continuously
     """
-    # TODO implement this class and its subclasses
+    def __init__(self, device, app):
+        self.device = device
+        self.app = app
+
     def start(self, event_manager):
         """
         start producing events
@@ -213,6 +230,8 @@ class EventFactory(object):
         while count < event_manager.count:
             event = self.generate_event()
             event_manager.add_event(event)
+            time.sleep(event_manager.duration)
+            count += 1
 
     def generate_event(self):
         """
@@ -220,11 +239,37 @@ class EventFactory(object):
         """
         raise NotImplementedError
 
+
+def weighted_choice(choices):
+    total = sum(w for c,w in choices)
+    r = random.uniform(0, total)
+    upto = 0
+    for c,w in choices:
+        if upto + w > r:
+            return c
+        upto += w
+
+
 class DummyEventFactory(EventFactory):
     """
     A dummy factory which produces AppEventManager.send_event method in a random manner
     """
-    pass
+
+    def __init__(self, device, app):
+        super(DummyEventFactory, self).__init__(device, app)
+        self.choices = {
+            UIEvent: 5,
+            IntentEvent: 4,
+            KeyEvent: 1
+        }
+
+    def generate_event(self):
+        """
+        generate a event
+        """
+        event_type = weighted_choice(self.choices)
+        event = event_type.get_random_instance()
+        return event
 
 
 class StaticEventFactory(EventFactory):
@@ -232,33 +277,47 @@ class StaticEventFactory(EventFactory):
     A factory which produces events based on static analysis result
     for example, manifest file and sensitive API it used
     """
-    def __init__(self, app):
+
+    def __init__(self, device, app):
+        super(StaticEventFactory, self).__init__(device, app)
+
+    def generate_event(self):
         """
-        create a StaticEventFactory from app analysis result
-        :param instance of App
+        generate a event
         """
-        self.app = app
+        pass
 
 
 class DynamicEventFactory(EventFactory):
     """
     A much wiser factory which produces events based on the current app state
     """
-    def __init__(self, app):
+
+    def __init__(self, device, app):
+        super(DynamicEventFactory, self).__init__(device, app)
+
+    def generate_event(self):
         """
-        create a DynamicEventFactory from app dynamic state
-        :param instance of App
+        generate a event
         """
-        self.app = app
+        pass
+
 
 
 class FileEventFactory(EventFactory):
     """
     factory which produces events from file
     """
-    def __init__(self, file):
+    def __init__(self, device, app, file):
         """
         create a FileEventFactory from a json file
         :param file path string
         """
+        super(FileEventFactory, self).__init__(device, app)
         self.file = file
+
+    def generate_event(self):
+        """
+        generate a event
+        """
+        pass

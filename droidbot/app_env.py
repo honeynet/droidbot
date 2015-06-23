@@ -22,11 +22,14 @@ class AppEnv(object):
     """
     This class describes a environment attribute of device
     """
+    def to_dict(self):
+        return self.__dict__
+
     def to_json(self):
-        json.dumps(self.__dict__)
+        json.dumps(self.to_dict())
 
     def __str__(self):
-        return self.__dict__.__str__()
+        return self.to_dict().__str__()
 
 
 class StaticAppEnv(AppEnv):

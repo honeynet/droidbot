@@ -302,13 +302,17 @@ class Device(object):
         :return:
         """
         assert isinstance(contact_env, app_env.ContactAppEnv)
+        assert self.get_adb() is not None
         extra_string = contact_env.__dict__
         extra_string.pop('env_type')
         contact_intent = Intent(action="android.intent.action.INSERT",
                                 mime_type="vnd.android.cursor.dir/contact",
                                 extra_string=extra_string)
         self.send_intent(type='start', intent=contact_intent)
-        # TODO click button and confirm adding
+        time.sleep(2)
+        self.get_adb().press("BACK")
+        time.sleep(2)
+        self.get_adb().press("BACK")
 
     def add_gps_env(self, gps_env):
         """
@@ -499,14 +503,6 @@ class AndroguardAnalysis(object):
         self.a, self.d, self.dx = AnalyzeAPK(app_path)
 
 
-class UIEvent(object):
-    """
-    this class describes a UI event
-    """
-    # TODO define this class
-    pass
-
-
 class Intent(object):
     """
     this class describes a intent event
@@ -515,6 +511,7 @@ class Intent(object):
                  component=None, flag=None, extra_keys=[], extra_string={}, extra_boolean={},
                  extra_int={}, extra_long={}, extra_float={}, extra_uri={}, extra_component={},
                  extra_array_int={}, extra_array_long={}, extra_array_float={}, flags=[]):
+        self.event_type = 'intent'
         self.action = action
         self.data_uri = data_uri
         self.mime_type = mime_type

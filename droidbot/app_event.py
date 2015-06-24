@@ -8,9 +8,9 @@ import logging
 import json
 import time
 import random
-from types import Intent
+from types import Intent, Device, App
 
-event_policies = [
+EVENT_POLICIES = [
     "none",
     "monkey",
     "static",
@@ -18,6 +18,128 @@ event_policies = [
     "file"
 ]
 
+POSSIBLE_KEYS = [
+    "BACK",
+    "MENU",
+    "HOME",
+    "VOLUME_UP"
+    "VOLUME_DOWN"
+]
+
+POSSIBLE_ACTIONS = '''
+android.intent.action.AIRPLANE_MODE_CHANGED
+android.intent.action.ALL_APPS
+android.intent.action.ANSWER
+android.intent.action.APPLICATION_RESTRICTIONS_CHANGED
+android.intent.action.APP_ERROR
+android.intent.action.ASSIST
+android.intent.action.ATTACH_DATA
+android.intent.action.BATTERY_CHANGED
+android.intent.action.BATTERY_LOW
+android.intent.action.BATTERY_OKAY
+android.intent.action.BOOT_COMPLETED
+android.intent.action.BUG_REPORT
+android.intent.action.CALL
+android.intent.action.CALL_BUTTON
+android.intent.action.CAMERA_BUTTON
+android.intent.action.CHOOSER
+android.intent.action.CLOSE_SYSTEM_DIALOGS
+android.intent.action.CONFIGURATION_CHANGED
+android.intent.action.CREATE_DOCUMENT
+android.intent.action.CREATE_SHORTCUT
+android.intent.action.DATE_CHANGED
+android.intent.action.DEFAULT
+android.intent.action.DELETE
+android.intent.action.DEVICE_STORAGE_LOW
+android.intent.action.DEVICE_STORAGE_OK
+android.intent.action.DIAL
+android.intent.action.DOCK_EVENT
+android.intent.action.DREAMING_STARTED
+android.intent.action.DREAMING_STOPPED
+android.intent.action.EDIT
+android.intent.action.EXTERNAL_APPLICATIONS_AVAILABLE
+android.intent.action.EXTERNAL_APPLICATIONS_UNAVAILABLE
+android.intent.action.FACTORY_TEST
+android.intent.action.GET_CONTENT
+android.intent.action.GET_RESTRICTION_ENTRIES
+android.intent.action.GTALK_SERVICE_CONNECTED
+android.intent.action.GTALK_SERVICE_DISCONNECTED
+android.intent.action.HEADSET_PLUG
+android.intent.action.INPUT_METHOD_CHANGED
+android.intent.action.INSERT
+android.intent.action.INSERT_OR_EDIT
+android.intent.action.INSTALL_PACKAGE
+android.intent.action.LOCALE_CHANGED
+android.intent.action.MAIN
+android.intent.action.MANAGED_PROFILE_ADDED
+android.intent.action.MANAGED_PROFILE_REMOVED
+android.intent.action.MANAGE_NETWORK_USAGE
+android.intent.action.MANAGE_PACKAGE_STORAGE
+android.intent.action.MEDIA_BAD_REMOVAL
+android.intent.action.MEDIA_BUTTON
+android.intent.action.MEDIA_CHECKING
+android.intent.action.MEDIA_EJECT
+android.intent.action.MEDIA_MOUNTED
+android.intent.action.MEDIA_NOFS
+android.intent.action.MEDIA_REMOVED
+android.intent.action.MEDIA_SCANNER_FINISHED
+android.intent.action.MEDIA_SCANNER_SCAN_FILE
+android.intent.action.MEDIA_SCANNER_STARTED
+android.intent.action.MEDIA_SHARED
+android.intent.action.MEDIA_UNMOUNTABLE
+android.intent.action.MEDIA_UNMOUNTED
+android.intent.action.MY_PACKAGE_REPLACED
+android.intent.action.NEW_OUTGOING_CALL
+android.intent.action.OPEN_DOCUMENT
+android.intent.action.OPEN_DOCUMENT_TREE
+android.intent.action.PACKAGE_ADDED
+android.intent.action.PACKAGE_CHANGED
+android.intent.action.PACKAGE_DATA_CLEARED
+android.intent.action.PACKAGE_FIRST_LAUNCH
+android.intent.action.PACKAGE_FULLY_REMOVED
+android.intent.action.PACKAGE_INSTALL
+android.intent.action.PACKAGE_NEEDS_VERIFICATION
+android.intent.action.PACKAGE_REMOVED
+android.intent.action.PACKAGE_REPLACED
+android.intent.action.PACKAGE_RESTARTED
+android.intent.action.PACKAGE_VERIFIED
+android.intent.action.PASTE
+android.intent.action.PICK
+android.intent.action.PICK_ACTIVITY
+android.intent.action.POWER_CONNECTED
+android.intent.action.POWER_DISCONNECTED
+android.intent.action.POWER_USAGE_SUMMARY
+android.intent.action.PROVIDER_CHANGED
+android.intent.action.QUICK_CLOCK
+android.intent.action.REBOOT
+android.intent.action.RUN
+android.intent.action.SCREEN_OFF
+android.intent.action.SCREEN_ON
+android.intent.action.SEARCH
+android.intent.action.SEARCH_LONG_PRESS
+android.intent.action.SEND
+android.intent.action.SENDTO
+android.intent.action.SEND_MULTIPLE
+android.intent.action.SET_WALLPAPER
+android.intent.action.SHUTDOWN
+android.intent.action.SYNC
+android.intent.action.SYSTEM_TUTORIAL
+android.intent.action.TIMEZONE_CHANGED
+android.intent.action.TIME_CHANGED
+android.intent.action.TIME_TICK
+android.intent.action.UID_REMOVED
+android.intent.action.UMS_CONNECTED
+android.intent.action.UMS_DISCONNECTED
+android.intent.action.UNINSTALL_PACKAGE
+android.intent.action.USER_BACKGROUND
+android.intent.action.USER_FOREGROUND
+android.intent.action.USER_INITIALIZE
+android.intent.action.USER_PRESENT
+android.intent.action.VIEW
+android.intent.action.VOICE_COMMAND
+android.intent.action.WALLPAPER_CHANGED
+android.intent.action.WEB_SEARCH
+'''.splitlines()
 
 class AppEvent(object):
     """
@@ -33,8 +155,12 @@ class AppEvent(object):
         return self.to_dict().__str__()
 
     @staticmethod
-    def get_random_instance():
-        # TODO implement this, including those in subclasses
+    def get_random_instance(device, app):
+        """
+        get a random instance of event
+        :param device: Device
+        :param app: App
+        """
         raise NotImplementedError
 
 
@@ -46,18 +172,28 @@ class KeyEvent(AppEvent):
         self.event_type = 'key'
         self.name = name
 
-    @staticmethod
-    def get_random_instance():
-        raise NotImplementedError
+    def get_random_instance(device, app):
+        key_name = random.choice(POSSIBLE_KEYS)
+        return KeyEvent(key_name)
+
 
 class UIEvent(AppEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
 
-    @staticmethod
-    def get_random_instance():
-        raise NotImplementedError
+    def get_random_instance(device, app):
+        if not device.is_foreground(app):
+            # if current app is in background, bring it to foreground
+            return IntentEvent(Intent(suffix=app.get_package_name()))
+        else:
+            choices = {
+                TouchEvent: 6,
+                LongTouchEvent: 2,
+                DragEvent: 2
+            }
+            event_type = weighted_choice(choices)
+            return event_type.get_random_instance(device, app)
 
 
 class TouchEvent(UIEvent):
@@ -69,6 +205,11 @@ class TouchEvent(UIEvent):
         self.x = x
         self.y = y
 
+    def get_random_instance(device, app):
+        x = random.uniform(0, device.get_display_info()['width'])
+        y = random.uniform(0, device.get_display_info()['height'])
+        return TouchEvent(x, y)
+
 
 class LongTouchEvent(UIEvent):
     """
@@ -79,6 +220,11 @@ class LongTouchEvent(UIEvent):
         self.x = x
         self.y = y
         self.duration = duration
+
+    def get_random_instance(device, app):
+        x = random.uniform(0, device.get_display_info()['width'])
+        y = random.uniform(0, device.get_display_info()['height'])
+        return LongTouchEvent(x, y)
 
 
 class DragEvent(UIEvent):
@@ -93,6 +239,13 @@ class DragEvent(UIEvent):
         self.end_y = end_y
         self.duration = duration
 
+    def get_random_instance(device, app):
+        start_x = random.uniform(0, device.get_display_info()['width'])
+        start_y = random.uniform(0, device.get_display_info()['height'])
+        end_x = random.uniform(0, device.get_display_info()['width'])
+        end_y = random.uniform(0, device.get_display_info()['height'])
+        return DragEvent(start_x, start_y, end_x, end_y)
+
 
 class IntentEvent(AppEvent):
     """
@@ -102,6 +255,11 @@ class IntentEvent(AppEvent):
         assert isinstance(intent, Intent)
         self.type = 'intent'
         self.intent = intent.get_cmd()
+
+    def get_random_instance(device, app):
+        action = random.choice(POSSIBLE_ACTIONS)
+        intent = Intent(action=action)
+        return IntentEvent(intent)
 
 
 class ContextEvent(AppEvent):
@@ -268,7 +426,7 @@ class DummyEventFactory(EventFactory):
         generate a event
         """
         event_type = weighted_choice(self.choices)
-        event = event_type.get_random_instance()
+        event = event_type.get_random_instance(self.device, self.app)
         return event
 
 

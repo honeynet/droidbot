@@ -28,6 +28,7 @@ class Device(object):
         self.telnet = None
         self.monkeyrunner = None
         self.view_client = None
+        self.display_info = None
 
         if self.is_emulator:
             self.adb_enabled = False
@@ -162,6 +163,25 @@ class Device(object):
                        'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(*ViewClient.connectToDeviceOrExit(**kwargs1), **kwargs2)
         return self.view_client
+
+    def is_foreground(self, app):
+        """
+        check if app is in foreground of device
+        :param app: App
+        :return: boolean
+        """
+        package = app.get_package_name()
+        focused_window_name = self.get_adb().getFocusedWindowName()
+        return focused_window_name.startswith(package)
+
+    def get_display_info(self):
+        """
+        get device display infomation, including width, height, and density
+        :return: dict, display_info
+        """
+        if self.display_info is not None:
+            self.display_info = self.get_adb().getDisplayInfo()
+        return self.display_info
 
     def device_prepare(self):
         """
@@ -305,10 +325,11 @@ class Device(object):
         assert self.get_adb() is not None
         extra_string = contact_env.__dict__
         extra_string.pop('env_type')
-        contact_intent = Intent(action="android.intent.action.INSERT",
+        contact_intent = Intent(prefix="start",
+                                action="android.intent.action.INSERT",
                                 mime_type="vnd.android.cursor.dir/contact",
                                 extra_string=extra_string)
-        self.send_intent(type='start', intent=contact_intent)
+        self.send_intent(intent=contact_intent)
         time.sleep(2)
         self.get_adb().press("BACK")
         time.sleep(2)
@@ -386,16 +407,15 @@ class Device(object):
                              % (db_name, table_name, value, name))
         self.get_settings()
 
-    def send_intent(self, type, intent):
+    def send_intent(self, intent):
         """
         send an intent to device via am (ActivityManager)
-        :param type: type of this intent, start, startservice, or broadcast
         :param intent: instance of Intent
         :return:
         """
         assert self.get_adb() is not None
         assert intent is not None
-        cmd = "am %s%s" % (type, intent.get_cmd())
+        cmd = intent.get_cmd()
         self.get_adb().shell(cmd)
 
     def send_event(self, event, state=None):
@@ -507,11 +527,12 @@ class Intent(object):
     """
     this class describes a intent event
     """
-    def __init__(self, action=None, data_uri=None, mime_type=None, category=None,
+    def __init__(self, prefix="start", action=None, data_uri=None, mime_type=None, category=None,
                  component=None, flag=None, extra_keys=[], extra_string={}, extra_boolean={},
                  extra_int={}, extra_long={}, extra_float={}, extra_uri={}, extra_component={},
-                 extra_array_int={}, extra_array_long={}, extra_array_float={}, flags=[]):
+                 extra_array_int={}, extra_array_long={}, extra_array_float={}, flags=[], suffix=""):
         self.event_type = 'intent'
+        self.prefix = prefix
         self.action = action
         self.data_uri = data_uri
         self.mime_type = mime_type
@@ -530,17 +551,21 @@ class Intent(object):
         self.extra_array_long = extra_array_long
         self.extra_array_float = extra_array_float
         self.flags = flags
+        self.suffix = suffix
         self.cmd = None
         self.get_cmd()
 
     def get_cmd(self):
         """
         convert this intent to cmd string
-        :return:
+        :rtype : object
+        :return: str, cmd string
         """
         if self.cmd is not None:
             return self.cmd
-        cmd = ""
+        cmd = "am "
+        if self.prefix:
+            cmd += self.prefix
         if self.action is not None:
             cmd += " -a " + self.action
         if self.data_uri is not None:
@@ -588,4 +613,7 @@ class Intent(object):
                 cmd += " -efa '%s' %s" % (key, ",".join(self.extra_array_float[key]))
         if self.flags:
             cmd += " " + " ".join(self.flags)
+        if self.suffix:
+            cmd += " " + self.suffix
         self.cmd = cmd
+        return self.cmd

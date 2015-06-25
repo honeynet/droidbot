@@ -9,6 +9,11 @@ __author__ = 'liyc'
 
 import logging
 import json
+import random
+import time
+import threading
+
+from types import Device, App, Intent
 
 ENV_POLICIES = [
     "none",
@@ -16,6 +21,10 @@ ENV_POLICIES = [
     "static",
     "file",
 ]
+
+
+class UnknownEnvException(Exception):
+    pass
 
 
 class AppEnv(object):
@@ -30,6 +39,13 @@ class AppEnv(object):
 
     def __str__(self):
         return self.to_dict().__str__()
+
+    def deploy(self, device):
+        """
+        deploy this env to device
+        :param device: Device
+        """
+        raise NotImplementedError
 
 
 class StaticAppEnv(AppEnv):
@@ -57,6 +73,23 @@ class ContactAppEnv(StaticAppEnv):
         self.email = email
         self.env_type = 'contact'
 
+    def deploy(self, device):
+        """
+        add a contact to the device
+        """
+        assert device.get_adb() is not None
+        extra_string = self.__dict__
+        extra_string.pop('env_type')
+        contact_intent = Intent(prefix="start",
+                                action="android.intent.action.INSERT",
+                                mime_type="vnd.android.cursor.dir/contact",
+                                extra_string=extra_string)
+        device.send_intent(intent=contact_intent)
+        time.sleep(2)
+        device.get_adb().press("BACK")
+        time.sleep(2)
+        device.get_adb().press("BACK")
+
 
 class SettingsAppEnv(StaticAppEnv):
     """
@@ -67,6 +100,9 @@ class SettingsAppEnv(StaticAppEnv):
         self.name = name
         self.value = value
         self.env_type = 'settings'
+
+    def deploy(self, device):
+        device.change_settings(self.table_name, self.name, self.value)
 
 
 class CallLogEnv(StaticAppEnv):
@@ -85,6 +121,32 @@ class CallLogEnv(StaticAppEnv):
         self.accepted = accepted
         self.env_type = 'calllog'
 
+    def deploy(self, device):
+        if self.call_in:
+            self.deploy_call_in(device)
+        else:
+            self.deploy_call_out(device)
+
+    def deploy_call_in(self, device):
+        """
+        deploy call in log event to device
+        """
+        if not device.receive_call(self.phone):
+            return
+        time.sleep(1)
+        if self.accepted:
+            device.accept_call(self.phone)
+            time.sleep(1)
+        device.cancel_call(self.phone)
+
+    def deploy_call_out(self, device):
+        """
+        deploy call out log event to device
+        """
+        device.call(self.phone)
+        time.sleep(2)
+        device.cancel_call(self.phone)
+
 
 class SMSLogEnv(StaticAppEnv):
     """
@@ -102,6 +164,12 @@ class SMSLogEnv(StaticAppEnv):
         self.content = content
         self.env_type = 'smslog'
 
+    def deploy(self, device):
+        if self.sms_in:
+            device.receive_sms(self.phone, self.content)
+        else:
+            device.send_sms(self.phone, self.content)
+
 
 class GPSAppEnv(DynamicAppEnv):
     """
@@ -113,6 +181,9 @@ class GPSAppEnv(DynamicAppEnv):
         self.delta_x = delta_x
         self.delta_y = delta_y
         self.env_type = 'gps'
+
+    def deploy(self, device):
+        device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
 
 
 class AppEnvManager(object):
@@ -135,7 +206,7 @@ class AppEnvManager(object):
         self.envs = []
 
         if not self.policy or self == None:
-            self.policy = "dummy"
+            self.policy = "none"
 
         if self.policy == "none":
             self.env_factory = None
@@ -160,14 +231,14 @@ class AppEnvManager(object):
         :param device:
         :return:
         """
-        self.logger.info("deploying environment, policy is %s" % self.policy)
+        self.logger.info("start deploying environment, policy is %s" % self.policy)
         if self.env_factory != None:
             self.envs = self.generateFromFactory(self.env_factory)
         if self.envs is None:
             return
         for env in self.envs:
             self.device.add_env(env)
-        return
+        self.logger.info("finish deploying environment, policy is %s" % self.policy)
 
     def dump(self, file):
         """

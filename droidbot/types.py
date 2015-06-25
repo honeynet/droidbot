@@ -1,12 +1,11 @@
 # utils for setting up Android environment and sending events
 __author__ = 'yuanchun'
 import connection
-import app_env
 import logging
-import random
-import time
-import threading
 from com.dtmilano.android.viewclient import ViewClient
+
+DEFAULT_NUM = '1234567890'
+DEFAULT_CONTENT = 'Hello world!'
 
 
 class Device(object):
@@ -45,6 +44,8 @@ class Device(object):
         self.connect()
         self.settings = {}
         self.get_settings()
+        self.get_display_info()
+        assert self.display_info is not None
         # self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -179,7 +180,7 @@ class Device(object):
         get device display infomation, including width, height, and density
         :return: dict, display_info
         """
-        if self.display_info is not None:
+        if self.display_info is None:
             self.display_info = self.get_adb().getDisplayInfo()
         return self.display_info
 
@@ -204,57 +205,10 @@ class Device(object):
         set env to the device
         :param env: instance of AppEnv
         """
-        if isinstance(env, app_env.CallLogEnv):
-            if env.call_in:
-                self.add_call_in_log_env(env)
-            elif not env.call_in:
-                self.add_call_out_log_env(env)
+        self.logger.info("deploying env: %s" % env)
+        env.deploy(self)
 
-        elif isinstance(env, app_env.ContactAppEnv):
-            self.add_contact_env(env)
-
-        elif isinstance(env, app_env.SMSLogEnv):
-            if env.sms_in:
-                self.receive_sms(env.phone, env.content)
-            else:
-                self.send_sms(env.phone, env.content)
-
-        elif isinstance(env, app_env.GPSAppEnv):
-            gps_thread = threading.Thread(target=self.add_gps_env(env))
-            gps_thread.start()
-
-        elif isinstance(env, app_env.SettingsAppEnv):
-            self.change_settings(env.table_name, env.name, env.value)
-
-    def add_call_in_log_env(self, call_event):
-        """
-        simulate a income phonecall log
-        :param call_event: CallLogEnv
-        """
-        assert isinstance(call_event, app_env.CallLogEnv)
-        assert call_event.call_in
-
-        if not self.receive_call(call_event.phone):
-            return
-        time.sleep(1)
-        if call_event.accepted:
-            self.accept_call(call_event.phone)
-            time.sleep(1)
-        self.cancel_call(call_event.phone)
-
-    def add_call_out_log_env(self, call_event):
-        """
-        simulate a outcome phonecall log
-        :param call_event: CallLogEnv
-        """
-        assert isinstance(call_event, app_env.CallLogEnv)
-        assert not call_event.call_in
-
-        self.call(call_event.phone)
-        time.sleep(2)
-        self.cancel_call(call_event.phone)
-
-    def receive_call(self, phone):
+    def receive_call(self, phone=DEFAULT_NUM):
         """
         simulate a income phonecall
         :param phone: str, phonenum
@@ -263,7 +217,7 @@ class Device(object):
         assert self.get_telnet() is not None
         return self.get_telnet().run_cmd("gsm call %s" % phone)
 
-    def cancel_call(self, phone):
+    def cancel_call(self, phone=DEFAULT_NUM):
         """
         cancel phonecall
         :param phone: str, phonenum
@@ -272,7 +226,7 @@ class Device(object):
         assert self.get_telnet() is not None
         return self.get_telnet().run_cmd("gsm cancel %s" % phone)
 
-    def accept_call(self, phone):
+    def accept_call(self, phone=DEFAULT_NUM):
         """
         accept phonecall
         :param phone: str, phonenum
@@ -281,28 +235,30 @@ class Device(object):
         assert self.get_telnet() is not None
         return self.get_telnet().run_cmd("gsm accept %s" % phone)
 
-    def call(self, phone):
+    def call(self, phone=DEFAULT_NUM):
         """
         simulate a outcome phonecall
         :param phone: str, phonenum
         :return:
         """
-        call_intent = Intent(action="android.intent.action.CALL",
+        call_intent = Intent(prefix='start',
+                             action="android.intent.action.CALL",
                              data_uri="tel:%s" % phone)
-        self.send_intent(type='start', intent=call_intent)
+        self.send_intent(intent=call_intent)
 
-    def send_sms(self, phone, content=""):
+    def send_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
         """
         send a SMS
         :param phone: str, phone number of receiver
         :param content: str, content of sms
         :return:
         """
-        send_sms_intent = Intent(action="android.intent.action.SENDTO",
+        send_sms_intent = Intent(prefix='start',
+                                 action="android.intent.action.SENDTO",
                                  data_uri="sms:%s" % phone,
                                  extra_string={'sms_body':content},
                                  extra_boolean={'exit_on_sent':'true'})
-        self.send_intent(type='start', intent=send_sms_intent)
+        self.send_intent(intent=send_sms_intent)
         # TODO click send button to send the message
 
     def receive_sms(self, phone, content=""):
@@ -315,46 +271,6 @@ class Device(object):
         assert self.get_telnet() is not None
         self.get_telnet().run_cmd("sms send %s '%s'" % (phone, content))
 
-    def add_contact_env(self, contact_env):
-        """
-        add a contact to the device
-        :param contact_env: ContactAppEnv
-        :return:
-        """
-        assert isinstance(contact_env, app_env.ContactAppEnv)
-        assert self.get_adb() is not None
-        extra_string = contact_env.__dict__
-        extra_string.pop('env_type')
-        contact_intent = Intent(prefix="start",
-                                action="android.intent.action.INSERT",
-                                mime_type="vnd.android.cursor.dir/contact",
-                                extra_string=extra_string)
-        self.send_intent(intent=contact_intent)
-        time.sleep(2)
-        self.get_adb().press("BACK")
-        time.sleep(2)
-        self.get_adb().press("BACK")
-
-    def add_gps_env(self, gps_env):
-        """
-        simulate GPS on device via telnet
-        :param gps_env: GPSAppEnv
-        :return:
-        """
-        assert isinstance(gps_env, app_env.GPSAppEnv)
-        assert self.telnet_enabled and self.get_telnet() is not None
-
-        center_x = gps_env.center_x
-        center_y = gps_env.center_y
-        delta_x = gps_env.delta_x
-        delta_y = gps_env.delta_y
-
-        while self.is_connected:
-            x = random.random() * delta_x * 2 + center_x - delta_x
-            y = random.random() * delta_y * 2 + center_y - delta_y
-            self.set_gps(x, y)
-            time.sleep(3)
-
     def set_gps(self, x, y):
         """
         set GPS positioning to x,y
@@ -364,6 +280,25 @@ class Device(object):
         """
         assert self.get_telnet() is not None
         self.get_telnet().run_cmd("geo fix %s %s" % (x, y))
+
+    def set_continuous_gps(self, center_x, center_y, delta_x, delta_y):
+        import threading
+        gps_thread = threading.Thread(
+            target=self.set_continuous_gps_blocked,
+            args=(center_x, center_y, delta_x, delta_y))
+        gps_thread.start()
+
+    def set_continuous_gps_blocked(self, center_x, center_y, delta_x, delta_y):
+        """
+        simulate GPS on device via telnet
+        this method is blocked
+        """
+        import random, time
+        while self.is_connected:
+            x = random.random() * delta_x * 2 + center_x - delta_x
+            y = random.random() * delta_y * 2 + center_y - delta_y
+            self.set_gps(x, y)
+            time.sleep(3)
 
     def get_settings(self):
         """
@@ -383,7 +318,7 @@ class Device(object):
         secure_settings = {}
         out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "secure"))
         out_lines = out.splitlines()
-        for line in out.splitlines():
+        for line in out_lines:
             segs = line.split('|')
             if len(segs) != 3:
                 continue
@@ -418,13 +353,14 @@ class Device(object):
         cmd = intent.get_cmd()
         self.get_adb().shell(cmd)
 
-    def send_event(self, event, state=None):
+    def send_event(self, event):
         """
         send one event to device
         :param event: the event to be sent
         :return:
         """
-        # TODO implement this method
+        self.logger.info("sending event: %s" % event)
+        event.send(self)
 
     def start_app(self, app):
         """
@@ -441,14 +377,6 @@ class Device(object):
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
         self.get_adb().startActivity(uri=package_name)
-
-    def send_UI_event(self, ui_event):
-        """
-        send a UI event to device via viewclient
-        :param ui_event: instance of UIEvent
-        :return:
-        """
-        # TODO implement this function
 
 
 class App(object):

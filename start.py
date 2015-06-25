@@ -47,7 +47,7 @@ def main():
     the main function
     it starts a droidbot according to the arguments given in cmd line
     """
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     opts = parse_args()
 
     droidbot = DroidBot(opts)

@@ -141,6 +141,11 @@ android.intent.action.WALLPAPER_CHANGED
 android.intent.action.WEB_SEARCH
 '''.splitlines()
 
+
+class UnknownEventException(Exception):
+    pass
+
+
 class AppEvent(object):
     """
     The base class of all events
@@ -153,6 +158,14 @@ class AppEvent(object):
 
     def __str__(self):
         return self.to_dict().__str__()
+
+    def send(self, device):
+        """
+        send this event to device
+        :param device: Device
+        :return:
+        """
+        raise NotImplementedError
 
     @staticmethod
     def get_random_instance(device, app):
@@ -172,16 +185,21 @@ class KeyEvent(AppEvent):
         self.event_type = 'key'
         self.name = name
 
+    @staticmethod
     def get_random_instance(device, app):
         key_name = random.choice(POSSIBLE_KEYS)
         return KeyEvent(key_name)
+
+    def send(self, device):
+        assert device.get_adb() is not None
+        device.get_adb().press(self.name)
 
 
 class UIEvent(AppEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
-
+    @staticmethod
     def get_random_instance(device, app):
         if not device.is_foreground(app):
             # if current app is in background, bring it to foreground
@@ -205,10 +223,15 @@ class TouchEvent(UIEvent):
         self.x = x
         self.y = y
 
+    @staticmethod
     def get_random_instance(device, app):
         x = random.uniform(0, device.get_display_info()['width'])
         y = random.uniform(0, device.get_display_info()['height'])
         return TouchEvent(x, y)
+
+    def send(self, device):
+        assert device.get_adb() is not None
+        device.get_adb().touch(self.x, self.y)
 
 
 class LongTouchEvent(UIEvent):
@@ -221,10 +244,15 @@ class LongTouchEvent(UIEvent):
         self.y = y
         self.duration = duration
 
+    @staticmethod
     def get_random_instance(device, app):
         x = random.uniform(0, device.get_display_info()['width'])
         y = random.uniform(0, device.get_display_info()['height'])
         return LongTouchEvent(x, y)
+
+    def send(self, device):
+        assert device.get_adb() is not None
+        device.get_adb().longTouch(self.x, self.y, self.duration)
 
 
 class DragEvent(UIEvent):
@@ -239,6 +267,7 @@ class DragEvent(UIEvent):
         self.end_y = end_y
         self.duration = duration
 
+    @staticmethod
     def get_random_instance(device, app):
         start_x = random.uniform(0, device.get_display_info()['width'])
         start_y = random.uniform(0, device.get_display_info()['height'])
@@ -246,6 +275,11 @@ class DragEvent(UIEvent):
         end_y = random.uniform(0, device.get_display_info()['height'])
         return DragEvent(start_x, start_y, end_x, end_y)
 
+    def send(self, device):
+        assert device.get_adb() is not None
+        device.get_adb().drag((self.start_x, self.start_y),
+                              (self.end_x, self.end_y),
+                              self.duration)
 
 class IntentEvent(AppEvent):
     """
@@ -256,11 +290,39 @@ class IntentEvent(AppEvent):
         self.type = 'intent'
         self.intent = intent.get_cmd()
 
+    @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
         intent = Intent(action=action)
         return IntentEvent(intent)
 
+    def send(self, device):
+        assert device.get_adb() is not None
+        device.get_adb().shell(self.intent)
+
+
+class EmulatorEvent(AppEvent):
+    """
+    build-in emulator event, including incoming call and incoming SMS
+    """
+    def __init__(self, event_name, event_data):
+        """
+        :param event_name: name of event
+        :param event_data: data of event
+        """
+        self.event_name = event_name
+        self.event_data = event_data
+
+    def send(self, device):
+        assert isinstance(device, Device)
+        if self.event_data == 'call':
+            device.receive_call()
+            time.sleep(2)
+            device.accept_call()
+        elif self.event_data == 'sms':
+            device.send_sms()
+        else:
+            raise UnknownEventException
 
 class ContextEvent(AppEvent):
     """
@@ -308,7 +370,7 @@ class AppEventManager(object):
             self.count = 100
 
         if not self.policy or self.policy == None:
-            self.policy = "none"
+            self.policy = "monkey"
 
         if self.policy == "none":
             self.event_factory = None
@@ -360,14 +422,15 @@ class AppEventManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
-        if self.event_factory != None:
+        if self.event_factory is not None:
             self.event_factory.start(self)
         else:
-            monkey_cmd = ["monkey", "--throttle", "1000", "-v"]
-            if self.app.get_package_name() != None:
-                monkey_cmd += ["-p", self.app.package_name]
-            monkey_cmd.append(str(self.count))
+            monkey_cmd = "monkey %s --throttle 1000 -v %d" % (
+                ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
+                self.count
+            )
             self.device.get_adb().shell(" ".join(monkey_cmd))
+        self.logger.info("finish sending events, policy is %s" % self.policy)
 
 
 class EventFactory(object):
@@ -399,13 +462,13 @@ class EventFactory(object):
 
 
 def weighted_choice(choices):
-    total = sum(w for c,w in choices)
+    total = sum(choices[c] for c in choices.keys())
     r = random.uniform(0, total)
     upto = 0
-    for c,w in choices:
-        if upto + w > r:
+    for c in choices.keys():
+        if upto + choices[c] > r:
             return c
-        upto += w
+        upto += choices[c]
 
 
 class DummyEventFactory(EventFactory):

@@ -165,7 +165,6 @@ class TelnetConsole(object):
         else:
             raise TelnetException()
 
-
     def run_cmd(self, args):
         """
         run a command in emulator console

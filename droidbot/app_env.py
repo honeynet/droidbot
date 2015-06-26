@@ -77,18 +77,9 @@ class ContactAppEnv(StaticAppEnv):
         """
         add a contact to the device
         """
-        assert device.get_adb() is not None
-        extra_string = self.__dict__
-        extra_string.pop('env_type')
-        contact_intent = Intent(prefix="start",
-                                action="android.intent.action.INSERT",
-                                mime_type="vnd.android.cursor.dir/contact",
-                                extra_string=extra_string)
-        device.send_intent(intent=contact_intent)
-        time.sleep(2)
-        device.get_adb().press("BACK")
-        time.sleep(2)
-        device.get_adb().press("BACK")
+        contact_data = self.__dict__
+        contact_data.pop('env_type')
+        device.add_contact(contact_data)
 
 
 class SettingsAppEnv(StaticAppEnv):

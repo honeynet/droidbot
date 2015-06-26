@@ -1041,6 +1041,27 @@ class AdbClient:
              }
         return string.Template(template).substitute(_map)
 
+    # Lynn added
+    def getServiceNames(self):
+        """
+        get current running services
+        :return: list of services
+        """
+        self.__checkTransport()
+        services = []
+        dat = self.shell('dumpsys activity services')
+        lines = dat.splitlines()
+        serviceRE = re.compile('^ *\* ServiceRecord{[0-9a-f]+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
+
+        for line in lines:
+            m = serviceRE.search(line)
+            if m:
+                package = m.group(1)
+                service = m.group(2)
+                services.append("%s/%s" % (package, service))
+        return services
+
+
 if __name__ == '__main__':
     adbClient = AdbClient(os.environ['ANDROID_SERIAL'])
     INTERACTIVE = False

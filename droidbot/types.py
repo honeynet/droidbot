@@ -2,6 +2,7 @@
 __author__ = 'yuanchun'
 import connection
 import logging
+import time
 from com.dtmilano.android.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
@@ -30,7 +31,7 @@ class Device(object):
         self.display_info = None
 
         if self.is_emulator:
-            self.adb_enabled = False
+            self.adb_enabled = True
             self.telnet_enabled = True
             self.monkeyrunner_enabled = False
             self.view_client_enabled = True
@@ -92,14 +93,14 @@ class Device(object):
         :return:
         """
         try:
-            if self.view_client_enabled:
-                self.get_view_client()
             if self.adb_enabled:
                 self.get_adb()
             if self.telnet_enabled:
                 self.get_telnet()
             if self.monkeyrunner_enabled:
                 self.get_monkeyrunner()
+            if self.view_client_enabled:
+                self.get_view_client()
             self.is_connected = True
 
         except connection.TelnetException:
@@ -134,11 +135,9 @@ class Device(object):
         get adb connection of the device
         """
         if self.adb_enabled and not self.adb:
-            self.adb = connection.ADB(self)
-            return self.adb
-        else:
-            # return viewclient.adb instead
-            return self.view_client.device
+            # use adbclient class in com.dtmilano.adb.adbclient
+            self.adb, self.serial = ViewClient.connectToDeviceOrExit(verbose=True,serialno=self.serial)
+        return self.adb
 
     def get_monkeyrunner(self):
         """
@@ -155,14 +154,11 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and not self.view_client:
-            kwargs1 = {'verbose': True,
-                       'ignoresecuredevice': True,
-                       'serialno': self.serial}
-            kwargs2 = {'startviewserver': True,
-                       'forceviewserveruse': True,
-                       'autodump': False,
-                       'ignoreuiautomatorkilled': True}
-            self.view_client = ViewClient(*ViewClient.connectToDeviceOrExit(**kwargs1), **kwargs2)
+            kwargs = {'startviewserver': True,
+                      'forceviewserveruse': True,
+                      'autodump': False,
+                      'ignoreuiautomatorkilled': True}
+            self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client
 
     def is_foreground(self, app):
@@ -172,7 +168,7 @@ class Device(object):
         :return: boolean
         """
         package = app.get_package_name()
-        focused_window_name = self.get_adb().getFocusedWindowName()
+        focused_window_name = self.get_adb().getTopActivityName()
         return focused_window_name.startswith(package)
 
     def get_display_info(self):
@@ -207,6 +203,23 @@ class Device(object):
         """
         self.logger.info("deploying env: %s" % env)
         env.deploy(self)
+
+    def add_contact(self, contact_data):
+        """
+        add a contact to device
+        :param contact_data: dict of contact, should have keys like name, phone, email
+        :return:
+        """
+        assert self.get_adb() is not None
+        contact_intent = Intent(prefix="start",
+                                action="android.intent.action.INSERT",
+                                mime_type="vnd.android.cursor.dir/contact",
+                                extra_string=contact_data)
+        self.send_intent(intent=contact_intent)
+        time.sleep(2)
+        self.get_adb().press("BACK")
+        time.sleep(2)
+        self.get_adb().press("BACK")
 
     def receive_call(self, phone=DEFAULT_NUM):
         """
@@ -259,7 +272,8 @@ class Device(object):
                                  extra_string={'sms_body':content},
                                  extra_boolean={'exit_on_sent':'true'})
         self.send_intent(intent=send_sms_intent)
-        # TODO click send button to send the message
+        time.sleep(2)
+        self.get_adb().press('66')
 
     def receive_sms(self, phone, content=""):
         """

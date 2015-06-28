@@ -3,6 +3,7 @@ __author__ = 'yuanchun'
 import connection
 import logging
 import time
+import os
 from com.dtmilano.android.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
@@ -408,10 +409,13 @@ class App(object):
         self.app_path = app_path
         self.androguard = None
 
-        if not package_name and not app_path:
+        if not self.package_name and not self.app_path:
             self.logger.warning("no app given, will operate on whole device")
-        elif app_path:
-            self.get_androguard_analysis()
+        else:
+            if self.app_path is None:
+                self.get_app_path()
+            else:
+                self.get_package_name()
 
     def get_androguard_analysis(self):
         """
@@ -421,6 +425,20 @@ class App(object):
         if self.androguard is None:
             self.androguard = AndroguardAnalysis(self.app_path)
         return self.androguard
+
+    def get_app_path(self):
+        """
+        get app file path of current app
+        :return:
+        """
+        if self.app_path is not None:
+            return self.app_path
+        # if we only have package name, use `adb pull` to get the package from device
+        # TODO implement this
+        return NotImplementedError
+        from droidbot import DroidBot
+        out_dir = DroidBot.get_instance().options.output_dir
+        self.app_path = os.path.join(out_dir, 'temp', "%s.apk" % self.package_name)
 
     def get_package_name(self):
         """

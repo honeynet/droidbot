@@ -290,8 +290,21 @@ class StaticEnvFactory(AppEnvFactory):
         """
         generate app-specific envs
         """
-        # TODO generate app-specific envs
         envs = []
+        androguard = self.app.get_androguard_analysis()
+        permissions = androguard.a.get_permissions()
+        if 'android.permission.READ_CONTACTS' in permissions:
+            envs.append(ContactAppEnv())
+        if 'android.permission.READ_CALL_LOG' in permissions:
+            envs.append(CallLogEnv())
+            envs.append(CallLogEnv(call_in=False))
+            envs.append(CallLogEnv(accepted=False))
+        if 'android.permission.ACCESS_FINE_LOCATION' in permissions:
+            envs.append(GPSAppEnv())
+        if 'android.permission.READ_SMS' in permissions:
+            envs.append(SMSLogEnv())
+            envs.append(SMSLogEnv(sms_in=False))
+        # TODO add more app-specific app environment
         return envs
 
 

@@ -6,6 +6,7 @@
 __author__ = 'liyc'
 import logging
 import sys
+import os
 from types import App, Device
 from app_env import AppEnvManager
 from app_event import AppEventManager
@@ -30,6 +31,7 @@ class DroidBot(object):
         self.options = options
         if self.options.output_dir is None:
             self.options.output_dir = "droidbot_out"
+        os.mkdir(self.options.output_dir)
         DroidBot.instance = self
 
     @staticmethod

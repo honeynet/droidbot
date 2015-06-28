@@ -293,7 +293,7 @@ class IntentEvent(AppEvent):
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
-        intent = Intent(action=action)
+        intent = Intent(prefix='broadcast', action=action)
         return IntentEvent(intent)
 
     def send(self, device):
@@ -479,8 +479,8 @@ class DummyEventFactory(EventFactory):
     def __init__(self, device, app):
         super(DummyEventFactory, self).__init__(device, app)
         self.choices = {
-            UIEvent: 5,
-            IntentEvent: 4,
+            UIEvent: 7,
+            IntentEvent: 2,
             KeyEvent: 1
         }
 
@@ -501,12 +501,34 @@ class StaticEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(StaticEventFactory, self).__init__(device, app)
+        androguard_a = app.get_androguard_analysis().a
+        receivers = androguard_a.get_receivers()
+        self.choices = {
+            UIEvent: 5,
+            IntentEvent: 4,
+            KeyEvent: 1
+        }
+        self.possible_intents = set()
+        for receiver in receivers:
+            intent_filters = androguard_a.get_intent_filters('receiver', receiver)
+            actions = intent_filters['action']
+            categories = intent_filters['category']
+            categories.append(None)
+            for action in actions:
+                for category in categories:
+                    intent = Intent(prefix='broadcast', action=action, category=category)
+                    self.possible_intents.add(intent)
 
     def generate_event(self):
         """
         generate a event
         """
-        pass
+        event_type = weighted_choice(self.choices)
+        if event_type == IntentEvent:
+            event = IntentEvent(random.choice(self.possible_intents))
+        else:
+            event = event_type.get_random_instance(self.device, self.app)
+        return event
 
 
 class DynamicEventFactory(EventFactory):

@@ -305,7 +305,7 @@ class EmulatorEvent(AppEvent):
     """
     build-in emulator event, including incoming call and incoming SMS
     """
-    def __init__(self, event_name, event_data):
+    def __init__(self, event_name, event_data={}):
         """
         :param event_name: name of event
         :param event_data: data of event
@@ -315,14 +315,37 @@ class EmulatorEvent(AppEvent):
 
     def send(self, device):
         assert isinstance(device, Device)
-        if self.event_data == 'call':
-            device.receive_call()
-            time.sleep(2)
-            device.accept_call()
-        elif self.event_data == 'sms':
-            device.send_sms()
+        if self.event_name == 'call':
+            if self.event_data and self.event_data.has_key('phone'):
+                phone = self.event_data['phone']
+                device.receive_call(phone)
+                time.sleep(2)
+                device.accept_call(phone)
+                time.sleep(2)
+                device.cancel_call(phone)
+            else:
+                device.receive_call()
+                time.sleep(2)
+                device.accept_call()
+                time.sleep(2)
+                device.cancel_call()
+
+        elif self.event_name == 'sms':
+            if self.event_data and self.event_data.has_key('phone') \
+                and self.event_data.has_key('content'):
+                phone = self.event_data['phone']
+                content = self.event_data['content']
+                device.receive_sms(phone, content)
+            else:
+                device.receive_sms()
+
         else:
             raise UnknownEventException
+
+    @staticmethod
+    def get_random_instance(device, app):
+        event_name = random.choice(['call', 'sms'])
+        return EmulatorEvent(event_name=event_name)
 
 class ContextEvent(AppEvent):
     """
@@ -335,13 +358,90 @@ class ContextEvent(AppEvent):
         :param context: the context where the event happens
         :param event: the event to perform
         """
-        assert isinstance(event, UIEvent)
+        assert isinstance(event, AppEvent)
         self.type = 'context'
         self.context = context
         self.event = event
 
+    def send(self, device):
+        """
+        to send a ContextEvent:
+        assert the context matches the device, then send the event
+        """
+        assert isinstance(device, Device)
+        assert self.context.assert_in_device(device)
+        self.event.send(device)
+
     def to_dict(self):
         return {'context' : self.context.__dict__, 'event' : self.event.__dict__}
+
+
+class Context(object):
+    """
+    base class of context
+    """
+    def assert_in_device(self, device):
+        """
+        assert that the context is currently in device
+        """
+        return NotImplementedError
+
+
+class ActivityNameContext(Context):
+    """
+    use activity name as context
+    """
+    def __init__(self, activity_name):
+        self.activity_name = activity_name
+
+    def __eq__(self, other):
+        return self.activity_name == other.activity_name
+
+    def __str__(self):
+        return self.activity_name
+
+    def assert_in_device(self, device):
+        current_top_activity = device.get_adb().getTopActivityName()
+        return self.activity_name == current_top_activity
+
+
+class WindowNameContext(Context):
+    """
+    use activity name and window name as context
+    """
+    def __init__(self, activity_name, window_name):
+        self.activity_name = activity_name
+        self.window_name = window_name
+
+    def __eq__(self, other):
+        return self.activity_name == other.activity_name \
+               and self.window_name == other.window_name
+
+    def __str__(self):
+        return "%s/%s" % (self.activity_name, self.window_name)
+
+    def assert_in_device(self, device):
+        current_top_activity = device.get_adb().getTopActivityName()
+        if self.activity_name != current_top_activity:
+            return False
+        current_focused_window = device.get_adb().getFocusedWindowName()
+        return self.window_name == current_focused_window
+
+
+class UniqueView(object):
+    """
+    use view unique id and its text to identify a view
+    """
+    def __init__(self, unique_id, text):
+        self.unique_id = unique_id
+        self.text = text
+
+    def __eq__(self, other):
+        return self.unique_id == other.unique_id \
+               and self.text == other.text
+
+    def __str__(self):
+        return "%s/%s" % (self.unique_id, self.text)
 
 
 class AppEventManager(object):
@@ -501,23 +601,12 @@ class StaticEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(StaticEventFactory, self).__init__(device, app)
-        androguard_a = app.get_androguard_analysis().a
-        receivers = androguard_a.get_receivers()
         self.choices = {
             UIEvent: 5,
             IntentEvent: 4,
             KeyEvent: 1
         }
-        self.possible_intents = set()
-        for receiver in receivers:
-            intent_filters = androguard_a.get_intent_filters('receiver', receiver)
-            actions = intent_filters['action']
-            categories = intent_filters['category']
-            categories.append(None)
-            for action in actions:
-                for category in categories:
-                    intent = Intent(prefix='broadcast', action=action, category=category)
-                    self.possible_intents.add(intent)
+        self.possible_broadcasts = app.get_possible_broadcasts()
 
     def generate_event(self):
         """
@@ -525,7 +614,7 @@ class StaticEventFactory(EventFactory):
         """
         event_type = weighted_choice(self.choices)
         if event_type == IntentEvent:
-            event = IntentEvent(random.choice(self.possible_intents))
+            event = IntentEvent(random.choice(self.possible_broadcasts))
         else:
             event = event_type.get_random_instance(self.device, self.app)
         return event
@@ -534,17 +623,107 @@ class StaticEventFactory(EventFactory):
 class DynamicEventFactory(EventFactory):
     """
     A much wiser factory which produces events based on the current app state
+    for each service, try sending all broadcasts
+    for each activity, try touching each view, and scrolling in four directions
     """
 
     def __init__(self, device, app):
         super(DynamicEventFactory, self).__init__(device, app)
+        assert device.get_adb() is not None
+        assert device.get_view_client() is not None
+
+        self.exploited_contexts = set()
+        self.exploited_services = set()
+        self.exploited_broadcasts = set()
+
+        # a map of Context to UniqueViews,
+        # which means the views are exploited in the context
+        self.exploited_views = {}
+
+        self.event_queue = []
+        self.possible_broadcasts = set(app.get_possible_broadcasts())
+
+        if self.device.is_emulator:
+            self.choices = {
+                UIEvent: 40,
+                IntentEvent: 8,
+                KeyEvent: 1,
+                EmulatorEvent: 1
+            }
+        else:
+            self.choices = {
+                UIEvent: 40,
+                IntentEvent: 9,
+                KeyEvent: 1
+            }
 
     def generate_event(self):
         """
         generate a event
         """
-        pass
+        # get current running Activity
+        top_activity_name = self.device.get_adb().getTopActivityName()
+        # get focused window
+        focused_window = self.device.get_adb().getFocusedWindow()
+        current_context = WindowNameContext(activity_name=top_activity_name, window_name=focused_window.activity)
+        current_context_str = current_context.__str__()
+        # get running services
+        running_services = set(self.device.get_adb().getServiceNames())
+        new_services = running_services - self.exploited_services
+        # if new service is started, set exploited broadcasts to empty
+        if new_services:
+            self.exploited_services = self.exploited_services.union(running_services)
+            self.exploited_broadcasts = set()
 
+        event_type = weighted_choice(self.choices)
+
+        if event_type == IntentEvent:
+            possible_intents = self.possible_broadcasts - self.exploited_broadcasts
+            if not possible_intents:
+                possible_intents = self.possible_broadcasts
+                self.exploited_broadcasts = set()
+            intent = random.choice(list(possible_intents))
+            self.exploited_broadcasts.add(intent)
+            intent_event = IntentEvent(intent=intent)
+            return ContextEvent(context=current_context, event=intent_event)
+
+        if event_type == KeyEvent or event_type == EmulatorEvent:
+            event = KeyEvent.get_random_instance(self.device, self.app)
+            return ContextEvent(context=current_context, event=event)
+
+        # if the current activity is exploited, try go back
+        if current_context_str in self.exploited_contexts:
+            event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
+            return event
+
+        if not self.device.is_foreground(self.app):
+            return IntentEvent(Intent(suffix="%s/%s" %
+                                             (self.app.get_package_name(),
+                                              self.app.get_main_activity())))
+
+        if not self.exploited_views.has_key(current_context_str):
+            self.exploited_views[current_context_str] = set()
+
+        # dump view via AndroidViewClient
+        views = self.device.get_view_client().dump(window=focused_window.winId)
+
+        # then find a view to send UI event
+        for v in views:
+            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
+                continue
+            unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
+            if unique_view_str in self.exploited_views[current_context_str]:
+                continue
+            else:
+                self.exploited_views[current_context_str].add(unique_view_str)
+                (x, y) = v.getCenter()
+                event = ContextEvent(context=current_context, event=TouchEvent(x, y))
+                return event
+        # if all views were exploited, TODO try scroll current view
+        # Then mark this context as exploited
+        self.exploited_contexts.add(current_context_str)
+        event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
+        return event
 
 
 class FileEventFactory(EventFactory):

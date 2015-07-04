@@ -276,7 +276,7 @@ class Device(object):
         time.sleep(2)
         self.get_adb().press('66')
 
-    def receive_sms(self, phone, content=""):
+    def receive_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
         """
         receive a SMS
         :param phone: str, phone number of sender
@@ -406,8 +406,10 @@ class App(object):
         """
         self.logger = logging.getLogger('App')
         self.package_name = package_name
+        self.main_activity = None
         self.app_path = app_path
         self.androguard = None
+        self.possible_broadcasts = None
 
         if not self.package_name and not self.app_path:
             self.logger.warning("no app given, will operate on whole device")
@@ -453,6 +455,44 @@ class App(object):
         else:
             self.logger.warning("can not get package name")
             return None
+
+    def get_main_activity(self):
+        """
+        get package name of current app
+        :return:
+        """
+        if self.main_activity is not None:
+            return self.main_activity
+        elif self.get_androguard_analysis() is not None:
+            self.main_activity = self.get_androguard_analysis().a.get_main_activity()
+            return self.main_activity
+        else:
+            self.logger.warning("can not get main activity name")
+            return None
+
+    def get_possible_broadcasts(self):
+        if self.possible_broadcasts is not None:
+            return self.possible_broadcasts
+
+        androguard_a = self.get_androguard_analysis().a
+        receivers = androguard_a.get_receivers()
+        self.possible_broadcasts = set()
+        for receiver in receivers:
+            intent_filters = androguard_a.get_intent_filters('receiver', receiver)
+            if intent_filters.has_key('action'):
+                actions = intent_filters['action']
+            else:
+                actions = []
+            if intent_filters.has_key('category'):
+                categories = intent_filters['category']
+            else:
+                categories = []
+            categories.append(None)
+            for action in actions:
+                for category in categories:
+                    intent = Intent(prefix='broadcast', action=action, category=category)
+                    self.possible_broadcasts.add(intent)
+        return self.possible_broadcasts
 
     def get_coverage(self):
         """

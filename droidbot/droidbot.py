@@ -31,7 +31,8 @@ class DroidBot(object):
         self.options = options
         if self.options.output_dir is None:
             self.options.output_dir = "droidbot_out"
-        os.mkdir(self.options.output_dir)
+        if not os.path.exists(self.options.output_dir):
+            os.mkdir(self.options.output_dir)
         DroidBot.instance = self
 
     @staticmethod

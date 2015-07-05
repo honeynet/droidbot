@@ -281,6 +281,22 @@ class DragEvent(UIEvent):
                               (self.end_x, self.end_y),
                               self.duration)
 
+
+class TypeEvent(UIEvent):
+    """
+    type some word
+    """
+    def __init__(self, text):
+        self.event_type = 'type'
+        self.text = text
+
+    def send(self, device):
+        assert device.get_adb() is not None
+        escaped = self.text.replace('%s', '\\%s')
+        encoded = escaped.replace(' ', '%s')
+        device.type(encoded)
+
+
 class IntentEvent(AppEvent):
     """
     An event describing an intent
@@ -409,21 +425,16 @@ class WindowNameContext(Context):
     """
     use activity name and window name as context
     """
-    def __init__(self, activity_name, window_name):
-        self.activity_name = activity_name
+    def __init__(self, window_name):
         self.window_name = window_name
 
     def __eq__(self, other):
-        return self.activity_name == other.activity_name \
-               and self.window_name == other.window_name
+        return self.window_name == other.window_name
 
     def __str__(self):
-        return "%s/%s" % (self.activity_name, self.window_name)
+        return self.window_name
 
     def assert_in_device(self, device):
-        current_top_activity = device.get_adb().getTopActivityName()
-        if self.activity_name != current_top_activity:
-            return False
         current_focused_window = device.get_adb().getFocusedWindowName()
         return self.window_name == current_focused_window
 
@@ -639,9 +650,21 @@ class DynamicEventFactory(EventFactory):
         # a map of Context to UniqueViews,
         # which means the views are exploited in the context
         self.exploited_views = {}
+        self.saved_views = {}
 
-        self.event_queue = []
+        self.previous_event = None
+        self.event_stack = []
+
         self.possible_broadcasts = set(app.get_possible_broadcasts())
+        self.possible_inputs = {
+            'account': 'droidbot',
+            'name': 'droidbot',
+            'email': 'droidbot@honeynet.com',
+            'password': 'droidbot',
+            'pwd': 'droidbot',
+            'text': 'hello world',
+            'number': '1234567890'
+        }
 
         if self.device.is_emulator:
             self.choices = {
@@ -658,14 +681,21 @@ class DynamicEventFactory(EventFactory):
             }
 
     def generate_event(self):
+        if self.event_stack:
+            event = self.event_stack.pop()
+            return event
+        else:
+            return self.find_events()
+
+    def find_events(self):
         """
-        generate a event
+        find some event, return the first, and add the rest to event stack
         """
         # get current running Activity
         top_activity_name = self.device.get_adb().getTopActivityName()
         # get focused window
         focused_window = self.device.get_adb().getFocusedWindow()
-        current_context = WindowNameContext(activity_name=top_activity_name, window_name=focused_window.activity)
+        current_context = WindowNameContext(window_name=focused_window.activity)
         current_context_str = current_context.__str__()
         # get running services
         running_services = set(self.device.get_adb().getServiceNames())
@@ -704,8 +734,12 @@ class DynamicEventFactory(EventFactory):
         if not self.exploited_views.has_key(current_context_str):
             self.exploited_views[current_context_str] = set()
 
-        # dump view via AndroidViewClient
-        views = self.device.get_view_client().dump(window=focused_window.winId)
+        # if no views were saved, dump view via AndroidViewClient
+        if not self.saved_views.has_key(current_context_str):
+            views = self.device.get_view_client().dump(window=focused_window.winId)
+            self.saved_views[current_context_str] = views
+        else:
+            views = self.saved_views[current_context_str]
 
         # then find a view to send UI event
         for v in views:
@@ -718,6 +752,15 @@ class DynamicEventFactory(EventFactory):
                 self.exploited_views[current_context_str].add(unique_view_str)
                 (x, y) = v.getCenter()
                 event = ContextEvent(context=current_context, event=TouchEvent(x, y))
+                # if it is an EditText, try input something
+                from com.dtmilano.android.viewclient import EditText
+
+                if isinstance(v, EditText) or v.getClass().__contains__('EditText'):
+                    for key in self.possible_inputs.keys():
+                        if v.getId().__contains__(key) or v.getClass().__contains__(key):
+                            next_event = TypeEvent(text=self.possible_inputs[key])
+                            self.event_stack.append(next_event)
+                            break
                 return event
         # if all views were exploited, TODO try scroll current view
         # Then mark this context as exploited

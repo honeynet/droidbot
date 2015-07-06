@@ -29,6 +29,7 @@ class Device(object):
         self.telnet = None
         self.monkeyrunner = None
         self.view_client = None
+        self.settings = {}
         self.display_info = None
 
         if self.is_emulator:
@@ -44,8 +45,7 @@ class Device(object):
 
         self.is_connected = False
         self.connect()
-        self.settings = {}
-        self.get_settings()
+        # self.get_settings()
         self.get_display_info()
         assert self.display_info is not None
         # self.check_connectivity()
@@ -102,6 +102,7 @@ class Device(object):
                 self.get_monkeyrunner()
             if self.view_client_enabled:
                 self.get_view_client()
+            time.sleep(3)
             self.is_connected = True
 
         except connection.TelnetException:
@@ -114,7 +115,7 @@ class Device(object):
         """
         self.is_connected = False
         if self.adb:
-            self.adb.disconnect()
+            pass
         if self.telnet:
             self.telnet.disconnect()
         if self.monkeyrunner:

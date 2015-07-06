@@ -294,7 +294,7 @@ class TypeEvent(UIEvent):
         assert device.get_adb() is not None
         escaped = self.text.replace('%s', '\\%s')
         encoded = escaped.replace(' ', '%s')
-        device.type(encoded)
+        device.adb.type(encoded)
 
 
 class IntentEvent(AppEvent):
@@ -653,6 +653,7 @@ class DynamicEventFactory(EventFactory):
         self.saved_views = {}
 
         self.previous_event = None
+        self.previous_activity = None
         self.event_stack = []
 
         self.possible_broadcasts = set(app.get_possible_broadcasts())
@@ -693,6 +694,11 @@ class DynamicEventFactory(EventFactory):
         """
         # get current running Activity
         top_activity_name = self.device.get_adb().getTopActivityName()
+        if top_activity_name != self.previous_activity:
+            # if detected activity switch, wait a few minutes
+            time.sleep(3)
+        self.previous_activity = top_activity_name
+
         # get focused window
         focused_window = self.device.get_adb().getFocusedWindow()
         current_context = WindowNameContext(window_name=focused_window.activity)
@@ -742,6 +748,7 @@ class DynamicEventFactory(EventFactory):
             views = self.saved_views[current_context_str]
 
         # then find a view to send UI event
+        random.shuffle(views)
         for v in views:
             if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
                 continue

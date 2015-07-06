@@ -252,7 +252,6 @@ class AppEnvFactory(object):
     """
     This class is responsible for produce a list of static and dynamic AppEnv
     """
-    # TODO implement this class and its subclasses
     def produce_envs(self):
         return []
 

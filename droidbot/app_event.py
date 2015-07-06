@@ -694,11 +694,10 @@ class DynamicEventFactory(EventFactory):
         """
         # get current running Activity
         top_activity_name = self.device.get_adb().getTopActivityName()
+        # if the activity switches, wait a few seconds
         if top_activity_name != self.previous_activity:
-            # if detected activity switch, wait a few minutes
             time.sleep(3)
         self.previous_activity = top_activity_name
-
         # get focused window
         focused_window = self.device.get_adb().getFocusedWindow()
         current_context = WindowNameContext(window_name=focused_window.activity)

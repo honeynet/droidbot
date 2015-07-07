@@ -67,7 +67,10 @@ class ContactAppEnv(StaticAppEnv):
     """
     This class describes a contact inside device
     """
-    def __init__(self, name='Lynn', phone="1234567890", email="droidbot@honeynet.com"):
+    def __init__(self, name='Lynn', phone="1234567890", email="droidbot@honeynet.com", env_dict=None):
+        if env_dict is not None:
+            self.__dict__ = env_dict
+            return
         self.name = name
         self.phone = phone
         self.email = email
@@ -86,7 +89,10 @@ class SettingsAppEnv(StaticAppEnv):
     """
     This class describes settings of device
     """
-    def __init__(self, table_name="system", name="screen_brightness", value="50"):
+    def __init__(self, table_name="system", name="screen_brightness", value="50", env_dict=None):
+        if env_dict is not None:
+            self.__dict__ = env_dict
+            return
         self.table_name = table_name
         self.name = name
         self.value = value
@@ -100,13 +106,16 @@ class CallLogEnv(StaticAppEnv):
     """
     call log
     """
-    def __init__(self, phone="1234567890", call_in=True, accepted=True):
+    def __init__(self, phone="1234567890", call_in=True, accepted=True, env_dict=None):
         """
         a call log
         :param phone: str, phone number of contact
         :param call_in: bool, True for call in, False for call out
         :param accepted: whether the call is accepted
         """
+        if env_dict is not None:
+            self.__dict__ = env_dict
+            return
         self.phone = phone
         self.call_in = call_in
         self.accepted = accepted
@@ -143,13 +152,17 @@ class SMSLogEnv(StaticAppEnv):
     """
     SMS log
     """
-    def __init__(self, phone="1234567890", sms_in=True, content="Hello world"):
+    def __init__(self, phone="1234567890", sms_in=True, content="Hello world", env_dict=None):
         """
         a call log
         :param phone: str, phone number of contact
         :param sms_in: bool, True for income message, False for outcome
         :param content: content of message
         """
+        if env_dict is not None:
+            self.__dict__ = env_dict
+            return
+
         self.phone = phone
         self.sms_in = sms_in
         self.content = content
@@ -166,7 +179,10 @@ class GPSAppEnv(DynamicAppEnv):
     """
     This class describes the continuous updating GPS data inside device
     """
-    def __init__(self, center_x=50, center_y=50, delta_x=1, delta_y=1):
+    def __init__(self, center_x=50, center_y=50, delta_x=1, delta_y=1, env_dict=None):
+        if env_dict is not None:
+            self.__dict__ = env_dict
+            return
         self.center_x = center_x
         self.center_y = center_y
         self.delta_x = delta_x
@@ -175,6 +191,15 @@ class GPSAppEnv(DynamicAppEnv):
 
     def deploy(self, device):
         device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
+
+
+ENV_TYPES = {
+    'contact': ContactAppEnv,
+    'settings': SettingsAppEnv,
+    'calllog': CallLogEnv,
+    'smslog': SMSLogEnv,
+    'gps': GPSAppEnv
+}
 
 
 class AppEnvManager(object):
@@ -237,7 +262,12 @@ class AppEnvManager(object):
         :param file: the file path to output the environment
         :return:
         """
-        # TODO implement this method
+        f = open(file, 'w')
+        env_array = []
+        for env in self.envs:
+            env_array.append(env.to_dict())
+        env_json = json.dumps(env_array)
+        f.write(env_json)
 
     def generateFromFactory(self, app_env_factory):
         """
@@ -317,13 +347,28 @@ class FileEnvFactory(AppEnvFactory):
         create a FileEnvFactory from a json file
         :param file path string
         """
-        envs = []
+        self.envs = []
         self.file = file
+        f = open(file, 'r')
+        env_json = f.readall()
+        env_array = json.loads(env_json)
+        for env_dict in env_array:
+            if not isinstance(env_dict, dict):
+                raise UnknownEnvException
+            if not env_dict.has_key('env_type'):
+                raise UnknownEnvException
+            env_type = env_dict['env_type']
+            if not ENV_TYPES.has_key('env_type'):
+                raise UnknownEnvException
+            EnvType = ENV_TYPES[env_type]
+            env = EnvType(dict=env_dict)
+            self.envs.append(env)
+        self.index = 0
 
     def produce_envs(self):
         """
         generate envs from file
         """
-        # TODO generate envs from file
-        envs = []
-        return envs
+        env = self.envs[self.index]
+        self.index += 1
+        return env

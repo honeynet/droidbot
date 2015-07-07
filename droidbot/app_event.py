@@ -181,7 +181,10 @@ class KeyEvent(AppEvent):
     """
     a key pressing event
     """
-    def __init__(self, name):
+    def __init__(self, name, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         self.event_type = 'key'
         self.name = name
 
@@ -218,7 +221,10 @@ class TouchEvent(UIEvent):
     """
     a touch on screen
     """
-    def __init__(self, x, y):
+    def __init__(self, x, y, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         self.event_type = 'touch'
         self.x = x
         self.y = y
@@ -238,7 +244,10 @@ class LongTouchEvent(UIEvent):
     """
     a long touch on screen
     """
-    def __init__(self, x, y, duration=2000):
+    def __init__(self, x, y, duration=2000, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         self.event_type = 'long_touch'
         self.x = x
         self.y = y
@@ -259,7 +268,10 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
-    def __init__(self, start_x, start_y, end_x, end_y, duration=1000):
+    def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         self.event_type = 'drag'
         self.start_x = start_x
         self.start_y = start_y
@@ -286,7 +298,10 @@ class TypeEvent(UIEvent):
     """
     type some word
     """
-    def __init__(self, text):
+    def __init__(self, text, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         self.event_type = 'type'
         self.text = text
 
@@ -301,7 +316,10 @@ class IntentEvent(AppEvent):
     """
     An event describing an intent
     """
-    def __init__(self, intent):
+    def __init__(self, intent, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
         assert isinstance(intent, Intent)
         self.type = 'intent'
         self.intent = intent.get_cmd()
@@ -321,11 +339,15 @@ class EmulatorEvent(AppEvent):
     """
     build-in emulator event, including incoming call and incoming SMS
     """
-    def __init__(self, event_name, event_data={}):
+    def __init__(self, event_name, event_data={}, event_dict=None):
         """
         :param event_name: name of event
         :param event_data: data of event
         """
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
+        self.type = 'emulator'
         self.event_name = event_name
         self.event_data = event_data
 
@@ -368,12 +390,30 @@ class ContextEvent(AppEvent):
     An extended event, which knows the device context in which it is performing
     This is reproducable
     """
-    def __init__(self, context, event):
+    def __init__(self, context, event, event_dict=None):
         """
         construct an event which knows its context
         :param context: the context where the event happens
         :param event: the event to perform
         """
+        if event_dict is not None:
+            assert event_dict.has_key('type')
+            assert event_dict.has_key('context')
+            assert event_dict.has_key('event')
+            assert event_dict['type'] == 'context'
+            self.type = event_dict['type']
+
+            context_dict = event_dict['context']
+            context_type = context_dict['type']
+            ContextType = CONTEXT_TYPES[context_type]
+            self.context = ContextType(context_dict=context_dict)
+
+            sub_event_dict = event_dict['event']
+            sub_event_type = sub_event_dict['type']
+            SubEventType = EVENT_TYPES[sub_event_type]
+            self.event = SubEventType(dict=sub_event_dict)
+            return
+
         assert isinstance(event, AppEvent)
         self.type = 'context'
         self.context = context
@@ -389,7 +429,7 @@ class ContextEvent(AppEvent):
         self.event.send(device)
 
     def to_dict(self):
-        return {'context' : self.context.__dict__, 'event' : self.event.__dict__}
+        return {'type': self.type, 'context': self.context.__dict__, 'event': self.event.__dict__}
 
 
 class Context(object):
@@ -407,7 +447,11 @@ class ActivityNameContext(Context):
     """
     use activity name as context
     """
-    def __init__(self, activity_name):
+    def __init__(self, activity_name, context_dict=None):
+        if context_dict is not None:
+            self.__dict__ = context_dict
+            return
+        self.type = 'activity'
         self.activity_name = activity_name
 
     def __eq__(self, other):
@@ -423,9 +467,13 @@ class ActivityNameContext(Context):
 
 class WindowNameContext(Context):
     """
-    use activity name and window name as context
+    use window name as context
     """
-    def __init__(self, window_name):
+    def __init__(self, window_name, context_dict=None):
+        if context_dict is not None:
+            self.__dict__ = context_dict
+            return
+        self.type = 'window'
         self.window_name = window_name
 
     def __eq__(self, other):
@@ -437,6 +485,12 @@ class WindowNameContext(Context):
     def assert_in_device(self, device):
         current_focused_window = device.get_adb().getFocusedWindowName()
         return self.window_name == current_focused_window
+
+
+CONTEXT_TYPES = {
+    'activity': ActivityNameContext,
+    'window': WindowNameContext
+}
 
 
 class UniqueView(object):
@@ -509,7 +563,12 @@ class AppEventManager(object):
         :param file: the file path to output the events
         :return:
         """
-        # TODO implement this method
+        f = open(file, 'w')
+        event_array = []
+        for event in self.events:
+            event_array.append(event.to_dict())
+        event_json = json.dumps(event_array)
+        f.write(event_json)
 
     def on_state_update(self, old_state, new_state):
         """
@@ -775,6 +834,17 @@ class DynamicEventFactory(EventFactory):
         return event
 
 
+EVENT_TYPES = {
+    'key': KeyEvent,
+    'touch': TouchEvent,
+    'long_touch': LongTouchEvent,
+    'drag': DragEvent,
+    'type': TypeEvent,
+    'emulator': EmulatorEvent,
+    'context': ContextEvent
+}
+
+
 class FileEventFactory(EventFactory):
     """
     factory which produces events from file
@@ -785,10 +855,28 @@ class FileEventFactory(EventFactory):
         :param file path string
         """
         super(FileEventFactory, self).__init__(device, app)
+        self.events = []
         self.file = file
+        f = open(file, 'r')
+        events_json = f.readall()
+        events_array = json.loads(events_json)
+        for event_dict in events_array:
+            if not isinstance(event_dict, dict):
+                raise UnknownEventException
+            if not event_dict.has_key('event_type'):
+                raise UnknownEventException
+            event_type = event_dict['event_type']
+            if not EVENT_TYPES.has_key('event_type'):
+                raise UnknownEventException
+            EventType = EVENT_TYPES[event_type]
+            event = EventType(dict=event_dict)
+            self.events.append(event)
+        self.index = 0
 
     def generate_event(self):
         """
         generate a event
         """
-        pass
+        event = self.events[self.index]
+        self.index += 1
+        return event

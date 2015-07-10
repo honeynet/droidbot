@@ -14,7 +14,7 @@ class Device(object):
     """
     this class describes a connected device
     """
-    def __init__(self, device_serial, is_emulator=True):
+    def __init__(self, device_serial=None, is_emulator=True):
         """
         create a device
         :param device_serial: serial number of target device
@@ -37,6 +37,7 @@ class Device(object):
             self.telnet_enabled = True
             self.monkeyrunner_enabled = False
             self.view_client_enabled = True
+            self.get_settings()
         else:
             self.adb_enabled = True
             self.telnet_enabled = True
@@ -45,9 +46,8 @@ class Device(object):
 
         self.is_connected = False
         self.connect()
-        # self.get_settings()
         self.get_display_info()
-        assert self.display_info is not None
+        # assert self.display_info is not None
         # self.check_connectivity()
         # print self.type, self.host, self.port
 
@@ -222,6 +222,7 @@ class Device(object):
         self.get_adb().press("BACK")
         time.sleep(2)
         self.get_adb().press("BACK")
+        return True
 
     def receive_call(self, phone=DEFAULT_NUM):
         """
@@ -260,6 +261,7 @@ class Device(object):
                              action="android.intent.action.CALL",
                              data_uri="tel:%s" % phone)
         self.send_intent(intent=call_intent)
+
 
     def send_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
         """
@@ -367,7 +369,7 @@ class Device(object):
         assert self.get_adb() is not None
         assert intent is not None
         cmd = intent.get_cmd()
-        self.get_adb().shell(cmd)
+        return self.get_adb().shell(cmd)
 
     def send_event(self, event):
         """

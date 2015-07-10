@@ -5,6 +5,7 @@
 __author__ = 'liyc'
 
 
+# Unused
 class AppStateMonitor(object):
     """
     This class is responsible for monitoring the states of app
@@ -44,4 +45,3 @@ class AppStateMonitor(object):
         From now on, the on_state_updated method in listeners will be continuously called
         :return:
         """
-        # TODO implement this method

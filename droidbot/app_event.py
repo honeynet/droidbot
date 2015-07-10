@@ -570,14 +570,14 @@ class AppEventManager(object):
         event_json = json.dumps(event_array)
         f.write(event_json)
 
-    def on_state_update(self, old_state, new_state):
-        """
-        callback method invoked by AppstateMonitor
-        :param old_state: origin state of App
-        :param new_state: new state of App
-        :return:
-        """
-        # TODO implement this method
+    # def on_state_update(self, old_state, new_state):
+    #     """
+    #     callback method invoked by AppstateMonitor
+    #     :param old_state: origin state of App
+    #     :param new_state: new state of App
+    #     :return:
+    #     """
+    #
 
     def set_event_factory(self, event_factory):
         """

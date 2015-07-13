@@ -33,6 +33,10 @@ class DroidBot(object):
             self.options.output_dir = "droidbot_out"
         if not os.path.exists(self.options.output_dir):
             os.mkdir(self.options.output_dir)
+        if self.options.device_serial is None:
+            # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
+            #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
+            self.options.device_serial = '.*'
         DroidBot.instance = self
 
     @staticmethod

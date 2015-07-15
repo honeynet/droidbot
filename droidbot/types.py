@@ -169,6 +169,10 @@ class Device(object):
         :param app: App
         :return: boolean
         """
+        # if droidbot is working on whole device, return True
+        if app.whole_device:
+            return True
+
         package = app.get_package_name()
         focused_window_name = self.get_adb().getTopActivityName()
         return focused_window_name.startswith(package)
@@ -413,8 +417,10 @@ class App(object):
         self.app_path = app_path
         self.androguard = None
         self.possible_broadcasts = None
+        self.whole_device = False
 
-        if not self.package_name and not self.app_path:
+        if self.package_name is None and self.app_path is None:
+            self.whole_device = True
             self.logger.warning("no app given, will operate on whole device")
         else:
             if self.app_path is None:

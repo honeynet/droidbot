@@ -206,7 +206,10 @@ class UIEvent(AppEvent):
     def get_random_instance(device, app):
         if not device.is_foreground(app):
             # if current app is in background, bring it to foreground
-            return IntentEvent(Intent(suffix=app.get_package_name()))
+            return IntentEvent(Intent(suffix="%s/%s" %
+                                             (app.get_package_name(),
+                                              app.get_main_activity())))
+
         else:
             choices = {
                 TouchEvent: 6,
@@ -684,7 +687,7 @@ class StaticEventFactory(EventFactory):
         """
         event_type = weighted_choice(self.choices)
         if event_type == IntentEvent:
-            event = IntentEvent(random.choice(self.possible_broadcasts))
+            event = IntentEvent(random.choice(list(self.possible_broadcasts)))
         else:
             event = event_type.get_random_instance(self.device, self.app)
         return event

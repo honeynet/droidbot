@@ -2534,16 +2534,13 @@ class ViewClient:
 
         progname = os.path.basename(sys.argv[0])
         if serialno is None:
-            # droidbot
-            # @Lynn modified
-            # eat all the extra options the invoking script may have added
-            # args = sys.argv
-            # while len(args) > 1 and args[1][0] == '-':
-            #     args.pop(1)
-            # serialno = args[1] if len(args) > 1 else \
-            #         os.environ['ANDROID_SERIAL'] if os.environ.has_key('ANDROID_SERIAL') \
-            #         else '.*'
-            serialno = '.*'
+            #eat all the extra options the invoking script may have added
+            args = sys.argv
+            while len(args) > 1 and args[1][0] == '-':
+                args.pop(1)
+            serialno = args[1] if len(args) > 1 else \
+                    os.environ['ANDROID_SERIAL'] if os.environ.has_key('ANDROID_SERIAL') \
+                    else '.*'
         if IP_RE.match(serialno):
             # If matches an IP address format and port was not specified add the default
             serialno += ':%d' % ADB_DEFAULT_PORT

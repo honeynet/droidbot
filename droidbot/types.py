@@ -23,7 +23,7 @@ class Device(object):
         """
         self.logger = logging.getLogger('Device')
         self.serial = device_serial
-        # type 0 for real device, 1 for emulator
+        # is_emulator 0 for real device, 1 for emulator
         self.is_emulator = is_emulator
         self.adb = None
         self.telnet = None
@@ -49,7 +49,7 @@ class Device(object):
         self.get_display_info()
         # assert self.display_info is not None
         # self.check_connectivity()
-        # print self.type, self.host, self.port
+        # print self.is_emulator, self.host, self.port
 
     def check_connectivity(self):
         """

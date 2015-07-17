@@ -605,6 +605,19 @@ class AdbClient:
         if re.search(r"(Error type)|(Error: )|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
             raise RuntimeError(out)
 
+    # Lynn added
+    # use monkey to start activity
+    def startActivityViaMonkey(self, package):
+        self.__checkTransport()
+        cmd = 'monkey'
+        if package:
+            cmd += ' -p %s' % package
+        if DEBUG:
+            print >> sys.stderr, "Starting activity: %s" % cmd
+        out = self.shell(cmd)
+        if re.search(r"(Error type)|(Error: )|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
+            raise RuntimeError(out)
+
     def takeSnapshot(self, reconnect=False):
         '''
         Takes a snapshot of the device and return it as a PIL Image.

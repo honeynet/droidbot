@@ -1,5 +1,6 @@
 # test script of types.py
 __author__ = 'yuanchun'
+import time
 from unittest import TestCase
 from droidbot.types import Device, App, Intent
 
@@ -31,4 +32,81 @@ class DeviceTest(TestCase):
         self.device.check_connectivity()
         self.device.disconnect()
         self.device.connect()
+        self.assertTrue(self.device.is_connected)
 
+    def test_is_foreground(self):
+        settings_app = App(package_name="com.android.settings")
+        no_app = App()
+        self.device.get_adb().press('HOME')
+        time.sleep(2)
+        self.assertTrue(self.device.is_foreground(no_app))
+        self.assertFalse(self.device.is_foreground(settings_app))
+
+        self.device.start_app(settings_app)
+        time.sleep(2)
+        self.assertTrue(settings_app)
+        self.assertFalse("com.android.unknown")
+
+    def test_add_contact(self):
+        contact_data = {
+            'name': 'Lynn',
+            'phone': '1234567890'
+        }
+        r = self.device.add_contact(contact_data)
+        self.assertTrue(r)
+
+    def test_call(self):
+        phone_num = "1234567890"
+
+        r = self.device.call(phone_num)
+        self.assertTrue(r)
+
+        r = self.device.cancel_call(phone_num)
+        self.assertTrue(r)
+
+        r = self.device.receive_call(phone_num)
+        self.assertTrue(r)
+
+        r = self.device.accept_call(phone_num)
+        self.assertTrue(r)
+
+        r = self.device.cancel_call(phone_num)
+        self.assertTrue(r)
+
+    def test_sms(self):
+        r = self.device.send_sms()
+        self.assertTrue(r)
+
+        r = self.device.receive_sms()
+        self.assertTrue(r)
+
+    def test_set_gps(self):
+        r = self.device.set_gps(10, 10)
+        self.assertTrue(r)
+
+    def test_settings(self):
+        self.device.change_settings(table_name='system', name='volume_system', value='10')
+        self.assertEqual(self.device.get_settings()['system']['volume_system'], '10')
+        self.device.change_settings(table_name='system', name='volume_system', value='20')
+        self.assertEqual(self.device.get_settings()['system']['volume_system'], '20')
+
+
+class AppTest(TestCase):
+    """
+    test the App class
+    """
+    def setUp(self):
+        self.app = App(app_path="examples/Browser.apk")
+
+    def test_init(self):
+        noapp = App()
+        self.assertTrue(noapp.whole_device)
+
+        app_with_package_name = App(package_name="com.android.settings")
+        self.assertFalse(app_with_package_name.whole_device)
+        # TODO test get app path function
+        # self.assertIsNotNone(app_with_package_name.get_app_path())
+
+        app_with_file_path = self.app
+        self.assertFalse(app_with_file_path.whole_device)
+        self.assertEqual(app_with_file_path.get_package_name(), 'com.android.browser')

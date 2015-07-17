@@ -169,13 +169,16 @@ class Device(object):
         :param app: App
         :return: boolean
         """
-        # if droidbot is working on whole device, return True
-        if app.whole_device:
-            return True
+        if isinstance(app, str):
+            package_name = app
+        elif isinstance(app, App):
+            # if droidbot is working on whole device, return True
+            if app.whole_device:
+                return True
+            package_name = app.get_package_name()
 
-        package = app.get_package_name()
         focused_window_name = self.get_adb().getTopActivityName()
-        return focused_window_name.startswith(package)
+        return focused_window_name.startswith(package_name)
 
     def get_display_info(self):
         """
@@ -264,8 +267,7 @@ class Device(object):
         call_intent = Intent(prefix='start',
                              action="android.intent.action.CALL",
                              data_uri="tel:%s" % phone)
-        self.send_intent(intent=call_intent)
-
+        return self.send_intent(intent=call_intent)
 
     def send_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
         """
@@ -282,6 +284,7 @@ class Device(object):
         self.send_intent(intent=send_sms_intent)
         time.sleep(2)
         self.get_adb().press('66')
+        return True
 
     def receive_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
         """
@@ -291,7 +294,7 @@ class Device(object):
         :return:
         """
         assert self.get_telnet() is not None
-        self.get_telnet().run_cmd("sms send %s '%s'" % (phone, content))
+        return self.get_telnet().run_cmd("sms send %s '%s'" % (phone, content))
 
     def set_gps(self, x, y):
         """
@@ -301,7 +304,7 @@ class Device(object):
         :return:
         """
         assert self.get_telnet() is not None
-        self.get_telnet().run_cmd("geo fix %s %s" % (x, y))
+        return self.get_telnet().run_cmd("geo fix %s %s" % (x, y))
 
     def set_continuous_gps(self, center_x, center_y, delta_x, delta_y):
         import threading
@@ -360,9 +363,8 @@ class Device(object):
         """
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
-        self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
-                             % (db_name, table_name, value, name))
-        self.get_settings()
+        return self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
+                                    % (db_name, table_name, value, name))
 
     def send_intent(self, intent):
         """
@@ -390,10 +392,9 @@ class Device(object):
         :param app: instance of App, or str of package name
         :return:
         """
-        package_name = ""
         if isinstance(app, str):
             package_name = app
-        if isinstance(app, App):
+        elif isinstance(app, App):
             package_name = app.get_package_name()
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))

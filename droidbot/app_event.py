@@ -686,7 +686,7 @@ class StaticEventFactory(EventFactory):
         generate a event
         """
         event_type = weighted_choice(self.choices)
-        if event_type == IntentEvent:
+        if event_type == IntentEvent and self.possible_broadcasts:
             event = IntentEvent(random.choice(list(self.possible_broadcasts)))
         else:
             event = event_type.get_random_instance(self.device, self.app)
@@ -774,7 +774,7 @@ class DynamicEventFactory(EventFactory):
 
         event_type = weighted_choice(self.choices)
 
-        if event_type == IntentEvent:
+        if event_type == IntentEvent and self.possible_broadcasts:
             possible_intents = self.possible_broadcasts - self.exploited_broadcasts
             if not possible_intents:
                 possible_intents = self.possible_broadcasts

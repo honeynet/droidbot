@@ -55,7 +55,9 @@ class DroidBot(object):
         app = App(self.options.package_name, self.options.app_path)
 
         env_manager = AppEnvManager(device, app, self.options.env_policy)
-        event_manager = AppEventManager(device, app, self.options.event_policy, self.options.event_count)
+        event_manager = AppEventManager(device, app, self.options.event_policy,
+                                        self.options.event_count,
+                                        self.options.event_interval)
 
         env_manager.deploy()
         event_manager.start()

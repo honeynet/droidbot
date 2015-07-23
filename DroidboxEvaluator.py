@@ -1,15 +1,11 @@
 # Evaluate droidbot with droidbox
 # basic idea is:
 # A tool is better if more droidbox logs are generated when using the tool
-import signal
-from droidbot.app_env import AppEnvManager
-from droidbot.app_event import AppEventManager
-from droidbot.types import Device, App
-
 __author__ = 'yuanchun'
 import subprocess
 import os
 import re
+import logging
 import sys
 import threading
 import time
@@ -20,121 +16,244 @@ class DroidboxEvaluator(object):
     evaluate test tool with droidbox
     make sure you have started droidbox emulator before evaluating
     """
-    def __init__(self, droidbox_home, apk_path, duration, count, inteval):
-        self.droidbox_home = droidbox_home
-        self.apk_path = apk_path
+    MODE_DEFAULT = "default"
+    MODE_MONKEY = "monkey"
+    MODE_STATIC = "static"
+    MODE_DYNAMIC = "dynamic"
+
+    def __init__(self, droidbox_home, droidbot_home, apk_path, duration, count, interval):
+        self.logger = logging.getLogger('DroidboxEvaluator')
+        self.droidbox_home = os.path.abspath(droidbox_home)
+        self.droidbot_home = os.path.abspath(droidbot_home)
+        self.working_dir = os.path.abspath(os.path.curdir)
+        self.apk_path = os.path.abspath(apk_path)
         self.duration = duration
         self.count = count
-        self.inteval = inteval
+        self.interval = interval
         self.droidbox = None
+        self.droidbot = None
         self.log_count = 0
-        self.log_counter_thread = None
+        self.enable = False
+        self.log_received = False
+        self.default_mode_result = {}
+        self.monkey_mode_result = {}
+        self.static_mode_result = {}
+        self.dynamic_mode_result = {}
+        self.logger.info("Evaluator initialized")
+        self.logger.info("droidbox_home:%s\ndroidbot_home:%s\napk_path:%s\n"
+                         "duration:%d\ncount:%d\ninteval:%d\n" %
+                         (self.droidbox_home, self.droidbot_home, self.apk_path,
+                          self.duration, self.count, self.interval))
 
     def start_evaluate(self):
         """
         start droidbox testing
         :return:
         """
-        self.start_droidbox()
-        self.count_log()
-        # self.log_counter_thread = threading.Thread(target=self.log_counter_thread)
-        # self.log_counter_thread.start()
-        # while True:
-        #     pass
+        self.evaluate_mode(DroidboxEvaluator.MODE_DEFAULT,
+                           self.default_mode,
+                           self.default_mode_result)
+        # self.evaluate_mode(DroidboxEvaluator.MODE_MONKEY,
+        #                    self.droidbot_monkey,
+        #                    self.monkey_mode_result)
+        # self.evaluate_mode(DroidboxEvaluator.MODE_STATIC,
+        #                    self.droidbot_static,
+        #                    self.static_mode_result)
+        # self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
+        #                    self.droidbot_dynamic,
+        #                    self.dynamic_mode_result)
+
+    def evaluate_mode(self, mode, target, result):
+        """
+        evaluate a particular mode
+        :param mode: str of mode
+        :param target: the target function to run
+        :param result: the result dict
+        :return:
+        """
+        self.logger.info("evaluating [%s] mode" % mode)
+        target()
+        self.monitor_and_record(result)
+        self.stop_droidbox()
+        self.logger.info("finished evaluating [%s] mode" % mode)
 
     def start_droidbox(self):
         """
         start droidbox
         :return:
         """
+        self.logger.info("starting droidbox")
         os.chdir(self.droidbox_home)
         self.droidbox = subprocess.Popen(
             ["sh", "droidbox.sh", self.apk_path, str(self.duration)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE
         )
+        threading.Thread(target=self.count_log).start()
+
+    def wait_for_droidbox(self):
+        # wait until first log generated
+        while not self.log_received:
+            time.sleep(1)
+        self.logger.info("droidbox started")
+
+    def stop_droidbox(self):
+        if self.droidbox is None:
+            return
+        self.logger.info("stoping droidbox")
+        self.droidbox.kill()
+        time.sleep(2)
+        self.enable = False
 
     def count_log(self):
-        log_count_RE = re.compile('\s* Collected ([0-9]+) sandbox logs*')
+        self.logger.info("start counting logs")
+        log_count_re = re.compile('\s* Collected ([0-9]+) sandbox logs*')
         buf_size = 128
-        while True:
+        self.log_count = 0
+        self.enable = True
+        self.log_received = False
+        while self.enable:
             output = self.droidbox.stdout.read(buf_size)
             if output:
-                print output
-                m = log_count_RE.search(output)
+                self.logger.debug(output)
+                self.log_received = True
+                m = log_count_re.search(output)
                 if not m:
                     continue
                 log_count_str = m.group(1)
                 self.log_count = int(log_count_str)
-                print "log count: "
-                print self.log_count
+        self.logger.info("finish counting logs")
+
+    def monitor_and_record(self, result):
+        t = 0
+        self.logger.info("start monitoring")
+        try:
+            while True:
+                log_count = self.log_count
+                result[t] = log_count
+                time.sleep(self.interval)
+                t += self.interval
+                if t > self.duration:
+                    return
+        except KeyboardInterrupt as exception:
+            self.logger.info(exception.message)
+            self.stop_droidbox()
+        self.logger.info("stop monitoring")
+        self.logger.debug(result)
 
     def default_mode(self):
         """
-        do nothing
+        just start droidbox and do nothing
         :return:
         """
-        pass
+        self.start_droidbox()
+        self.wait_for_droidbox()
+
+    def start_droidbot(self, apk_path, count, interval,
+                       env_policy, event_policy):
+        """
+        start droidbot with given arguments
+        :param apk_path: path to target apk
+        :param count: number of events
+        :param interval: interval of each two events
+        :param env_policy: policy to deploy environment
+        :param event_policy: policy to send events
+        :return:
+        """
+        self.logger.info("starting droidbot")
+        os.chdir(self.droidbot_home)
+        self.droidbot = subprocess.Popen(
+            ["python", "start.py",
+             "-a", apk_path,
+             "-c", str(count),
+             "-i", str(interval),
+             "-env", env_policy,
+             "-event", event_policy],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
 
     def droidbot_monkey(self):
         """
         try droidbot "monkey" mode
         :return:
         """
-        device = Device()
-        app = App(app_path=self.apk_path)
-
-        env_manager = AppEnvManager(device, app, env_policy="none")
-        event_manager = AppEventManager(
-            device, app, "monkey", event_count=self.count, event_inteval=self.inteval)
-
-        env_manager.deploy()
-        event_manager.start()
-
-        device.disconnect()
+        self.start_droidbox()
+        self.wait_for_droidbox()
+        self.start_droidbot(apk_path=self.apk_path,
+                            count=self.log_count,
+                            interval=self.interval,
+                            env_policy="none",
+                            event_policy="monkey")
 
     def droidbot_static(self):
         """
-        try droidbot "monkey" mode
+        try droidbot "static" mode
         :return:
         """
-        device = Device()
-        app = App(app_path=self.apk_path)
-
-        env_manager = AppEnvManager(device, app, env_policy="static")
-        event_manager = AppEventManager(
-            device, app, "static", event_count=self.count, event_inteval=self.inteval)
-
-        env_manager.deploy()
-        event_manager.start()
-
-        device.disconnect()
+        self.start_droidbox()
+        self.wait_for_droidbox()
+        self.start_droidbot(apk_path=self.apk_path,
+                            count=self.log_count,
+                            interval=self.interval,
+                            env_policy="static",
+                            event_policy="static")
 
     def droidbot_dynamic(self):
         """
-        try droidbot "monkey" mode
+        try droidbot "dynamic" mode
         :return:
         """
-        device = Device()
-        app = App(app_path=self.apk_path)
+        self.start_droidbox()
+        self.wait_for_droidbox()
+        self.start_droidbot(apk_path=self.apk_path,
+                            count=self.log_count,
+                            interval=self.interval,
+                            env_policy="dummy",
+                            event_policy="dynamic")
 
-        env_manager = AppEnvManager(device, app, env_policy="dummy")
-        event_manager = AppEventManager(
-            device, app, "dynamic", event_count=self.count, event_inteval=self.inteval)
+    def dump(self, out_file):
+        out_file.write("time\t%s\t%s\t%s\t%s\n" %
+                       (DroidboxEvaluator.MODE_DEFAULT,
+                        DroidboxEvaluator.MODE_MONKEY,
+                        DroidboxEvaluator.MODE_STATIC,
+                        DroidboxEvaluator.MODE_DYNAMIC))
+        t = 0
+        while True:
+            default_result = None
+            monkey_result = None
+            static_result = None
+            dynamic_result = None
+            if t in self.default_mode_result.keys():
+                default_result = self.default_mode_result[t]
+            if t in self.monkey_mode_result.keys():
+                monkey_result = self.monkey_mode_result[t]
+            if t in self.static_mode_result.keys():
+                static_result = self.static_mode_result[t]
+            if t in self.dynamic_mode_result.keys():
+                dynamic_result = self.dynamic_mode_result[t]
 
-        env_manager.deploy()
-        event_manager.start()
+            if default_result is None and monkey_result is None \
+                    and static_result is None and dynamic_result is None:
+                return
 
-        device.disconnect()
+            out_file.write("%d\t%s\t%s\t%s\t%s\n" %
+                           (t, default_result, monkey_result, static_result, dynamic_result))
+            t += self.interval
+            if t > self.duration:
+                return
 
 
 if __name__ == "__main__":
-    apk_path = os.path.abspath(os.path.join("resources/TestDroidbot.apk"))
-    print apk_path
+    logging.basicConfig(level=logging.DEBUG)
     evaluator = DroidboxEvaluator(
         droidbox_home="/Users/yuanchun/tools/droidbox/DroidBox_4.1.1/",
-        apk_path=apk_path,
-        duration=100,
+        droidbot_home=".",
+        apk_path="resources/TestDroidbot.apk",
+        duration=10,
         count=1000,
-        inteval=2
+        interval=2
     )
-    evaluator.start_evaluate()
+    try:
+        evaluator.start_evaluate()
+    except KeyboardInterrupt as e:
+        print e.message
+    evaluator.dump(sys.stdout)

@@ -22,6 +22,8 @@ def parse_args():
                         help="file path of target app, necessary for static analysis")
     parser.add_argument("-c", action="store", dest="event_count", nargs='?',
                         type=int, help="number of events to generate during testing")
+    parser.add_argument("-i", action="store", dest="event_interval", nargs="?",
+                        type=int, help="interval between two events (seconds)")
     parser.add_argument("-env", action="store", dest="env_policy", nargs='?',
                         help="policy to set up environment. Supported policies:\n"
                         "none\tno environment will be set. App will run in default environment of device; \n"

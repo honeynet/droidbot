@@ -32,8 +32,8 @@ def parse_args():
                         "<file>\tget environment policy from a json file.\n")
     parser.add_argument("-event", action="store", dest="event_policy", nargs='?',
                         help="policy to generate events. Supported policies:\n"
-                        "none\tno event will be sent; \n" \
-                        "monkey\tpseudo-random events, same as \"adb shell monkey ...\"; \n" \
+                        "monkey\tuse \"adb shell monkey\" to send events; \n" \
+                        "random\tpseudo-random events, similar with monkey; \n" \
                         "static\tsend events based on static analysis result; \n" \
                         "dynamic\tsend events based on dynamic app state,"
                         " this policy requires framework instrumented; \n" \

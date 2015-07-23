@@ -8,11 +8,11 @@ import logging
 import json
 import time
 import random
-from types import Intent, Device, App
+from types import Intent, Device
 
 EVENT_POLICIES = [
-    "none",
     "monkey",
+    "random",
     "static",
     "dynamic",
     "file"
@@ -150,6 +150,7 @@ class AppEvent(object):
     """
     The base class of all events
     """
+
     def to_dict(self):
         return self.__dict__
 
@@ -181,6 +182,7 @@ class KeyEvent(AppEvent):
     """
     a key pressing event
     """
+
     def __init__(self, name, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -202,6 +204,10 @@ class UIEvent(AppEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
+
+    def send(self, device):
+        raise NotImplementedError
+
     @staticmethod
     def get_random_instance(device, app):
         if not device.is_foreground(app):
@@ -224,6 +230,7 @@ class TouchEvent(UIEvent):
     """
     a touch on screen
     """
+
     def __init__(self, x, y, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -247,6 +254,7 @@ class LongTouchEvent(UIEvent):
     """
     a long touch on screen
     """
+
     def __init__(self, x, y, duration=2000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -271,6 +279,7 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
+
     def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -301,6 +310,7 @@ class TypeEvent(UIEvent):
     """
     type some word
     """
+
     def __init__(self, text, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -319,6 +329,7 @@ class IntentEvent(AppEvent):
     """
     An event describing an intent
     """
+
     def __init__(self, intent, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -342,11 +353,14 @@ class EmulatorEvent(AppEvent):
     """
     build-in emulator event, including incoming call and incoming SMS
     """
-    def __init__(self, event_name, event_data={}, event_dict=None):
+
+    def __init__(self, event_name, event_data=None, event_dict=None):
         """
         :param event_name: name of event
         :param event_data: data of event
         """
+        if event_data is None:
+            event_data = {}
         if event_dict is not None:
             self.__dict__ = event_dict
             return
@@ -357,7 +371,7 @@ class EmulatorEvent(AppEvent):
     def send(self, device):
         assert isinstance(device, Device)
         if self.event_name == 'call':
-            if self.event_data and self.event_data.has_key('phone'):
+            if self.event_data and 'phone' in self.event_data.keys():
                 phone = self.event_data['phone']
                 device.receive_call(phone)
                 time.sleep(2)
@@ -372,8 +386,8 @@ class EmulatorEvent(AppEvent):
                 device.cancel_call()
 
         elif self.event_name == 'sms':
-            if self.event_data and self.event_data.has_key('phone') \
-                and self.event_data.has_key('content'):
+            if self.event_data and 'phone' in self.event_data.keys() \
+                    and 'content' in self.event_data.keys():
                 phone = self.event_data['phone']
                 content = self.event_data['content']
                 device.receive_sms(phone, content)
@@ -388,11 +402,17 @@ class EmulatorEvent(AppEvent):
         event_name = random.choice(['call', 'sms'])
         return EmulatorEvent(event_name=event_name)
 
+
 class ContextEvent(AppEvent):
     """
     An extended event, which knows the device context in which it is performing
     This is reproducable
     """
+
+    @staticmethod
+    def get_random_instance(device, app):
+        raise NotImplementedError
+
     def __init__(self, context, event, event_dict=None):
         """
         construct an event which knows its context
@@ -439,6 +459,7 @@ class Context(object):
     """
     base class of context
     """
+
     def assert_in_device(self, device):
         """
         assert that the context is currently in device
@@ -450,6 +471,7 @@ class ActivityNameContext(Context):
     """
     use activity name as context
     """
+
     def __init__(self, activity_name, context_dict=None):
         if context_dict is not None:
             self.__dict__ = context_dict
@@ -472,6 +494,7 @@ class WindowNameContext(Context):
     """
     use window name as context
     """
+
     def __init__(self, window_name, context_dict=None):
         if context_dict is not None:
             self.__dict__ = context_dict
@@ -500,13 +523,13 @@ class UniqueView(object):
     """
     use view unique id and its text to identify a view
     """
+
     def __init__(self, unique_id, text):
         self.unique_id = unique_id
         self.text = text
 
     def __eq__(self, other):
-        return self.unique_id == other.unique_id \
-               and self.text == other.text
+        return self.unique_id == other.unique_id and self.text == other.text
 
     def __str__(self):
         return "%s/%s" % (self.unique_id, self.text)
@@ -517,7 +540,7 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_inteval=2):
+    def __init__(self, device, app, event_policy, event_count, event_interval=2):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -532,18 +555,18 @@ class AppEventManager(object):
         self.events = []
         self.event_factory = None
         self.count = event_count
-        self.inteval = event_inteval
+        self.interval = event_interval
 
-        if not self.count or self.count == None:
+        if not self.count or self.count is None:
             self.count = 100
 
-        if not self.policy or self.policy == None:
+        if not self.policy or self.policy is None:
             self.policy = "monkey"
 
-        if self.policy == "none":
+        if self.policy == "monkey":
             self.event_factory = None
-        elif self.policy == "monkey":
-            self.event_factory = DummyEventFactory(device, app)
+        elif self.policy == "random":
+            self.event_factory = RandomEventFactory(device, app)
         elif self.policy == "static":
             self.event_factory = StaticEventFactory(device, app)
         elif self.policy == "dynamic":
@@ -560,13 +583,13 @@ class AppEventManager(object):
         self.events.append(event)
         self.device.send_event(event)
 
-    def dump(self, file):
+    def dump(self, out_file):
         """
         dump the event information to a file
-        :param file: the file path to output the events
+        :param out_file: the file path to output the events
         :return:
         """
-        f = open(file, 'w')
+        f = open(out_file, 'w')
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
@@ -598,10 +621,10 @@ class AppEventManager(object):
         if self.event_factory is not None:
             self.event_factory.start(self)
         else:
-            monkey_cmd = "monkey %s --throttle 1000 -v %d" % (
+            throttle = self.interval * 1000
+            monkey_cmd = "monkey %s --throttle %d -v %d" % (
                 ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
-                self.count
-            )
+                throttle, self.count)
             self.device.get_adb().shell(" ".join(monkey_cmd))
         self.logger.info("finish sending events, policy is %s" % self.policy)
 
@@ -611,6 +634,7 @@ class EventFactory(object):
     This class is responsible for generating events to stimulate more app behaviour
     It should call AppEventManager.send_event method continuously
     """
+
     def __init__(self, device, app):
         self.device = device
         self.app = app
@@ -624,7 +648,7 @@ class EventFactory(object):
         while count < event_manager.count:
             event = self.generate_event()
             event_manager.add_event(event)
-            time.sleep(event_manager.duration)
+            time.sleep(event_manager.interval)
             count += 1
 
     def generate_event(self):
@@ -644,13 +668,13 @@ def weighted_choice(choices):
         upto += choices[c]
 
 
-class DummyEventFactory(EventFactory):
+class RandomEventFactory(EventFactory):
     """
     A dummy factory which produces AppEventManager.send_event method in a random manner
     """
 
     def __init__(self, device, app):
-        super(DummyEventFactory, self).__init__(device, app)
+        super(RandomEventFactory, self).__init__(device, app)
         self.choices = {
             UIEvent: 7,
             IntentEvent: 2,
@@ -798,11 +822,11 @@ class DynamicEventFactory(EventFactory):
                                              (self.app.get_package_name(),
                                               self.app.get_main_activity())))
 
-        if not self.exploited_views.has_key(current_context_str):
+        if current_context_str not in self.exploited_views.keys():
             self.exploited_views[current_context_str] = set()
 
         # if no views were saved, dump view via AndroidViewClient
-        if not self.saved_views.has_key(current_context_str):
+        if current_context_str not in self.saved_views.keys():
             views = self.device.get_view_client().dump(window=focused_window.winId)
             self.saved_views[current_context_str] = views
         else:
@@ -852,15 +876,16 @@ class FileEventFactory(EventFactory):
     """
     factory which produces events from file
     """
-    def __init__(self, device, app, file):
+
+    def __init__(self, device, app, in_file):
         """
         create a FileEventFactory from a json file
-        :param file path string
+        :param in_file path string
         """
         super(FileEventFactory, self).__init__(device, app)
         self.events = []
-        self.file = file
-        f = open(file, 'r')
+        self.file = in_file
+        f = open(in_file, 'r')
         events_json = f.readall()
         events_array = json.loads(events_json)
         for event_dict in events_array:

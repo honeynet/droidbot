@@ -75,6 +75,7 @@ class DroidboxEvaluator(object):
         target()
         self.monitor_and_record(result)
         self.stop_droidbox()
+        self.stop_droidbot()
         self.logger.info("finished evaluating [%s] mode" % mode)
 
     def start_droidbox(self):
@@ -103,6 +104,8 @@ class DroidboxEvaluator(object):
         self.droidbox.kill()
         time.sleep(2)
         self.enable = False
+        time.sleep(1)
+        self.droidbox = None
 
     def count_log(self):
         self.logger.info("start counting logs")
@@ -168,8 +171,20 @@ class DroidboxEvaluator(object):
              "-i", str(interval),
              "-env", env_policy,
              "-event", event_policy],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+
+    def stop_droidbot(self):
+        """
+        stop droidbot
+        :return:
+        """
+        if self.droidbot is None:
+            return
+        self.logger.info("stoping droidbot")
+        self.droidbot.kill()
+        time.sleep(2)
+        self.droidbot = None
 
     def droidbot_monkey(self):
         """

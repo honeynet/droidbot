@@ -18,10 +18,10 @@ In this evaluation:
 According to the result, I think:
 
 1. It would be better to restart droidbox each time. (to ensure sandboxing.)
-2. IMPORTANT. droidbox counts accesses to socket/input.jar/am.jar/etc as file access,
-which are what droidbot use to generate events.
+2. IMPORTANT. droidbox counts accesses to socket/input.jar/am.jar/etc as file accesses,
+which are what droidbot uses to generate events.
 That is why the droidbot policies generated so many logs.
-    We should filter out these useless logs in next evaluation.
+    We should filter out these useless logs next time.
 
 |   time	|	default	|	monkey	|	random	|	static	|	dynamic |
 |   ----    |   ----    |   ----    |   ----    |   ----    |   ----    |

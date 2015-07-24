@@ -73,6 +73,11 @@ python setup.py install
 2. Start droidbot:
 `python droidbot.py -h`
 
+## Evaluation
+
+Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
+and adb monkey tool. The results are in [result](/evaluate_results/README.md).
+
 ## Acknowledgement
 
 1. [AndroidViewClient](https://github.com/dtmilano/AndroidViewClient) 

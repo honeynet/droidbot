@@ -52,6 +52,8 @@ That is why the droidbot policies generated so many logs.
 
 ## Visualization
 
+X-axis: time (in seconds), Y-axis: log count
+
 <canvas id="myChart" data-type="Line" width="800" height="400" style="width: 800px; height: 400px;"></canvas>
 <script src="http://cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
 <script src="http://cdn.bootcss.com/Chart.js/1.0.2/Chart.min.js"></script>

@@ -256,12 +256,13 @@ class DroidboxEvaluator(object):
                             event_policy="dynamic")
 
     def dump(self, out_file):
-        out_file.write("time\t%s\t%s\t%s\t%s\t%s\n" %
+        out_file.write("|\ttime\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\n" %
                        (DroidboxEvaluator.MODE_DEFAULT,
                         DroidboxEvaluator.MODE_MONKEY,
                         DroidboxEvaluator.MODE_RANDOM,
                         DroidboxEvaluator.MODE_STATIC,
                         DroidboxEvaluator.MODE_DYNAMIC))
+        out_file.write("|\t----\t|\t----\t|\t----\t|\t----\t|\t----\t|\t----\t|")
         t = 0
         while True:
             default_result = None
@@ -284,7 +285,7 @@ class DroidboxEvaluator(object):
                     and static_result is None and dynamic_result is None:
                 return
 
-            out_file.write("%d\t%s\t%s\t%s\t%s\t%s\n" %
+            out_file.write("|\t%d\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\t%s\t|\n" %
                            (t, default_result, monkey_result, random_result,
                             static_result, dynamic_result))
             t += self.interval

@@ -1,6 +1,6 @@
 # Evaluation Result 1
 
-## evaluate strategy:
+## Evaluate Strategy:
 
 In this evaluation:
 

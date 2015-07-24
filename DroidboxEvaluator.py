@@ -35,6 +35,7 @@ class DroidboxEvaluator(object):
         self.droidbox = None
         self.droidbot = None
         self.log_count = 0
+        self.is_counting_log = False
         self.enable = False
         self.log_received = False
         self.default_mode_result = {}
@@ -53,21 +54,21 @@ class DroidboxEvaluator(object):
         start droidbox testing
         :return:
         """
-        # self.evaluate_mode(DroidboxEvaluator.MODE_DEFAULT,
-        #                    self.default_mode,
-        #                    self.default_mode_result)
-        # self.evaluate_mode(DroidboxEvaluator.MODE_MONKEY,
-        #                    self.droidbot_monkey,
-        #                    self.monkey_mode_result)
+        self.evaluate_mode(DroidboxEvaluator.MODE_DEFAULT,
+                           self.default_mode,
+                           self.default_mode_result)
+        self.evaluate_mode(DroidboxEvaluator.MODE_MONKEY,
+                           self.adb_monkey,
+                           self.monkey_mode_result)
         self.evaluate_mode(DroidboxEvaluator.MODE_RANDOM,
                            self.droidbot_random,
                            self.random_mode_result)
         self.evaluate_mode(DroidboxEvaluator.MODE_STATIC,
                            self.droidbot_static,
                            self.static_mode_result)
-        # self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
-        #                    self.droidbot_dynamic,
-        #                    self.dynamic_mode_result)
+        self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
+                           self.droidbot_dynamic,
+                           self.dynamic_mode_result)
         self.dump(sys.stdout)
         result_file = open(self.result_file_path, "w")
         self.dump(result_file)
@@ -110,31 +111,37 @@ class DroidboxEvaluator(object):
     def stop_droidbox(self):
         if self.droidbox is None:
             return
-        self.logger.info("stoping droidbox")
+
         self.droidbox.kill()
-        time.sleep(3)
-        self.enable = False
         time.sleep(2)
+        self.enable = False
+        while self.is_counting_log:
+            pass
         self.droidbox = None
+        self.logger.info("stopped droidbox")
 
     def count_log(self):
         self.logger.info("start counting logs")
         log_count_re = re.compile('\s* Collected ([0-9]+) sandbox logs*')
-        buf_size = 128
+        buf_size = 256
         self.log_count = 0
         self.enable = True
+        self.is_counting_log = True
         self.log_received = False
         while self.enable:
             output = self.droidbox.stdout.read(buf_size)
             if output:
                 self.logger.debug(output)
-                self.log_received = True
                 m = log_count_re.search(output)
                 if not m:
                     continue
+                self.log_received = True
                 log_count_str = m.group(1)
                 self.log_count = int(log_count_str)
-        self.logger.info("finish counting logs")
+        self.is_counting_log = False
+        self.log_received = False
+        self.log_count = 0
+        self.logger.info("finished counting logs")
 
     def monitor_and_record(self, result):
         t = 0
@@ -193,10 +200,10 @@ class DroidboxEvaluator(object):
         if self.droidbot is None:
             return
         self.droidbot.kill()
-        time.sleep(2)
+        time.sleep(5)
         self.droidbot = None
 
-    def droidbot_monkey(self):
+    def adb_monkey(self):
         """
         try droidbot "monkey" mode
         :return:
@@ -290,11 +297,11 @@ if __name__ == "__main__":
     evaluator = DroidboxEvaluator(
         droidbox_home="/Users/yuanchun/tools/droidbox/DroidBox_4.1.1/",
         droidbot_home=".",
-        apk_path="resources/TestDroidbot.apk",
-        duration=20,
+        apk_path="resources/webviewdemo.apk",
+        duration=200,
         count=1000,
         interval=2,
-        result_file="result.txt"
+        result_file="evaluate_results/result.md"
     )
     try:
         evaluator.start_evaluate()

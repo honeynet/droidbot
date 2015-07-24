@@ -540,7 +540,7 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval=2):
+    def __init__(self, device, app, event_policy, event_count, event_interval):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -562,6 +562,9 @@ class AppEventManager(object):
 
         if not self.policy or self.policy is None:
             self.policy = "monkey"
+
+        if not self.interval or self.interval is None:
+            self.interval = 2
 
         if self.policy == "monkey":
             self.event_factory = None

@@ -14,6 +14,12 @@ adb wait-for-device
 adb forward tcp:5900 tcp:5901
 adb shell /data/fastdroid-vnc >> /samples/out/vnc.log &
 echo -ne "\e[0m"
-python /opt/DroidBox_4.1.1/scripts/droidbox.py $1 $2 2>&1 |tee /samples/out/analysis.log
+echo `date` ": Start DroitBox"
+python /opt/DroidBox_4.1.1/scripts/droidbox.py $1 $2 2>&1 |tee /samples/out/analysis.log &
+
+#Bad workaround, because DroitBot crashes, if Emulator is not ready.
+sleep 150
+echo `date` ": Start DroitBot"
+python /opt/DroidBot/start.py -a $1 2>&1 |tee /samples/out/droidbot.log
 echo -ne "\e[0m"
 exit

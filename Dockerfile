@@ -1,5 +1,6 @@
-# https://github.com/aikinci/droidbox
-# A docerized Droidbox instance
+# A docker image, where DroidBot interacts with Droidbox instance.
+# https://github.com/lynnlyc/droidbot
+# the dockerized Droidbox instance was copied from https://github.com/aikinci/droidbox
 FROM ubuntu:14.04
 MAINTAINER ali@ikinci.info
 
@@ -27,7 +28,7 @@ RUN curl -O http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz && \
     rm -f DroidBox411RC.tar.gz
 
 # accept-licenses was taken from https://github.com/embarkmobile/android-sdk-installer and is Licensed under the MIT License.
-ADD accept-licenses /build/
+ADD docker/accept-licenses /build/
 RUN expect /build/accept-licenses "android update sdk --no-ui --all --filter platform-tool,system-image,android-16" "android-sdk-license-5be876d5" && \
     echo "\n"| android create avd -n droidbox -t 1 -d 2
 
@@ -36,12 +37,17 @@ RUN sed  's/PermitRootLogin without-password/PermitRootLogin yes/g' /etc/ssh/ssh
     echo "root:$ROOTPASSWORD" | chpasswd ;
 
 # fastdroid-vnc was taken from https://code.google.com/p/fastdroid-vnc/ it is GPLv2 licensed
-ADD fastdroid-vnc /build/
-ADD install-fastdroid-vnc.sh /build/
+ADD docker/fastdroid-vnc /build/
+ADD docker/install-fastdroid-vnc.sh /build/
 RUN /build/install-fastdroid-vnc.sh
-ADD run.sh /build/
-ADD droidbox.py.patch /build/
+ADD docker/run.sh /build/
+ADD docker/droidbox.py.patch /build/
 RUN cd /opt/DroidBox_4.1.1/scripts && patch < /build/droidbox.py.patch
+
+# Add DroitBot
+RUN apt-get install -y --no-install-recommends python-setuptools
+ADD . /opt/DroidBot
+RUN python /opt/DroidBot/setup.py install
 
 CMD ["NONE"]
 

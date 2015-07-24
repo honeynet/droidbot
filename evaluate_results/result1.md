@@ -1,27 +1,51 @@
 # Evaluation Result 1
 
-## evaluate strategy:
+## About
+
+I compare droidbot with droidbox default mode and adb monkey mode. Thus, there are five modes compared:
+
+1. default. (the droidbox default, which just start the app and do nothing)
+2. monkey. (adb monkey)
+3. random. (droidbot sends events randomly)
+4. static. (droidbot sends events according to static analysis)
+5. dynamic. (droidbot sends events according to dynamic device states)
+
+In my evaluation, for each mode:
+
++ droidbox keeps collecting logs for a *duration*
++ the testing bot (monkey or droidbot) sends event *at intervals* during this time
++ the number of logs is recorded at each time.
+
+Comparisons are made between the log counts, and more logs mean higher coverage.
+
+The script `DroidboxEvaluator.py` is what I used to generate the result data.
+
+## Evaluate Strategy:
 
 In this evaluation:
 
 1. DroidboxEvaluator.py took the follow command arguments:
-    droidbot_home:/Users/yuanchun/project/droidbot
-    apk_path:/Users/yuanchun/project/droidbot/resources/webviewdemo.apk
-    duration:200
-    count:1000
-    inteval:2
+```
+droidbot_home=/Users/yuanchun/project/droidbot,
+apk_path=/Users/yuanchun/project/droidbot/resources/webviewdemo.apk,
+duration=200,
+count=1000,
+inteval=2
+```
 2. Did NOT restart the emulator before each test
 3. The tested app webviewdemo.apk is a benign app written by myself
 
 ## Findings
 
-According to the result, I think:
+According to the result, I found that:
 
 1. It would be better to restart droidbox each time. (to ensure sandboxing.)
-2. IMPORTANT. droidbox counts accesses to socket/input.jar/am.jar/etc as file accesses,
+2. **IMPORTANT**. droidbox counts accesses to socket/input.jar/am.jar/etc as file accesses,
 which are what droidbot uses to generate events.
 That is why the droidbot policies generated so many logs.
     We should filter out these useless logs next time.
+
+## Data
 
 |   time	|	default	|	monkey	|	random	|	static	|	dynamic |
 |   ----    |   ----    |   ----    |   ----    |   ----    |   ----    |

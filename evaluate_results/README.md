@@ -1,4 +1,4 @@
-# Evaluation Results
+# Evaluation Overview
 
 ## About
 
@@ -11,16 +11,23 @@ we use a alternative approach:
 
 **Comparing the number of droidbox logs generated when using different test bots.**
 
-We compare droidbot with droidbox default mode (which only start the app) and adb monkey mode.
-Thus, there are five modes compared:
+I compare droidbot with droidbox default mode and adb monkey mode. Thus, there are five modes compared:
 
-1. default. (the droidbox default)
+1. default. (the droidbox default, which just start the app and do nothing)
 2. monkey. (adb monkey)
 3. random. (droidbot sends events randomly)
 4. static. (droidbot sends events according to static analysis)
 5. dynamic. (droidbot sends events according to dynamic device states)
 
-The script `DroidboxEvaluator.py` is what I use to test and generate results.
+In my evaluation, for each mode:
+
++ droidbox keeps collecting logs for a *duration*
++ the testing bot (monkey or droidbot) sends event *at intervals* during this time
++ the number of logs is recorded at each time.
+
+Comparisons are made between the log counts, and more logs mean higher coverage.
+
+The script `DroidboxEvaluator.py` is what I used to generate the result data.
 
 ## Results
 

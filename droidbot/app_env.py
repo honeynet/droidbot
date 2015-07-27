@@ -254,7 +254,7 @@ class AppEnvManager(object):
             return
         for env in self.envs:
             self.device.add_env(env)
-        self.logger.info("finish deploying environment, policy is %s" % self.policy)
+        self.logger.debug("finish deploying environment, policy is %s" % self.policy)
 
     def dump(self, file):
         """

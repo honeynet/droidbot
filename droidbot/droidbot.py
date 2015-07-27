@@ -10,8 +10,7 @@ import os
 from types import App, Device
 from app_env import AppEnvManager
 from app_event import AppEventManager
-from connection import TelnetException, ADBException, MonkeyRunnerException
-
+from droidbox_script.droidbox import DroidBox
 
 class DroidBot(object):
     """
@@ -21,23 +20,39 @@ class DroidBot(object):
     # this is a single instance class
     instance = None
 
-    def __init__(self, options):
+    def __init__(self, device_serial=None, package_name=None, app_path=None, output_dir=None,
+                 env_policy=None, event_policy=None, with_droidbox=False,
+                 event_count=None, event_interval=None, event_duration=None):
         """
         initiate droidbot with configurations
         :param options: the options which contain configurations of droidbot
         :return:
         """
         self.logger = logging.getLogger('DroidBot')
-        self.options = options
-        if self.options.output_dir is None:
-            self.options.output_dir = "droidbot_out"
-        if not os.path.exists(self.options.output_dir):
-            os.mkdir(self.options.output_dir)
-        if self.options.device_serial is None:
+        DroidBot.instance = self
+
+        self.output_dir = output_dir
+        if output_dir is None:
+            self.output_dir = "droidbot_out"
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+
+        if device_serial is None:
             # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
             #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
-            self.options.device_serial = '.*'
-        DroidBot.instance = self
+            device_serial = '.*'
+
+        self.device = Device(device_serial)
+        self.app = App(package_name, app_path)
+
+        self.droidbox = None
+        if with_droidbox:
+            self.droidbox = DroidBox()
+
+        self.env_manager = AppEnvManager(self.device, self.app, env_policy)
+        self.event_manager = AppEventManager(self.device, self.app, event_policy,
+                                             event_count, event_interval,
+                                             event_duration)
 
     @staticmethod
     def get_instance():
@@ -51,15 +66,15 @@ class DroidBot(object):
         start interacting
         :return:
         """
-        device = Device(self.options.device_serial)
-        app = App(self.options.package_name, self.options.app_path)
+        self.env_manager.deploy()
 
-        env_manager = AppEnvManager(device, app, self.options.env_policy)
-        event_manager = AppEventManager(device, app, self.options.event_policy,
-                                        self.options.event_count,
-                                        self.options.event_interval)
+        if self.droidbox is not None:
+            self.droidbox.set_apk(self.app.app_path)
+            self.droidbox.start_unblocked()
+            self.event_manager.start()
+            self.droidbox.stop()
+            self.droidbox.get_output()
+        else:
+            self.event_manager.start()
 
-        env_manager.deploy()
-        event_manager.start()
-
-        device.disconnect()
+        self.device.disconnect()

@@ -1,7 +1,6 @@
 # Evaluate droidbot with droidbox
 # basic idea is:
 # A tool is better if more droidbox logs are generated when using the tool
-# TODO complete this file
 __author__ = 'yuanchun'
 import subprocess
 import os
@@ -23,13 +22,17 @@ class DroidboxEvaluator(object):
     MODE_STATIC = "static"
     MODE_DYNAMIC = "dynamic"
 
-    def __init__(self, apk_path, duration, count, interval, result_file):
+    def __init__(self, droidbox_home, droidbot_home, apk_path, duration, count, interval, result_file):
         self.logger = logging.getLogger('DroidboxEvaluator')
+        self.droidbox_home = os.path.abspath(droidbox_home)
+        self.droidbot_home = os.path.abspath(droidbot_home)
+        self.working_dir = os.path.abspath(os.path.curdir)
         self.apk_path = os.path.abspath(apk_path)
         self.result_file_path = os.path.abspath(result_file)
         self.duration = duration
         self.count = count
         self.interval = interval
+        self.droidbox = None
         self.droidbot = None
         self.log_count = 0
         self.is_counting_log = False
@@ -41,9 +44,9 @@ class DroidboxEvaluator(object):
         self.static_mode_result = {}
         self.dynamic_mode_result = {}
         self.logger.info("Evaluator initialized")
-        self.logger.info("droidbot_home:%s\napk_path:%s\n"
+        self.logger.info("droidbox_home:%s\ndroidbot_home:%s\napk_path:%s\n"
                          "duration:%d\ncount:%d\ninteval:%d\n" %
-                         (self.droidbot_home, self.apk_path,
+                         (self.droidbox_home, self.droidbot_home, self.apk_path,
                           self.duration, self.count, self.interval))
 
     def start_evaluate(self):
@@ -181,8 +184,8 @@ class DroidboxEvaluator(object):
         self.droidbot = subprocess.Popen(
             ["python", "start.py",
              "-a", apk_path,
-             "-c", str(count),
-             "-i", str(interval),
+             "-count", str(count),
+             "-interval", str(interval),
              "-env", env_policy,
              "-event", event_policy],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE
@@ -293,9 +296,11 @@ class DroidboxEvaluator(object):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     evaluator = DroidboxEvaluator(
+        droidbox_home="/Users/yuanchun/tools/droidbox/DroidBox_4.1.1/",
+        droidbot_home=".",
         apk_path="resources/webviewdemo.apk",
         duration=200,
-        count=200,
+        count=1000,
         interval=2,
         result_file="evaluate_results/result.md"
     )

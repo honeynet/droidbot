@@ -3,6 +3,8 @@
 #     1. UI events. click, touch, etc
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
+import signal
+
 __author__ = 'liyc'
 import logging
 import json
@@ -140,6 +142,22 @@ android.intent.action.VOICE_COMMAND
 android.intent.action.WALLPAPER_CHANGED
 android.intent.action.WEB_SEARCH
 '''.splitlines()
+
+
+def weighted_choice(choices):
+    total = sum(choices[c] for c in choices.keys())
+    r = random.uniform(0, total)
+    upto = 0
+    for c in choices.keys():
+        if upto + choices[c] > r:
+            return c
+        upto += choices[c]
+
+def interrupt_handler(signum, frame):
+    """
+    Raise interrupt
+    """
+    raise KeyboardInterrupt
 
 
 class UnknownEventException(Exception):
@@ -540,7 +558,7 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval):
+    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -556,6 +574,7 @@ class AppEventManager(object):
         self.event_factory = None
         self.count = event_count
         self.interval = event_interval
+        self.duration = event_duration
 
         if not self.count or self.count is None:
             self.count = 100
@@ -621,16 +640,21 @@ class AppEventManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
-        if self.event_factory is not None:
-            self.event_factory.start(self)
-        else:
-            throttle = self.interval * 1000
-            monkey_cmd = "monkey %s --throttle %d -v %d" % (
-                ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
-                throttle, self.count)
-            self.device.get_adb().shell(" ".join(monkey_cmd))
-        self.logger.info("finish sending events, policy is %s" % self.policy)
-
+        if self.duration:
+            signal.signal(signal.SIGALRM, interrupt_handler)
+            signal.alarm(self.duration)
+        try:
+            if self.event_factory is not None:
+                self.event_factory.start(self)
+            else:
+                throttle = self.interval * 1000
+                monkey_cmd = "monkey %s --throttle %d -v %d" % (
+                    ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
+                    throttle, self.count)
+                self.device.get_adb().shell(monkey_cmd)
+        except KeyboardInterrupt:
+            pass
+        self.logger.debug("finish sending events, policy is %s" % self.policy)
 
 class EventFactory(object):
     """
@@ -659,16 +683,6 @@ class EventFactory(object):
         generate a event
         """
         raise NotImplementedError
-
-
-def weighted_choice(choices):
-    total = sum(choices[c] for c in choices.keys())
-    r = random.uniform(0, total)
-    upto = 0
-    for c in choices.keys():
-        if upto + choices[c] > r:
-            return c
-        upto += choices[c]
 
 
 class RandomEventFactory(EventFactory):

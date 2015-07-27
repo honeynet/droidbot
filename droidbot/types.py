@@ -1,4 +1,6 @@
 # utils for setting up Android environment and sending events
+import subprocess
+
 __author__ = 'yuanchun'
 import connection
 import logging
@@ -37,7 +39,6 @@ class Device(object):
             self.telnet_enabled = True
             self.monkeyrunner_enabled = False
             self.view_client_enabled = True
-            self.get_settings()
         else:
             self.adb_enabled = True
             self.telnet_enabled = True
@@ -88,12 +89,31 @@ class Device(object):
         except:
             return False
 
+    def wait_for_device(self):
+        """
+        wait until the device is fully booted
+        :return:
+        """
+        self.logger.info("waiting for device")
+        try:
+            subprocess.check_call(["adb", "wait-for-device"])
+            while True:
+                out = subprocess.check_output(["adb", "shell", "getprop", "init.svc.bootanim"]).split()[0]
+                if out == "stopped":
+                    break
+                time.sleep(3)
+        except:
+            self.logger.warning("error waiting for device")
+
+
     def connect(self):
         """
         connect this device via adb, telnet and monkeyrunner
         :return:
         """
         try:
+            # wait for emulator to start
+            self.wait_for_device()
             if self.adb_enabled:
                 self.get_adb()
             if self.telnet_enabled:
@@ -128,7 +148,7 @@ class Device(object):
         get telnet connection of the device
         note that only emulator have telnet connection
         """
-        if self.telnet_enabled and not self.telnet:
+        if self.telnet_enabled and self.telnet is None:
             self.telnet = connection.TelnetConsole(self)
         return self.telnet
 
@@ -136,7 +156,7 @@ class Device(object):
         """
         get adb connection of the device
         """
-        if self.adb_enabled and not self.adb:
+        if self.adb_enabled and self.adb is None:
             # use adbclient class in com.dtmilano.adb.adbclient
             self.adb, self.serial = ViewClient.connectToDeviceOrExit(verbose=True,serialno=self.serial)
         return self.adb
@@ -146,7 +166,7 @@ class Device(object):
         get monkeyrunner connection of the device
         :return:
         """
-        if self.monkeyrunner_enabled and not self.monkeyrunner:
+        if self.monkeyrunner_enabled and self.monkeyrunner is None:
             self.monkeyrunner = connection.MonkeyRunner(self)
         return self.monkeyrunner
 
@@ -155,13 +175,24 @@ class Device(object):
         get view_client connection of the device
         :return:
         """
-        if self.view_client_enabled and not self.view_client:
+        if self.view_client_enabled and self.view_client is None:
             kwargs = {'startviewserver': True,
                       'forceviewserveruse': True,
                       'autodump': False,
                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client
+
+    def get_droidbox(self):
+        """
+        start droidbox and return the instance
+        :return:
+        """
+        if self.droidbox_enabled and self.droidbox is not None:
+            self.droidbox = None
+            import droidbox_script.droidbox
+            droidbox_script.droidbox.main()
+        return self.droidbox
 
     def is_foreground(self, app):
         """
@@ -423,11 +454,9 @@ class App(object):
         if self.package_name is None and self.app_path is None:
             self.whole_device = True
             self.logger.warning("no app given, will operate on whole device")
-        else:
-            if self.app_path is None:
-                self.get_app_path()
-            else:
-                self.get_package_name()
+        elif self.app_path is not None:
+            self.get_package_name()
+            subprocess.check_call(["adb", "install", self.get_app_path()])
 
     def get_androguard_analysis(self):
         """
@@ -449,7 +478,7 @@ class App(object):
         # TODO implement this
         return NotImplementedError
         from droidbot import DroidBot
-        out_dir = DroidBot.get_instance().options.output_dir
+        out_dir = DroidBot.get_instance().output_dir
         self.app_path = os.path.join(out_dir, 'temp', "%s.apk" % self.package_name)
 
     def get_package_name(self):
@@ -459,6 +488,8 @@ class App(object):
         """
         if self.package_name is not None:
             return self.package_name
+        elif self.app_path is None:
+            return None
         elif self.get_androguard_analysis() is not None:
             self.package_name = self.get_androguard_analysis().a.get_package()
             return self.package_name

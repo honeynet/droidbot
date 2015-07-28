@@ -31,6 +31,8 @@ class DroidBot(object):
         self.logger = logging.getLogger('DroidBot')
         DroidBot.instance = self
 
+        self.enabled = True
+
         self.output_dir = output_dir
         if output_dir is None:
             self.output_dir = "droidbot_out"
@@ -66,15 +68,29 @@ class DroidBot(object):
         start interacting
         :return:
         """
-        self.env_manager.deploy()
+        try:
+            if not self.enabled:
+                return
+            self.env_manager.deploy()
 
-        if self.droidbox is not None:
-            self.droidbox.set_apk(self.app.app_path)
-            self.droidbox.start_unblocked()
-            self.event_manager.start()
-            self.droidbox.stop()
-            self.droidbox.get_output()
-        else:
-            self.event_manager.start()
-
+            if self.droidbox is not None:
+                self.droidbox.set_apk(self.app.app_path)
+                self.droidbox.start_unblocked()
+                if not self.enabled:
+                    return
+                self.event_manager.start()
+                self.droidbox.stop()
+                self.droidbox.get_output()
+            else:
+                if not self.enabled:
+                    return
+                self.event_manager.start()
+        except KeyboardInterrupt:
+            pass
         self.device.disconnect()
+
+    def stop(self):
+        self.enabled = False
+        self.event_manager.stop()
+        if self.droidbox is not None:
+            self.droidbox.stop()

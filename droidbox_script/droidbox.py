@@ -23,31 +23,23 @@ __author__ = 'yuanchun'
 
 """
 Analyze dynamically Android applications
-This script allows you to analyze dynamically Android applications. It installs, runs, and analyzes Android applications.
+This script allows you to analyze dynamically Android applications.
+It installs, runs, and analyzes Android applications.
 At the end of each analysis, it outputs the Android application's characteristics in JSON.
-Please keep in mind that all data received/sent, read/written are shown in hexadecimal since the handled data can contain binary data.
+Please keep in mind that all data received/sent,
+read/written are shown in hexadecimal since the handled data can contain binary data.
 """
 
-import sys, json, time, curses, signal, os, inspect
-import zipfile, StringIO
-import tempfile, shutil
-import operator
+import json, time, signal, os, sys
+import zipfile
 import subprocess
-import thread, threading
-import re
+import threading
 
 from threading import Thread
 from xml.dom import minidom
 from subprocess import call, PIPE, Popen
 from utils import AXMLPrinter
 import hashlib
-from pylab import *
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from matplotlib.font_manager import FontProperties
-
-from collections import OrderedDict
 
 tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TAINT_PHONE_NUMBER",
         0x10: "TAINT_LOCATION_GPS", 0x20: "TAINT_LOCATION_NET", 0x40: "TAINT_LOCATION_LAST", 0x80: "TAINT_CAMERA",
@@ -71,7 +63,7 @@ class DroidBox(object):
         self.fdaccess = {}
         self.servicestart = {}
         self.accessedfiles = {}
-        self.enabled = False
+        self.enabled = True
 
         self.adb = None
 
@@ -79,30 +71,33 @@ class DroidBox(object):
         self.apk_hashes = None
         self.apk_enfperm = None
         self.apk_recvsaction = None
-
         self.applicationStarted = 0
 
-    def set_apk(self, apkName):
-        if apkName is None:
+        self.is_counting_logs = False
+
+    def set_apk(self, apk_name):
+        if not self.enabled:
+            return
+        if apk_name is None:
             return
         # APK existing?
-        if os.path.isfile(apkName) == False:
-            print("File %s not found" % apkName)
+        if not os.path.isfile(apk_name):
+            print("File %s not found" % apk_name)
             sys.exit(1)
 
-        self.apk_name = apkName
+        self.apk_name = os.path.abspath(apk_name)
 
-        application = Application(apkName)
+        application = Application(apk_name)
         ret = application.processAPK()
 
         # Error during the APK processing?
-        if (ret == 0):
+        if ret == 0:
             print("Failed to analyze the APK. Terminate the analysis.")
             sys.exit(1)
 
         activities = application.getActivities()
-        mainActivity = application.getMainActivity()
-        packageName = application.getPackage()
+        main_activity = application.getMainActivity()
+        package_name = application.getPackage()
 
         recvsaction = application.getRecvsaction()
         enfperm = application.getEnfperm()
@@ -116,28 +111,29 @@ class DroidBox(object):
         self.apk_hashes = hashes
 
         # No Main acitvity found? Return an error
-        if mainActivity == None:
+        if main_activity == None:
             print("No activity to start. Terminate the analysis.")
             sys.exit(1)
 
         # No packages identified? Return an error
-        if packageName == None:
+        if package_name == None:
             print("No package found. Terminate the analysis.")
             sys.exit(1)
 
         # Execute the application
-        ret = call(['monkeyrunner', 'monkeyrunner.py', apkName, packageName, mainActivity], stderr=PIPE,
+        call(['adb', 'logcat', '-c'])
+        ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name, package_name, main_activity], stderr=PIPE,
                    cwd=os.path.dirname(os.path.realpath(__file__)))
 
         if (ret == 1):
             print("Failed to execute the application.")
             sys.exit(1)
 
-        print("Starting the activity %s..." % mainActivity)
+        print("Starting the activity %s..." % main_activity)
 
         # By default the application has not started
         self.applicationStarted = 0
-        stringApplicationStarted = "Start proc %s" % packageName
+        stringApplicationStarted = "Start proc %s" % package_name
 
         # Open the adb logcat
         if self.adb is None:
@@ -174,11 +170,15 @@ class DroidBox(object):
         self.enabled = False
         if self.adb is not None:
             self.adb.terminate()
+            self.adb = None
 
     def start_blocked(self, duration=0):
+        if not self.enabled:
+            return
         # curses.setupterm()
         # sys.stdout.write(curses.tigetstr("clear"))
         sys.stdout.flush()
+        call(["adb", "wait-for-device"])
         call(['adb', 'logcat', '-c'])
 
         print " ____                        __  ____"
@@ -194,15 +194,14 @@ class DroidBox(object):
 
         timeStamp = time.time()
         if duration:
-            signal.signal(signal.SIGALRM, interruptHandler)
-            signal.alarm(duration)
+            threading.Timer(duration, self.stop).start()
 
         if self.adb is None:
             self.adb = Popen(["adb", "logcat", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE)
 
         # Collect DroidBox logs
-        self.enabled = True
+        self.is_counting_logs = True
         while self.enabled:
             try:
                 logcatInput = self.adb.stdout.readline()
@@ -249,7 +248,7 @@ class DroidBox(object):
                                 load['FileRW']['type'] = 'file read'
 
                             self.fdaccess[time.time() - timeStamp] = load['FileRW']
-                            # parser.add_argument("-o", action="store", dest="output_dir", nargs='?', help="directory of output")count.increaseCount()
+                            count.increaseCount()
 
                         # opened network connection log
                         if load.has_key('OpenNet'):
@@ -318,6 +317,7 @@ class DroidBox(object):
             except:
                 break
 
+        self.is_counting_logs = False
         count.stopCounting()
         count.join()
         # Kill ADB, otherwise it will never terminate
@@ -366,13 +366,14 @@ class DroidBox(object):
         output["sendnet"] = len(self.sendnet)
         output["closenet"] = len(self.closenet)
 
-        output["accessedfiles"] = len(self.accessedfiles)
         output["dataleaks"] = len(self.dataleaks)
 
         output["fdaccess"] = len(self.fdaccess)
         output["sendsms"] = len(self.sendsms)
         output["phonecalls"] = len(self.phonecalls)
         output["cryptousage"] = len(self.cryptousage)
+
+        output["sum"] = sum(output.values())
 
         return output
 
@@ -413,7 +414,7 @@ class CountingThread(Thread):
         while 1:
             sign = signs[counter % len(signs)]
             sys.stdout.write("     \033[132m[%s] Collected %s sandbox logs\033[1m   (Ctrl-C to view logs)\r" % (
-            sign, str(self.logs)))
+                sign, str(self.logs)))
             sys.stdout.flush()
             time.sleep(0.5)
             counter = counter + 1
@@ -466,7 +467,7 @@ class Application:
                         self.recvs.append(str(item.getAttribute("android:name")))
                         for child in item.getElementsByTagName('action'):
                             self.recvsaction[str(item.getAttribute("android:name"))] = (
-                            str(child.getAttribute("android:name")))
+                                str(child.getAttribute("android:name")))
 
                     for item in xml[i].getElementsByTagName('activity'):
                         activity = str(item.getAttribute("android:name"))
@@ -587,7 +588,7 @@ if __name__ == "__main__":
 
     apkName = sys.argv[1]
 
-    #APK existing?
+    # APK existing?
     if os.path.isfile(apkName) == False:
         print("File %s not found" % argv[1])
         sys.exit(1)

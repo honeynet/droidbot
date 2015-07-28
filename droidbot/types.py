@@ -24,6 +24,7 @@ class Device(object):
         :return:
         """
         self.logger = logging.getLogger('Device')
+
         self.serial = device_serial
         # is_emulator 0 for real device, 1 for emulator
         self.is_emulator = is_emulator
@@ -209,6 +210,8 @@ class Device(object):
             package_name = app.get_package_name()
 
         focused_window_name = self.get_adb().getTopActivityName()
+        if focused_window_name is None:
+            return False
         return focused_window_name.startswith(package_name)
 
     def get_display_info(self):
@@ -456,7 +459,8 @@ class App(object):
             self.logger.warning("no app given, will operate on whole device")
         elif self.app_path is not None:
             self.get_package_name()
-            subprocess.check_call(["adb", "install", self.get_app_path()])
+            subprocess.check_call(["adb", "install", self.get_app_path()],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_androguard_analysis(self):
         """

@@ -10,6 +10,8 @@ import logging
 import json
 import time
 import random
+import subprocess
+from threading import Timer
 from types import Intent, Device
 
 EVENT_POLICIES = [
@@ -152,13 +154,6 @@ def weighted_choice(choices):
         if upto + choices[c] > r:
             return c
         upto += choices[c]
-
-def interrupt_handler(signum, frame):
-    """
-    Raise interrupt
-    """
-    raise KeyboardInterrupt
-
 
 class UnknownEventException(Exception):
     pass
@@ -466,7 +461,8 @@ class ContextEvent(AppEvent):
         assert the context matches the device, then send the event
         """
         assert isinstance(device, Device)
-        assert self.context.assert_in_device(device)
+        if not self.context.assert_in_device(device):
+            device.logger.warning("Context not in device: %s" % self.context)
         self.event.send(device)
 
     def to_dict(self):
@@ -567,23 +563,26 @@ class AppEventManager(object):
         :return:
         """
         self.logger = logging.getLogger('AppEventManager')
+        self.enabled = True
+
         self.device = device
         self.app = app
         self.policy = event_policy
         self.events = []
         self.event_factory = None
-        self.count = event_count
-        self.interval = event_interval
-        self.duration = event_duration
+        self.event_count = event_count
+        self.event_interval = event_interval
+        self.event_duration = event_duration
+        self.monkey = None
 
-        if not self.count or self.count is None:
-            self.count = 100
+        if not self.event_count or self.event_count is None:
+            self.event_count = 100
 
         if not self.policy or self.policy is None:
             self.policy = "monkey"
 
-        if not self.interval or self.interval is None:
-            self.interval = 2
+        if not self.event_interval or self.event_interval is None:
+            self.event_interval = 2
 
         if self.policy == "monkey":
             self.event_factory = None
@@ -640,21 +639,33 @@ class AppEventManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
-        if self.duration:
-            signal.signal(signal.SIGALRM, interrupt_handler)
-            signal.alarm(self.duration)
+        if self.event_duration:
+            Timer(self.event_duration, self.stop).start()
         try:
             if self.event_factory is not None:
                 self.event_factory.start(self)
             else:
-                throttle = self.interval * 1000
-                monkey_cmd = "monkey %s --throttle %d -v %d" % (
+                throttle = self.event_interval * 1000
+                monkey_cmd = "adb shell monkey %s --throttle %d -v %d" % (
                     ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
-                    throttle, self.count)
-                self.device.get_adb().shell(monkey_cmd)
+                    throttle, self.event_count)
+                self.monkey = subprocess.Popen(monkey_cmd.split(),
+                                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                while self.enabled:
+                    time.sleep(1)
         except KeyboardInterrupt:
             pass
         self.logger.debug("finish sending events, policy is %s" % self.policy)
+
+    def stop(self):
+        """
+        stop sending event
+        """
+        if self.monkey:
+            self.monkey.terminate()
+            self.monkey = None
+        self.enabled = False
+
 
 class EventFactory(object):
     """
@@ -672,10 +683,10 @@ class EventFactory(object):
         :param event_manager: instance of AppEventManager
         """
         count = 0
-        while count < event_manager.count:
+        while event_manager.enabled and count < event_manager.event_count:
             event = self.generate_event()
             event_manager.add_event(event)
-            time.sleep(event_manager.interval)
+            time.sleep(event_manager.event_interval)
             count += 1
 
     def generate_event(self):

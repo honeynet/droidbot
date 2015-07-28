@@ -75,6 +75,8 @@ python setup.py install
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
 and adb monkey tool. The results are in [result](/evaluate_results/README.md).
 
+Or see my visualized evaluation reports at [DroidBot Posts](http://lynnlyc.github.io/droidbot/).
+
 ## Acknowledgement
 
 1. [AndroidViewClient](https://github.com/dtmilano/AndroidViewClient) 

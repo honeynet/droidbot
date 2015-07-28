@@ -172,7 +172,8 @@ class DroidboxEvaluator(object):
                                  event_count=self.event_count,
                                  event_duration=self.event_duration,
                                  event_interval=self.event_interval,
-                                 with_droidbox=True)
+                                 with_droidbox=True,
+                                 quiet=True)
         self.droidbox = self.droidbot.droidbox
         self.droidbot.start()
 

@@ -22,12 +22,14 @@ class DroidBot(object):
 
     def __init__(self, device_serial=None, package_name=None, app_path=None, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
-                 event_count=None, event_interval=None, event_duration=None):
+                 event_count=None, event_interval=None, event_duration=None, quiet=False):
         """
         initiate droidbot with configurations
         :param options: the options which contain configurations of droidbot
         :return:
         """
+        logging.basicConfig(level=logging.WARNING if quiet else logging.INFO)
+
         self.logger = logging.getLogger('DroidBot')
         DroidBot.instance = self
 

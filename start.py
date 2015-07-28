@@ -44,6 +44,8 @@ def parse_args():
                         help="directory of output")
     parser.add_argument("-droidbox", action="store_true", dest="with_droidbox",
                         help="start with droidbox")
+    parser.add_argument("-q", action="store_true", dest="quiet",
+                        help="run in quiet mode (dump warning messages only).")
     options = parser.parse_args()
     # print options
     return options
@@ -54,7 +56,6 @@ def main():
     the main function
     it starts a droidbot according to the arguments given in cmd line
     """
-    logging.basicConfig(level=logging.WARNING)
     opts = parse_args()
 
     droidbot = DroidBot(device_serial=opts.device_serial,
@@ -66,7 +67,8 @@ def main():
                         with_droidbox=opts.with_droidbox,
                         event_interval=opts.event_interval,
                         event_duration=opts.event_duration,
-                        event_count=opts.event_count)
+                        event_count=opts.event_count,
+                        quiet=opts.quiet)
     droidbot.start()
     return
 

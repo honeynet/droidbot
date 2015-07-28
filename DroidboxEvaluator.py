@@ -33,9 +33,11 @@ class DroidboxEvaluator(object):
         self.device_serial=device_serial,
         self.apk_path = os.path.abspath(apk_path)
         if output_dir is None:
-            output_dir = "evaluate_results/"
+            output_dir = "evaluate_reports/"
         now = datetime.now()
-        result_file_name = "%d-%d-%d-evaluate-result-%d:%d.md" % \
+        self.report_title = "Evaluation Report %d-%d-%d %d:%d.md" % \
+                            (now.year, now.month, now.day, now.hour, now.minute)
+        result_file_name = "%d-%d-%d-evaluation-report-%d:%d.md" % \
                            (now.year, now.month, now.day, now.hour, now.minute)
         self.result_file_path = os.path.abspath(os.path.join(output_dir, result_file_name))
 
@@ -236,14 +238,15 @@ class DroidboxEvaluator(object):
             modes = list(modes.keys())
             modes.sort()
 
+        out_file.write("# %s\n\n" % self.report_title)
         out_file.write("## Data\n\n")
-        out_file.write("\n### Summary\n\n")
+        out_file.write("### Summary\n\n")
         # gen head lines
         th1 = "|\tcategory\t|"
-        th2 = "|\t----\t|"
+        th2 = "|----|"
         for mode in modes:
             th1 += "\t%s\t|" % mode
-            th2 += "\t----\t|"
+            th2 += "----|"
         th1 += "\n"
         th2 += "\n"
         out_file.write(th1)
@@ -274,10 +277,10 @@ class DroidboxEvaluator(object):
         out_file.write("\n### Tendency\n\n")
         # gen head lines
         th1 = "|\ttime\t|"
-        th2 = "|\t----\t|"
+        th2 = "|----|"
         for mode in modes:
             th1 += "\t%s\t|" % mode
-            th2 += "\t----\t|"
+            th2 += "----|"
         th1 += "\n"
         th2 += "\n"
         out_file.write(th1)

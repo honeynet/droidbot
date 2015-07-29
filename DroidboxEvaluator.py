@@ -309,17 +309,17 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Run different testing bots on droidbox, and compare their log counts.",
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-d", action="store", dest="device_serial", nargs='?',
+    parser.add_argument("-d", action="store", dest="device_serial",
                         help="serial number of target device")
-    parser.add_argument("-a", action="store", dest="app_path", nargs='?', required=True,
+    parser.add_argument("-a", action="store", dest="app_path", required=True,
                         help="file path of target app, necessary for static analysis")
-    parser.add_argument("-count", action="store", dest="event_count", nargs='?',
+    parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="number of events to generate during testing")
-    parser.add_argument("-interval", action="store", dest="event_interval", nargs="?",
+    parser.add_argument("-interval", action="store", dest="event_interval",
                         type=int, help="interval between two events (seconds)")
-    parser.add_argument("-duration", action="store", dest="event_duration", nargs="?",
+    parser.add_argument("-duration", action="store", dest="event_duration",
                         type=int, help="duration of droidbot running (seconds)")
-    parser.add_argument("-o", action="store", dest="output_dir", nargs='?',
+    parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
     options = parser.parse_args()
     # print options

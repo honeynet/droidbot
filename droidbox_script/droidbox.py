@@ -67,10 +67,9 @@ class DroidBox(object):
 
         self.adb = None
 
+        self.application = None
         self.apk_name = None
         self.apk_hashes = None
-        self.apk_enfperm = None
-        self.apk_recvsaction = None
         self.applicationStarted = 0
 
         self.is_counting_logs = False
@@ -87,28 +86,17 @@ class DroidBox(object):
 
         self.apk_name = os.path.abspath(apk_name)
 
-        application = Application(apk_name)
-        ret = application.processAPK()
+        self.application = Application(apk_name)
+        ret = self.application.processAPK()
 
         # Error during the APK processing?
         if ret == 0:
             print("Failed to analyze the APK. Terminate the analysis.")
             sys.exit(1)
 
-        activities = application.getActivities()
-        main_activity = application.getMainActivity()
-        package_name = application.getPackage()
-
-        recvsaction = application.getRecvsaction()
-        enfperm = application.getEnfperm()
-
-        self.apk_recvsaction = recvsaction
-        self.apk_enfperm = enfperm
-
-        # Get the hashes
-        hashes = application.getHashes()
-
-        self.apk_hashes = hashes
+        main_activity = self.application.getMainActivity()
+        package_name = self.application.getPackage()
+        self.apk_hashes = self.application.getHashes()
 
         # No Main acitvity found? Return an error
         if main_activity == None:
@@ -122,8 +110,9 @@ class DroidBox(object):
 
         # Execute the application
         call(['adb', 'logcat', '-c'])
-        ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name, package_name, main_activity], stderr=PIPE,
-                   cwd=os.path.dirname(os.path.realpath(__file__)))
+        ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name,
+                    package_name, main_activity], stderr=PIPE,
+                    cwd=os.path.dirname(os.path.realpath(__file__)))
 
         if (ret == 1):
             print("Failed to execute the application.")
@@ -349,8 +338,8 @@ class DroidBox(object):
         output["phonecalls"] = self.phonecalls
         output["cryptousage"] = self.cryptousage
 
-        output["recvsaction"] = self.apk_recvsaction
-        output["enfperm"] = self.apk_enfperm
+        output["recvsaction"] = self.application.getRecvsaction()
+        output["enfperm"] = self.application.getEnfperm()
 
         output["hashes"] = self.apk_hashes
         output["apkName"] = self.apk_name
@@ -442,8 +431,7 @@ class CountingThread(Thread):
         self.stop = True
 
     def increaseCount(self):
-
-        self.logs = self.logs + 1
+        self.logs += 1
 
     def run(self):
         """
@@ -547,6 +535,9 @@ class Application:
     def getActivities(self):
         return self.activities
 
+    def getPermissions(self):
+        return self.permissions
+
     def getRecvActions(self):
         return self.recvsaction
 
@@ -559,7 +550,6 @@ class Application:
         Calculate MD5,SHA-1, SHA-256
         hashes of APK input file
         """
-
         md5 = hashlib.md5()
         sha1 = hashlib.sha1()
         sha256 = hashlib.sha256()

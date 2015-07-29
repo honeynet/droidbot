@@ -97,6 +97,8 @@ class DroidboxEvaluator(object):
         if not self.enabled:
             return
         self.logger.info("evaluating [%s] mode" % mode)
+        self.droidbot = None
+        self.droidbox = None
         target_thread = threading.Thread(target=target)
         target_thread.start()
         self.wait_for_droidbox()
@@ -107,10 +109,8 @@ class DroidboxEvaluator(object):
     def stop_modules(self):
         if self.droidbox is not None:
             self.droidbox.stop()
-            self.droidbox = None
         if self.droidbot is not None:
             self.droidbot.stop()
-            self.droidbot = None
 
     def wait_for_droidbox(self):
         # wait until droidbox starts counting
@@ -236,7 +236,29 @@ class DroidboxEvaluator(object):
             modes.sort()
 
         out_file.write("# %s\n\n" % self.report_title)
-        out_file.write("## Data\n\n")
+
+        out_file.write("## About\n\n")
+        out_file.write("This report is generated automatically by %s "
+                       "with options:\n\n"
+                       "+ apk_path=%s\n"
+                       "+ event_duration=%s\n"
+                       "+ event_interval=%s\n"
+                       "+ event_count=%s\n\n"
+                       % (self.__class__.__name__, os.path.basename(self.apk_path),
+                          self.event_duration, self.event_interval, self.event_interval))
+
+        out_file.write("## Apk Info\n\n")
+        out_file.write("|Package Name|%s|\n" % self.droidbox.application.getPackage())
+        out_file.write("|Main Activity|%s|\n" % self.droidbox.application.getMainActivity())
+        out_file.write("|Hash (md5)|%s|\n" % self.droidbox.apk_hashes[0])
+        out_file.write("|Hash (sha1)|%s|\n" % self.droidbox.apk_hashes[1])
+        out_file.write("|Hash (sha256)|%s|\n\n" % self.droidbox.apk_hashes[2])
+
+        out_file.write("### Permissions\n\n")
+        for permission in self.droidbox.application.getPermissions():
+            out_file.write("+ %s\n" % permission)
+
+        out_file.write("\n## Data\n\n")
         out_file.write("### Summary\n\n")
         # gen head lines
         th1 = "|\tcategory\t|"
@@ -308,7 +330,7 @@ def parse_args():
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial",
                         help="serial number of target device")
-    parser.add_argument("-a", action="store", dest="app_path", required=True,
+    parser.add_argument("-a", action="store", dest="apk_path", required=True,
                         help="file path of target app, necessary for static analysis")
     parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="number of events to generate during testing")
@@ -328,9 +350,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     evaluator = DroidboxEvaluator(
         device_serial=opts.device_serial,
-        apk_path=opts.app_path,
+        apk_path=opts.apk_path,
         event_duration=opts.event_duration,
-        event_count=opts.event_duration,
+        event_count=opts.event_count,
         event_interval=opts.event_interval,
         output_dir=opts.output_dir,
     )

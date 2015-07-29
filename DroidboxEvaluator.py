@@ -35,10 +35,8 @@ class DroidboxEvaluator(object):
         if output_dir is None:
             output_dir = "evaluate_reports/"
         now = datetime.now()
-        self.report_title = "Evaluation Report %d-%d-%d %d:%d.md" % \
-                            (now.year, now.month, now.day, now.hour, now.minute)
-        result_file_name = "%d-%d-%d-evaluation-report-%d:%d.md" % \
-                           (now.year, now.month, now.day, now.hour, now.minute)
+        self.report_title = now.strftime("Evaluation Report_%Y-%m-%d_%H%M")
+        result_file_name = self.report_title + ".md"
         self.result_file_path = os.path.abspath(os.path.join(output_dir, result_file_name))
 
         self.event_duration = event_duration
@@ -62,9 +60,9 @@ class DroidboxEvaluator(object):
 
         self.logger.info("Evaluator initialized")
         self.logger.info("apk_path:%s\n"
-                         "duration:%d\ncount:%d\ninteval:%d\n" %
+                         "duration:%d\ncount:%d\ninteval:%d\nreport title:%s" %
                          (self.apk_path, self.event_duration,
-                          self.event_count, self.event_interval))
+                          self.event_count, self.event_interval, self.report_title))
 
         self.enabled = True
 

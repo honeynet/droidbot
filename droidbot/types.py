@@ -117,12 +117,16 @@ class Device(object):
             self.wait_for_device()
             if self.adb_enabled:
                 self.get_adb()
+
             if self.telnet_enabled:
                 self.get_telnet()
+
             if self.monkeyrunner_enabled:
                 self.get_monkeyrunner()
+
             if self.view_client_enabled:
                 self.get_view_client()
+
             time.sleep(3)
             self.is_connected = True
 
@@ -184,17 +188,6 @@ class Device(object):
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client
 
-    def get_droidbox(self):
-        """
-        start droidbox and return the instance
-        :return:
-        """
-        if self.droidbox_enabled and self.droidbox is not None:
-            self.droidbox = None
-            import droidbox_script.droidbox
-            droidbox_script.droidbox.main()
-        return self.droidbox
-
     def is_foreground(self, app):
         """
         check if app is in foreground of device
@@ -208,6 +201,8 @@ class Device(object):
             if app.whole_device:
                 return True
             package_name = app.get_package_name()
+        else:
+            return False
 
         focused_window_name = self.get_adb().getTopActivityName()
         if focused_window_name is None:
@@ -459,6 +454,8 @@ class App(object):
             self.logger.warning("no app given, will operate on whole device")
         elif self.app_path is not None:
             self.get_package_name()
+            subprocess.check_call(["adb", "uninstall", self.get_package_name()],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             subprocess.check_call(["adb", "install", self.get_app_path()],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -573,9 +570,9 @@ class Intent(object):
     this class describes a intent event
     """
     def __init__(self, prefix="start", action=None, data_uri=None, mime_type=None, category=None,
-                 component=None, flag=None, extra_keys=[], extra_string={}, extra_boolean={},
-                 extra_int={}, extra_long={}, extra_float={}, extra_uri={}, extra_component={},
-                 extra_array_int={}, extra_array_long={}, extra_array_float={}, flags=[], suffix=""):
+                 component=None, flag=None, extra_keys=None, extra_string=None, extra_boolean=None,
+                 extra_int=None, extra_long=None, extra_float=None, extra_uri=None, extra_component=None,
+                 extra_array_int=None, extra_array_long=None, extra_array_float=None, flags=None, suffix=""):
         self.event_type = 'intent'
         self.prefix = prefix
         self.action = action

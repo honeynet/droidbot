@@ -33,7 +33,7 @@ class DroidboxEvaluator(object):
         self.device_serial=device_serial,
         self.apk_path = os.path.abspath(apk_path)
         if output_dir is None:
-            output_dir = "evaluate_reports/"
+            output_dir = "evaluation_reports/"
         now = datetime.now()
         self.report_title = "Evaluation Report %d-%d-%d %d:%d.md" % \
                             (now.year, now.month, now.day, now.hour, now.minute)

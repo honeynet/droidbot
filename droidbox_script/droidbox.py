@@ -213,6 +213,8 @@ class DroidBox(object):
                     try:
                         load = json.loads(decode(boxlog[1]))
 
+                        self.filter_noises(load)
+
                         # DexClassLoader
                         if load.has_key('DexClassLoader'):
                             load['DexClassLoader']['type'] = 'dexload'
@@ -376,6 +378,46 @@ class DroidBox(object):
         output["sum"] = sum(output.values())
 
         return output
+
+    def filter_noises(self, log):
+        """
+        filter use less noises from log
+        :param log: log of Droidbox in dict format
+        :return: boolean
+        """
+        if isinstance(log, dict):
+            # DexClassLoader
+            if 'DexClassLoader' in log.keys():
+                if log['DexClassLoader']['path'] in DEXCLASSLOADER_EXCLUDED:
+                    log.pop('DexClassLoader')
+
+            # fdaccess
+            if 'FdAccess' in log.keys():
+                for excluded_prefix in FDACCESS_EXCLUDED_PREFIX:
+                    if hexToStr(log['FdAccess']['path']).startswith(excluded_prefix):
+                        log.pop('FdAccess')
+                        break
+
+            # file read or write
+            if 'FileRW' in log.keys():
+                if log['FileRW']['id'] not in self.accessedfiles.keys():
+                    log.pop('FileRW')
+
+        return log
+
+
+DEXCLASSLOADER_EXCLUDED = [
+    "/system/framework/monkey.jar",
+    "/system/framework/input.jar",
+    "/system/framework/am.jar",
+]
+
+
+FDACCESS_EXCLUDED_PREFIX = [
+    "pipe:",
+    "socket:",
+    "/dev/input/event",
+]
 
 
 class CountingThread(Thread):

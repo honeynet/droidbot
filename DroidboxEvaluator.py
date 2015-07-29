@@ -1,7 +1,6 @@
 # Evaluate droidbot with droidbox
 # basic idea is:
 # A tool is better if more droidbox logs are generated when using the tool
-# TODO complete this file
 import argparse
 
 __author__ = 'yuanchun'
@@ -35,7 +34,7 @@ class DroidboxEvaluator(object):
         if output_dir is None:
             output_dir = "evaluation_reports/"
         now = datetime.now()
-        self.report_title = now.strftime("Evaluation Report_%Y-%m-%d_%H%M")
+        self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
         result_file_name = self.report_title + ".md"
         self.result_file_path = os.path.abspath(os.path.join(output_dir, result_file_name))
 

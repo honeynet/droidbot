@@ -191,7 +191,13 @@ class DroidBox(object):
 
         # Collect DroidBox logs
         self.is_counting_logs = True
+        self.lastScreenshot = 0
         while self.enabled:
+            if (time.time() - self.lastScreenshot) >=5:
+                #Take Screenshots every 5 seconds.
+                #TODO: Use path from options
+                os.system("adb shell screencap -p | sed 's/\r$//' > /samples/out/screen_$(date +%Y-%m-%d_%H%M%S).png")
+                self.lastScreenshot = time.time()
             try:
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
@@ -316,6 +322,9 @@ class DroidBox(object):
         self.adb = None
 
         print json.dumps(self.get_output())
+        #ToDo: Read path from options
+        with open("/samples/out/analysis.json","w") as jsonfile:
+            jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 
     def get_output(self):
         # Done? Store the objects in a dictionary, transform it in a JSON object and return it
@@ -628,4 +637,4 @@ if __name__ == "__main__":
     droidbox = DroidBox()
     droidbox.set_apk(apkName)
     droidbox.start_blocked(duration)
-    droidbox.get_output()
+    #droidbox.get_output() #TODO: HL: This line is useless, isn't it?

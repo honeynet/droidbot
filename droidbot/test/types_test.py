@@ -96,7 +96,7 @@ class AppTest(TestCase):
     test the App class
     """
     def setUp(self):
-        self.app = App(app_path="examples/Browser.apk")
+        self.app = App(app_path="resources/TestDroidbot.apk")
 
     def test_init(self):
         noapp = App()
@@ -110,3 +110,18 @@ class AppTest(TestCase):
         app_with_file_path = self.app
         self.assertFalse(app_with_file_path.whole_device)
         self.assertEqual(app_with_file_path.get_package_name(), 'com.android.browser')
+
+    def test_get_package_name(self):
+        package_name = self.app.get_package_name()
+        self.assertEqual(package_name, "com.lynnlyc")
+
+    def test_get_main_activity(self):
+        main_activity = self.app.get_main_activity()
+        self.assertEqual(main_activity, "MainActivity")
+
+    def test_get_possible_broadcasts(self):
+        possible_broadcasts = self.app.get_possible_broadcasts()
+        self.assertIsNotNone(possible_broadcasts)
+        # TODO modify testDroidbot app, and fix this assertion
+        i = Intent(prefix='broadcast', action="", category="")
+        self.assertIn(i, possible_broadcasts)

@@ -1,0 +1,6 @@
+droidbot_out/*
+evaluation_reports/*
+*.md
+*.log
+*.pyc
+.git/*

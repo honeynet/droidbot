@@ -41,8 +41,8 @@ ADD docker/fastdroid-vnc /build/
 ADD docker/install-fastdroid-vnc.sh /build/
 RUN /build/install-fastdroid-vnc.sh
 ADD docker/run.sh /build/
-ADD docker/droidbox.py.patch /build/
-RUN cd /opt/DroidBox_4.1.1/scripts && patch < /build/droidbox.py.patch
+#ADD docker/droidbox.py.patch /build/
+#RUN cd /opt/DroidBox_4.1.1/scripts && patch < /build/droidbox.py.patch
 
 # Add DroitBot
 RUN apt-get install -y --no-install-recommends python-setuptools

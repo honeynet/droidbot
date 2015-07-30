@@ -1,15 +1,15 @@
-# droidbot
+# DroidBot
 
 ## About
-A robot which automatically interacts with app in Droidbox.
+A robot which automatically interacts with Android app.
 
-droidbot sends keyevent, gestures and simulates system events 
+DroidBot sends keyevent, gestures and simulates system events 
 in order to exploit more app states automatically.
 droidbot decides which actions to take based on static analysis result of app 
 and dynamic device information (view hierarchy).
 
 ## Introduction
-droidbot mainly does following two things:
+DroidBot mainly does following two things:
 
 1. Setting up device environments, include the contacts, SMS logs, 
 call logs, GPS mocking, etc. The target app may have access to these resources, thus we 
@@ -28,6 +28,7 @@ keyevents, and simulated broadcasts, etc.
 
     Similarly, we have several policies to produce events:
     
+    + `none` policy which does not send any event;
     + `monkey` policy which make use of adb `monkey` tool, to produce randomized events;
     + `random` policy which sends randomized events to device
     + `static` policy produces a list of events based on static information of app. Eg. 
@@ -52,7 +53,7 @@ it records much information we don't need.
 1. `Java` version `1.6+`
 2. `Python` version `2.7`
 3. `Android SDK`, and `platform_tools` and `tools` added to `PATH`
-4. `Droidbox` version `4.1.1`
+4. (Optional) `DroidBox` version `4.1.1`
 
 ## Installation
 
@@ -66,14 +67,14 @@ python setup.py install
 
 ## Usage
 
-1. Run `droidbox`, and install target app.
+1. Start an emulator (recommended) or connect to a device using adb.
 2. Start droidbot:
 `python droidbot.py -h`
 
 ## Evaluation
 
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
-and adb monkey tool. The results are in [result](/evaluate_results/README.md).
+and adb monkey tool. The results are in [result](/evaluation_reports/README.md).
 
 Or see my visualized evaluation reports at [DroidBot Posts](http://lynnlyc.github.io/droidbot/).
 

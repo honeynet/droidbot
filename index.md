@@ -1,9 +1,15 @@
 ---
 layout: default
-title: Droidbot by lynnlyc
+title: DroidBot by lynnlyc
 ---
 
-# droidbot
+# DroidBot
+
+## List of posts
+
+{% for post in site.posts %}
++ [{{ post.title }}]({{ site.baseurl }}{{ post.url }}) {{ post.date | date_to_string }} 
+{% endfor %}
 
 ## About
 A robot which automatically interacts with app in Droidbox.
@@ -51,9 +57,3 @@ Android's `traceviewer` is able to record entering and exiting of each method, a
 of all methods of app via reverse engineering. By comparing `traceviewer` log and app dex, hopefully 
 we can get the method coverage of app. The challenge is, `traceviewer` brings too much overhead, because 
 it records much information we don't need.
-
-## List of posts
-
-{% for post in site.posts %}
-+ [{{ post.title }}]({{ site.baseurl }}{{ post.url }}) {{ post.date | date_to_string }} 
-{% endfor %}

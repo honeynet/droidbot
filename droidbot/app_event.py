@@ -799,6 +799,9 @@ class DynamicEventFactory(EventFactory):
             'number': '1234567890'
         }
 
+        # randomized touch events for each webview
+        self.webview_touches = 5
+
         if self.device.is_emulator:
             self.choices = {
                 UIEvent: 40,
@@ -812,6 +815,9 @@ class DynamicEventFactory(EventFactory):
                 IntentEvent: 9,
                 KeyEvent: 1
             }
+
+        # use this flag to indicate the last sent event
+        self.last_event_flag = ""
 
     def generate_event(self):
         if self.event_stack:
@@ -852,21 +858,53 @@ class DynamicEventFactory(EventFactory):
             intent = random.choice(list(possible_intents))
             self.exploited_broadcasts.add(intent)
             intent_event = IntentEvent(intent=intent)
+
             return ContextEvent(context=current_context, event=intent_event)
 
         if event_type == KeyEvent or event_type == EmulatorEvent:
             event = KeyEvent.get_random_instance(self.device, self.app)
+
             return ContextEvent(context=current_context, event=event)
 
-        # if the current activity is exploited, try go back
+        # if the current context is exploited, try go back
         if current_context_str in self.exploited_contexts:
-            event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
-            return event
+            if self.last_event_flag.endswith("start_app+back+start_app"):
+                # It seems the views in app is all explored
+                # Then give it another pass
+                self.exploited_contexts.clear()
+                self.exploited_services.clear()
+                self.exploited_broadcasts.clear()
+                self.saved_views.clear()
+                self.exploited_views.clear()
+            elif self.last_event_flag.endswith("back+back+back"):
+                # It seems the app can not be back, try use HOME key
+                self.last_event_flag += "+home"
+                event = ContextEvent(context=current_context, event=KeyEvent('HOME'))
+                return event
+            elif self.last_event_flag.endswith("back+back+home"):
+                # HOME key also does not work
+                self.device.logger.warning("This app might have hijacked the device!")
+                # we have to continue interacting with this app
+                self.exploited_contexts.clear()
+                self.exploited_services.clear()
+                self.exploited_broadcasts.clear()
+                self.saved_views.clear()
+                self.exploited_views.clear()
+            else:
+                self.last_event_flag += "+back"
+                event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
+                return event
 
         if not self.device.is_foreground(self.app):
-            return IntentEvent(Intent(suffix="%s/%s" %
-                                             (self.app.get_package_name(),
-                                              self.app.get_main_activity())))
+            if self.last_event_flag == "start_app+start_app":
+                # It seems the app stuck at some state, and cannot be started
+                # just pass to let viewclient deal with this case
+                pass
+            else:
+                self.last_event_flag += "+start_app"
+                return IntentEvent(Intent(suffix="%s/%s" %
+                                                 (self.app.get_package_name(),
+                                                  self.app.get_main_activity())))
 
         if current_context_str not in self.exploited_views.keys():
             self.exploited_views[current_context_str] = set()
@@ -890,19 +928,35 @@ class DynamicEventFactory(EventFactory):
                 self.exploited_views[current_context_str].add(unique_view_str)
                 (x, y) = v.getCenter()
                 event = ContextEvent(context=current_context, event=TouchEvent(x, y))
+                v_cls_name = v.getClass().lower()
+
                 # if it is an EditText, try input something
                 from com.dtmilano.android.viewclient import EditText
-
-                if isinstance(v, EditText) or v.getClass().__contains__('EditText'):
+                if isinstance(v, EditText) or 'edit' in v_cls_name\
+                        or 'text' in v_cls_name or 'input' in v_cls_name:
                     for key in self.possible_inputs.keys():
-                        if v.getId().__contains__(key) or v.getClass().__contains__(key):
+                        if key in v.getId().lower() or key in v_cls_name:
                             next_event = TypeEvent(text=self.possible_inputs[key])
                             self.event_stack.append(next_event)
                             break
+
+                # if it is a WebView, try touch randomly
+                if 'webview' in v_cls_name:
+                    webview_event_count = 0
+                    bounds = v.getBounds()
+                    while webview_event_count < self.webview_touches:
+                        webview_x = random.uniform(bounds[0][0], bounds[1][0])
+                        webview_y = random.uniform(bounds[1][1], bounds[0][1])
+                        self.event_stack.append(TouchEvent(webview_x, webview_y))
+                        webview_event_count += 1
+
+                self.last_event_flag = "touch"
                 return event
         # if all views were exploited, TODO try scroll current view
         # Then mark this context as exploited
         self.exploited_contexts.add(current_context_str)
+
+        self.last_event_flag += "back"
         event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
         return event
 

@@ -109,7 +109,7 @@ class DroidBox(object):
             sys.exit(1)
 
         # Execute the application
-        call(['adb', 'logcat', '-c'])
+        call(["adb", "logcat", "-c"])
         ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name,
                     package_name, main_activity], stderr=PIPE,
                     cwd=os.path.dirname(os.path.realpath(__file__)))

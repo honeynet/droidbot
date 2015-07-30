@@ -260,7 +260,7 @@ class TouchEvent(UIEvent):
 
     def send(self, device):
         assert device.get_adb() is not None
-        device.get_adb().touch(self.x, self.y)
+        device.get_adb().longTouch(self.x, self.y, duration=500)
 
 
 class LongTouchEvent(UIEvent):
@@ -461,7 +461,7 @@ class ContextEvent(AppEvent):
         assert the context matches the device, then send the event
         """
         if not self.context.assert_in_device(device):
-            device.logger.warning("Context not in device: %s" % self.context)
+            device.logger.warning("Context not in device: %s" % self.context.__str__())
         self.event.send(device)
 
     def to_dict(self):
@@ -783,6 +783,8 @@ class DynamicEventFactory(EventFactory):
         # which means the views are exploited in the context
         self.exploited_views = {}
         self.saved_views = {}
+        self.window_passes = {}
+        self.window_pass_limit = 3
 
         self.previous_event = None
         self.previous_activity = None
@@ -801,6 +803,8 @@ class DynamicEventFactory(EventFactory):
 
         # randomized touch events for each webview
         self.webview_touches = 5
+
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "check", "agree", "try", "go"]
 
         if self.device.is_emulator:
             self.choices = {
@@ -875,6 +879,7 @@ class DynamicEventFactory(EventFactory):
                 self.exploited_services.clear()
                 self.exploited_broadcasts.clear()
                 self.saved_views.clear()
+                self.window_passes.clear()
                 self.exploited_views.clear()
             elif self.last_event_flag.endswith("back+back+back"):
                 # It seems the app can not be back, try use HOME key
@@ -889,6 +894,7 @@ class DynamicEventFactory(EventFactory):
                 self.exploited_services.clear()
                 self.exploited_broadcasts.clear()
                 self.saved_views.clear()
+                self.window_passes.clear()
                 self.exploited_views.clear()
             else:
                 self.last_event_flag += "+back"
@@ -896,7 +902,7 @@ class DynamicEventFactory(EventFactory):
                 return event
 
         if not self.device.is_foreground(self.app):
-            if self.last_event_flag == "start_app+start_app":
+            if self.last_event_flag.endswith("+start_app"):
                 # It seems the app stuck at some state, and cannot be started
                 # just pass to let viewclient deal with this case
                 pass
@@ -913,48 +919,79 @@ class DynamicEventFactory(EventFactory):
         if current_context_str not in self.saved_views.keys():
             views = self.device.get_view_client().dump(window=focused_window.winId)
             self.saved_views[current_context_str] = views
+            self.window_passes[current_context_str] = 0
         else:
             views = self.saved_views[current_context_str]
 
         # then find a view to send UI event
         random.shuffle(views)
+
+        # find preferred view
         for v in views:
             if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
                 continue
+
             unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
             if unique_view_str in self.exploited_views[current_context_str]:
                 continue
-            else:
+
+            v_text = v.getText()
+            if v_text is None:
+                continue
+            v_text = v_text.lower()
+            if v_text in self.preferred_buttons:
                 self.exploited_views[current_context_str].add(unique_view_str)
                 (x, y) = v.getCenter()
-                event = ContextEvent(context=current_context, event=TouchEvent(x, y))
-                v_cls_name = v.getClass().lower()
-
-                # if it is an EditText, try input something
-                from com.dtmilano.android.viewclient import EditText
-                if isinstance(v, EditText) or 'edit' in v_cls_name\
-                        or 'text' in v_cls_name or 'input' in v_cls_name:
-                    for key in self.possible_inputs.keys():
-                        if key in v.getId().lower() or key in v_cls_name:
-                            next_event = TypeEvent(text=self.possible_inputs[key])
-                            self.event_stack.append(next_event)
-                            break
-
-                # if it is a WebView, try touch randomly
-                if 'webview' in v_cls_name:
-                    webview_event_count = 0
-                    bounds = v.getBounds()
-                    while webview_event_count < self.webview_touches:
-                        webview_x = random.uniform(bounds[0][0], bounds[1][0])
-                        webview_y = random.uniform(bounds[1][1], bounds[0][1])
-                        self.event_stack.append(TouchEvent(webview_x, webview_y))
-                        webview_event_count += 1
-
+                event = TouchEvent(x, y)
+                self.event_stack.append(event)
                 self.last_event_flag = "touch"
                 return event
+
+        # no preferred view, find another
+        for v in views:
+            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
+                continue
+
+            unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
+            if unique_view_str in self.exploited_views[current_context_str]:
+                continue
+
+            self.exploited_views[current_context_str].add(unique_view_str)
+            (x, y) = v.getCenter()
+            event = ContextEvent(context=current_context, event=TouchEvent(x, y))
+            v_cls_name = v.getClass().lower()
+
+            # if it is an EditText, try input something
+            from com.dtmilano.android.viewclient import EditText
+            if isinstance(v, EditText) or 'edit' in v_cls_name\
+                    or 'text' in v_cls_name or 'input' in v_cls_name:
+                for key in self.possible_inputs.keys():
+                    if key in v.getId().lower() or key in v_cls_name:
+                        next_event = TypeEvent(text=self.possible_inputs[key])
+                        self.event_stack.append(next_event)
+                        break
+
+            # if it is a WebView, try touch randomly
+            if 'webview' in v_cls_name:
+                webview_event_count = 0
+                bounds = v.getBounds()
+                while webview_event_count < self.webview_touches:
+                    webview_x = random.uniform(bounds[0][0], bounds[1][0])
+                    webview_y = random.uniform(bounds[1][1], bounds[0][1])
+                    self.event_stack.append(TouchEvent(webview_x, webview_y))
+                    webview_event_count += 1
+
+            self.last_event_flag = "touch"
+            return event
+        # if reach here, it means droidbot has traverse current window once more
+        self.window_passes[current_context_str] += 1
+        if self.window_passes[current_context_str] < self.window_pass_limit:
+            self.exploited_views[current_context_str] = set()
+        else:
+            # Then mark this context as exploited
+            self.exploited_contexts.add(current_context_str)
+
         # if all views were exploited, TODO try scroll current view
-        # Then mark this context as exploited
-        self.exploited_contexts.add(current_context_str)
 
         self.last_event_flag += "back"
         event = ContextEvent(context=current_context, event=KeyEvent('BACK'))

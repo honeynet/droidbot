@@ -82,6 +82,8 @@ class DroidboxEvaluator(object):
         self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
                            self.droidbot_dynamic)
         self.dump(sys.stdout)
+        if not self.enabled:
+            return
         result_file = open(self.result_file_path, "w")
         self.dump(result_file)
         result_file.close()

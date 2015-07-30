@@ -3,8 +3,6 @@
 #     1. UI events. click, touch, etc
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
-import signal
-
 __author__ = 'liyc'
 import logging
 import json
@@ -12,9 +10,10 @@ import time
 import random
 import subprocess
 from threading import Timer
-from types import Intent, Device
+from types import Intent
 
 EVENT_POLICIES = [
+    "none",
     "monkey",
     "random",
     "static",
@@ -154,6 +153,7 @@ def weighted_choice(choices):
         if upto + choices[c] > r:
             return c
         upto += choices[c]
+
 
 class UnknownEventException(Exception):
     pass
@@ -347,7 +347,6 @@ class IntentEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        assert isinstance(intent, Intent)
         self.type = 'intent'
         self.intent = intent.get_cmd()
 
@@ -358,7 +357,6 @@ class IntentEvent(AppEvent):
         return IntentEvent(intent)
 
     def send(self, device):
-        assert device.get_adb() is not None
         device.get_adb().shell(self.intent)
 
 
@@ -382,7 +380,9 @@ class EmulatorEvent(AppEvent):
         self.event_data = event_data
 
     def send(self, device):
-        assert isinstance(device, Device)
+        """
+        :param device: Device
+        """
         if self.event_name == 'call':
             if self.event_data and 'phone' in self.event_data.keys():
                 phone = self.event_data['phone']
@@ -433,9 +433,9 @@ class ContextEvent(AppEvent):
         :param event: the event to perform
         """
         if event_dict is not None:
-            assert event_dict.has_key('type')
-            assert event_dict.has_key('context')
-            assert event_dict.has_key('event')
+            assert 'type' in event_dict.keys()
+            assert 'context' in event_dict.keys()
+            assert 'event' in event_dict.keys()
             assert event_dict['type'] == 'context'
             self.type = event_dict['type']
 
@@ -460,7 +460,6 @@ class ContextEvent(AppEvent):
         to send a ContextEvent:
         assert the context matches the device, then send the event
         """
-        assert isinstance(device, Device)
         if not self.context.assert_in_device(device):
             device.logger.warning("Context not in device: %s" % self.context)
         self.event.send(device)
@@ -584,7 +583,9 @@ class AppEventManager(object):
         if not self.event_interval or self.event_interval is None:
             self.event_interval = 2
 
-        if self.policy == "monkey":
+        if self.policy == "none":
+            self.event_factory = NoneEventFactory(device, app)
+        elif self.policy == "monkey":
             self.event_factory = None
         elif self.policy == "random":
             self.event_factory = RandomEventFactory(device, app)
@@ -601,6 +602,8 @@ class AppEventManager(object):
         :param event: the event to be added, should be subclass of AppEvent
         :return:
         """
+        if event is None:
+            return
         self.events.append(event)
         self.device.send_event(event)
 
@@ -694,6 +697,21 @@ class EventFactory(object):
         generate a event
         """
         raise NotImplementedError
+
+
+class NoneEventFactory(EventFactory):
+    """
+    do not send any event
+    """
+
+    def __init__(self, device, app):
+        super(NoneEventFactory, self).__init__(device, app)
+
+    def generate_event(self):
+        """
+        generate a event
+        """
+        return None
 
 
 class RandomEventFactory(EventFactory):
@@ -919,10 +937,10 @@ class FileEventFactory(EventFactory):
         for event_dict in events_array:
             if not isinstance(event_dict, dict):
                 raise UnknownEventException
-            if not event_dict.has_key('event_type'):
+            if 'event_type' not in event_dict.keys():
                 raise UnknownEventException
             event_type = event_dict['event_type']
-            if not EVENT_TYPES.has_key('event_type'):
+            if 'event_type' not in EVENT_TYPES.keys():
                 raise UnknownEventException
             EventType = EVENT_TYPES[event_type]
             event = EventType(dict=event_dict)

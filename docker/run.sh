@@ -22,6 +22,6 @@ adb shell /data/fastdroid-vnc >> /samples/out/vnc.log &
 echo -ne "\e[0m"
 echo `date` ": Start DroitBot with DroidBox"
 #TODO: If we call Python direct, a Docker stop does not send a sigterm to this python job.
-python /opt/DroidBot/start.py -a $1 -duration $duration -event static -o /samples/out/ -droidbox 2>&1 |tee /samples/out/analysis.log
+python /opt/DroidBot/start.py -a $1 -duration $duration -event dynamic -o /samples/out/ -droidbox 2>&1 |tee /samples/out/analysis.log
 echo -ne "\e[0m"
 exit

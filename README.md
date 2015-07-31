@@ -71,6 +71,22 @@ python setup.py install
 2. Start droidbot:
 `python droidbot.py -h`
 
+### Usage with Docker
+
+One Example:
+```
+# Prepare Environment:
+$ mkdir -l ~/mobileSamples/out
+$ cp mySample.apk ~/mobileSamples/
+
+# Build Docker Container
+$ git checkout feature/docker
+$ docker build -t honeynet/droidbot:V0.2 .
+
+# Run DroidBot with DroidBox in a Docker Container
+$  docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out hannol/droidbot:V0.2 /samples/mySample.apk
+```
+
 ## Evaluation
 
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 

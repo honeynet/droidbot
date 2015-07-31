@@ -238,7 +238,7 @@ class DroidboxEvaluator(object):
                        "+ event_interval=%s\n"
                        "+ event_count=%s\n\n"
                        % (self.__class__.__name__, os.path.basename(self.apk_path),
-                          self.event_duration, self.event_interval, self.event_interval))
+                          self.event_duration, self.event_interval, self.event_count))
 
         out_file.write("## Apk Info\n\n")
         out_file.write("|Item|Value|\n")

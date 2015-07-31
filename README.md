@@ -84,7 +84,7 @@ $ git checkout feature/docker
 $ docker build -t honeynet/droidbot:V0.2 .
 
 # Run DroidBot with DroidBox in a Docker Container
-$  docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out hannol/droidbot:V0.2 /samples/mySample.apk
+$  docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot:V0.2 /samples/mySample.apk
 ```
 
 ## Evaluation

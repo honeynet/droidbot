@@ -149,7 +149,7 @@ class DroidboxEvaluator(object):
         """
         if not self.enabled:
             return
-        self.droidbox = DroidBox()
+        self.droidbox = DroidBox(output_dir=None) #Set output_dir=None -> no DroidBox Result Files are created
         self.droidbox.set_apk(self.apk_path)
         self.droidbox.start_blocked(self.event_duration)
 

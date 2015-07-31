@@ -101,11 +101,12 @@ $ mkdir -l ~/mobileSamples/out
 $ cp mySample.apk ~/mobileSamples/
 
 # Build Docker Container
-$ git checkout feature/docker
+$ git clone https://github.com/lynnlyc/droidbot.git
+$ cd droidbot
 $ docker build -t honeynet/droidbot:V0.2 .
 
 # Run DroidBot with DroidBox in a Docker Container
-$  docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot:V0.2 /samples/mySample.apk
+$ docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot:V0.2 /samples/mySample.apk
 ```
 
 ## Evaluation

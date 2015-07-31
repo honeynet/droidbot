@@ -50,7 +50,7 @@ tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TA
 
 
 class DroidBox(object):
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.sendsms = {}
         self.phonecalls = {}
         self.cryptousage = {}
@@ -73,6 +73,14 @@ class DroidBox(object):
         self.applicationStarted = 0
 
         self.is_counting_logs = False
+
+        if output_dir:
+            self.output_dir = output_dir
+            if not os.path.exists(self.output_dir):
+                os.mkdir(self.output_dir)
+        else:
+            #Posibility that no output-files is generated
+            self.output_dir = None
 
     def set_apk(self, apk_name):
         if not self.enabled:
@@ -191,7 +199,13 @@ class DroidBox(object):
 
         # Collect DroidBox logs
         self.is_counting_logs = True
+        self.lastScreenshot = 0
         while self.enabled:
+            if self.output_dir and (time.time() - self.lastScreenshot) >=5:
+                #Take Screenshots every 5 seconds.
+                os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
+                          + "_$(date +%Y-%m-%d_%H%M%S).png")
+                self.lastScreenshot = time.time()
             try:
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
@@ -316,6 +330,8 @@ class DroidBox(object):
         self.adb = None
 
         print json.dumps(self.get_output())
+        with open(os.path.join(self.output_dir, "analysis.json"),"w") as jsonfile:
+            jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 
     def get_output(self):
         # Done? Store the objects in a dictionary, transform it in a JSON object and return it
@@ -628,4 +644,4 @@ if __name__ == "__main__":
     droidbox = DroidBox()
     droidbox.set_apk(apkName)
     droidbox.start_blocked(duration)
-    droidbox.get_output()
+    #droidbox.get_output() #TODO: HL: This line is useless, isn't it?

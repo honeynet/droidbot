@@ -8,11 +8,14 @@ import logging
 import json
 import time
 import random
-from types import Intent, Device, App
+import subprocess
+from threading import Timer
+from types import Intent
 
 EVENT_POLICIES = [
     "none",
     "monkey",
+    "random",
     "static",
     "dynamic",
     "file"
@@ -142,6 +145,16 @@ android.intent.action.WEB_SEARCH
 '''.splitlines()
 
 
+def weighted_choice(choices):
+    total = sum(choices[c] for c in choices.keys())
+    r = random.uniform(0, total)
+    upto = 0
+    for c in choices.keys():
+        if upto + choices[c] > r:
+            return c
+        upto += choices[c]
+
+
 class UnknownEventException(Exception):
     pass
 
@@ -150,6 +163,7 @@ class AppEvent(object):
     """
     The base class of all events
     """
+
     def to_dict(self):
         return self.__dict__
 
@@ -181,6 +195,7 @@ class KeyEvent(AppEvent):
     """
     a key pressing event
     """
+
     def __init__(self, name, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -202,6 +217,10 @@ class UIEvent(AppEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
+
+    def send(self, device):
+        raise NotImplementedError
+
     @staticmethod
     def get_random_instance(device, app):
         if not device.is_foreground(app):
@@ -224,6 +243,7 @@ class TouchEvent(UIEvent):
     """
     a touch on screen
     """
+
     def __init__(self, x, y, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -240,13 +260,14 @@ class TouchEvent(UIEvent):
 
     def send(self, device):
         assert device.get_adb() is not None
-        device.get_adb().touch(self.x, self.y)
+        device.get_adb().longTouch(self.x, self.y, duration=500)
 
 
 class LongTouchEvent(UIEvent):
     """
     a long touch on screen
     """
+
     def __init__(self, x, y, duration=2000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -271,6 +292,7 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
+
     def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -301,6 +323,7 @@ class TypeEvent(UIEvent):
     """
     type some word
     """
+
     def __init__(self, text, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -319,11 +342,11 @@ class IntentEvent(AppEvent):
     """
     An event describing an intent
     """
+
     def __init__(self, intent, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        assert isinstance(intent, Intent)
         self.type = 'intent'
         self.intent = intent.get_cmd()
 
@@ -334,7 +357,6 @@ class IntentEvent(AppEvent):
         return IntentEvent(intent)
 
     def send(self, device):
-        assert device.get_adb() is not None
         device.get_adb().shell(self.intent)
 
 
@@ -342,11 +364,14 @@ class EmulatorEvent(AppEvent):
     """
     build-in emulator event, including incoming call and incoming SMS
     """
-    def __init__(self, event_name, event_data={}, event_dict=None):
+
+    def __init__(self, event_name, event_data=None, event_dict=None):
         """
         :param event_name: name of event
         :param event_data: data of event
         """
+        if event_data is None:
+            event_data = {}
         if event_dict is not None:
             self.__dict__ = event_dict
             return
@@ -355,9 +380,11 @@ class EmulatorEvent(AppEvent):
         self.event_data = event_data
 
     def send(self, device):
-        assert isinstance(device, Device)
+        """
+        :param device: Device
+        """
         if self.event_name == 'call':
-            if self.event_data and self.event_data.has_key('phone'):
+            if self.event_data and 'phone' in self.event_data.keys():
                 phone = self.event_data['phone']
                 device.receive_call(phone)
                 time.sleep(2)
@@ -372,8 +399,8 @@ class EmulatorEvent(AppEvent):
                 device.cancel_call()
 
         elif self.event_name == 'sms':
-            if self.event_data and self.event_data.has_key('phone') \
-                and self.event_data.has_key('content'):
+            if self.event_data and 'phone' in self.event_data.keys() \
+                    and 'content' in self.event_data.keys():
                 phone = self.event_data['phone']
                 content = self.event_data['content']
                 device.receive_sms(phone, content)
@@ -388,11 +415,17 @@ class EmulatorEvent(AppEvent):
         event_name = random.choice(['call', 'sms'])
         return EmulatorEvent(event_name=event_name)
 
+
 class ContextEvent(AppEvent):
     """
     An extended event, which knows the device context in which it is performing
     This is reproducable
     """
+
+    @staticmethod
+    def get_random_instance(device, app):
+        raise NotImplementedError
+
     def __init__(self, context, event, event_dict=None):
         """
         construct an event which knows its context
@@ -400,9 +433,9 @@ class ContextEvent(AppEvent):
         :param event: the event to perform
         """
         if event_dict is not None:
-            assert event_dict.has_key('type')
-            assert event_dict.has_key('context')
-            assert event_dict.has_key('event')
+            assert 'type' in event_dict.keys()
+            assert 'context' in event_dict.keys()
+            assert 'event' in event_dict.keys()
             assert event_dict['type'] == 'context'
             self.type = event_dict['type']
 
@@ -427,8 +460,8 @@ class ContextEvent(AppEvent):
         to send a ContextEvent:
         assert the context matches the device, then send the event
         """
-        assert isinstance(device, Device)
-        assert self.context.assert_in_device(device)
+        if not self.context.assert_in_device(device):
+            device.logger.warning("Context not in device: %s" % self.context.__str__())
         self.event.send(device)
 
     def to_dict(self):
@@ -439,6 +472,7 @@ class Context(object):
     """
     base class of context
     """
+
     def assert_in_device(self, device):
         """
         assert that the context is currently in device
@@ -450,6 +484,7 @@ class ActivityNameContext(Context):
     """
     use activity name as context
     """
+
     def __init__(self, activity_name, context_dict=None):
         if context_dict is not None:
             self.__dict__ = context_dict
@@ -472,6 +507,7 @@ class WindowNameContext(Context):
     """
     use window name as context
     """
+
     def __init__(self, window_name, context_dict=None):
         if context_dict is not None:
             self.__dict__ = context_dict
@@ -500,13 +536,13 @@ class UniqueView(object):
     """
     use view unique id and its text to identify a view
     """
+
     def __init__(self, unique_id, text):
         self.unique_id = unique_id
         self.text = text
 
     def __eq__(self, other):
-        return self.unique_id == other.unique_id \
-               and self.text == other.text
+        return self.unique_id == other.unique_id and self.text == other.text
 
     def __str__(self):
         return "%s/%s" % (self.unique_id, self.text)
@@ -517,7 +553,7 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_duration=2):
+    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -526,24 +562,33 @@ class AppEventManager(object):
         :return:
         """
         self.logger = logging.getLogger('AppEventManager')
+        self.enabled = True
+
         self.device = device
         self.app = app
         self.policy = event_policy
         self.events = []
         self.event_factory = None
-        self.count = event_count
-        self.duration = event_duration
+        self.event_count = event_count
+        self.event_interval = event_interval
+        self.event_duration = event_duration
+        self.monkey = None
 
-        if not self.count or self.count == None:
-            self.count = 100
+        if not self.event_count or self.event_count is None:
+            self.event_count = 100
 
-        if not self.policy or self.policy == None:
+        if not self.policy or self.policy is None:
             self.policy = "monkey"
 
+        if not self.event_interval or self.event_interval is None:
+            self.event_interval = 2
+
         if self.policy == "none":
-            self.event_factory = None
+            self.event_factory = NoneEventFactory(device, app)
         elif self.policy == "monkey":
-            self.event_factory = DummyEventFactory(device, app)
+            self.event_factory = None
+        elif self.policy == "random":
+            self.event_factory = RandomEventFactory(device, app)
         elif self.policy == "static":
             self.event_factory = StaticEventFactory(device, app)
         elif self.policy == "dynamic":
@@ -557,16 +602,18 @@ class AppEventManager(object):
         :param event: the event to be added, should be subclass of AppEvent
         :return:
         """
+        if event is None:
+            return
         self.events.append(event)
         self.device.send_event(event)
 
-    def dump(self, file):
+    def dump(self, out_file):
         """
         dump the event information to a file
-        :param file: the file path to output the events
+        :param out_file: the file path to output the events
         :return:
         """
-        f = open(file, 'w')
+        f = open(out_file, 'w')
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
@@ -595,15 +642,32 @@ class AppEventManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
-        if self.event_factory is not None:
-            self.event_factory.start(self)
-        else:
-            monkey_cmd = "monkey %s --throttle 1000 -v %d" % (
-                ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
-                self.count
-            )
-            self.device.get_adb().shell(" ".join(monkey_cmd))
-        self.logger.info("finish sending events, policy is %s" % self.policy)
+        if self.event_duration:
+            Timer(self.event_duration, self.stop).start()
+        try:
+            if self.event_factory is not None:
+                self.event_factory.start(self)
+            else:
+                throttle = self.event_interval * 1000
+                monkey_cmd = "adb shell monkey %s --throttle %d -v %d" % (
+                    ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
+                    throttle, self.event_count)
+                self.monkey = subprocess.Popen(monkey_cmd.split(),
+                                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                while self.enabled:
+                    time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        self.logger.debug("finish sending events, policy is %s" % self.policy)
+
+    def stop(self):
+        """
+        stop sending event
+        """
+        if self.monkey:
+            self.monkey.terminate()
+            self.monkey = None
+        self.enabled = False
 
 
 class EventFactory(object):
@@ -611,6 +675,7 @@ class EventFactory(object):
     This class is responsible for generating events to stimulate more app behaviour
     It should call AppEventManager.send_event method continuously
     """
+
     def __init__(self, device, app):
         self.device = device
         self.app = app
@@ -621,10 +686,10 @@ class EventFactory(object):
         :param event_manager: instance of AppEventManager
         """
         count = 0
-        while count < event_manager.count:
+        while event_manager.enabled and count < event_manager.event_count:
             event = self.generate_event()
             event_manager.add_event(event)
-            time.sleep(event_manager.duration)
+            time.sleep(event_manager.event_interval)
             count += 1
 
     def generate_event(self):
@@ -634,23 +699,28 @@ class EventFactory(object):
         raise NotImplementedError
 
 
-def weighted_choice(choices):
-    total = sum(choices[c] for c in choices.keys())
-    r = random.uniform(0, total)
-    upto = 0
-    for c in choices.keys():
-        if upto + choices[c] > r:
-            return c
-        upto += choices[c]
+class NoneEventFactory(EventFactory):
+    """
+    do not send any event
+    """
+
+    def __init__(self, device, app):
+        super(NoneEventFactory, self).__init__(device, app)
+
+    def generate_event(self):
+        """
+        generate a event
+        """
+        return None
 
 
-class DummyEventFactory(EventFactory):
+class RandomEventFactory(EventFactory):
     """
     A dummy factory which produces AppEventManager.send_event method in a random manner
     """
 
     def __init__(self, device, app):
-        super(DummyEventFactory, self).__init__(device, app)
+        super(RandomEventFactory, self).__init__(device, app)
         self.choices = {
             UIEvent: 7,
             IntentEvent: 2,
@@ -686,7 +756,7 @@ class StaticEventFactory(EventFactory):
         generate a event
         """
         event_type = weighted_choice(self.choices)
-        if event_type == IntentEvent:
+        if event_type == IntentEvent and self.possible_broadcasts:
             event = IntentEvent(random.choice(list(self.possible_broadcasts)))
         else:
             event = event_type.get_random_instance(self.device, self.app)
@@ -713,6 +783,8 @@ class DynamicEventFactory(EventFactory):
         # which means the views are exploited in the context
         self.exploited_views = {}
         self.saved_views = {}
+        self.window_passes = {}
+        self.window_pass_limit = 3
 
         self.previous_event = None
         self.previous_activity = None
@@ -729,6 +801,11 @@ class DynamicEventFactory(EventFactory):
             'number': '1234567890'
         }
 
+        # randomized touch events for each webview
+        self.webview_touches = 5
+
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "check", "agree", "try", "go"]
+
         if self.device.is_emulator:
             self.choices = {
                 UIEvent: 40,
@@ -742,6 +819,9 @@ class DynamicEventFactory(EventFactory):
                 IntentEvent: 9,
                 KeyEvent: 1
             }
+
+        # use this flag to indicate the last sent event
+        self.last_event_flag = ""
 
     def generate_event(self):
         if self.event_stack:
@@ -774,7 +854,7 @@ class DynamicEventFactory(EventFactory):
 
         event_type = weighted_choice(self.choices)
 
-        if event_type == IntentEvent:
+        if event_type == IntentEvent and self.possible_broadcasts:
             possible_intents = self.possible_broadcasts - self.exploited_broadcasts
             if not possible_intents:
                 possible_intents = self.possible_broadcasts
@@ -782,57 +862,138 @@ class DynamicEventFactory(EventFactory):
             intent = random.choice(list(possible_intents))
             self.exploited_broadcasts.add(intent)
             intent_event = IntentEvent(intent=intent)
+
             return ContextEvent(context=current_context, event=intent_event)
 
         if event_type == KeyEvent or event_type == EmulatorEvent:
             event = KeyEvent.get_random_instance(self.device, self.app)
+
             return ContextEvent(context=current_context, event=event)
 
-        # if the current activity is exploited, try go back
+        # if the current context is exploited, try go back
         if current_context_str in self.exploited_contexts:
-            event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
-            return event
+            if self.last_event_flag.endswith("start_app+back+start_app"):
+                # It seems the views in app is all explored
+                # Then give it another pass
+                self.exploited_contexts.clear()
+                self.exploited_services.clear()
+                self.exploited_broadcasts.clear()
+                self.saved_views.clear()
+                self.window_passes.clear()
+                self.exploited_views.clear()
+            elif self.last_event_flag.endswith("back+back+back"):
+                # It seems the app can not be back, try use HOME key
+                self.last_event_flag += "+home"
+                event = ContextEvent(context=current_context, event=KeyEvent('HOME'))
+                return event
+            elif self.last_event_flag.endswith("back+back+home"):
+                # HOME key also does not work
+                self.device.logger.warning("This app might have hijacked the device!")
+                # we have to continue interacting with this app
+                self.exploited_contexts.clear()
+                self.exploited_services.clear()
+                self.exploited_broadcasts.clear()
+                self.saved_views.clear()
+                self.window_passes.clear()
+                self.exploited_views.clear()
+            else:
+                self.last_event_flag += "+back"
+                event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
+                return event
 
         if not self.device.is_foreground(self.app):
-            return IntentEvent(Intent(suffix="%s/%s" %
-                                             (self.app.get_package_name(),
-                                              self.app.get_main_activity())))
+            if self.last_event_flag.endswith("+start_app"):
+                # It seems the app stuck at some state, and cannot be started
+                # just pass to let viewclient deal with this case
+                pass
+            else:
+                self.last_event_flag += "+start_app"
+                return IntentEvent(Intent(suffix="%s/%s" %
+                                                 (self.app.get_package_name(),
+                                                  self.app.get_main_activity())))
 
-        if not self.exploited_views.has_key(current_context_str):
+        if current_context_str not in self.exploited_views.keys():
             self.exploited_views[current_context_str] = set()
 
         # if no views were saved, dump view via AndroidViewClient
-        if not self.saved_views.has_key(current_context_str):
+        if current_context_str not in self.saved_views.keys():
             views = self.device.get_view_client().dump(window=focused_window.winId)
             self.saved_views[current_context_str] = views
+            self.window_passes[current_context_str] = 0
         else:
             views = self.saved_views[current_context_str]
 
         # then find a view to send UI event
         random.shuffle(views)
+
+        # find preferred view
         for v in views:
             if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
                 continue
+
             unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
             if unique_view_str in self.exploited_views[current_context_str]:
                 continue
-            else:
+
+            v_text = v.getText()
+            if v_text is None:
+                continue
+            v_text = v_text.lower()
+            if v_text in self.preferred_buttons:
                 self.exploited_views[current_context_str].add(unique_view_str)
                 (x, y) = v.getCenter()
-                event = ContextEvent(context=current_context, event=TouchEvent(x, y))
-                # if it is an EditText, try input something
-                from com.dtmilano.android.viewclient import EditText
-
-                if isinstance(v, EditText) or v.getClass().__contains__('EditText'):
-                    for key in self.possible_inputs.keys():
-                        if v.getId().__contains__(key) or v.getClass().__contains__(key):
-                            next_event = TypeEvent(text=self.possible_inputs[key])
-                            self.event_stack.append(next_event)
-                            break
+                event = TouchEvent(x, y)
+                self.event_stack.append(event)
+                self.last_event_flag = "touch"
                 return event
+
+        # no preferred view, find another
+        for v in views:
+            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
+                continue
+
+            unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
+            if unique_view_str in self.exploited_views[current_context_str]:
+                continue
+
+            self.exploited_views[current_context_str].add(unique_view_str)
+            (x, y) = v.getCenter()
+            event = ContextEvent(context=current_context, event=TouchEvent(x, y))
+            v_cls_name = v.getClass().lower()
+
+            # if it is an EditText, try input something
+            from com.dtmilano.android.viewclient import EditText
+            if isinstance(v, EditText) or 'edit' in v_cls_name\
+                    or 'text' in v_cls_name or 'input' in v_cls_name:
+                for key in self.possible_inputs.keys():
+                    if key in v.getId().lower() or key in v_cls_name:
+                        next_event = TypeEvent(text=self.possible_inputs[key])
+                        self.event_stack.append(next_event)
+                        break
+
+            # if it is a WebView, try touch randomly
+            if 'webview' in v_cls_name:
+                webview_event_count = 0
+                bounds = v.getBounds()
+                while webview_event_count < self.webview_touches:
+                    webview_x = random.uniform(bounds[0][0], bounds[1][0])
+                    webview_y = random.uniform(bounds[1][1], bounds[0][1])
+                    self.event_stack.append(TouchEvent(webview_x, webview_y))
+                    webview_event_count += 1
+
+            self.last_event_flag = "touch"
+            return event
+        # if reach here, it means droidbot has traverse current window once more
+        self.window_passes[current_context_str] += 1
+        if self.window_passes[current_context_str] < self.window_pass_limit:
+            self.exploited_views[current_context_str] = set()
+        else:
+            # Then mark this context as exploited
+            self.exploited_contexts.add(current_context_str)
+
         # if all views were exploited, TODO try scroll current view
-        # Then mark this context as exploited
-        self.exploited_contexts.add(current_context_str)
+
+        self.last_event_flag += "back"
         event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
         return event
 
@@ -852,24 +1013,25 @@ class FileEventFactory(EventFactory):
     """
     factory which produces events from file
     """
-    def __init__(self, device, app, file):
+
+    def __init__(self, device, app, in_file):
         """
         create a FileEventFactory from a json file
-        :param file path string
+        :param in_file path string
         """
         super(FileEventFactory, self).__init__(device, app)
         self.events = []
-        self.file = file
-        f = open(file, 'r')
+        self.file = in_file
+        f = open(in_file, 'r')
         events_json = f.readall()
         events_array = json.loads(events_json)
         for event_dict in events_array:
             if not isinstance(event_dict, dict):
                 raise UnknownEventException
-            if not event_dict.has_key('event_type'):
+            if 'event_type' not in event_dict.keys():
                 raise UnknownEventException
             event_type = event_dict['event_type']
-            if not EVENT_TYPES.has_key('event_type'):
+            if 'event_type' not in EVENT_TYPES.keys():
                 raise UnknownEventException
             EventType = EVENT_TYPES[event_type]
             event = EventType(dict=event_dict)

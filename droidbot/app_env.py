@@ -9,11 +9,7 @@ __author__ = 'liyc'
 
 import logging
 import json
-import random
 import time
-import threading
-
-from types import Device, App, Intent
 
 ENV_POLICIES = [
     "none",
@@ -52,7 +48,9 @@ class StaticAppEnv(AppEnv):
     """
     This class describes a static environment attribute of device
     """
-    pass
+
+    def deploy(self, device):
+        raise NotImplementedError
 
 
 class DynamicAppEnv(AppEnv):
@@ -60,7 +58,9 @@ class DynamicAppEnv(AppEnv):
     This class describes a dynamic environment attribute of device
     usually we need to start a thread for this
     """
-    pass
+
+    def deploy(self, device):
+        raise NotImplementedError
 
 
 class ContactAppEnv(StaticAppEnv):
@@ -221,7 +221,7 @@ class AppEnvManager(object):
         self.policy = env_policy
         self.envs = []
 
-        if not self.policy or self == None:
+        if not self.policy:
             self.policy = "none"
 
         if self.policy == "none":
@@ -244,32 +244,31 @@ class AppEnvManager(object):
     def deploy(self):
         """
         deploy the environments to device (Emulator)
-        :param device:
         :return:
         """
         self.logger.info("start deploying environment, policy is %s" % self.policy)
-        if self.env_factory != None:
-            self.envs = self.generateFromFactory(self.env_factory)
+        if self.env_factory is not None:
+            self.envs = self.generate_from_factory(self.env_factory)
         if self.envs is None:
             return
         for env in self.envs:
             self.device.add_env(env)
-        self.logger.info("finish deploying environment, policy is %s" % self.policy)
+        self.logger.debug("finish deploying environment, policy is %s" % self.policy)
 
-    def dump(self, file):
+    def dump(self, env_file):
         """
         dump the environment information to a file
-        :param file: the file path to output the environment
+        :param env_file: the file path to output the environment
         :return:
         """
-        f = open(file, 'w')
+        f = open(env_file, 'w')
         env_array = []
         for env in self.envs:
             env_array.append(env.to_dict())
         env_json = json.dumps(env_array)
         f.write(env_json)
 
-    def generateFromFactory(self, app_env_factory):
+    def generate_from_factory(self, app_env_factory):
         """
         generate the environment of app from factory
         :param app_env_factory: the AppEnvFactory instance used to generate
@@ -294,12 +293,7 @@ class DummyEnvFactory(AppEnvFactory):
         """
         produce a list of dummy environment
         """
-        envs = []
-        envs.append(ContactAppEnv())
-        envs.append(SettingsAppEnv())
-        envs.append(CallLogEnv())
-        envs.append(SMSLogEnv())
-        envs.append(GPSAppEnv())
+        envs = [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv()]
         return envs
 
 
@@ -311,7 +305,7 @@ class StaticEnvFactory(AppEnvFactory):
     def __init__(self, app):
         """
         create a StaticEnvFactory from app analysis result
-        :param instance of App
+        :param App
         """
         self.app = app
 
@@ -342,14 +336,14 @@ class FileEnvFactory(AppEnvFactory):
     A factory which generate environment from file
     """
 
-    def __init__(self, file):
+    def __init__(self, env_file):
         """
         create a FileEnvFactory from a json file
-        :param file path string
+        :param env_file path string
         """
         self.envs = []
-        self.file = file
-        f = open(file, 'r')
+        self.file = env_file
+        f = open(env_file, 'r')
         env_json = f.readall()
         env_array = json.loads(env_json)
         for env_dict in env_array:

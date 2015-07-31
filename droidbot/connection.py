@@ -161,7 +161,7 @@ class TelnetConsole(object):
         from telnetlib import Telnet
         self.console = Telnet(self.host, self.port)
         if self.check_connectivity():
-            self.logger.info("telnet successfully initiated, the addr is (%s:%d)" % (self.host, self.port))
+            self.logger.debug("telnet successfully initiated, the addr is (%s:%d)" % (self.host, self.port))
         else:
             raise TelnetException()
 
@@ -209,7 +209,7 @@ class TelnetConsole(object):
         disconnect telnet
         """
         self.console.close()
-        self.logger.info("disconnected")
+        self.logger.debug("disconnected")
 
 
 class MonkeyRunner(object):
@@ -231,7 +231,7 @@ class MonkeyRunner(object):
         self.run_cmd('from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice')
         self.run_cmd('device=MonkeyRunner.waitForConnection(5,\'%s\')' % device.serial)
         if self.check_connectivity():
-            self.logger.info("monkeyrunner successfully initiated, the device is %s" % device.serial)
+            self.logger.debug("monkeyrunner successfully initiated, the device is %s" % device.serial)
         else:
             raise MonkeyRunnerException()
 
@@ -289,4 +289,4 @@ class MonkeyRunner(object):
         """
         self.running = False
         self.console.terminate()
-        self.logger.info("disconnected")
+        self.logger.debug("disconnected")

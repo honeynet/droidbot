@@ -71,6 +71,42 @@ python setup.py install
 2. Start droidbot:
 `python droidbot.py -h`
 
+### Usage with DroidBox (without docker)
+
+```
+# Step 1. Start droidbox emulator
+# 1.1 Download DroidBox image
+$ wget https://droidbox.googlecode.com/files/DroidBox411RC.tar.gz
+$ tar xfz DroidBox411RC.tar.gz
+
+# 1.2 Create an avd named droidbox
+# You can either use android avd manager or use `android create avd` command.
+
+# 1.3 Start the avd with droidbox image
+$ cd DroidBox411RC
+$ sh startemu.sh droidbox
+
+# Step 2. Start droidbot
+$ git clone https://github.com/lynnlyc/droidbot.git
+$ cd droidbot
+$ python start.py -a <sample.apk> -event dynamic -duration 100
+```
+
+### Usage with Docker
+
+One Example:
+```
+# Prepare Environment:
+$ mkdir -l ~/mobileSamples/out
+$ cp mySample.apk ~/mobileSamples/
+
+# Build Docker Container
+$ git checkout feature/docker
+$ docker build -t honeynet/droidbot:V0.2 .
+
+# Run DroidBot with DroidBox in a Docker Container
+$  docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot:V0.2 /samples/mySample.apk
+
 ## Evaluation
 
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 

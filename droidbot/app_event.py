@@ -872,7 +872,8 @@ class DynamicEventFactory(EventFactory):
 
         # if the current context is exploited, try go back
         if current_context_str in self.exploited_contexts:
-            if self.last_event_flag.endswith("start_app+back+start_app"):
+            if self.last_event_flag.endswith("start_app+back+start_app") or \
+                    self.last_event_flag.endswith("start_app+back+back+home+start_app"):
                 # It seems the views in app is all explored
                 # Then give it another pass
                 self.exploited_contexts.clear()
@@ -881,7 +882,7 @@ class DynamicEventFactory(EventFactory):
                 self.saved_views.clear()
                 self.window_passes.clear()
                 self.exploited_views.clear()
-            elif self.last_event_flag.endswith("back+back+back"):
+            elif self.last_event_flag.endswith("back+back"):
                 # It seems the app can not be back, try use HOME key
                 self.last_event_flag += "+home"
                 event = ContextEvent(context=current_context, event=KeyEvent('HOME'))

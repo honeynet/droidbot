@@ -94,19 +94,27 @@ $ python start.py -a <sample.apk> -event dynamic -duration 100
 
 ### Usage with Docker
 
-One Example:
+Prepare the environment on your host by creating a folder to be shared with the **DroidBot** Docker container. The folder will be used to load samples to be analyzed in **DroidBot**, and also to store output results from **DroidBot** analysis.
 ```
-# Prepare Environment:
-$ mkdir -l ~/mobileSamples/out
-$ cp mySample.apk ~/mobileSamples/
+mkdir -p ~/mobileSamples/out
+```
 
-# Build Docker Container
-$ git clone https://github.com/lynnlyc/droidbot.git
-$ cd droidbot
-$ docker build -t honeynet/droidbot:V0.2 .
+Now pull the ready-made Docker container (about 1.8 GB after extraction) from Honeynet Project's hub:
+```
+docker pull honeynet/droidbot
+```
 
-# Run DroidBot with DroidBox in a Docker Container
-$ docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot:V0.2 /samples/mySample.apk
+or, if you prefer, build your own from the GitHub repo:
+```
+git clone https://github.com/lynnlyc/droidbot.git
+docker build -t honeynet/droidbot droidbot
+```
+
+To run the analysis, copy your sample to the folder you created above, then start the container; you will find results in the "out" subfolder.
+```
+cp mySample.apk ~/mobileSamples/
+docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot /samples/mySample.apk
+ls ~/mobileSamples/out
 ```
 
 ## Evaluation

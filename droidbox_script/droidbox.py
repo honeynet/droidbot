@@ -50,7 +50,7 @@ tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TA
 
 
 class DroidBox(object):
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.sendsms = {}
         self.phonecalls = {}
         self.cryptousage = {}
@@ -67,13 +67,20 @@ class DroidBox(object):
 
         self.adb = None
 
+        self.application = None
         self.apk_name = None
         self.apk_hashes = None
-        self.apk_enfperm = None
-        self.apk_recvsaction = None
         self.applicationStarted = 0
 
         self.is_counting_logs = False
+
+        if output_dir:
+            self.output_dir = output_dir
+            if not os.path.exists(self.output_dir):
+                os.mkdir(self.output_dir)
+        else:
+            #Posibility that no output-files is generated
+            self.output_dir = None
 
     def set_apk(self, apk_name):
         if not self.enabled:
@@ -87,28 +94,17 @@ class DroidBox(object):
 
         self.apk_name = os.path.abspath(apk_name)
 
-        application = Application(apk_name)
-        ret = application.processAPK()
+        self.application = Application(apk_name)
+        ret = self.application.processAPK()
 
         # Error during the APK processing?
         if ret == 0:
             print("Failed to analyze the APK. Terminate the analysis.")
             sys.exit(1)
 
-        activities = application.getActivities()
-        main_activity = application.getMainActivity()
-        package_name = application.getPackage()
-
-        recvsaction = application.getRecvsaction()
-        enfperm = application.getEnfperm()
-
-        self.apk_recvsaction = recvsaction
-        self.apk_enfperm = enfperm
-
-        # Get the hashes
-        hashes = application.getHashes()
-
-        self.apk_hashes = hashes
+        main_activity = self.application.getMainActivity()
+        package_name = self.application.getPackage()
+        self.apk_hashes = self.application.getHashes()
 
         # No Main acitvity found? Return an error
         if main_activity == None:
@@ -121,9 +117,10 @@ class DroidBox(object):
             sys.exit(1)
 
         # Execute the application
-        call(['adb', 'logcat', '-c'])
-        ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name, package_name, main_activity], stderr=PIPE,
-                   cwd=os.path.dirname(os.path.realpath(__file__)))
+        call(["adb", "logcat", "-c"])
+        ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name,
+                    package_name, main_activity], stderr=PIPE,
+                    cwd=os.path.dirname(os.path.realpath(__file__)))
 
         if (ret == 1):
             print("Failed to execute the application.")
@@ -202,7 +199,13 @@ class DroidBox(object):
 
         # Collect DroidBox logs
         self.is_counting_logs = True
+        self.lastScreenshot = 0
         while self.enabled:
+            if self.output_dir and (time.time() - self.lastScreenshot) >=5:
+                #Take Screenshots every 5 seconds.
+                os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
+                          + "_$(date +%Y-%m-%d_%H%M%S).png")
+                self.lastScreenshot = time.time()
             try:
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
@@ -212,6 +215,8 @@ class DroidBox(object):
                 if len(boxlog) > 1:
                     try:
                         load = json.loads(decode(boxlog[1]))
+
+                        self.filter_noises(load)
 
                         # DexClassLoader
                         if load.has_key('DexClassLoader'):
@@ -325,6 +330,8 @@ class DroidBox(object):
         self.adb = None
 
         print json.dumps(self.get_output())
+        with open(os.path.join(self.output_dir, "analysis.json"),"w") as jsonfile:
+            jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 
     def get_output(self):
         # Done? Store the objects in a dictionary, transform it in a JSON object and return it
@@ -347,8 +354,8 @@ class DroidBox(object):
         output["phonecalls"] = self.phonecalls
         output["cryptousage"] = self.cryptousage
 
-        output["recvsaction"] = self.apk_recvsaction
-        output["enfperm"] = self.apk_enfperm
+        output["recvsaction"] = self.application.getRecvsaction()
+        output["enfperm"] = self.application.getEnfperm()
 
         output["hashes"] = self.apk_hashes
         output["apkName"] = self.apk_name
@@ -377,6 +384,46 @@ class DroidBox(object):
 
         return output
 
+    def filter_noises(self, log):
+        """
+        filter use less noises from log
+        :param log: log of Droidbox in dict format
+        :return: boolean
+        """
+        if isinstance(log, dict):
+            # DexClassLoader
+            if 'DexClassLoader' in log.keys():
+                if log['DexClassLoader']['path'] in DEXCLASSLOADER_EXCLUDED:
+                    log.pop('DexClassLoader')
+
+            # fdaccess
+            if 'FdAccess' in log.keys():
+                for excluded_prefix in FDACCESS_EXCLUDED_PREFIX:
+                    if hexToStr(log['FdAccess']['path']).startswith(excluded_prefix):
+                        log.pop('FdAccess')
+                        break
+
+            # file read or write
+            if 'FileRW' in log.keys():
+                if log['FileRW']['id'] not in self.accessedfiles.keys():
+                    log.pop('FileRW')
+
+        return log
+
+
+DEXCLASSLOADER_EXCLUDED = [
+    "/system/framework/monkey.jar",
+    "/system/framework/input.jar",
+    "/system/framework/am.jar",
+]
+
+
+FDACCESS_EXCLUDED_PREFIX = [
+    "pipe:",
+    "socket:",
+    "/dev/input/event",
+]
+
 
 class CountingThread(Thread):
     """
@@ -400,8 +447,7 @@ class CountingThread(Thread):
         self.stop = True
 
     def increaseCount(self):
-
-        self.logs = self.logs + 1
+        self.logs += 1
 
     def run(self):
         """
@@ -505,6 +551,9 @@ class Application:
     def getActivities(self):
         return self.activities
 
+    def getPermissions(self):
+        return self.permissions
+
     def getRecvActions(self):
         return self.recvsaction
 
@@ -517,7 +566,6 @@ class Application:
         Calculate MD5,SHA-1, SHA-256
         hashes of APK input file
         """
-
         md5 = hashlib.md5()
         sha1 = hashlib.sha1()
         sha256 = hashlib.sha256()
@@ -596,4 +644,4 @@ if __name__ == "__main__":
     droidbox = DroidBox()
     droidbox.set_apk(apkName)
     droidbox.start_blocked(duration)
-    droidbox.get_output()
+    # droidbox.get_output()

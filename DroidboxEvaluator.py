@@ -1,7 +1,6 @@
 # Evaluate droidbot with droidbox
 # basic idea is:
 # A tool is better if more droidbox logs are generated when using the tool
-# TODO complete this file
 import argparse
 
 __author__ = 'yuanchun'
@@ -28,16 +27,14 @@ class DroidboxEvaluator(object):
     MODE_DYNAMIC = "5.dynamic"
 
     def __init__(self, device_serial, apk_path, event_duration, event_count, event_interval, output_dir):
-        self.logger = logging.getLogger('DroidboxEvaluator')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.device_serial = device_serial,
         self.apk_path = os.path.abspath(apk_path)
         if output_dir is None:
-            output_dir = "evaluate_reports/"
+            output_dir = "evaluation_reports/"
         now = datetime.now()
-        self.report_title = "Evaluation Report %d-%d-%d %d:%d.md" % \
-                            (now.year, now.month, now.day, now.hour, now.minute)
-        result_file_name = "%d-%d-%d-evaluation-report-%d:%d.md" % \
-                           (now.year, now.month, now.day, now.hour, now.minute)
+        self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
+        result_file_name = self.report_title + ".md"
         self.result_file_path = os.path.abspath(os.path.join(output_dir, result_file_name))
 
         self.event_duration = event_duration
@@ -61,9 +58,9 @@ class DroidboxEvaluator(object):
 
         self.logger.info("Evaluator initialized")
         self.logger.info("apk_path:%s\n"
-                         "duration:%d\ncount:%d\ninteval:%d\n" %
+                         "duration:%d\ncount:%d\ninteval:%d\nreport title:%s" %
                          (self.apk_path, self.event_duration,
-                          self.event_count, self.event_interval))
+                          self.event_count, self.event_interval, self.report_title))
 
         self.enabled = True
 
@@ -85,6 +82,8 @@ class DroidboxEvaluator(object):
         self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
                            self.droidbot_dynamic)
         self.dump(sys.stdout)
+        if not self.enabled:
+            return
         result_file = open(self.result_file_path, "w")
         self.dump(result_file)
         result_file.close()
@@ -99,6 +98,8 @@ class DroidboxEvaluator(object):
         if not self.enabled:
             return
         self.logger.info("evaluating [%s] mode" % mode)
+        self.droidbot = None
+        self.droidbox = None
         target_thread = threading.Thread(target=target)
         target_thread.start()
         self.wait_for_droidbox()
@@ -109,10 +110,8 @@ class DroidboxEvaluator(object):
     def stop_modules(self):
         if self.droidbox is not None:
             self.droidbox.stop()
-            self.droidbox = None
         if self.droidbot is not None:
             self.droidbot.stop()
-            self.droidbot = None
 
     def wait_for_droidbox(self):
         # wait until droidbox starts counting
@@ -150,7 +149,7 @@ class DroidboxEvaluator(object):
         """
         if not self.enabled:
             return
-        self.droidbox = DroidBox()
+        self.droidbox = DroidBox(output_dir=None) #Set output_dir=None -> no DroidBox Result Files are created
         self.droidbox.set_apk(self.apk_path)
         self.droidbox.start_blocked(self.event_duration)
 
@@ -180,32 +179,28 @@ class DroidboxEvaluator(object):
         try droidbot "monkey" mode
         :return:
         """
-        self.start_droidbot(env_policy="none",
-                            event_policy="monkey")
+        self.start_droidbot(env_policy="none", event_policy="monkey")
 
     def droidbot_random(self):
         """
         try droidbot "random" mode
         :return:
         """
-        self.start_droidbot(env_policy="none",
-                            event_policy="random")
+        self.start_droidbot(env_policy="none", event_policy="random")
 
     def droidbot_static(self):
         """
         try droidbot "static" mode
         :return:
         """
-        self.start_droidbot(env_policy="none",
-                            event_policy="static")
+        self.start_droidbot(env_policy="none", event_policy="static")
 
     def droidbot_dynamic(self):
         """
         try droidbot "dynamic" mode
         :return:
         """
-        self.start_droidbot(env_policy="none",
-                            event_policy="dynamic")
+        self.start_droidbot(env_policy="none", event_policy="dynamic")
 
     def result_safe_get(self, mode_tag=None, time_tag=None, item_tag=None):
         """
@@ -234,7 +229,31 @@ class DroidboxEvaluator(object):
             modes.sort()
 
         out_file.write("# %s\n\n" % self.report_title)
-        out_file.write("## Data\n\n")
+
+        out_file.write("## About\n\n")
+        out_file.write("This report is generated automatically by %s "
+                       "with options:\n\n"
+                       "+ apk_path=%s\n"
+                       "+ event_duration=%s\n"
+                       "+ event_interval=%s\n"
+                       "+ event_count=%s\n\n"
+                       % (self.__class__.__name__, os.path.basename(self.apk_path),
+                          self.event_duration, self.event_interval, self.event_count))
+
+        out_file.write("## Apk Info\n\n")
+        out_file.write("|Item|Value|\n")
+        out_file.write("|----|----|\n")
+        out_file.write("|Package Name|%s|\n" % self.droidbox.application.getPackage())
+        out_file.write("|Main Activity|%s|\n" % self.droidbox.application.getMainActivity())
+        out_file.write("|Hash (md5)|%s|\n" % self.droidbox.apk_hashes[0])
+        out_file.write("|Hash (sha1)|%s|\n" % self.droidbox.apk_hashes[1])
+        out_file.write("|Hash (sha256)|%s|\n\n" % self.droidbox.apk_hashes[2])
+
+        out_file.write("### Permissions\n\n")
+        for permission in self.droidbox.application.getPermissions():
+            out_file.write("+ %s\n" % permission)
+
+        out_file.write("\n## Data\n\n")
         out_file.write("### Summary\n\n")
         # gen head lines
         th1 = "|\tcategory\t|"
@@ -301,20 +320,20 @@ def parse_args():
     parse command line input
     generate options including host name, port number
     """
-    parser = argparse.ArgumentParser(description="Run different testing bots on droidbox, "
-                                                 "and compare their log counts.",
+    description = "Run different testing bots on droidbox, and compare their log counts."
+    parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-d", action="store", dest="device_serial", nargs='?',
+    parser.add_argument("-d", action="store", dest="device_serial",
                         help="serial number of target device")
-    parser.add_argument("-a", action="store", dest="app_path", nargs='?', required=True,
+    parser.add_argument("-a", action="store", dest="apk_path", required=True,
                         help="file path of target app, necessary for static analysis")
-    parser.add_argument("-count", action="store", dest="event_count", nargs='?',
+    parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="number of events to generate during testing")
-    parser.add_argument("-interval", action="store", dest="event_interval", nargs="?",
+    parser.add_argument("-interval", action="store", dest="event_interval",
                         type=int, help="interval between two events (seconds)")
-    parser.add_argument("-duration", action="store", dest="event_duration", nargs="?",
+    parser.add_argument("-duration", action="store", dest="event_duration",
                         type=int, help="duration of droidbot running (seconds)")
-    parser.add_argument("-o", action="store", dest="output_dir", nargs='?',
+    parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
     options = parser.parse_args()
     # print options
@@ -326,9 +345,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     evaluator = DroidboxEvaluator(
         device_serial=opts.device_serial,
-        apk_path=opts.app_path,
+        apk_path=opts.apk_path,
         event_duration=opts.event_duration,
-        event_count=opts.event_duration,
+        event_count=opts.event_count,
         event_interval=opts.event_interval,
         output_dir=opts.output_dir,
     )

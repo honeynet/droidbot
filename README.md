@@ -1,15 +1,15 @@
-# droidbot
+# DroidBot
 
 ## About
-A robot which automatically interacts with app in Droidbox.
+A robot which automatically interacts with Android app.
 
-droidbot sends keyevent, gestures and simulates system events 
+DroidBot sends keyevent, gestures and simulates system events 
 in order to exploit more app states automatically.
 droidbot decides which actions to take based on static analysis result of app 
 and dynamic device information (view hierarchy).
 
 ## Introduction
-droidbot mainly does following two things:
+DroidBot mainly does following two things:
 
 1. Setting up device environments, include the contacts, SMS logs, 
 call logs, GPS mocking, etc. The target app may have access to these resources, thus we 
@@ -28,6 +28,7 @@ keyevents, and simulated broadcasts, etc.
 
     Similarly, we have several policies to produce events:
     
+    + `none` policy which does not send any event;
     + `monkey` policy which make use of adb `monkey` tool, to produce randomized events;
     + `random` policy which sends randomized events to device
     + `static` policy produces a list of events based on static information of app. Eg. 
@@ -52,7 +53,7 @@ it records much information we don't need.
 1. `Java` version `1.6+`
 2. `Python` version `2.7`
 3. `Android SDK`, and `platform_tools` and `tools` added to `PATH`
-4. `Droidbox` version `4.1.1`
+4. (Optional) `DroidBox` version `4.1.1`
 
 ## Installation
 
@@ -66,14 +67,60 @@ python setup.py install
 
 ## Usage
 
-1. Run `droidbox`, and install target app.
+1. Start an emulator (recommended) or connect to a device using adb.
 2. Start droidbot:
 `python droidbot.py -h`
+
+### Usage with DroidBox (without docker)
+
+```
+# Step 1. Start droidbox emulator
+# 1.1 Download DroidBox image
+$ wget https://droidbox.googlecode.com/files/DroidBox411RC.tar.gz
+$ tar xfz DroidBox411RC.tar.gz
+
+# 1.2 Create an avd named droidbox
+# You can either use android avd manager or use `android create avd` command.
+
+# 1.3 Start the avd with droidbox image
+$ cd DroidBox411RC
+$ sh startemu.sh droidbox
+
+# Step 2. Start droidbot
+$ git clone https://github.com/lynnlyc/droidbot.git
+$ cd droidbot
+$ python start.py -a <sample.apk> -event dynamic -duration 100
+```
+
+### Usage with Docker
+
+Prepare the environment on your host by creating a folder to be shared with the **DroidBot** Docker container. The folder will be used to load samples to be analyzed in **DroidBot**, and also to store output results from **DroidBot** analysis.
+```
+mkdir -p ~/mobileSamples/out
+```
+
+Now pull the ready-made Docker container (about 1.8 GB after extraction) from Honeynet Project's hub:
+```
+docker pull honeynet/droidbot
+```
+
+or, if you prefer, build your own from the GitHub repo:
+```
+git clone https://github.com/lynnlyc/droidbot.git
+docker build -t honeynet/droidbot droidbot
+```
+
+To run the analysis, copy your sample to the folder you created above, then start the container; you will find results in the "out" subfolder.
+```
+cp mySample.apk ~/mobileSamples/
+docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot /samples/mySample.apk
+ls ~/mobileSamples/out
+```
 
 ## Evaluation
 
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
-and adb monkey tool. The results are in [result](/evaluate_results/README.md).
+and adb monkey tool. The results are in [result](/evaluation_reports/README.md).
 
 Or see my visualized evaluation reports at [DroidBot Posts](http://lynnlyc.github.io/droidbot/).
 

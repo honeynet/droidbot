@@ -6,7 +6,6 @@ import argparse
 
 __author__ = 'yuanchun'
 import os
-import re
 import logging
 import sys
 import threading
@@ -30,7 +29,7 @@ class DroidboxEvaluator(object):
 
     def __init__(self, device_serial, apk_path, event_duration, event_count, event_interval, output_dir):
         self.logger = logging.getLogger('DroidboxEvaluator')
-        self.device_serial=device_serial,
+        self.device_serial = device_serial,
         self.apk_path = os.path.abspath(apk_path)
         if output_dir is None:
             output_dir = "evaluate_reports/"
@@ -158,9 +157,6 @@ class DroidboxEvaluator(object):
     def start_droidbot(self, env_policy, event_policy):
         """
         start droidbot with given arguments
-        :param apk_path: path to target apk
-        :param count: number of events
-        :param interval: interval of each two events
         :param env_policy: policy to deploy environment
         :param event_policy: policy to send events
         :return:
@@ -211,8 +207,7 @@ class DroidboxEvaluator(object):
         self.start_droidbot(env_policy="none",
                             event_policy="dynamic")
 
-
-    def result_safe_get(self, mode_tag = None, time_tag = None, item_tag = None):
+    def result_safe_get(self, mode_tag=None, time_tag=None, item_tag=None):
         """
         get an item from result
         """
@@ -273,7 +268,6 @@ class DroidboxEvaluator(object):
             tl += "\n"
             out_file.write(tl)
 
-
         out_file.write("\n### Tendency\n\n")
         # gen head lines
         th1 = "|\ttime\t|"
@@ -307,7 +301,8 @@ def parse_args():
     parse command line input
     generate options including host name, port number
     """
-    parser = argparse.ArgumentParser(description="Run different testing bots on droidbox, and compare their log counts.",
+    parser = argparse.ArgumentParser(description="Run different testing bots on droidbox, "
+                                                 "and compare their log counts.",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial", nargs='?',
                         help="serial number of target device")

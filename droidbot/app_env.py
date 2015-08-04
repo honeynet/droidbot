@@ -170,9 +170,9 @@ class SMSLogEnv(StaticAppEnv):
 
     def deploy(self, device):
         if self.sms_in:
-            device.receive_sms(self.phone, self.content)
+            return device.receive_sms(self.phone, self.content)
         else:
-            device.send_sms(self.phone, self.content)
+            return device.send_sms(self.phone, self.content)
 
 
 class GPSAppEnv(DynamicAppEnv):

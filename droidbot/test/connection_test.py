@@ -19,6 +19,7 @@ class TestADB(TestCase):
         r = self.adb.run_cmd("get-state")
         self.assertTrue(r.startswith('device'))
 
+
 class TestTelnet(TestCase):
     def setUp(self):
         self.telnet = TelnetConsole(Device())
@@ -32,10 +33,11 @@ class TestTelnet(TestCase):
         self.assertTrue(self.telnet.run_cmd(['help']))
         self.assertFalse(self.telnet.run_cmd("unknown"))
 
+
 class TestMonkeyRunner(TestCase):
     def setUp(self):
         self.monkeyrunner = MonkeyRunner(Device())
 
     def test_connect(self):
-        self.assertTrue(self.telnet.check_connectivity())
+        self.assertTrue(self.monkeyrunner.check_connectivity())
         self.monkeyrunner.disconnect()

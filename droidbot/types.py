@@ -231,8 +231,7 @@ class Device(object):
         # unlock screen
         self.get_adb().unlock()
 
-        # TODO set screen to never locked
-        # TODO skip first-use turorials
+        # DOWN skip first-use turorials, we don't have to
 
     def add_env(self, env):
         """
@@ -475,12 +474,20 @@ class App(object):
         """
         if self.app_path is not None:
             return self.app_path
+        if self.package_name is None:
+            self.logger.warning("Trying to get app path without package name")
+            return None
         # if we only have package name, use `adb pull` to get the package from device
-        # TODO implement this
-        return NotImplementedError
-        from droidbot import DroidBot
-        out_dir = DroidBot.get_instance().output_dir
-        self.app_path = os.path.join(out_dir, 'temp', "%s.apk" % self.package_name)
+        try:
+            from droidbot import DroidBot
+            app_path_in_device = DroidBot.get_instance().device.get_adb().getPackagePath(self.package_name)
+            out_dir = DroidBot.get_instance().output_dir
+            app_path = os.path.join(out_dir, 'temp', "%s.apk" % self.package_name)
+            subprocess.check_call(["adb", "pull", app_path_in_device, app_path])
+            self.app_path = app_path
+            return self.app_path
+        except Exception:
+            return None
 
     def get_package_name(self):
         """

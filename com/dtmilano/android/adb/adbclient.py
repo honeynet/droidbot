@@ -1074,6 +1074,21 @@ class AdbClient:
                 services.append("%s/%s" % (package, service))
         return services
 
+    # Lynn added
+    def getPackagePath(self, package_name):
+        """
+        get installation path of a package (app)
+        :param package_name:
+        :return: package path of app in device
+        """
+        self.__checkTransport()
+        dat = self.shell('pm path %s' % package_name)
+        package_path_RE = re.compile('^package:(.+)$')
+        m = package_path_RE.match(dat)
+        if m:
+            path = m.group(1)
+            return path.strip()
+        return None
 
 if __name__ == '__main__':
     adbClient = AdbClient(os.environ['ANDROID_SERIAL'])

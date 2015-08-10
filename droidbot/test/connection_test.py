@@ -7,11 +7,11 @@ from droidbot.types import Device
 
 class TestADB(TestCase):
     def setUp(self):
-        self.adb = ADB(Device())
+        self.device=Device("emulator-5554")
+        self.adb = ADB(self.device)
 
     def test_connect(self):
         self.assertTrue(self.adb.check_connectivity())
-        self.adb.disconnect()
 
     def test_run_cmd(self):
         r = self.adb.run_cmd(['get-state'])
@@ -19,10 +19,15 @@ class TestADB(TestCase):
         r = self.adb.run_cmd("get-state")
         self.assertTrue(r.startswith('device'))
 
+    def tearDown(self):
+        self.adb.disconnect()
+        self.device.disconnect()
+
 
 class TestTelnet(TestCase):
     def setUp(self):
-        self.telnet = TelnetConsole(Device())
+        self.device=Device("emulator-5554")
+        self.telnet = TelnetConsole(self.device)
 
     def test_connect(self):
         self.assertTrue(self.telnet.check_connectivity())
@@ -33,11 +38,21 @@ class TestTelnet(TestCase):
         self.assertTrue(self.telnet.run_cmd(['help']))
         self.assertFalse(self.telnet.run_cmd("unknown"))
 
+    def tearDown(self):
+        self.telnet.disconnect()
+        self.device.disconnect()
 
-class TestMonkeyRunner(TestCase):
-    def setUp(self):
-        self.monkeyrunner = MonkeyRunner(Device())
-
-    def test_connect(self):
-        self.assertTrue(self.monkeyrunner.check_connectivity())
-        self.monkeyrunner.disconnect()
+# monkeyrunner connection is never used in droidbot
+#
+# class TestMonkeyRunner(TestCase):
+#     def setUp(self):
+#         self.device=Device("emulator-5554")
+#         self.monkeyrunner = MonkeyRunner(self.device)
+#
+#     def test_connect(self):
+#         self.assertTrue(self.monkeyrunner.check_connectivity())
+#         self.monkeyrunner.disconnect()
+#
+#     def tearDown(self):
+#         self.monkeyrunner.disconnect()
+#         self.device.disconnect()

@@ -37,7 +37,7 @@ class DroidBot(object):
 
         self.output_dir = output_dir
         if output_dir is None:
-            self.output_dir = "droidbot_out"
+            self.output_dir = os.path.abspath("droidbot_out")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
 
@@ -46,8 +46,8 @@ class DroidBot(object):
             #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
             device_serial = '.*'
 
-        self.device = Device(device_serial)
-        self.app = App(package_name, app_path)
+        self.device = Device(device_serial, output_dir=self.output_dir)
+        self.app = App(package_name, app_path, output_dir=self.output_dir)
 
         self.droidbox = None
         if with_droidbox:

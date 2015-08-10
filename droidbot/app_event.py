@@ -168,7 +168,7 @@ class AppEvent(object):
         return self.__dict__
 
     def to_json(self):
-        json.dumps(self.to_dict())
+        return json.dumps(self.to_dict())
 
     def __str__(self):
         return self.to_dict().__str__()
@@ -211,6 +211,7 @@ class KeyEvent(AppEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().press(self.name)
+        return True
 
 
 class UIEvent(AppEvent):
@@ -261,6 +262,7 @@ class TouchEvent(UIEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().longTouch(self.x, self.y, duration=500)
+        return True
 
 
 class LongTouchEvent(UIEvent):
@@ -286,6 +288,7 @@ class LongTouchEvent(UIEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().longTouch(self.x, self.y, self.duration)
+        return True
 
 
 class DragEvent(UIEvent):
@@ -317,6 +320,7 @@ class DragEvent(UIEvent):
         device.get_adb().drag((self.start_x, self.start_y),
                               (self.end_x, self.end_y),
                               self.duration)
+        return True
 
 
 class TypeEvent(UIEvent):
@@ -336,6 +340,7 @@ class TypeEvent(UIEvent):
         escaped = self.text.replace('%s', '\\%s')
         encoded = escaped.replace(' ', '%s')
         device.adb.type(encoded)
+        return True
 
 
 class IntentEvent(AppEvent):
@@ -358,6 +363,7 @@ class IntentEvent(AppEvent):
 
     def send(self, device):
         device.get_adb().shell(self.intent)
+        return True
 
 
 class EmulatorEvent(AppEvent):
@@ -409,6 +415,7 @@ class EmulatorEvent(AppEvent):
 
         else:
             raise UnknownEventException
+        return True
 
     @staticmethod
     def get_random_instance(device, app):
@@ -462,7 +469,7 @@ class ContextEvent(AppEvent):
         """
         if not self.context.assert_in_device(device):
             device.logger.warning("Context not in device: %s" % self.context.__str__())
-        self.event.send(device)
+        return self.event.send(device)
 
     def to_dict(self):
         return {'type': self.type, 'context': self.context.__dict__, 'event': self.event.__dict__}

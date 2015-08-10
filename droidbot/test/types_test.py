@@ -1,6 +1,7 @@
 # test script of types.py
 __author__ = 'yuanchun'
 import time
+import os
 from unittest import TestCase
 from droidbot.types import Device, App, Intent
 
@@ -13,12 +14,15 @@ class DeviceTest(TestCase):
     def setUp(self):
         self.device = Device("emulator-5554")
 
-    def test_init(self):
-        device_emulator = Device("emulator-5554")
-        self.assertTrue(device_emulator.is_connected)
-        self.assertIsNotNone(device_emulator.get_display_info())
+    def tearDown(self):
+        self.device.disconnect()
+        self.device = None
 
-        device_real = Device(is_emulator=False)
+    def test_init(self):
+        self.assertTrue(self.device.is_connected)
+        self.assertIsNotNone(self.device.get_display_info())
+
+        device_real = Device("emulator-5554", is_emulator=False)
         self.assertTrue(device_real.is_connected)
 
     def test_connect(self):
@@ -60,15 +64,19 @@ class DeviceTest(TestCase):
 
         r = self.device.call(phone_num)
         self.assertTrue(r)
+        time.sleep(2)
 
         r = self.device.cancel_call(phone_num)
         self.assertTrue(r)
+        time.sleep(2)
 
         r = self.device.receive_call(phone_num)
         self.assertTrue(r)
+        time.sleep(2)
 
         r = self.device.accept_call(phone_num)
         self.assertTrue(r)
+        time.sleep(2)
 
         r = self.device.cancel_call(phone_num)
         self.assertTrue(r)
@@ -96,7 +104,7 @@ class AppTest(TestCase):
     test the App class
     """
     def setUp(self):
-        self.app = App(app_path="resources/TestDroidbot.apk")
+        self.app = App(app_path="resources/DroidBoxTests.apk")
 
     def test_init(self):
         noapp = App()
@@ -104,28 +112,28 @@ class AppTest(TestCase):
 
         app_with_file_path = self.app
         self.assertFalse(app_with_file_path.whole_device)
-        self.assertEqual(app_with_file_path.get_package_name(), 'com.android.browser')
+        self.assertEqual(app_with_file_path.get_package_name(), 'droidbox.tests')
 
     def test_get_package_name(self):
         package_name = self.app.get_package_name()
-        self.assertEqual(package_name, "com.lynnlyc")
+        self.assertEqual(package_name, "droidbox.tests")
 
-    def test_get_app_path(self):
-        from droidbot.droidbot import DroidBot
-        import os
-        droidbot = DroidBot(package_name="com.android.settings")
-        self.assertFalse(droidbot.app.whole_device)
-        app_file_path = droidbot.app.get_app_path()
-        self.assertIsNotNone(app_file_path)
-        self.assertTrue(os.path.exists(app_file_path))
+    # useless function
+    # def test_get_app_path(self):
+    #     from droidbot.droidbot import DroidBot
+    #     droidbot = DroidBot(device_serial="emulator-5554", package_name="com.android.settings")
+    #     self.assertFalse(droidbot.app.whole_device)
+    #     app_file_path = droidbot.app.pull_app_from_device(device=droidbot.device)
+    #     self.assertIsNotNone(app_file_path)
+    #     self.assertTrue(os.path.exists(app_file_path))
+    #     droidbot.stop()
 
     def test_get_main_activity(self):
         main_activity = self.app.get_main_activity()
-        self.assertEqual(main_activity, "MainActivity")
+        self.assertEqual(main_activity, "droidbox.tests.DroidBoxTests")
 
     def test_get_possible_broadcasts(self):
         possible_broadcasts = self.app.get_possible_broadcasts()
         self.assertIsNotNone(possible_broadcasts)
-        # TODO modify testDroidbot app, and fix this assertion
-        i = Intent(prefix='broadcast', action="", category="")
-        self.assertIn(i, possible_broadcasts)
+        i = possible_broadcasts.pop()
+        self.assertEqual(i.action, "android.provider.Telephony.SMS_RECEIVED")

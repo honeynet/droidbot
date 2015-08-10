@@ -31,7 +31,7 @@ class AppEnv(object):
         return self.__dict__
 
     def to_json(self):
-        json.dumps(self.to_dict())
+        return json.dumps(self.to_dict())
 
     def __str__(self):
         return self.to_dict().__str__()
@@ -82,7 +82,7 @@ class ContactAppEnv(StaticAppEnv):
         """
         contact_data = self.__dict__
         contact_data.pop('env_type')
-        device.add_contact(contact_data)
+        return device.add_contact(contact_data)
 
 
 class SettingsAppEnv(StaticAppEnv):
@@ -99,7 +99,7 @@ class SettingsAppEnv(StaticAppEnv):
         self.env_type = 'settings'
 
     def deploy(self, device):
-        device.change_settings(self.table_name, self.name, self.value)
+        return device.change_settings(self.table_name, self.name, self.value)
 
 
 class CallLogEnv(StaticAppEnv):
@@ -123,21 +123,21 @@ class CallLogEnv(StaticAppEnv):
 
     def deploy(self, device):
         if self.call_in:
-            self.deploy_call_in(device)
+            return self.deploy_call_in(device)
         else:
-            self.deploy_call_out(device)
+            return self.deploy_call_out(device)
 
     def deploy_call_in(self, device):
         """
         deploy call in log event to device
         """
         if not device.receive_call(self.phone):
-            return
+            return False
         time.sleep(1)
         if self.accepted:
             device.accept_call(self.phone)
             time.sleep(1)
-        device.cancel_call(self.phone)
+        return device.cancel_call(self.phone)
 
     def deploy_call_out(self, device):
         """
@@ -145,7 +145,7 @@ class CallLogEnv(StaticAppEnv):
         """
         device.call(self.phone)
         time.sleep(2)
-        device.cancel_call(self.phone)
+        return device.cancel_call(self.phone)
 
 
 class SMSLogEnv(StaticAppEnv):
@@ -190,7 +190,7 @@ class GPSAppEnv(DynamicAppEnv):
         self.env_type = 'gps'
 
     def deploy(self, device):
-        device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
+        return device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
 
 
 ENV_TYPES = {

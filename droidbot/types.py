@@ -16,7 +16,7 @@ class Device(object):
     """
     this class describes a connected device
     """
-    def __init__(self, device_serial=None, is_emulator=True):
+    def __init__(self, device_serial=None, is_emulator=True, output_dir=None):
         """
         create a device
         :param device_serial: serial number of target device
@@ -34,6 +34,7 @@ class Device(object):
         self.view_client = None
         self.settings = {}
         self.display_info = None
+        self.output_dir = output_dir
 
         if self.is_emulator:
             self.adb_enabled = True
@@ -340,6 +341,7 @@ class Device(object):
             target=self.set_continuous_gps_blocked,
             args=(center_x, center_y, delta_x, delta_y))
         gps_thread.start()
+        return True
 
     def set_continuous_gps_blocked(self, center_x, center_y, delta_x, delta_y):
         """
@@ -391,8 +393,9 @@ class Device(object):
         """
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
-        return self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
-                                    % (db_name, table_name, value, name))
+        self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
+                             % (db_name, table_name, value, name))
+        return True
 
     def send_intent(self, intent):
         """
@@ -434,19 +437,21 @@ class App(object):
     """
     this class describes an app
     """
-    def __init__(self, package_name=None, app_path=None):
+    def __init__(self, package_name=None, app_path=None, output_dir=None):
         """
         create a App instance
         :param app_path: local file path of app
         :return:
         """
         self.logger = logging.getLogger('App')
+
         self.package_name = package_name
         self.main_activity = None
         self.app_path = app_path
         self.androguard = None
         self.possible_broadcasts = None
         self.whole_device = False
+        self.output_dir=output_dir
 
         if self.package_name is None and self.app_path is None:
             self.whole_device = True
@@ -455,7 +460,7 @@ class App(object):
             self.get_package_name()
             subprocess.check_call(["adb", "uninstall", self.get_package_name()],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            subprocess.check_call(["adb", "install", self.get_app_path()],
+            subprocess.check_call(["adb", "install", self.app_path],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_androguard_analysis(self):
@@ -467,9 +472,10 @@ class App(object):
             self.androguard = AndroguardAnalysis(self.app_path)
         return self.androguard
 
-    def get_app_path(self):
+    def pull_app_from_device(self, device):
         """
         get app file path of current app
+        :param device: Device
         :return:
         """
         if self.app_path is not None:
@@ -479,14 +485,14 @@ class App(object):
             return None
         # if we only have package name, use `adb pull` to get the package from device
         try:
-            from droidbot import DroidBot
-            app_path_in_device = DroidBot.get_instance().device.get_adb().getPackagePath(self.package_name)
-            out_dir = DroidBot.get_instance().output_dir
-            app_path = os.path.join(out_dir, 'temp', "%s.apk" % self.package_name)
+            self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
+            app_path_in_device = device.get_adb().getPackagePath(self.package_name)
+            app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
             subprocess.check_call(["adb", "pull", app_path_in_device, app_path])
             self.app_path = app_path
             return self.app_path
-        except Exception:
+        except Exception as e:
+            self.logger.warning(e.message)
             return None
 
     def get_package_name(self):

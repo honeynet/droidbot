@@ -49,6 +49,10 @@ tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TA
         0x100000: "TAINT_EMAIL", 0x200000: "TAINT_CALENDAR", 0x400000: "TAINT_SETTINGS"}
 
 
+class LostADBException(Exception):
+    pass
+
+
 class DroidBox(object):
     def __init__(self, output_dir=None):
         self.sendsms = {}
@@ -210,7 +214,7 @@ class DroidBox(object):
 
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
-                    raise Exception("We have lost the connection with ADB.")
+                    raise LostADBException("We have lost the connection with ADB.")
 
                 boxlog = logcatInput.split('DroidBox:')
                 if len(boxlog) > 1:
@@ -321,6 +325,8 @@ class DroidBox(object):
                     except ValueError:
                         pass
             except KeyboardInterrupt:
+                break
+            except LostADBException:
                 break
             except Exception as e:
                 print(e.message)

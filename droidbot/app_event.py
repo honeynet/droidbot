@@ -694,9 +694,15 @@ class EventFactory(object):
         """
         count = 0
         while event_manager.enabled and count < event_manager.event_count:
-            event = self.generate_event()
-            event_manager.add_event(event)
-            time.sleep(event_manager.event_interval)
+            try:
+                event = self.generate_event()
+                event_manager.add_event(event)
+                time.sleep(event_manager.event_interval)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.device.logger.warning(e.message)
+                continue
             count += 1
 
     def generate_event(self):

@@ -330,6 +330,8 @@ class DroidBox(object):
         self.adb = None
 
         print json.dumps(self.get_output())
+        if self.output_dir is None:
+            return
         with open(os.path.join(self.output_dir, "analysis.json"),"w") as jsonfile:
             jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 

@@ -201,12 +201,13 @@ class DroidBox(object):
         self.is_counting_logs = True
         self.lastScreenshot = 0
         while self.enabled:
-            if self.output_dir and (time.time() - self.lastScreenshot) >=5:
-                #Take Screenshots every 5 seconds.
-                os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
-                          + "_$(date +%Y-%m-%d_%H%M%S).png")
-                self.lastScreenshot = time.time()
             try:
+                if self.output_dir and (time.time() - self.lastScreenshot) >=5:
+                    #Take Screenshots every 5 seconds.
+                    os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
+                              + "_$(date +%Y-%m-%d_%H%M%S).png")
+                    self.lastScreenshot = time.time()
+
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
                     raise Exception("We have lost the connection with ADB.")
@@ -319,8 +320,11 @@ class DroidBox(object):
                             count.increaseCount()
                     except ValueError:
                         pass
-            except:
+            except KeyboardInterrupt:
                 break
+            except Exception as e:
+                print(e.message)
+                continue
 
         self.is_counting_logs = False
         count.stopCounting()

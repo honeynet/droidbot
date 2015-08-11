@@ -10,6 +10,7 @@ __author__ = 'liyc'
 import logging
 import json
 import time
+import os
 
 ENV_POLICIES = [
     "none",
@@ -220,6 +221,7 @@ class AppEnvManager(object):
         self.app = app
         self.policy = env_policy
         self.envs = []
+        self.enabled = True
 
         if not self.policy:
             self.policy = "none"
@@ -252,21 +254,26 @@ class AppEnvManager(object):
         if self.envs is None:
             return
         for env in self.envs:
+            if not self.enabled:
+                break
             self.device.add_env(env)
-        self.logger.debug("finish deploying environment, policy is %s" % self.policy)
+
+        out_file = open(os.path.join(self.device.output_dir, "droidbot_env.json"), "w")
+        self.dump(out_file)
+        out_file.close()
+        self.logger.debug("finish deploying environment, saved to droidbot_env.json")
 
     def dump(self, env_file):
         """
         dump the environment information to a file
-        :param env_file: the file path to output the environment
+        :param env_file: the file to output the environment
         :return:
         """
-        f = open(env_file, 'w')
         env_array = []
         for env in self.envs:
             env_array.append(env.to_dict())
         env_json = json.dumps(env_array)
-        f.write(env_json)
+        env_file.write(env_json)
 
     def generate_from_factory(self, app_env_factory):
         """
@@ -275,6 +282,9 @@ class AppEnvManager(object):
         :return:
         """
         return app_env_factory.produce_envs()
+
+    def stop(self):
+        self.enabled = False
 
 
 class AppEnvFactory(object):
@@ -315,6 +325,8 @@ class StaticEnvFactory(AppEnvFactory):
         """
         envs = []
         androguard = self.app.get_androguard_analysis()
+        if androguard is None:
+            return [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv()]
         permissions = androguard.a.get_permissions()
         if 'android.permission.READ_CONTACTS' in permissions:
             envs.append(ContactAppEnv())

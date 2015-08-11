@@ -468,7 +468,7 @@ class App(object):
         run static analysis of app
         :return:
         """
-        if self.androguard is None:
+        if self.androguard is None and self.app_path is not None:
             self.androguard = AndroguardAnalysis(self.app_path)
         return self.androguard
 
@@ -529,9 +529,14 @@ class App(object):
         if self.possible_broadcasts is not None:
             return self.possible_broadcasts
 
+        self.possible_broadcasts = set()
+        androguard = self.get_androguard_analysis()
+        if androguard is None:
+            return self.possible_broadcasts
+
         androguard_a = self.get_androguard_analysis().a
         receivers = androguard_a.get_receivers()
-        self.possible_broadcasts = set()
+
         for receiver in receivers:
             intent_filters = androguard_a.get_intent_filters('receiver', receiver)
             if intent_filters.has_key('action'):

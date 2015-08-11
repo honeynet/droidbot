@@ -25,15 +25,12 @@ class DroidBot(object):
                  event_count=None, event_interval=None, event_duration=None, quiet=False):
         """
         initiate droidbot with configurations
-        :param options: the options which contain configurations of droidbot
         :return:
         """
         logging.basicConfig(level=logging.WARNING if quiet else logging.INFO)
 
         self.logger = logging.getLogger('DroidBot')
         DroidBot.instance = self
-
-        self.enabled = True
 
         self.output_dir = output_dir
         if output_dir is None:
@@ -71,28 +68,22 @@ class DroidBot(object):
         :return:
         """
         try:
-            if not self.enabled:
-                return
             self.env_manager.deploy()
 
             if self.droidbox is not None:
                 self.droidbox.set_apk(self.app.app_path)
                 self.droidbox.start_unblocked()
-                if not self.enabled:
-                    return
                 self.event_manager.start()
                 self.droidbox.stop()
                 self.droidbox.get_output()
             else:
-                if not self.enabled:
-                    return
                 self.event_manager.start()
         except KeyboardInterrupt:
             pass
-        self.device.disconnect()
+        self.stop()
 
     def stop(self):
-        self.enabled = False
+        self.env_manager.stop()
         self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()

@@ -7,6 +7,7 @@ __author__ = 'liyc'
 import logging
 import json
 import time
+import os
 import random
 import subprocess
 from threading import Timer
@@ -226,9 +227,10 @@ class UIEvent(AppEvent):
     def get_random_instance(device, app):
         if not device.is_foreground(app):
             # if current app is in background, bring it to foreground
-            return IntentEvent(Intent(suffix="%s/%s" %
-                                             (app.get_package_name(),
-                                              app.get_main_activity())))
+            component = app.get_package_name()
+            if app.get_main_activity():
+                component += "/%s" % app.get_main_activity()
+            return IntentEvent(Intent(suffix=component))
 
         else:
             choices = {
@@ -352,7 +354,7 @@ class IntentEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.type = 'intent'
+        self.event_type = 'intent'
         self.intent = intent.get_cmd()
 
     @staticmethod
@@ -381,7 +383,7 @@ class EmulatorEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.type = 'emulator'
+        self.event_type = 'emulator'
         self.event_name = event_name
         self.event_data = event_data
 
@@ -440,25 +442,25 @@ class ContextEvent(AppEvent):
         :param event: the event to perform
         """
         if event_dict is not None:
-            assert 'type' in event_dict.keys()
+            assert 'event_type' in event_dict.keys()
             assert 'context' in event_dict.keys()
             assert 'event' in event_dict.keys()
-            assert event_dict['type'] == 'context'
-            self.type = event_dict['type']
+            assert event_dict['event_type'] == 'context'
+            self.event_type = event_dict['event_type']
 
             context_dict = event_dict['context']
-            context_type = context_dict['type']
+            context_type = context_dict['context_type']
             ContextType = CONTEXT_TYPES[context_type]
             self.context = ContextType(context_dict=context_dict)
 
             sub_event_dict = event_dict['event']
-            sub_event_type = sub_event_dict['type']
+            sub_event_type = sub_event_dict['event_type']
             SubEventType = EVENT_TYPES[sub_event_type]
             self.event = SubEventType(dict=sub_event_dict)
             return
 
         assert isinstance(event, AppEvent)
-        self.type = 'context'
+        self.event_type = 'context'
         self.context = context
         self.event = event
 
@@ -472,7 +474,7 @@ class ContextEvent(AppEvent):
         return self.event.send(device)
 
     def to_dict(self):
-        return {'type': self.type, 'context': self.context.__dict__, 'event': self.event.__dict__}
+        return {'event_type': self.event_type, 'context': self.context.__dict__, 'event': self.event.__dict__}
 
 
 class Context(object):
@@ -496,7 +498,7 @@ class ActivityNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.type = 'activity'
+        self.context_type = 'activity'
         self.activity_name = activity_name
 
     def __eq__(self, other):
@@ -519,7 +521,7 @@ class WindowNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.type = 'window'
+        self.context_type = 'window'
         self.window_name = window_name
 
     def __eq__(self, other):
@@ -617,15 +619,14 @@ class AppEventManager(object):
     def dump(self, out_file):
         """
         dump the event information to a file
-        :param out_file: the file path to output the events
+        :param out_file: the file to output the events
         :return:
         """
-        f = open(out_file, 'w')
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
         event_json = json.dumps(event_array)
-        f.write(event_json)
+        out_file.write(event_json)
 
     # def on_state_update(self, old_state, new_state):
     #     """
@@ -665,7 +666,10 @@ class AppEventManager(object):
                     time.sleep(1)
         except KeyboardInterrupt:
             pass
-        self.logger.debug("finish sending events, policy is %s" % self.policy)
+        out_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
+        self.dump(out_file)
+        out_file.close()
+        self.logger.debug("finish sending events, saved to droidbot_event.json")
 
     def stop(self):
         """
@@ -803,7 +807,8 @@ class DynamicEventFactory(EventFactory):
         self.previous_activity = None
         self.event_stack = []
 
-        self.possible_broadcasts = set(app.get_possible_broadcasts())
+        self.possible_broadcasts = app.get_possible_broadcasts()
+
         self.possible_inputs = {
             'account': 'droidbot',
             'name': 'droidbot',
@@ -817,7 +822,8 @@ class DynamicEventFactory(EventFactory):
         # randomized touch events for each webview
         self.webview_touches = 5
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "check", "agree", "try", "go"]
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+                                  "check", "agree", "try", "go", "next"]
 
         if self.device.is_emulator:
             self.choices = {
@@ -922,9 +928,10 @@ class DynamicEventFactory(EventFactory):
                 pass
             else:
                 self.last_event_flag += "+start_app"
-                return IntentEvent(Intent(suffix="%s/%s" %
-                                                 (self.app.get_package_name(),
-                                                  self.app.get_main_activity())))
+                component = self.app.get_package_name()
+                if self.app.get_main_activity():
+                    component += "/%s" % self.app.get_main_activity()
+                return IntentEvent(Intent(suffix=component))
 
         if current_context_str not in self.exploited_views.keys():
             self.exploited_views[current_context_str] = set()

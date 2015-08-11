@@ -35,3 +35,5 @@ The script `DroidboxEvaluator.py` is what I used to generate the result data.
 2. [report 2015-07-28_1904](Evaluation_Report_2015-07-28_1904.md)
 3. [report 2015-07-29_2152](Evaluation_Report_2015-07-29_2152.md)
 4. [report 2015-07-30_1501](Evaluation_Report_2015-07-30_1501.md)
+5. [report 2015-08-09_2146](Evaluation_Report_2015-08-09_2146.md)
+6. [report 2015-08-10_0913](Evaluation_Report_2015-08-10_0913.md)

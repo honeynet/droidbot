@@ -10,6 +10,7 @@ __author__ = 'liyc'
 import logging
 import json
 import time
+import os
 
 ENV_POLICIES = [
     "none",
@@ -31,7 +32,7 @@ class AppEnv(object):
         return self.__dict__
 
     def to_json(self):
-        json.dumps(self.to_dict())
+        return json.dumps(self.to_dict())
 
     def __str__(self):
         return self.to_dict().__str__()
@@ -82,7 +83,7 @@ class ContactAppEnv(StaticAppEnv):
         """
         contact_data = self.__dict__
         contact_data.pop('env_type')
-        device.add_contact(contact_data)
+        return device.add_contact(contact_data)
 
 
 class SettingsAppEnv(StaticAppEnv):
@@ -99,7 +100,7 @@ class SettingsAppEnv(StaticAppEnv):
         self.env_type = 'settings'
 
     def deploy(self, device):
-        device.change_settings(self.table_name, self.name, self.value)
+        return device.change_settings(self.table_name, self.name, self.value)
 
 
 class CallLogEnv(StaticAppEnv):
@@ -123,21 +124,21 @@ class CallLogEnv(StaticAppEnv):
 
     def deploy(self, device):
         if self.call_in:
-            self.deploy_call_in(device)
+            return self.deploy_call_in(device)
         else:
-            self.deploy_call_out(device)
+            return self.deploy_call_out(device)
 
     def deploy_call_in(self, device):
         """
         deploy call in log event to device
         """
         if not device.receive_call(self.phone):
-            return
+            return False
         time.sleep(1)
         if self.accepted:
             device.accept_call(self.phone)
             time.sleep(1)
-        device.cancel_call(self.phone)
+        return device.cancel_call(self.phone)
 
     def deploy_call_out(self, device):
         """
@@ -145,7 +146,7 @@ class CallLogEnv(StaticAppEnv):
         """
         device.call(self.phone)
         time.sleep(2)
-        device.cancel_call(self.phone)
+        return device.cancel_call(self.phone)
 
 
 class SMSLogEnv(StaticAppEnv):
@@ -190,7 +191,7 @@ class GPSAppEnv(DynamicAppEnv):
         self.env_type = 'gps'
 
     def deploy(self, device):
-        device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
+        return device.set_continuous_gps(self.center_x, self.center_y, self.delta_x, self.delta_y)
 
 
 ENV_TYPES = {
@@ -220,6 +221,7 @@ class AppEnvManager(object):
         self.app = app
         self.policy = env_policy
         self.envs = []
+        self.enabled = True
 
         if not self.policy:
             self.policy = "none"
@@ -252,21 +254,26 @@ class AppEnvManager(object):
         if self.envs is None:
             return
         for env in self.envs:
+            if not self.enabled:
+                break
             self.device.add_env(env)
-        self.logger.debug("finish deploying environment, policy is %s" % self.policy)
+
+        out_file = open(os.path.join(self.device.output_dir, "droidbot_env.json"), "w")
+        self.dump(out_file)
+        out_file.close()
+        self.logger.debug("finish deploying environment, saved to droidbot_env.json")
 
     def dump(self, env_file):
         """
         dump the environment information to a file
-        :param env_file: the file path to output the environment
+        :param env_file: the file to output the environment
         :return:
         """
-        f = open(env_file, 'w')
         env_array = []
         for env in self.envs:
             env_array.append(env.to_dict())
         env_json = json.dumps(env_array)
-        f.write(env_json)
+        env_file.write(env_json)
 
     def generate_from_factory(self, app_env_factory):
         """
@@ -275,6 +282,9 @@ class AppEnvManager(object):
         :return:
         """
         return app_env_factory.produce_envs()
+
+    def stop(self):
+        self.enabled = False
 
 
 class AppEnvFactory(object):
@@ -315,6 +325,8 @@ class StaticEnvFactory(AppEnvFactory):
         """
         envs = []
         androguard = self.app.get_androguard_analysis()
+        if androguard is None:
+            return [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv()]
         permissions = androguard.a.get_permissions()
         if 'android.permission.READ_CONTACTS' in permissions:
             envs.append(ContactAppEnv())

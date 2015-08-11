@@ -7,6 +7,7 @@ __author__ = 'liyc'
 import logging
 import json
 import time
+import os
 import random
 import subprocess
 from threading import Timer
@@ -168,7 +169,7 @@ class AppEvent(object):
         return self.__dict__
 
     def to_json(self):
-        json.dumps(self.to_dict())
+        return json.dumps(self.to_dict())
 
     def __str__(self):
         return self.to_dict().__str__()
@@ -211,6 +212,7 @@ class KeyEvent(AppEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().press(self.name)
+        return True
 
 
 class UIEvent(AppEvent):
@@ -225,9 +227,10 @@ class UIEvent(AppEvent):
     def get_random_instance(device, app):
         if not device.is_foreground(app):
             # if current app is in background, bring it to foreground
-            return IntentEvent(Intent(suffix="%s/%s" %
-                                             (app.get_package_name(),
-                                              app.get_main_activity())))
+            component = app.get_package_name()
+            if app.get_main_activity():
+                component += "/%s" % app.get_main_activity()
+            return IntentEvent(Intent(suffix=component))
 
         else:
             choices = {
@@ -261,6 +264,7 @@ class TouchEvent(UIEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().longTouch(self.x, self.y, duration=500)
+        return True
 
 
 class LongTouchEvent(UIEvent):
@@ -286,6 +290,7 @@ class LongTouchEvent(UIEvent):
     def send(self, device):
         assert device.get_adb() is not None
         device.get_adb().longTouch(self.x, self.y, self.duration)
+        return True
 
 
 class DragEvent(UIEvent):
@@ -317,6 +322,7 @@ class DragEvent(UIEvent):
         device.get_adb().drag((self.start_x, self.start_y),
                               (self.end_x, self.end_y),
                               self.duration)
+        return True
 
 
 class TypeEvent(UIEvent):
@@ -336,6 +342,7 @@ class TypeEvent(UIEvent):
         escaped = self.text.replace('%s', '\\%s')
         encoded = escaped.replace(' ', '%s')
         device.adb.type(encoded)
+        return True
 
 
 class IntentEvent(AppEvent):
@@ -347,7 +354,7 @@ class IntentEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.type = 'intent'
+        self.event_type = 'intent'
         self.intent = intent.get_cmd()
 
     @staticmethod
@@ -358,6 +365,7 @@ class IntentEvent(AppEvent):
 
     def send(self, device):
         device.get_adb().shell(self.intent)
+        return True
 
 
 class EmulatorEvent(AppEvent):
@@ -375,7 +383,7 @@ class EmulatorEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.type = 'emulator'
+        self.event_type = 'emulator'
         self.event_name = event_name
         self.event_data = event_data
 
@@ -409,6 +417,7 @@ class EmulatorEvent(AppEvent):
 
         else:
             raise UnknownEventException
+        return True
 
     @staticmethod
     def get_random_instance(device, app):
@@ -433,25 +442,25 @@ class ContextEvent(AppEvent):
         :param event: the event to perform
         """
         if event_dict is not None:
-            assert 'type' in event_dict.keys()
+            assert 'event_type' in event_dict.keys()
             assert 'context' in event_dict.keys()
             assert 'event' in event_dict.keys()
-            assert event_dict['type'] == 'context'
-            self.type = event_dict['type']
+            assert event_dict['event_type'] == 'context'
+            self.event_type = event_dict['event_type']
 
             context_dict = event_dict['context']
-            context_type = context_dict['type']
+            context_type = context_dict['context_type']
             ContextType = CONTEXT_TYPES[context_type]
             self.context = ContextType(context_dict=context_dict)
 
             sub_event_dict = event_dict['event']
-            sub_event_type = sub_event_dict['type']
+            sub_event_type = sub_event_dict['event_type']
             SubEventType = EVENT_TYPES[sub_event_type]
             self.event = SubEventType(dict=sub_event_dict)
             return
 
         assert isinstance(event, AppEvent)
-        self.type = 'context'
+        self.event_type = 'context'
         self.context = context
         self.event = event
 
@@ -462,10 +471,10 @@ class ContextEvent(AppEvent):
         """
         if not self.context.assert_in_device(device):
             device.logger.warning("Context not in device: %s" % self.context.__str__())
-        self.event.send(device)
+        return self.event.send(device)
 
     def to_dict(self):
-        return {'type': self.type, 'context': self.context.__dict__, 'event': self.event.__dict__}
+        return {'event_type': self.event_type, 'context': self.context.__dict__, 'event': self.event.__dict__}
 
 
 class Context(object):
@@ -489,7 +498,7 @@ class ActivityNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.type = 'activity'
+        self.context_type = 'activity'
         self.activity_name = activity_name
 
     def __eq__(self, other):
@@ -512,7 +521,7 @@ class WindowNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.type = 'window'
+        self.context_type = 'window'
         self.window_name = window_name
 
     def __eq__(self, other):
@@ -610,15 +619,14 @@ class AppEventManager(object):
     def dump(self, out_file):
         """
         dump the event information to a file
-        :param out_file: the file path to output the events
+        :param out_file: the file to output the events
         :return:
         """
-        f = open(out_file, 'w')
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
         event_json = json.dumps(event_array)
-        f.write(event_json)
+        out_file.write(event_json)
 
     # def on_state_update(self, old_state, new_state):
     #     """
@@ -658,7 +666,10 @@ class AppEventManager(object):
                     time.sleep(1)
         except KeyboardInterrupt:
             pass
-        self.logger.debug("finish sending events, policy is %s" % self.policy)
+        out_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
+        self.dump(out_file)
+        out_file.close()
+        self.logger.debug("finish sending events, saved to droidbot_event.json")
 
     def stop(self):
         """
@@ -687,9 +698,15 @@ class EventFactory(object):
         """
         count = 0
         while event_manager.enabled and count < event_manager.event_count:
-            event = self.generate_event()
-            event_manager.add_event(event)
-            time.sleep(event_manager.event_interval)
+            try:
+                event = self.generate_event()
+                event_manager.add_event(event)
+                time.sleep(event_manager.event_interval)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.device.logger.warning(e.message)
+                continue
             count += 1
 
     def generate_event(self):
@@ -790,7 +807,8 @@ class DynamicEventFactory(EventFactory):
         self.previous_activity = None
         self.event_stack = []
 
-        self.possible_broadcasts = set(app.get_possible_broadcasts())
+        self.possible_broadcasts = app.get_possible_broadcasts()
+
         self.possible_inputs = {
             'account': 'droidbot',
             'name': 'droidbot',
@@ -804,7 +822,8 @@ class DynamicEventFactory(EventFactory):
         # randomized touch events for each webview
         self.webview_touches = 5
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "check", "agree", "try", "go"]
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+                                  "check", "agree", "try", "go", "next"]
 
         if self.device.is_emulator:
             self.choices = {
@@ -909,9 +928,10 @@ class DynamicEventFactory(EventFactory):
                 pass
             else:
                 self.last_event_flag += "+start_app"
-                return IntentEvent(Intent(suffix="%s/%s" %
-                                                 (self.app.get_package_name(),
-                                                  self.app.get_main_activity())))
+                component = self.app.get_package_name()
+                if self.app.get_main_activity():
+                    component += "/%s" % self.app.get_main_activity()
+                return IntentEvent(Intent(suffix=component))
 
         if current_context_str not in self.exploited_views.keys():
             self.exploited_views[current_context_str] = set()

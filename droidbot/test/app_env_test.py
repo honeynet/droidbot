@@ -27,6 +27,7 @@ class TestEnv(TestCase):
         self.assertTrue(self.gps_env.deploy(device))
         self.assertTrue(self.settings_env.deploy(device))
         self.assertTrue(self.sms_log_env.deploy(device))
+        device.disconnect()
 
 
 class TestEnvFactory(TestCase):

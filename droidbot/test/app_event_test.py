@@ -1,10 +1,11 @@
 __author__ = 'yuanchun'
 import json
+import time
 from unittest import TestCase
-from droidbot.types import Intent
+from droidbot.types import Intent, Device
 from droidbot.app_event import AppEvent, ContextEvent, DragEvent,\
     EmulatorEvent, KeyEvent, LongTouchEvent, IntentEvent, TouchEvent,\
-    UIEvent, AppEventManager
+    UIEvent, AppEventManager, ActivityNameContext, WindowNameContext
 
 
 class TestEvent(TestCase):
@@ -17,12 +18,41 @@ class TestEvent(TestCase):
         self.emulator_event = EmulatorEvent(
             event_name="call", event_data={"phone":"1234567"})
         self.drag_event = DragEvent(50, 50, 100, 100)
-        self.context_event = ContextEvent(context=None, event=self.touch_event)
+
+        self.activity_context = ActivityNameContext("dummy")
+        self.window_context = ActivityNameContext("dummy")
+        self.context_event1 = ContextEvent(context=self.activity_context, event=self.touch_event)
+        self.context_event2 = ContextEvent(context=self.window_context, event=self.touch_event)
 
     def test_to_json(self):
         touch_event_json = self.touch_event.to_json()
         touch_event_dict = json.loads(touch_event_json)
         self.assertTrue("event_type" in touch_event_dict.keys())
+
+    def test_send(self):
+        device = Device("emulator-5554")
+        self.assertTrue(self.touch_event.send(device))
+        self.assertTrue(self.intent_event.send(device))
+        self.assertTrue(self.long_touch_event.send(device))
+        self.assertTrue(self.key_event.send(device))
+        self.assertTrue(self.emulator_event.send(device))
+        self.assertTrue(self.drag_event.send(device))
+        self.assertTrue(self.context_event1.send(device))
+        device.disconnect()
+
+    def test_context(self):
+        device = Device("emulator-5554")
+        self.assertFalse(self.activity_context.assert_in_device(device))
+        self.assertFalse(self.window_context.assert_in_device(device))
+
+        settings_activity_context = ActivityNameContext("com.android.settings/.Settings")
+        settings_window_context = WindowNameContext("com.android.settings/com.android.settings.Settings")
+        device.start_app("com.android.settings")
+        time.sleep(2)
+        self.assertTrue(settings_activity_context.assert_in_device(device))
+        self.assertTrue(settings_window_context.assert_in_device(device))
+
+        device.disconnect()
 
 
 class TestEventManager(TestCase):

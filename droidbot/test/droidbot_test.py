@@ -5,7 +5,7 @@ from droidbot.droidbot import DroidBot
 
 class TestDroidBot(unittest.TestCase):
     def setUp(self):
-        self.droidbot = DroidBot(device_serial="emulator-5554")
+        self.droidbot = DroidBot(device_serial="emulator-5554", event_duration=10)
 
     def test_init(self):
         self.assertIsNotNone(self.droidbot.app)
@@ -14,6 +14,7 @@ class TestDroidBot(unittest.TestCase):
         self.assertIsNotNone(self.droidbot.event_manager)
 
     def test_start(self):
-        self.droidbot.start()
-        self.assertTrue(self.droidbot.device.is_connected())
+        import threading
+        threading.Thread(target=self.droidbot.start).start()
+        self.assertTrue(self.droidbot.device.is_connected)
         self.assertIsNotNone(self.droidbot.app)

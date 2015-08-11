@@ -49,6 +49,10 @@ tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TA
         0x100000: "TAINT_EMAIL", 0x200000: "TAINT_CALENDAR", 0x400000: "TAINT_SETTINGS"}
 
 
+class LostADBException(Exception):
+    pass
+
+
 class DroidBox(object):
     def __init__(self, output_dir=None):
         self.sendsms = {}
@@ -201,15 +205,16 @@ class DroidBox(object):
         self.is_counting_logs = True
         self.lastScreenshot = 0
         while self.enabled:
-            if self.output_dir and (time.time() - self.lastScreenshot) >=5:
-                #Take Screenshots every 5 seconds.
-                os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
-                          + "_$(date +%Y-%m-%d_%H%M%S).png")
-                self.lastScreenshot = time.time()
             try:
+                if self.output_dir and (time.time() - self.lastScreenshot) >=5:
+                    #Take Screenshots every 5 seconds.
+                    os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
+                              + "_$(date +%Y-%m-%d_%H%M%S).png")
+                    self.lastScreenshot = time.time()
+
                 logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
-                    raise Exception("We have lost the connection with ADB.")
+                    raise LostADBException("We have lost the connection with ADB.")
 
                 boxlog = logcatInput.split('DroidBox:')
                 if len(boxlog) > 1:
@@ -319,8 +324,13 @@ class DroidBox(object):
                             count.increaseCount()
                     except ValueError:
                         pass
-            except:
+            except KeyboardInterrupt:
                 break
+            except LostADBException:
+                break
+            except Exception as e:
+                print(e.message)
+                continue
 
         self.is_counting_logs = False
         count.stopCounting()
@@ -330,6 +340,8 @@ class DroidBox(object):
         self.adb = None
 
         print json.dumps(self.get_output())
+        if self.output_dir is None:
+            return
         with open(os.path.join(self.output_dir, "analysis.json"),"w") as jsonfile:
             jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 

@@ -73,23 +73,29 @@ python setup.py install
 
 ### Usage with DroidBox (without docker)
 
+Step 1. Start droidbox emulator:
+
+1.1 Download DroidBox image
 ```
-# Step 1. Start droidbox emulator
-# 1.1 Download DroidBox image
-$ wget https://droidbox.googlecode.com/files/DroidBox411RC.tar.gz
-$ tar xfz DroidBox411RC.tar.gz
+wget https://droidbox.googlecode.com/files/DroidBox411RC.tar.gz
+tar xfz DroidBox411RC.tar.gz
+```
 
-# 1.2 Create an avd named droidbox
-# You can either use android avd manager or use `android create avd` command.
+1.2 Create an avd named droidbox
 
-# 1.3 Start the avd with droidbox image
-$ cd DroidBox411RC
-$ sh startemu.sh droidbox
+You can either use android avd manager or use `android create avd` command.
 
-# Step 2. Start droidbot
-$ git clone https://github.com/lynnlyc/droidbot.git
-$ cd droidbot
-$ python start.py -a <sample.apk> -event dynamic -duration 100
+1.3 Start the avd with droidbox image
+```
+cd DroidBox411RC
+sh startemu.sh droidbox
+```
+
+Step 2. Start droidbot:
+```
+git clone https://github.com/lynnlyc/droidbot.git
+cd droidbot
+python start.py -a <sample.apk> -event dynamic -duration 100
 ```
 
 ### Usage with Docker

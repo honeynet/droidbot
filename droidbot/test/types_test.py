@@ -126,6 +126,3 @@ class AppTest(TestCase):
     def test_get_possible_broadcasts(self):
         possible_broadcasts = self.app.get_possible_broadcasts()
         self.assertIsNotNone(possible_broadcasts)
-        # TODO modify testDroidbot app, and fix this assertion
-        i = Intent(prefix='broadcast', action="", category="")
-        self.assertIn(i, possible_broadcasts)

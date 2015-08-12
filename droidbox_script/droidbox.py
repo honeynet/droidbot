@@ -77,6 +77,7 @@ class DroidBox(object):
         self.applicationStarted = 0
 
         self.is_counting_logs = False
+        self.timer = None
 
         if output_dir:
             self.output_dir = output_dir
@@ -169,6 +170,8 @@ class DroidBox(object):
 
     def stop(self):
         self.enabled = False
+        if self.timer and self.timer.isAlive():
+            self.timer.cancel()
         if self.adb is not None:
             self.adb.terminate()
             self.adb = None
@@ -195,7 +198,8 @@ class DroidBox(object):
 
         timeStamp = time.time()
         if duration:
-            threading.Timer(duration, self.stop).start()
+            self.timer = threading.Timer(duration, self.stop)
+            self.timer.start()
 
         if self.adb is None:
             self.adb = Popen(["adb", "logcat", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,

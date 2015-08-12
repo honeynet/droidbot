@@ -582,6 +582,7 @@ class AppEventManager(object):
         self.event_interval = event_interval
         self.event_duration = event_duration
         self.monkey = None
+        self.timer = None
 
         if not self.event_count or self.event_count is None:
             self.event_count = 100
@@ -650,8 +651,11 @@ class AppEventManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
+
         if self.event_duration:
-            Timer(self.event_duration, self.stop).start()
+            self.timer = Timer(self.event_duration, self.stop)
+            self.timer.start()
+
         try:
             if self.event_factory is not None:
                 self.event_factory.start(self)
@@ -669,7 +673,7 @@ class AppEventManager(object):
         out_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
         self.dump(out_file)
         out_file.close()
-        self.logger.debug("finish sending events, saved to droidbot_event.json")
+        self.logger.info("finish sending events, saved to droidbot_event.json")
 
     def stop(self):
         """
@@ -678,6 +682,8 @@ class AppEventManager(object):
         if self.monkey:
             self.monkey.terminate()
             self.monkey = None
+        if self.timer and self.timer.isAlive():
+            self.timer.cancel()
         self.enabled = False
 
 

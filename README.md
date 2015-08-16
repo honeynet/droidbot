@@ -21,7 +21,7 @@ prepare them before starting the app.
     + `dummy` policy which just mocks same basic environment for all apps;
     + `static` policy which set up environment according to static information of app,
     for example permissions and files which the app have access to;
-    + `file` (to do) policy which read environment configurations from a json file.
+    + `file` policy which read environment configurations from a json file.
 
 2. Sending events during the app is running. Events includes touch, drag gestures on screen, 
 keyevents, and simulated broadcasts, etc.
@@ -38,7 +38,7 @@ keyevents, and simulated broadcasts, etc.
     window and sends events according to these information.
     It avoids going to same state too many times by comparing the window hierarchies, and 
     it sends activity-specific intents based on static analysis of app.
-    + `file` (to do) policy which generates events from a json file.
+    + `file` policy which generates events from a json file.
 
 Moreover, to evaluate whether our bot exploit more app states, I plan to implement a 
 Android test coverage tool **which does require repackaging or source code**. 
@@ -52,7 +52,7 @@ it records much information we don't need.
 
 1. `Java` version `1.6+`
 2. `Python` version `2.7`
-3. `Android SDK`, and `platform_tools` and `tools` added to `PATH`
+3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
 4. (Optional) `DroidBox` version `4.1.1`
 
 ## Installation
@@ -69,7 +69,7 @@ python setup.py install
 
 1. Start an emulator (recommended) or connect to a device using adb.
 2. Start droidbot:
-`python droidbot.py -h`
+`python start_droidbot.py -h`
 
 ### Usage with DroidBox (without docker)
 
@@ -95,7 +95,7 @@ Step 2. Start droidbot:
 ```
 git clone https://github.com/lynnlyc/droidbot.git
 cd droidbot
-python start.py -a <sample.apk> -event dynamic -duration 100
+python start_droidbot.py -a <sample.apk> -event dynamic -duration 100
 ```
 
 ### Usage with Docker

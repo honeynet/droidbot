@@ -4,7 +4,7 @@ __author__ = 'liyc'
 from setuptools import setup, find_packages
 setup(
   name = 'droidbot',
-  packages = find_packages(exclude=['docker', 'resources', '*tests*'
+  packages = find_packages(exclude=['docker', 'resources', 'droidbot/tests'
                                     'droidbot_out', 'evaluation_reports', ]), # this must be the same as the name above
   version = '1.0.0a1',
   description = 'A smart Android app exerciser.',
@@ -12,7 +12,7 @@ setup(
   license='MIT',
   author_email = 'pkulyc@gmail.com',
   url = 'https://github.com/lynnlyc/droidbot', # use the URL to the github repo
-  download_url = 'https://github.com/lynnlyc/droidbot/tarball/1.0.1', # I'll explain this in a second
+  download_url = 'https://github.com/lynnlyc/droidbot/tarball/1.0.0a1',
   keywords = ['testing', 'monkey', 'exerciser'], # arbitrary keywords
   classifiers=[
     # How mature is this project? Common values are
@@ -37,5 +37,6 @@ setup(
         'droidbot=start:main',
     ],
   },
+  # androidviewclient doesnot support pip install, thus we put the directory in ours
   install_requires=['androguard', ],
 )

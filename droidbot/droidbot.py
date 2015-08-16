@@ -67,6 +67,7 @@ class DroidBot(object):
         start interacting
         :return:
         """
+        self.logger.info("Starting DroidBot")
         try:
             self.env_manager.deploy()
 
@@ -80,7 +81,9 @@ class DroidBot(object):
                 self.event_manager.start()
         except KeyboardInterrupt:
             pass
+
         self.stop()
+        self.logger.info("DroidBot Stopped")
 
     def stop(self):
         self.env_manager.stop()

@@ -19,12 +19,18 @@ RUN dpkg --add-architecture i386 && \
     apt-get -y dist-upgrade && \
     apt-get install -y --no-install-recommends openjdk-7-jdk apt-utils curl expect python-tk python-matplotlib nano git openssh-server telnet libc6:i386 libncurses5:i386 libstdc++6:i386 bsdmainutils patch
 
-RUN curl -O http://dl.google.com/android/android-sdk_r24.3.3-linux.tgz && \
-    tar xfz android-sdk_r24.3.3-linux.tgz && \
+# RUN curl -O http://dl.google.com/android/android-sdk_r24.3.3-linux.tgz && \
+#    tar xfz android-sdk_r24.3.3-linux.tgz && \
+#    rm -f android-sdk_r24.3.3-linux.tgz
+COPY docker_downloads/android-sdk_r24.3.3-linux.tgz /opt/
+RUN tar xfz android-sdk_r24.3.3-linux.tgz && \
     rm -f android-sdk_r24.3.3-linux.tgz
 
-RUN curl -O http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz && \
-    tar xfz DroidBox411RC.tar.gz && \
+# RUN curl -O http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz && \
+#    tar xfz DroidBox411RC.tar.gz && \
+#    rm -f DroidBox411RC.tar.gz
+COPY docker_downloads/DroidBox411RC.tar.gz /opt/
+RUN tar xfz DroidBox411RC.tar.gz && \
     rm -f DroidBox411RC.tar.gz
 
 # accept-licenses was taken from https://github.com/embarkmobile/android-sdk-installer and is Licensed under the MIT License.

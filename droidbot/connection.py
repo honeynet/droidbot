@@ -126,6 +126,9 @@ class ADB(object):
         r = self.run_cmd("get-state")
         return r.startswith("device")
 
+    def checkConnected(self):
+        return self.check_connectivity()
+
     def disconnect(self):
         """
         disconnect adb

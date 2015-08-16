@@ -269,9 +269,6 @@ class AdbClient:
             print >> sys.stderr, "    checkConnected: returning True"
         return True
 
-    def check_connectivity(self):
-        return self.checkConnected()
-
     def checkVersion(self, ignoreversioncheck=False, reconnect=True):
         if DEBUG:
             print >> sys.stderr, "checkVersion(reconnect=%s)   ignoreversioncheck=%s" % (reconnect, ignoreversioncheck)
@@ -599,19 +596,6 @@ class AdbClient:
             cmd += ' -f %s' % flags
         if uri:
             cmd += ' %s' % uri
-        if DEBUG:
-            print >> sys.stderr, "Starting activity: %s" % cmd
-        out = self.shell(cmd)
-        if re.search(r"(Error type)|(Error: )|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
-            raise RuntimeError(out)
-
-    # Lynn added
-    # use monkey to start activity
-    def startActivityViaMonkey(self, package):
-        self.__checkTransport()
-        cmd = 'monkey'
-        if package:
-            cmd += ' -p %s' % package
         if DEBUG:
             print >> sys.stderr, "Starting activity: %s" % cmd
         out = self.shell(cmd)
@@ -1053,42 +1037,6 @@ class AdbClient:
                 'timestamp': timestamp
              }
         return string.Template(template).substitute(_map)
-
-    # Lynn added
-    def getServiceNames(self):
-        """
-        get current running services
-        :return: list of services
-        """
-        self.__checkTransport()
-        services = []
-        dat = self.shell('dumpsys activity services')
-        lines = dat.splitlines()
-        serviceRE = re.compile('^ *\* ServiceRecord{[0-9a-f]+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
-
-        for line in lines:
-            m = serviceRE.search(line)
-            if m:
-                package = m.group(1)
-                service = m.group(2)
-                services.append("%s/%s" % (package, service))
-        return services
-
-    # Lynn added
-    def getPackagePath(self, package_name):
-        """
-        get installation path of a package (app)
-        :param package_name:
-        :return: package path of app in device
-        """
-        self.__checkTransport()
-        dat = self.shell('pm path %s' % package_name)
-        package_path_RE = re.compile('^package:(.+)$')
-        m = package_path_RE.match(dat)
-        if m:
-            path = m.group(1)
-            return path.strip()
-        return None
 
 if __name__ == '__main__':
     adbClient = AdbClient(os.environ['ANDROID_SERIAL'])

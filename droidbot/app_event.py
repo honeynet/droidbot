@@ -870,7 +870,7 @@ class DynamicEventFactory(EventFactory):
         current_context = WindowNameContext(window_name=focused_window.activity)
         current_context_str = current_context.__str__()
         # get running services
-        running_services = set(self.device.get_adb().getServiceNames())
+        running_services = set(self.device.get_service_names())
         new_services = running_services - self.exploited_services
         # if new service is started, set exploited broadcasts to empty
         if new_services:

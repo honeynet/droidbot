@@ -6,6 +6,7 @@ import connection
 import logging
 import time
 import os
+import re
 from com.dtmilano.android.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
@@ -64,7 +65,7 @@ class Device(object):
             self.logger.info("checking connectivity...")
             result = True
 
-            if self.adb_enabled and self.adb and self.adb.check_connectivity():
+            if self.adb_enabled and self.adb and self.adb.checkConnected():
                 self.logger.info("ADB is connected")
             else:
                 self.logger.warning("ADB is not connected")
@@ -432,6 +433,49 @@ class Device(object):
             return
         self.get_adb().startActivity(uri=package_name)
 
+    def get_service_names(self):
+        """
+        get current running services
+        :return: list of services
+        """
+        services = []
+        dat = self.get_adb().shell('dumpsys activity services')
+        lines = dat.splitlines()
+        serviceRE = re.compile('^ *\* ServiceRecord{[0-9a-f]+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
+
+        for line in lines:
+            m = serviceRE.search(line)
+            if m:
+                package = m.group(1)
+                service = m.group(2)
+                services.append("%s/%s" % (package, service))
+        return services
+
+    def get_package_path(self, package_name):
+        """
+        get installation path of a package (app)
+        :param package_name:
+        :return: package path of app in device
+        """
+        dat = self.get_adb().shell('pm path %s' % package_name)
+        package_path_RE = re.compile('^package:(.+)$')
+        m = package_path_RE.match(dat)
+        if m:
+            path = m.group(1)
+            return path.strip()
+        return None
+
+    def start_activity_via_monkey(self, package):
+        """
+        use monkey to start activity
+        """
+        cmd = 'monkey'
+        if package:
+            cmd += ' -p %s' % package
+        out = self.get_adb().shell(cmd)
+        if re.search(r"(Error)|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
+            raise RuntimeError(out)
+
 
 class App(object):
     """
@@ -486,7 +530,7 @@ class App(object):
         # if we only have package name, use `adb pull` to get the package from device
         try:
             self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
-            app_path_in_device = device.get_adb().getPackagePath(self.package_name)
+            app_path_in_device = device.get_package_path(self.package_name)
             app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
             subprocess.check_call(["adb", "pull", app_path_in_device, app_path])
             self.app_path = app_path
@@ -570,6 +614,7 @@ class App(object):
         """
         pass
 
+
 class AndroguardAnalysis(object):
     """
     analysis result of androguard
@@ -579,7 +624,7 @@ class AndroguardAnalysis(object):
         :param app_path: local file path of app, should not be None
         analyse app specified by app_path
         """
-        from androguard.androlyze import AnalyzeAPK
+        from androguard.misc import AnalyzeAPK
         self.a, self.d, self.dx = AnalyzeAPK(app_path)
 
 

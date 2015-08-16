@@ -182,7 +182,7 @@ class DroidboxEvaluator(object):
         self.logger.info("starting droidbot")
         os.chdir(self.droidbot_home)
         self.droidbot = subprocess.Popen(
-            ["python", "start_droidbot.py",
+            ["python", "start.py",
              "-a", apk_path,
              "-count", str(count),
              "-interval", str(interval),

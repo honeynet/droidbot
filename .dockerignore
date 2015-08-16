@@ -1,5 +1,6 @@
 droidbot_out/*
 evaluation_reports/*
+droidbot.egg-info
 *.md
 *.log
 *.pyc

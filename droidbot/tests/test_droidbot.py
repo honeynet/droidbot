@@ -18,3 +18,7 @@ class TestDroidBot(unittest.TestCase):
         threading.Thread(target=self.droidbot.start).start()
         self.assertTrue(self.droidbot.device.is_connected)
         self.assertIsNotNone(self.droidbot.app)
+
+
+if __name__ == '__main__':
+    unittest.main()

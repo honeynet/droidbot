@@ -1,14 +1,14 @@
 __author__ = 'yuanchun'
 import json
 import time
-from unittest import TestCase
+import unittest
 from droidbot.types import Intent, Device
 from droidbot.app_event import AppEvent, ContextEvent, DragEvent,\
     EmulatorEvent, KeyEvent, LongTouchEvent, IntentEvent, TouchEvent,\
     UIEvent, AppEventManager, ActivityNameContext, WindowNameContext
 
 
-class TestEvent(TestCase):
+class TestEvent(unittest.TestCase):
     def setUp(self):
         self.touch_event = TouchEvent(50, 50)
         intent = Intent(prefix="start", suffix="com.android.settings")
@@ -55,9 +55,13 @@ class TestEvent(TestCase):
         device.disconnect()
 
 
-class TestEventManager(TestCase):
+class TestEventManager(unittest.TestCase):
     pass
 
 
-class TestEventFactory(TestEvent):
+class TestEventFactory(unittest.TestCase):
     pass
+
+
+if __name__ == '__main__':
+    unittest.main()

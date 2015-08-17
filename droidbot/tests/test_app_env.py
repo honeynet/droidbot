@@ -1,13 +1,13 @@
 # Test script of app_env.py
 __author__ = 'yuanchun'
 import json
-from unittest import TestCase
+import unittest
 from droidbot.types import Device
 from droidbot.app_env import CallLogEnv, ContactAppEnv, \
     GPSAppEnv, SettingsAppEnv, SMSLogEnv
 
 
-class TestEnv(TestCase):
+class TestEnv(unittest.TestCase):
     def setUp(self):
         self.call_log_env = CallLogEnv()
         self.contact_env = ContactAppEnv()
@@ -30,9 +30,13 @@ class TestEnv(TestCase):
         device.disconnect()
 
 
-class TestEnvFactory(TestCase):
+class TestEnvFactory(unittest.TestCase):
     pass
 
 
-class TestEnvManager(TestCase):
+class TestEnvManager(unittest.TestCase):
     pass
+
+
+if __name__ == '__main__':
+    unittest.main()

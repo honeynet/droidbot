@@ -2,11 +2,11 @@
 __author__ = 'yuanchun'
 import time
 import os
-from unittest import TestCase
+import unittest
 from droidbot.types import Device, App, Intent
 
 
-class DeviceTest(TestCase):
+class DeviceTest(unittest.TestCase):
     """
     test the Device class,
     before testing, please make sure a emulator is started
@@ -99,7 +99,7 @@ class DeviceTest(TestCase):
         self.assertEqual(self.device.get_settings()['system']['volume_system'], '20')
 
 
-class AppTest(TestCase):
+class AppTest(unittest.TestCase):
     """
     test the App class
     """
@@ -137,3 +137,7 @@ class AppTest(TestCase):
         self.assertIsNotNone(possible_broadcasts)
         i = possible_broadcasts.pop()
         self.assertEqual(i.action, "android.provider.Telephony.SMS_RECEIVED")
+
+
+if __name__ == '__main__':
+    unittest.main()

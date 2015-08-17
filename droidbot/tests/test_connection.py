@@ -1,11 +1,11 @@
 __author__ = 'yuanchun'
 import time
-from unittest import TestCase
+import unittest
 from droidbot.connection import ADB, TelnetConsole, MonkeyRunner
 from droidbot.types import Device
 
 
-class TestADB(TestCase):
+class TestADB(unittest.TestCase):
     def setUp(self):
         self.device=Device("emulator-5554")
         self.adb = ADB(self.device)
@@ -24,7 +24,7 @@ class TestADB(TestCase):
         self.device.disconnect()
 
 
-class TestTelnet(TestCase):
+class TestTelnet(unittest.TestCase):
     def setUp(self):
         self.device=Device("emulator-5554")
         self.telnet = TelnetConsole(self.device)
@@ -42,6 +42,7 @@ class TestTelnet(TestCase):
         self.telnet.disconnect()
         self.device.disconnect()
 
+
 # monkeyrunner connection is never used in droidbot
 #
 # class TestMonkeyRunner(TestCase):
@@ -56,3 +57,7 @@ class TestTelnet(TestCase):
 #     def tearDown(self):
 #         self.monkeyrunner.disconnect()
 #         self.device.disconnect()
+
+
+if __name__ == '__main__':
+    unittest.main()

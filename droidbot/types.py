@@ -148,7 +148,7 @@ class Device(object):
         if self.monkeyrunner:
             self.monkeyrunner.disconnect()
         if self.view_client:
-            self.view_client.__del__()
+            self.view_client = None
 
     def get_telnet(self):
         """

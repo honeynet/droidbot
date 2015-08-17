@@ -168,7 +168,7 @@ is an extension of `static` which improves UI event efficient by dynamically mon
 The unit test scripts are in `droidbot/tests` folder. Run them with:
 
 ```
-python -m unittest discover droidbot/droidbot/tests
+python -m unittest discover droidbot/tests
 ```
 
 note that running the tests requires a emulator with serial-no `emulator-5554` already started.

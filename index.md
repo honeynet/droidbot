@@ -44,7 +44,9 @@ Installing DroidBot from source requires:
 
 1. `Python` version `2.7`
 2. `Android SDK`, make sure that `platform_tools` and `tools` are added to PATH
-3. (Optional) `DroidBox` version `4.1.1`, 
+3. `androidviewclient`, install with `easy_install --upgrade androidviewclient`, 
+or refer to its [wiki](https://github.com/dtmilano/AndroidViewClient/wiki)
+4. (Optional) `DroidBox` version `4.1.1`, 
 you can download it from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 
 After installed the requirements, clone the droidbot directory to your working directory.

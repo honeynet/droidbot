@@ -5,7 +5,7 @@ __author__ = 'liyc'
 import argparse
 import logging
 from argparse import RawTextHelpFormatter
-from droidbot.droidbot import DroidBot
+from droidbot import DroidBot
 
 def parse_args():
     """

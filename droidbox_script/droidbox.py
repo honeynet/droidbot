@@ -638,7 +638,7 @@ def interruptHandler(signum, frame):
     raise KeyboardInterrupt
 
 
-if __name__ == "__main__":
+def main():
     argv = sys.argv
     if len(argv) < 2 or len(argv) > 3:
         print("Usage: droidbox.py filename.apk <duration in seconds>")
@@ -661,3 +661,7 @@ if __name__ == "__main__":
     droidbox.set_apk(apkName)
     droidbox.start_blocked(duration)
     # droidbox.get_output()
+
+
+if __name__ == "__main__":
+    main()

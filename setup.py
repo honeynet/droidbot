@@ -32,10 +32,9 @@ setup(
     # that you indicate whether you support Python 2, Python 3 or both.
     'Programming Language :: Python :: 2.7',
   ],
-  script_name='start.py',
   entry_points={
     'console_scripts': [
-        'droidbot=start:main',
+        'droidbot=droidbot:start',
     ],
   },
   # androidviewclient doesnot support pip install, thus we put the directory in ours

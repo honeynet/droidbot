@@ -47,14 +47,14 @@ ADD docker/fastdroid-vnc /build/
 ADD docker/install-fastdroid-vnc.sh /build/
 RUN /build/install-fastdroid-vnc.sh
 ADD docker/run.sh /build/
-ADD docker/start_droidbot.sh /build/
 #ADD docker/droidbox.py.patch /build/
 #RUN cd /opt/DroidBox_4.1.1/scripts && patch < /build/droidbox.py.patch
 
 # Add DroitBot
-RUN apt-get install -y --no-install-recommends python-setuptools
+RUN apt-get install -y --no-install-recommends python-setuptools python-pip
 ADD . /opt/DroidBot
-RUN python /opt/DroidBot/setup.py install
+RUN easy_install -q --upgrade androidviewclient
+RUN pip install -q /opt/DroidBot
 
 CMD ["NONE"]
 

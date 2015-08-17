@@ -710,6 +710,9 @@ class EventFactory(object):
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
+            except RuntimeError as e:
+                self.device.logger.warning(e.message)
+                break
             except Exception as e:
                 self.device.logger.warning(e.message)
                 continue
@@ -865,10 +868,18 @@ class DynamicEventFactory(EventFactory):
         if top_activity_name != self.previous_activity:
             time.sleep(3)
         self.previous_activity = top_activity_name
+
         # get focused window
         focused_window = self.device.get_adb().getFocusedWindow()
-        current_context = WindowNameContext(window_name=focused_window.activity)
+        focused_window_id = -1
+        focused_window_name = None
+        if focused_window is not None:
+            focused_window_id = focused_window.winId
+            focused_window_name = focused_window.activity
+
+        current_context = WindowNameContext(window_name=focused_window_name)
         current_context_str = current_context.__str__()
+
         # get running services
         running_services = set(self.device.get_service_names())
         new_services = running_services - self.exploited_services
@@ -944,7 +955,7 @@ class DynamicEventFactory(EventFactory):
 
         # if no views were saved, dump view via AndroidViewClient
         if current_context_str not in self.saved_views.keys():
-            views = self.device.get_view_client().dump(window=focused_window.winId)
+            views = self.device.get_view_client().dump(window=focused_window_id)
             self.saved_views[current_context_str] = views
             self.window_passes[current_context_str] = 0
         else:

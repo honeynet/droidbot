@@ -6,13 +6,13 @@ setup(
   name = 'droidbot',
   packages = find_packages(exclude=['docker', 'resources', 'droidbot/tests'
                                     'droidbot_out', 'evaluation_reports', ]), # this must be the same as the name above
-  version = '1.0.0a1',
+  version = '1.0.0a2',
   description = 'A smart Android app exerciser.',
   author = 'Lynn',
   license='MIT',
   author_email = 'pkulyc@gmail.com',
   url = 'https://github.com/lynnlyc/droidbot', # use the URL to the github repo
-  download_url = 'https://github.com/lynnlyc/droidbot/tarball/1.0.0a1',
+  download_url = 'https://github.com/lynnlyc/droidbot/tarball/1.0.0a2',
   keywords = ['testing', 'monkey', 'exerciser'], # arbitrary keywords
   classifiers=[
     # How mature is this project? Common values are
@@ -32,11 +32,12 @@ setup(
     # that you indicate whether you support Python 2, Python 3 or both.
     'Programming Language :: Python :: 2.7',
   ],
+  script_name='start.py',
   entry_points={
     'console_scripts': [
         'droidbot=start:main',
     ],
   },
   # androidviewclient doesnot support pip install, thus we put the directory in ours
-  install_requires=['androguard', ],
+  install_requires=['androguard', 'androidviewclient'],
 )

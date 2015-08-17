@@ -50,26 +50,27 @@ it records much information we don't need.
 
 ## Prerequisite
 
-1. `Java` version `1.6+`
-2. `Python` version `2.7`
-3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
-4. (Optional) `DroidBox` version `4.1.1`
+1. `Python` version `2.7`
+2. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
+3. `androidviewclient`, install with `sudo easy_install --upgrade androidviewclient`,
+or refer to its [wiki](https://github.com/dtmilano/AndroidViewClient/wiki)
+4. (Optional) `DroidBox` version `4.1.1`, 
+download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 
 ## Installation
 
-Clone this repo and cd to the directory.
-
-Run:
+Clone this repo and use pip install:
 
 ```shell
-python setup.py install
+git clone https://github.com/lynnlyc/droidbot.git
+pip install -e droidbot
 ```
 
 ## Usage
 
 1. Start an emulator (recommended) or connect to a device using adb.
 2. Start droidbot:
-`python start_droidbot.py -h`
+`droidbot -h`
 
 ### Usage with DroidBox (without docker)
 
@@ -93,9 +94,7 @@ sh startemu.sh droidbox
 
 Step 2. Start droidbot:
 ```
-git clone https://github.com/lynnlyc/droidbot.git
-cd droidbot
-python start_droidbot.py -a <sample.apk> -event dynamic -duration 100
+droidbot -a <sample.apk> -event dynamic -duration 100 -o droidbot_out
 ```
 
 ### Usage with Docker

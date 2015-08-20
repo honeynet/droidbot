@@ -36,7 +36,7 @@ and evaluated DroidBot by comparing with monkey.
 The result demonstrate that DroidBot is better than monkey on detecting more sensitive behaviors.
 
 ## Installation
-You can install DroidBot from source or from docker.
+You can install DroidBot from source or run it from docker.
 
 ### From source
 
@@ -47,35 +47,27 @@ Installing DroidBot from source requires:
 3. (Optional) `DroidBox` version `4.1.1`, 
 you can download it from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 
-After installed the requirements, clone the droidbot directory to your working directory.
+After installed the requirements, clone the droidbot directory to your working directory and run `pip install`.
 
-```
+{% highlight bash %}
 git clone https://github.com/lynnlyc/droidbot.git
-```
-
-Then install DroidBot:
-
-```
 pip install -e droidbot
-```
+{% endhighlight %}
 
 ### From docker
 
 Installing from docker is much easier:
 
-```
+{% highlight bash %}
 docker pull honeynet/droidbot
-```
+{% endhighlight %}
 
 or, if you prefer, build your own from the GitHub repo:
 
-```
+{% highlight bash %}
 git clone https://github.com/lynnlyc/droidbot.git
-```
-
-```
 docker build -t honeynet/droidbot droidbot
-```
+{% endhighlight %}
 
 ## Usage
 
@@ -84,28 +76,25 @@ Prepare the environment on your host by creating a folder to be shared with the 
 The folder will be used to load samples to be analyzed in DroidBot, 
 and also to store output results from DroidBot analysis.
 
-```
+{% highlight bash %}
 mkdir -p ~/mobileSamples/out
-```
+{% endhighlight %}
 
 To run the analysis, copy your sample to the folder you created above, 
 then start the container; you will find results in the "out" subfolder.
 
-```
+{% highlight bash %}
 cp mySample.apk ~/mobileSamples/
-```
-
-```
 docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot /samples/mySample.apk
 ls ~/mobileSamples/out
-```
+{% endhighlight %}
 
 ### Usage as a command-line tool
 If you install DroidBot via pip, you will be able to invoke DroidBot from command line. Try:
 
-```
+{% highlight bash %}
 droidbot -h
-```
+{% endhighlight %}
 
 It will print a list of options, in which the `-env` and `-event` might be confusing for first-time users.
 I will explain this in a second.
@@ -116,28 +105,25 @@ By importing the droidbot package to your project, you will have access to the u
 
 For example, initialize DroidBot by:
 
-```
+{% highlight python %}
 from droidbot.droidbot import DroidBot
-```
-
-```
 droidbot = DroidBot(...)
-```
+{% endhighlight %}
 
 After initialization, you can do something interesting, such as:
 
 examining if an app is in foreground by
-```
+{% highlight python %}
 droidbot.device.is_foreground('com.android.settings')
-```
+{% endhighlight %}
 , adding a contact to device by 
-```
+{% highlight python %}
 droidbot.device.add_contact({"name":"Alice", "phone":"12345"})
-```
+{% endhighlight %}
 , simulating a incoming SMS by
-```
+{% highlight python %}
 droidbot.device.receive_sms("12345", "Hello World")
-```
+{% endhighlight %}
 and so on.
 
 ## How does DroidBot work
@@ -165,18 +151,18 @@ is an extension of `static` which improves UI event efficient by dynamically mon
 ### Unit Tests
 The unit test scripts are in `droidbot/tests` folder. Run them with:
 
-```
+{% highlight bash %}
 python -m unittest discover droidbot/droidbot/tests
-```
+{% endhighlight %}
 
 note that running the tests requires a emulator with serial-no `emulator-5554` already started.
 
 ### Comparisons with Monkey
 You can also compare DroidBot with different policies and `adb monkey` by running the evaluator:
 
-```
+{% highlight bash %}
 python DroidBoxEvaluator.py -h
-```
+{% endhighlight %}
 
 this evaluator requires a DroidBox emulator already started. 
 The evaluator will generate a markdown report containing the detailed comparisons. 

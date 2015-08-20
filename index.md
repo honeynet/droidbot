@@ -12,6 +12,7 @@ title: DroidBot by lynnlyc
 + [Installation](#installation)
 + [Usage](#usage)
 + [Testing](#testing)
++ [Limitations](#limitations)
 + [List of Posts](#list-of-posts)
 
 ## Introduction
@@ -45,15 +46,28 @@ after which it will infer a list of broadcasts the app may handle and a list of 
 3. Set up environments. Here environment means the device usage data like SMS logs, call logs, etc.
 DroidBot has different policies to generate environments, for example, 
 `dummy` means random environments, `static` means app-specific environments 
-(static means static analysis, which gives a list of permissions the app requires 
-and a list of environments available with the permissions.). 
+(static means static analysis, which gives a list of required permissions in `AndroidManifest.xml`.
+DroidBot will decide which types of environments to set up according to the permissions, 
+for example, if the app requires `ACCESS_FINE_LOCATION` permission, DroidBot will set up a `GPSEnv`, 
+which is a stream of simulated GPS locations). 
 The policy to use to generate environments is specified by the option `-env`.
 4. Send user events. The events include gestures, broadcasts, key presses, etc., 
 just like the events generated when a user uses the device. 
 Same as setting up environments, DroidBot have multiple policy choices of sending events. For example, 
 `static` policy is to send app-specific events according to static analysis, and `dynamic` policy 
-is an extension of `static` which improves UI event efficient by dynamically monitoring the UI states.
+is an extension of `static` which improves UI event efficient by dynamically monitoring the UI states. 
+For example, 
 `-event` option determine the policy to use.
+
+Currently, to get a higher coverage, the policies we recommend are the `static` env policy and 
+the `dynamic` event policy.
+`static` env policy generates a minimum set of environments related to the target app.
+`dynamic` event policy are more likely to trigger the most sensitive behaviours 
+according to our [comparisons](#list-of-posts).
+
+In dockerized DroidBot, we used the `none` env policy, and `dynamic` event policy.
+We didn't use `static` env policy because we used a snapshot image to start the emulator in docker, 
+which already had some preset environments.
 
 ## Installation
 You can install DroidBot from source or run it from docker.
@@ -78,7 +92,9 @@ pip install -e droidbot
 
 ### From docker
 
-Installing from docker is much easier:
+Running DroidBot from docker is much easier.
+
+To get the docker image:
 
 {% highlight bash %}
 docker pull honeynet/droidbot
@@ -90,6 +106,8 @@ or, if you prefer, build your own from the GitHub repo:
 git clone https://github.com/lynnlyc/droidbot.git
 docker build -t honeynet/droidbot droidbot
 {% endhighlight %}
+
+That's it! Refer to [Usage with docker](#usage-with-docker) section for how to use.
 
 ## Usage
 
@@ -155,13 +173,10 @@ and so on.
 The unit test scripts are in `droidbot/tests` folder. Run them with:
 
 {% highlight bash %}
-python -m unittest discover droidbot/droidbot/tests
-{% endhighlight %}
-```
 python -m unittest discover droidbot/tests
-```
+{% endhighlight %}
 
-note that running the tests requires a emulator with serial-no `emulator-5554` already started.
+note that running the tests requires an emulator with serial-no `emulator-5554` already started.
 
 ### Comparisons with Monkey
 You can also compare DroidBot with different policies and `adb monkey` by running the evaluator:
@@ -173,6 +188,23 @@ python DroidBoxEvaluator.py -h
 this evaluator requires a DroidBox emulator already started. 
 The evaluator will generate a markdown report containing the detailed comparisons. 
 I have already published some of the visualized reports in [List of Posts](list-of-posts).
+
+## Limitations
+
+1. When running DroidBot with DroidBox, DroidBox counts accesses to sensitive resources as sensitive behaviours,
+but DroidBot have to access some of them (socket, fd, etc.) to do things, so does `monkey`.
+It cause DroidBox mistaking DroidBot's benign actions for sensitive behaviours (false positives).
+Thus we disabled monitoring of some resources in the tailored version of DroidBox.
+It is a temporary solution because it causes some false negatives.
+2. Although we evaluated DroidBot by comparing the log counts of DroidBox and saw some advantages of DroidBot, 
+we don't think the log count is a very reasonable matrix. 
+The better matrix is `test coverage`, however we have not found a good way to measure test coverage of app.
+(Most of existing test coverage tools require source code or repackaging, 
+but we want DroidBot applied to all of the apps, including those without source code or cannot be repackaged.)
+3. Although DroidBot is smarter than monkey, it is far less intelligent than manual testing. 
+DroidBot is weak in understanding the view and dealing with unexpected situations, for example,
+It may be confused by login screens, popup windows, drop-down menus, and so on.
+
 
 ## List of Posts
 

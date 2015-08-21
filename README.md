@@ -8,6 +8,8 @@ in order to exploit more app states automatically.
 droidbot decides which actions to take based on static analysis result of app 
 and dynamic device information (view hierarchy).
 
+For more details, refer to my [blog posts](http://lynnlyc.github.io/droidbot/).
+
 ## Introduction
 DroidBot mainly does following two things:
 

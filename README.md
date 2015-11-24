@@ -43,7 +43,7 @@ keyevents, and simulated broadcasts, etc.
     + `file` policy which generates events from a json file.
 
 Moreover, to evaluate whether our bot exploit more app states, I plan to implement a 
-Android test coverage tool **which does require repackaging or source code**. 
+Android test coverage tool **which does not require repackaging or source code**. 
 (note that `Emma` can evaluate coverage with source code)
 Android's `traceviewer` is able to record entering and exiting of each method, and we can get a list
 of all methods of app via reverse engineering. By comparing `traceviewer` log and app dex, hopefully 

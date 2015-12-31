@@ -44,9 +44,9 @@ class Device(object):
             self.view_client_enabled = True
         else:
             self.adb_enabled = True
-            self.telnet_enabled = True
+            self.telnet_enabled = False
             self.monkeyrunner_enabled = False
-            self.view_client_enabled = False
+            self.view_client_enabled = True
 
         self.is_connected = False
         self.connect()
@@ -184,7 +184,6 @@ class Device(object):
         """
         if self.view_client_enabled and self.view_client is None:
             kwargs = {'startviewserver': True,
-                      'forceviewserveruse': True,
                       'autodump': False,
                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
@@ -475,6 +474,45 @@ class Device(object):
         out = self.get_adb().shell(cmd)
         if re.search(r"(Error)|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
             raise RuntimeError(out)
+
+
+class DeviceState(object):
+    """
+    the state of the current device
+    """
+    def __init__(self, current_views, foreground_activity, background_services):
+        self.current_views = current_views
+        self.foreground_activity = foreground_activity
+        self.background_services = background_services
+
+    def to_dict(self):
+        state = {'foreground_activity': self.foreground_activity,
+                 'background_services': self.background_services,
+                 'current_views': self.views2list(self.current_views)}
+        return state
+
+    def to_json(self):
+        import json
+        return json.dumps(self.to_dict())
+
+    def views2list(self, views):
+        views_list = []
+        view2id_map = {}
+        id2view_map = {}
+        temp_id = 0
+        for view in views:
+            view2id_map[view] = temp_id
+            id2view_map[temp_id] = view
+            temp_id += 1
+
+        from com.dtmilano.android.viewclient import View
+        for view in views:
+            if isinstance(view, View):
+                view_dict = view.map
+                view_dict['temp_id'] = view2id_map.get(view)
+                view_dict['parent'] = view2id_map.get(view.getParent())
+                views_list.append(view_dict)
+        return views_list
 
 
 class App(object):

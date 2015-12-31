@@ -1083,3 +1083,24 @@ class FileEventFactory(EventFactory):
         event = self.events[self.index]
         self.index += 1
         return event
+
+
+class CustomizedEventFactory(EventFactory):
+    """
+    factory with customized actions
+    """
+
+    def __init__(self, device, app, gen_event_based_on_state=None):
+        super(CustomizedEventFactory, self).__init__(device, app)
+        self.device = device
+        self.app = app
+        self.gen_event_based_on_state = gen_event_based_on_state
+        if self.gen_event_based_on_state is None:
+            self.gen_event_based_on_state = self.gen_default_event_based_on_state
+
+    def generate_event(self):
+        state = self.device.get_current_state()
+        return self.gen_event_based_on_state(state)
+
+    def gen_default_event_based_on_state(self, state):
+        pass

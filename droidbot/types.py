@@ -437,7 +437,7 @@ class Device(object):
         services = []
         dat = self.get_adb().shell('dumpsys activity services')
         lines = dat.splitlines()
-        serviceRE = re.compile('^ *\* ServiceRecord{[0-9a-f]+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
+        serviceRE = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
 
         for line in lines:
             m = serviceRE.search(line)
@@ -489,15 +489,24 @@ class Device(object):
         subprocess.check_call(["adb", "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def get_current_state(self):
+        current_views = self.get_view_client().dump()
+        foreground_activity = self.get_adb().getTopActivityName()
+        background_services = self.get_service_names()
+        snapshot = self.get_adb().takeSnapshot(reconnect=True)
+        return DeviceState(self, current_views, foreground_activity, background_services, snapshot)
+
 
 class DeviceState(object):
     """
     the state of the current device
     """
-    def __init__(self, current_views, foreground_activity, background_services):
+    def __init__(self, device, current_views, foreground_activity, background_services, snapshot=None):
+        self.device = device
         self.current_views = current_views
         self.foreground_activity = foreground_activity
         self.background_services = background_services
+        self.snapshot = snapshot
 
     def to_dict(self):
         state = {'foreground_activity': self.foreground_activity,
@@ -528,6 +537,23 @@ class DeviceState(object):
                 views_list.append(view_dict)
         return views_list
 
+    def save2dir(self, output_dir=None):
+        from datetime import datetime
+        if output_dir is None:
+            output_dir = os.path.join(self.device.output_dir, "device_states")
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        now = datetime.now()
+        now_str = now.strftime("%Y-%m-%d_%H%M%S")
+        state_json_file_path = "%s/device_state_%s.json" % (output_dir, now_str)
+        snapshot_file_path = "%s/snapshot_%s.png" % (output_dir, now_str)
+        state_json_file = open(state_json_file_path, "w")
+        state_json_file.write(self.to_json())
+        state_json_file.close()
+        from PIL.Image import Image
+        if isinstance(self.snapshot, Image):
+            self.snapshot.save(snapshot_file_path)
+
 
 class App(object):
     """
@@ -552,7 +578,7 @@ class App(object):
     def get_androguard_analysis(self):
         """
         run static analysis of app
-        :return:
+        :return:get_adb().takeSnapshot(reconnect=True)
         """
         if self.androguard is None:
             self.androguard = AndroguardAnalysis(self.app_path)

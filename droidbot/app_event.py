@@ -603,6 +603,8 @@ class AppEventManager(object):
             self.event_factory = StaticEventFactory(device, app)
         elif self.policy == "dynamic":
             self.event_factory = DynamicEventFactory(device, app)
+        elif self.policy == "state_recorder":
+            self.event_factory = StateRecorderFactory(device, app)
         else:
             self.event_factory = FileEventFactory(device, app, self.policy)
 
@@ -1090,22 +1092,57 @@ class CustomizedEventFactory(EventFactory):
     factory with customized actions
     """
 
-    def __init__(self, device, app, gen_event_based_on_state=None):
+    def __init__(self, device, app):
         super(CustomizedEventFactory, self).__init__(device, app)
-        self.device = device
-        self.app = app
-        self.gen_event_based_on_state = gen_event_based_on_state
-        if self.gen_event_based_on_state is None:
-            self.gen_event_based_on_state = self.gen_default_event_based_on_state
 
     def generate_event(self):
         state = self.device.get_current_state()
-        return self.gen_event_based_on_state(state)
+        return self.gen_event_based_on_state_wrapper(state)
 
-    def gen_default_event_based_on_state(self, state):
+    def gen_event_based_on_state_wrapper(self, state):
         """
         randomly select a view and click it
-        @param state:
-        @return:
+        @param state: instance of DeviceState
+        @return: event: instance of AppEvent
         """
-        pass
+        from types import DeviceState
+        assert isinstance(state, DeviceState)
+        event = self.gen_event_based_on_state(state)
+        assert isinstance(event, AppEvent)
+        return event
+
+    def gen_event_based_on_state(self, state):
+        return AppEvent.get_random_instance(self.device, self.app)
+
+
+class StateRecorderFactory(CustomizedEventFactory):
+    """
+    record device state during execution
+    """
+    def __init__(self, device, app):
+        super(StateRecorderFactory, self).__init__(device, app)
+        self.last_event_flag = ""
+
+    def gen_event_based_on_state(self, state):
+        state.save2dir()
+        if not self.device.is_foreground(self.app):
+            if self.last_event_flag.endswith("+start_app"):
+                # It seems the app stuck at some state, and cannot be started
+                # just pass to let viewclient deal with this case
+                pass
+            else:
+                self.last_event_flag += "+start_app"
+                component = self.app.get_package_name()
+                if self.app.get_main_activity():
+                    component += "/%s" % self.app.get_main_activity()
+                return IntentEvent(Intent(suffix=component))
+
+        views = state.current_views
+        random.shuffle(views)
+        for v in views:
+            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
+                continue
+            (x, y) = v.getCenter()
+            event = TouchEvent(x, y)
+            self.last_event_flag = "touch"
+            return event

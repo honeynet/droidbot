@@ -106,27 +106,9 @@ class AppTest(unittest.TestCase):
     def setUp(self):
         self.app = App(app_path="resources/DroidBoxTests.apk")
 
-    def test_init(self):
-        noapp = App()
-        self.assertTrue(noapp.whole_device)
-
-        app_with_file_path = self.app
-        self.assertFalse(app_with_file_path.whole_device)
-        self.assertEqual(app_with_file_path.get_package_name(), 'droidbox.tests')
-
     def test_get_package_name(self):
         package_name = self.app.get_package_name()
         self.assertEqual(package_name, "droidbox.tests")
-
-    # useless function
-    # def test_get_app_path(self):
-    #     from droidbot.droidbot import DroidBot
-    #     droidbot = DroidBot(device_serial="emulator-5554", package_name="com.android.settings")
-    #     self.assertFalse(droidbot.app.whole_device)
-    #     app_file_path = droidbot.app.pull_app_from_device(device=droidbot.device)
-    #     self.assertIsNotNone(app_file_path)
-    #     self.assertTrue(os.path.exists(app_file_path))
-    #     droidbot.stop()
 
     def test_get_main_activity(self):
         main_activity = self.app.get_main_activity()

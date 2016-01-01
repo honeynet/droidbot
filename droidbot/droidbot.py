@@ -20,7 +20,7 @@ class DroidBot(object):
     # this is a single instance class
     instance = None
 
-    def __init__(self, device_serial=None, package_name=None, app_path=None, output_dir=None,
+    def __init__(self, device_serial=None, app_path=None, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None, quiet=False):
         """
@@ -44,7 +44,7 @@ class DroidBot(object):
             device_serial = '.*'
 
         self.device = Device(device_serial, output_dir=self.output_dir)
-        self.app = App(package_name, app_path, output_dir=self.output_dir)
+        self.app = App(app_path, output_dir=self.output_dir)
 
         self.droidbox = None
         if with_droidbox:
@@ -69,6 +69,7 @@ class DroidBot(object):
         """
         self.logger.info("Starting DroidBot")
         try:
+            self.device.install_app(self.app)
             self.env_manager.deploy()
 
             if self.droidbox is not None:
@@ -90,3 +91,4 @@ class DroidBot(object):
         self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
+        self.device.uninstall_app(self.app)

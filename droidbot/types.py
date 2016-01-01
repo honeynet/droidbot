@@ -198,9 +198,6 @@ class Device(object):
         if isinstance(app, str):
             package_name = app
         elif isinstance(app, App):
-            # if droidbot is working on whole device, return True
-            if app.whole_device:
-                return True
             package_name = app.get_package_name()
         else:
             return False
@@ -475,6 +472,23 @@ class Device(object):
         if re.search(r"(Error)|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
             raise RuntimeError(out)
 
+    def install_app(self, app):
+        """
+        install an app to device
+        @param app: instance of App
+        @return:
+        """
+        assert isinstance(app, App)
+        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.check_call(["adb", "install", app.app_path],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def uninstall_app(self, app):
+        assert isinstance(app, App)
+        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
 class DeviceState(object):
     """
@@ -519,38 +533,28 @@ class App(object):
     """
     this class describes an app
     """
-    def __init__(self, package_name=None, app_path=None, output_dir=None):
+    def __init__(self, app_path, output_dir=None):
         """
         create a App instance
         :param app_path: local file path of app
         :return:
         """
+        assert app_path is not None
         self.logger = logging.getLogger('App')
 
-        self.package_name = package_name
-        self.main_activity = None
         self.app_path = app_path
-        self.androguard = None
-        self.possible_broadcasts = None
-        self.whole_device = False
-        self.output_dir=output_dir
-
-        if self.package_name is None and self.app_path is None:
-            self.whole_device = True
-            self.logger.warning("no app given, will operate on whole device")
-        elif self.app_path is not None:
-            self.get_package_name()
-            subprocess.check_call(["adb", "uninstall", self.get_package_name()],
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            subprocess.check_call(["adb", "install", self.app_path],
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.output_dir = output_dir
+        self.androguard = AndroguardAnalysis(self.app_path)
+        self.package_name = self.androguard.a.get_package()
+        self.main_activity = self.androguard.a.get_main_activity()
+        self.possible_broadcasts = self.get_possible_broadcasts()
 
     def get_androguard_analysis(self):
         """
         run static analysis of app
         :return:
         """
-        if self.androguard is None and self.app_path is not None:
+        if self.androguard is None:
             self.androguard = AndroguardAnalysis(self.app_path)
         return self.androguard
 
@@ -582,39 +586,24 @@ class App(object):
         get package name of current app
         :return:
         """
-        if self.package_name is not None:
-            return self.package_name
-        elif self.app_path is None:
-            return None
-        elif self.get_androguard_analysis() is not None:
+        if self.package_name is None:
             self.package_name = self.get_androguard_analysis().a.get_package()
-            return self.package_name
-        else:
-            self.logger.warning("can not get package name")
-            return None
+        return self.package_name
 
     def get_main_activity(self):
         """
         get package name of current app
         :return:
         """
-        if self.main_activity is not None:
-            return self.main_activity
-        elif self.get_androguard_analysis() is not None:
+        if self.main_activity is None:
             self.main_activity = self.get_androguard_analysis().a.get_main_activity()
-            return self.main_activity
-        else:
-            self.logger.warning("can not get main activity name")
-            return None
+        return self.main_activity
 
     def get_possible_broadcasts(self):
-        if self.possible_broadcasts is not None:
-            return self.possible_broadcasts
-
-        self.possible_broadcasts = set()
+        possible_broadcasts = set()
         androguard = self.get_androguard_analysis()
         if androguard is None:
-            return self.possible_broadcasts
+            return androguard
 
         androguard_a = self.get_androguard_analysis().a
         receivers = androguard_a.get_receivers()
@@ -633,8 +622,8 @@ class App(object):
             for action in actions:
                 for category in categories:
                     intent = Intent(prefix='broadcast', action=action, category=category)
-                    self.possible_broadcasts.add(intent)
-        return self.possible_broadcasts
+                    possible_broadcasts.add(intent)
+        return possible_broadcasts
 
     def get_coverage(self):
         """
@@ -662,8 +651,13 @@ class AndroguardAnalysis(object):
         :param app_path: local file path of app, should not be None
         analyse app specified by app_path
         """
-        from androguard.misc import AnalyzeAPK
-        self.a, self.d, self.dx = AnalyzeAPK(app_path)
+        self.app_path = app_path
+        from androguard.core.bytecodes.apk import APK
+        self.a = APK(app_path)
+
+    def get_detailed_analysis(self):
+        from androguard.misc import AnalyzeDex
+        self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
 
 
 class Intent(object):

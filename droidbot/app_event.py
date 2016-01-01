@@ -1103,4 +1103,9 @@ class CustomizedEventFactory(EventFactory):
         return self.gen_event_based_on_state(state)
 
     def gen_default_event_based_on_state(self, state):
+        """
+        randomly select a view and click it
+        @param state:
+        @return:
+        """
         pass

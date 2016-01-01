@@ -16,10 +16,8 @@ def parse_args():
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial",
                         help="serial number of target device")
-    parser.add_argument("-p", action="store", dest="package_name",
-                        help="package name of a pre-installed app, otherwise use -a option")
-    parser.add_argument("-a", action="store", dest="app_path",
-                        help="file path of target app, necessary for static analysis")
+    parser.add_argument("-a", action="store", dest="app_path", required=True,
+                        help="file path of target app")
     parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="number of events to generate during testing")
     parser.add_argument("-interval", action="store", dest="event_interval",
@@ -59,7 +57,6 @@ def main():
     opts = parse_args()
 
     droidbot = DroidBot(device_serial=opts.device_serial,
-                        package_name=opts.package_name,
                         app_path=opts.app_path,
                         output_dir=opts.output_dir,
                         env_policy=opts.env_policy,

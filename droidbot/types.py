@@ -516,7 +516,7 @@ class DeviceState(object):
 
     def to_json(self):
         import json
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), indent=2)
 
     def views2list(self, views):
         views_list = []

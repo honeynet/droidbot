@@ -424,10 +424,13 @@ class Device(object):
             package_name = app
         elif isinstance(app, App):
             package_name = app.get_package_name()
+            if app.get_main_activity():
+                package_name += "/%s" % app.get_main_activity()
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
-        self.get_adb().startActivity(uri=package_name)
+        intent = Intent(suffix=package_name)
+        self.send_intent(intent)
 
     def get_service_names(self):
         """
@@ -490,11 +493,17 @@ class Device(object):
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_current_state(self):
-        current_views = self.get_view_client().dump()
-        foreground_activity = self.get_adb().getTopActivityName()
-        background_services = self.get_service_names()
-        snapshot = self.get_adb().takeSnapshot(reconnect=True)
-        return DeviceState(self, current_views, foreground_activity, background_services, snapshot)
+        self.logger.info("getting current device state...")
+        try:
+            current_views = self.get_view_client().dump()
+            foreground_activity = self.get_adb().getTopActivityName()
+            background_services = self.get_service_names()
+            snapshot = self.get_adb().takeSnapshot(reconnect=True)
+            self.logger.info("finish getting current device state...")
+            return DeviceState(self, current_views, foreground_activity, background_services, snapshot)
+        except Exception as e:
+            self.logger.warning(e)
+            return None
 
 
 class DeviceState(object):

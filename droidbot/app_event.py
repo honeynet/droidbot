@@ -13,14 +13,14 @@ import subprocess
 from threading import Timer
 from types import Intent
 
-EVENT_POLICIES = [
-    "none",
-    "monkey",
-    "random",
-    "static",
-    "dynamic",
-    "file"
-]
+POLICY_NONE = "none"
+POLICY_MONKEY = "monkey"
+POLICY_RANDOM = "random"
+POLICY_STATIC = "static"
+POLICY_DYNAMIC = "dynamic"
+POLICY_STATE_RECORDER = "state_recorder"
+POLICY_MANUAL = "manual"
+POLICY_FILE = "file"
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -588,22 +588,22 @@ class AppEventManager(object):
             self.event_count = 100
 
         if not self.policy or self.policy is None:
-            self.policy = "monkey"
+            self.policy = POLICY_NONE
 
         if not self.event_interval or self.event_interval is None:
             self.event_interval = 2
 
-        if self.policy == "none":
-            self.event_factory = NoneEventFactory(device, app)
-        elif self.policy == "monkey":
+        if self.policy == POLICY_NONE:
             self.event_factory = None
-        elif self.policy == "random":
+        elif self.policy == POLICY_MONKEY:
+            self.event_factory = None
+        elif self.policy == POLICY_RANDOM:
             self.event_factory = RandomEventFactory(device, app)
-        elif self.policy == "static":
+        elif self.policy == POLICY_STATIC:
             self.event_factory = StaticEventFactory(device, app)
-        elif self.policy == "dynamic":
+        elif self.policy == POLICY_DYNAMIC:
             self.event_factory = DynamicEventFactory(device, app)
-        elif self.policy == "state_recorder":
+        elif self.policy == POLICY_STATE_RECORDER:
             self.event_factory = StateRecorderFactory(device, app)
         else:
             self.event_factory = FileEventFactory(device, app, self.policy)
@@ -661,7 +661,7 @@ class AppEventManager(object):
         try:
             if self.event_factory is not None:
                 self.event_factory.start(self)
-            else:
+            elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
                 monkey_cmd = "adb shell monkey %s --throttle %d -v %d" % (
                     ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
@@ -670,6 +670,13 @@ class AppEventManager(object):
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 while self.enabled:
                     time.sleep(1)
+            elif self.policy == POLICY_NONE:
+                self.device.start_app(self.app)
+                while True:
+                    print raw_input("press ENTER to save current device state...")
+                    state = self.device.get_current_state()
+                    if state is not None:
+                        state.save2dir()
         except KeyboardInterrupt:
             pass
         out_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")

@@ -3,9 +3,10 @@
 
 __author__ = 'liyc'
 import argparse
-import logging
 from argparse import RawTextHelpFormatter
 from droidbot import DroidBot
+import app_event
+
 
 def parse_args():
     """
@@ -26,18 +27,21 @@ def parse_args():
                         type=int, help="duration of droidbot running (seconds)")
     parser.add_argument("-env", action="store", dest="env_policy",
                         help="policy to set up environment. Supported policies:\n"
-                        "none\tno environment will be set. App will run in default environment of device; \n"
-                        "dummy\tadd some fake contacts, SMS log, call log; \n"
-                        "static\tset environment based on static analysis result; \n"
-                        "<file>\tget environment policy from a json file.\n")
+                             "none\tno environment will be set. App will run in default environment of device; \n"
+                             "dummy\tadd some fake contacts, SMS log, call log; \n"
+                             "static\tset environment based on static analysis result; \n"
+                             "<file>\tget environment policy from a json file.\n")
     parser.add_argument("-event", action="store", dest="event_policy",
-                        help="policy to generate events. Supported policies:\n"
-                        "monkey\tuse \"adb shell monkey\" to send events; \n" \
-                        "random\tpseudo-random events, similar with monkey; \n" \
-                        "static\tsend events based on static analysis result; \n" \
-                        "dynamic\tsend events based on dynamic app state,"
-                        " this policy requires framework instrumented; \n" \
-                        "<file>\tget event policy from a json file.\n")
+                        help='policy to generate events. Supported policies:\n'
+                             '%s\tno event will be sent, user should interact manually with device; \n'
+                             '%s\tuse "adb shell monkey" to send events; \n'
+                             '%s\tpseudo-random events, similar with monkey; \n'
+                             '%s\tsend events based on static analysis result; \n'
+                             '%s\tsend events based on dynamic app state,'
+                             ' this policy requires framework instrumented; \n'
+                             '<%s>\tget event policy from a json file; \n' %
+                             (app_event.POLICY_NONE, app_event.POLICY_MONKEY, app_event.POLICY_RANDOM,
+                              app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_FILE))
     parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
     parser.add_argument("-droidbox", action="store_true", dest="with_droidbox",

@@ -506,6 +506,11 @@ class Device(object):
         subprocess.check_call(["adb", "install", app.app_path],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
+        package_info_file = open(package_info_file_name, "w")
+        subprocess.check_call(["adb", "shell", "dumpsys", "package", app.get_package_name()], stdout=package_info_file)
+        package_info_file.close()
+
     def uninstall_app(self, app):
         assert isinstance(app, App)
         subprocess.check_call(["adb", "uninstall", app.get_package_name()],

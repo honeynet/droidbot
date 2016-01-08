@@ -35,7 +35,12 @@ class Device(object):
         self.view_client = None
         self.settings = {}
         self.display_info = None
+
         self.output_dir = output_dir
+        if self.output_dir is None:
+            self.output_dir = os.path.abspath("droidbot_out")
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
 
         if self.is_emulator:
             self.adb_enabled = True
@@ -51,9 +56,21 @@ class Device(object):
         self.is_connected = False
         self.connect()
         self.get_display_info()
+        self.logcat = self.redirect_logcat()
         # assert self.display_info is not None
         # self.check_connectivity()
         # print self.is_emulator, self.host, self.port
+
+    def redirect_logcat(self, output_dir=None):
+        if output_dir is None:
+            output_dir = self.output_dir
+        logcat_file = open("%s/logcat.log" % output_dir, "w")
+        import subprocess
+        subprocess.check_call(["adb", "logcat", "-c"])
+        logcat = subprocess.Popen(["adb", "logcat"],
+                                  stdin=subprocess.PIPE,
+                                  stdout=logcat_file)
+        return logcat
 
     def check_connectivity(self):
         """
@@ -149,6 +166,7 @@ class Device(object):
             self.monkeyrunner.disconnect()
         if self.view_client:
             self.view_client = None
+        self.logcat.terminate()
 
     def get_telnet(self):
         """
@@ -185,6 +203,7 @@ class Device(object):
         if self.view_client_enabled and self.view_client is None:
             kwargs = {'startviewserver': True,
                       'autodump': False,
+                      # 'forceviewserveruse': True,
                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client

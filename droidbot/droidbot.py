@@ -33,7 +33,7 @@ class DroidBot(object):
         DroidBot.instance = self
 
         self.output_dir = output_dir
-        if output_dir is None:
+        if self.output_dir is None:
             self.output_dir = os.path.abspath("droidbot_out")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)

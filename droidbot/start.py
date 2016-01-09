@@ -17,8 +17,8 @@ def parse_args():
                                      formatter_class=RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial",
                         help="serial number of target device")
-    parser.add_argument("-a", action="store", dest="app_path", required=True,
-                        help="file path of target app")
+    parser.add_argument("-a", action="store", dest="apk_path", required=True,
+                        help="file path of target apk")
     parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="number of events to generate during testing")
     parser.add_argument("-interval", action="store", dest="event_interval",
@@ -59,9 +59,13 @@ def main():
     it starts a droidbot according to the arguments given in cmd line
     """
     opts = parse_args()
+    import os
+    if not os.path.exists(opts.apk_path):
+        print "apk not exist"
+        return
 
-    droidbot = DroidBot(device_serial=opts.device_serial,
-                        app_path=opts.app_path,
+    droidbot = DroidBot(app_path=opts.apk_path,
+                        device_serial=opts.device_serial,
                         output_dir=opts.output_dir,
                         env_policy=opts.env_policy,
                         event_policy=opts.event_policy,

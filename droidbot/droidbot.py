@@ -20,7 +20,7 @@ class DroidBot(object):
     # this is a single instance class
     instance = None
 
-    def __init__(self, device_serial=None, app_path=None, output_dir=None,
+    def __init__(self, app_path, device_serial=None, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None, quiet=False):
         """
@@ -92,3 +92,4 @@ class DroidBot(object):
         if self.droidbox is not None:
             self.droidbox.stop()
         self.device.uninstall_app(self.app)
+        self.device.disconnect()

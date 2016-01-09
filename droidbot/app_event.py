@@ -673,7 +673,9 @@ class AppEventManager(object):
             elif self.policy == POLICY_NONE:
                 self.device.start_app(self.app)
                 while True:
-                    print raw_input("press ENTER to save current device state...")
+                    input = raw_input("press ENTER to save current state, type q to exit...")
+                    if input.startswith('q'):
+                        break
                     state = self.device.get_current_state()
                     if state is not None:
                         state.save2dir()

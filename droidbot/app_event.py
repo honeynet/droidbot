@@ -263,7 +263,7 @@ class TouchEvent(UIEvent):
 
     def send(self, device):
         assert device.get_adb() is not None
-        device.get_adb().longTouch(self.x, self.y, duration=500)
+        device.get_adb().longTouch(self.x, self.y, duration=300)
         return True
 
 
@@ -619,17 +619,19 @@ class AppEventManager(object):
         self.events.append(event)
         self.device.send_event(event)
 
-    def dump(self, out_file):
+    def dump(self):
         """
-        dump the event information to a file
-        :param out_file: the file to output the events
+        dump the event information to files
         :return:
         """
+        event_log_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
-        event_json = json.dumps(event_array)
-        out_file.write(event_json)
+        json.dump(event_array, event_log_file)
+        event_log_file.close()
+        if self.event_factory is not None:
+            self.event_factory.dump()
 
     # def on_state_update(self, old_state, new_state):
     #     """
@@ -681,9 +683,9 @@ class AppEventManager(object):
                         state.save2dir()
         except KeyboardInterrupt:
             pass
-        out_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
-        self.dump(out_file)
-        out_file.close()
+
+        self.stop()
+        self.dump()
         self.logger.info("finish sending events, saved to droidbot_event.json")
 
     def stop(self):
@@ -695,7 +697,13 @@ class AppEventManager(object):
             self.monkey = None
         if self.timer and self.timer.isAlive():
             self.timer.cancel()
+            self.timer = None
         self.enabled = False
+
+
+class StopSendingEventException(Exception):
+    def __init__(self, message):
+        self.message = message
 
 
 class EventFactory(object):
@@ -721,12 +729,15 @@ class EventFactory(object):
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
-            except RuntimeError as e:
+            except StopSendingEventException as e:
                 self.device.logger.warning(e.message)
                 break
-            except Exception as e:
-                self.device.logger.warning(e.message)
-                continue
+            # except RuntimeError as e:
+            #     self.device.logger.warning(e.message)
+            #     break
+            # except Exception as e:
+            #     self.device.logger.warning(e.message)
+            #     continue
             count += 1
 
     def generate_event(self):
@@ -734,6 +745,13 @@ class EventFactory(object):
         generate a event
         """
         raise NotImplementedError
+
+    def dump(self):
+        """
+        dump something to file
+        @return:
+        """
+        pass
 
 
 class NoneEventFactory(EventFactory):
@@ -1115,13 +1133,19 @@ class CustomizedEventFactory(EventFactory):
         @return: event: instance of AppEvent
         """
         from types import DeviceState
-        assert isinstance(state, DeviceState)
-        event = self.gen_event_based_on_state(state)
-        assert isinstance(event, AppEvent)
+        if isinstance(state, DeviceState):
+            event = self.gen_event_based_on_state(state)
+            assert isinstance(event, AppEvent)
+        else:
+            event = UIEvent.get_random_instance(self.device, self.app)
         return event
 
     def gen_event_based_on_state(self, state):
-        return AppEvent.get_random_instance(self.device, self.app)
+        return UIEvent.get_random_instance(self.device, self.app)
+
+EVENT_FLAG_STARTED = "+started"
+EVENT_FLAG_START_APP = "+start_app"
+EVENT_FLAG_TOUCH = "+touch"
 
 
 class StateRecorderFactory(CustomizedEventFactory):
@@ -1130,28 +1154,133 @@ class StateRecorderFactory(CustomizedEventFactory):
     """
     def __init__(self, device, app):
         super(StateRecorderFactory, self).__init__(device, app)
+        self.explored_views = set()
+        self.state_transitions = set()
+
         self.last_event_flag = ""
+        self.last_touched_view_str = None
+        self.last_state = None
 
     def gen_event_based_on_state(self, state):
+        """
+        generate an event based on current device state
+        note: ensure these fields are properly maintained in each transaction:
+          last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
+        @param state: DeviceState
+        @return: AppEvent
+        """
         state.save2dir()
-        if not self.device.is_foreground(self.app):
-            if self.last_event_flag.endswith("+start_app"):
+        self.save_state_transition(self.last_touched_view_str, self.last_state, state)
+
+        if self.device.is_foreground(self.app):
+            # the app is in foreground, clear last_event_flag
+            self.last_event_flag = EVENT_FLAG_STARTED
+        else:
+            number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
+            # if we have tried too many times but still not started, stop droidbot
+            if number_of_starts > 5:
+                raise StopSendingEventException("The app cannot be started.")
+            # if app is not started, try start it
+            if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
                 # It seems the app stuck at some state, and cannot be started
                 # just pass to let viewclient deal with this case
                 pass
             else:
-                self.last_event_flag += "+start_app"
                 component = self.app.get_package_name()
                 if self.app.get_main_activity():
                     component += "/%s" % self.app.get_main_activity()
+
+                self.last_event_flag += EVENT_FLAG_START_APP
+                self.last_touched_view_str = None
+                self.last_state = state
                 return IntentEvent(Intent(suffix=component))
 
-        views = state.current_views
+        # select a view to click
+        view_to_touch = self.select_a_view(state)
+
+        view_to_touch_str = view_to_touch['view_str']
+        if view_to_touch_str.startswith('BACK'):
+            result = KeyEvent('BACK')
+        else:
+            from types import DeviceState
+            x, y = DeviceState.get_view_center(view_to_touch)
+            result = TouchEvent(x, y)
+
+        self.last_event_flag += EVENT_FLAG_TOUCH
+        self.last_touched_view_str = view_to_touch_str
+        self.last_state = state
+        self.save_explored_view(self.last_state, self.last_touched_view_str)
+        return result
+
+    def select_a_view(self, state):
+        """
+        select a view in the view list of given state, let droidbot touch it
+        @param state: DeviceState
+        @return:
+        """
+        from types import DeviceState
+
+        views = []
+        for view in state.views:
+            if view['enabled'] == "true" and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
+                views.append(view)
+
         random.shuffle(views)
-        for v in views:
-            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
-                continue
-            (x, y) = v.getCenter()
-            event = TouchEvent(x, y)
-            self.last_event_flag = "touch"
-            return event
+
+        # add a "BACK" view, consider go back first
+        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
+        views.insert(0, mock_view_back)
+
+        # first try to find a un-clicked view
+        for view in views:
+            if (state.foreground_activity, view['view_str']) not in self.explored_views:
+                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                return view
+
+        # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
+        transition_views = {transition[0] for transition in self.state_transitions}
+        for view in views:
+            if view['view_str'] in transition_views:
+                self.device.logger.info("selected a transition view: %s" % view['view_str'])
+                return view
+
+        # no window transition found, just return a random view
+        view = views[0]
+        self.device.logger.info("selected a random view: %s" % view['view_str'])
+        return view
+
+    def save_state_transition(self, event_str, old_state, new_state):
+        """
+        save the state transition
+        @param event_str: str, representing the event cause the transition
+        @param old_state: DeviceState
+        @param new_state: DeviceState
+        @return:
+        """
+        if event_str is None or old_state is None or new_state is None:
+            return
+        if new_state.is_different_from(old_state):
+            self.state_transitions.add((event_str, old_state.tag, new_state.tag))
+
+    def save_explored_view(self, state, view_str):
+        """
+        save the explored view
+        @param state: DeviceState, where the view located
+        @param view_str: str, representing a view
+        @return:
+        """
+        state_activity = state.foreground_activity
+        self.explored_views.add((state_activity, view_str))
+
+    def dump(self):
+        """
+        dump the explored_views and state_transitions to file
+        @return:
+        """
+        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
+        json.dump(list(self.explored_views), explored_views_file, indent=2)
+        explored_views_file.close()
+
+        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
+        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
+        state_transitions_file.close()

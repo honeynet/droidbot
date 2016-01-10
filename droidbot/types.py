@@ -159,7 +159,7 @@ class Device(object):
         """
         self.is_connected = False
         if self.adb:
-            pass
+            self.adb.close()
         if self.telnet:
             self.telnet.disconnect()
         if self.monkeyrunner:
@@ -519,12 +519,16 @@ class Device(object):
     def get_current_state(self):
         self.logger.info("getting current device state...")
         try:
-            current_views = self.get_view_client().dump()
+            view_client_views = self.get_view_client().dump()
             foreground_activity = self.get_adb().getTopActivityName()
             background_services = self.get_service_names()
             snapshot = self.get_adb().takeSnapshot(reconnect=True)
             self.logger.info("finish getting current device state...")
-            return DeviceState(self, current_views, foreground_activity, background_services, snapshot)
+            return DeviceState(self,
+                               view_client_views=view_client_views,
+                               foreground_activity=foreground_activity,
+                               background_services=background_services,
+                               snapshot=snapshot)
         except Exception as e:
             self.logger.warning(e)
             return None
@@ -534,59 +538,115 @@ class DeviceState(object):
     """
     the state of the current device
     """
-    def __init__(self, device, current_views, foreground_activity, background_services, snapshot=None):
+    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, snapshot=None):
         self.device = device
-        self.current_views = current_views
+        self.view_client_views = view_client_views
         self.foreground_activity = foreground_activity
         self.background_services = background_services
+        if tag is None:
+            from datetime import datetime
+            tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        self.tag = tag
         self.snapshot = snapshot
+        self.views = self.views2list(view_client_views)
 
     def to_dict(self):
-        state = {'foreground_activity': self.foreground_activity,
+        state = {'tag': self.tag,
+                 'foreground_activity': self.foreground_activity,
                  'background_services': self.background_services,
-                 'current_views': self.views2list(self.current_views)}
+                 'views': self.views}
         return state
 
     def to_json(self):
         import json
         return json.dumps(self.to_dict(), indent=2)
 
-    def views2list(self, views):
-        views_list = []
+    def views2list(self, view_client_views):
+        views = []
         view2id_map = {}
         id2view_map = {}
         temp_id = 0
-        for view in views:
+        for view in view_client_views:
             view2id_map[view] = temp_id
             id2view_map[temp_id] = view
             temp_id += 1
 
         from com.dtmilano.android.viewclient import View
-        for view in views:
+        for view in view_client_views:
             if isinstance(view, View):
                 view_dict = view.map
                 view_dict['temp_id'] = view2id_map.get(view)
                 view_dict['parent'] = view2id_map.get(view.getParent())
-                views_list.append(view_dict)
-        return views_list
+                view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
+                view_dict['view_str'] = DeviceState.get_view_str(view_dict)
+                views.append(view_dict)
+        return views
 
     def save2dir(self, output_dir=None):
-        from datetime import datetime
-        if output_dir is None:
-            output_dir = os.path.join(self.device.output_dir, "device_states")
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
-        now = datetime.now()
-        now_str = now.strftime("%Y-%m-%d_%H%M%S")
-        state_json_file_path = "%s/device_state_%s.json" % (output_dir, now_str)
-        snapshot_file_path = "%s/snapshot_%s.png" % (output_dir, now_str)
-        state_json_file = open(state_json_file_path, "w")
-        state_json_file.write(self.to_json())
-        state_json_file.close()
-        from PIL.Image import Image
-        if isinstance(self.snapshot, Image):
-            self.snapshot.save(snapshot_file_path)
+        try:
+            if output_dir is None:
+                output_dir = os.path.join(self.device.output_dir, "device_states")
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            state_json_file_path = "%s/device_state_%s.json" % (output_dir, self.tag)
+            snapshot_file_path = "%s/snapshot_%s.png" % (output_dir, self.tag)
+            state_json_file = open(state_json_file_path, "w")
+            state_json_file.write(self.to_json())
+            state_json_file.close()
+            from PIL.Image import Image
+            if isinstance(self.snapshot, Image):
+                self.snapshot.save(snapshot_file_path)
+        except Exception as e:
+            self.device.logger.warning("saving state to dir failed: " + e.message)
 
+    def is_different_from(self, other_state):
+        """
+        compare this state with another
+        @param other_state: DeviceState
+        @return: boolean, true if this state is different from other_state
+        """
+        if self.foreground_activity != other_state.foreground_activity:
+            return True
+        # ignore background service differences
+        # if self.background_services != other_state.background_services:
+        #     return True
+        this_views = {view['view_str'] for view in self.views}
+        other_views = {view['view_str'] for view in other_state.views}
+        if this_views != other_views:
+            return True
+        return False
+
+    @staticmethod
+    def get_view_str(view_dict):
+        """
+        get the unique string which can represent the view
+        @param view_dict: dict, element of list device.get_current_state().views
+        @return:
+        """
+        view_str = "package:%s,class:%s,resource-id:%s,text:%s" %\
+                   (view_dict['package'], view_dict['class'], view_dict['resource-id'], view_dict['text'])
+        return view_str
+
+    @staticmethod
+    def get_view_center(view_dict):
+        """
+        return the center point in a view
+        @param view_dict: dict, element of device.get_current_state().views
+        @return:
+        """
+        bounds = view_dict['bounds']
+        return (bounds[0][0]+bounds[1][0])/2, (bounds[0][1]+bounds[1][1])/2
+
+    @staticmethod
+    def get_view_size(view_dict):
+        """
+        return the size of a view
+        @param view_dict: dict, element of device.get_current_state().views
+        @return:
+        """
+        bounds = view_dict['bounds']
+        import math
+        return int(math.fabs((bounds[0][0]-bounds[1][0])*(bounds[0][1]-bounds[1][1])))
 
 class App(object):
     """

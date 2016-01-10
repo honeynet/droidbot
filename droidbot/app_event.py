@@ -732,12 +732,12 @@ class EventFactory(object):
             except StopSendingEventException as e:
                 self.device.logger.warning(e.message)
                 break
-            # except RuntimeError as e:
-            #     self.device.logger.warning(e.message)
-            #     break
-            # except Exception as e:
-            #     self.device.logger.warning(e.message)
-            #     continue
+            except RuntimeError as e:
+                self.device.logger.warning(e.message)
+                break
+            except Exception as e:
+                self.device.logger.warning(e.message)
+                continue
             count += 1
 
     def generate_event(self):

@@ -1238,6 +1238,7 @@ class StateRecorderFactory(CustomizedEventFactory):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
+        random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:

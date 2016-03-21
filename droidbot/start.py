@@ -39,9 +39,12 @@ def parse_args():
                              '%s\tsend events based on static analysis result; \n'
                              '%s\tsend events based on dynamic app state,'
                              ' this policy requires framework instrumented; \n'
-                             '<%s>\tget event policy from a json file; \n' %
+                             '<%s>\tget event policy from a json file; \n'
+                             '%s\ttest app and generate a UI state transition graph;\n'
+                             '%s\tmanually interact with your app, and we will record the events.\n' %
                              (app_event.POLICY_NONE, app_event.POLICY_MONKEY, app_event.POLICY_RANDOM,
-                              app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_FILE))
+                              app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_FILE,
+                              app_event.POLICY_STATE_RECORDER, app_event.POLICY_MANUAL))
     parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
     parser.add_argument("-droidbox", action="store_true", dest="with_droidbox",

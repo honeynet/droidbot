@@ -11,7 +11,7 @@ import os
 import random
 import subprocess
 from threading import Timer
-from types import Intent
+from droidbot_types import Intent
 
 POLICY_NONE = "none"
 POLICY_MONKEY = "monkey"
@@ -605,6 +605,8 @@ class AppEventManager(object):
             self.event_factory = DynamicEventFactory(device, app)
         elif self.policy == POLICY_STATE_RECORDER:
             self.event_factory = StateRecorderFactory(device, app)
+        elif self.policy == POLICY_MANUAL:
+            self.event_factory = ManualEventFactory(device, app)
         else:
             self.event_factory = FileEventFactory(device, app, self.policy)
 
@@ -1132,7 +1134,7 @@ class CustomizedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from types import DeviceState
+        from droidbot_types import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent)
@@ -1146,6 +1148,74 @@ class CustomizedEventFactory(EventFactory):
 EVENT_FLAG_STARTED = "+started"
 EVENT_FLAG_START_APP = "+start_app"
 EVENT_FLAG_TOUCH = "+touch"
+
+
+class ManualEventFactory(CustomizedEventFactory):
+    """
+    manually send events
+    droidbot will record the events and states
+    """
+    """
+    record device state during execution
+    """
+    def __init__(self, device, app):
+        super(ManualEventFactory, self).__init__(device, app)
+        self.state_transitions = set()
+
+        self.last_event_flag = ""
+        self.last_touched_view_str = None
+        self.last_state = None
+
+    def gen_event_based_on_state(self, state):
+        """
+        generate an event based on current device state
+        note: ensure these fields are properly maintained in each transaction:
+          last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
+        @param state: DeviceState
+        @return: AppEvent
+        """
+        state.save2dir()
+        self.save_state_transition(self.last_touched_view_str, self.last_state, state)
+        view_to_touch = self.wait_for_manual_event(state)
+        self.last_touched_view_str = view_to_touch['view_str']
+        self.last_state = state
+        return None
+
+    def wait_for_manual_event(self, state):
+        """
+        wait for user interaction
+        @param state: current state of device
+        @return: a view in state.views
+        """
+        self.device.logger.info("Waiting for user input...")
+
+        # TODO implement this using getevent
+        view = random.choice(state.views)
+
+        self.device.logger.info("Captured user input: %s" % view['view_str'])
+        return view
+
+    def save_state_transition(self, event_str, old_state, new_state):
+        """
+        save the state transition
+        @param event_str: str, representing the event cause the transition
+        @param old_state: DeviceState
+        @param new_state: DeviceState
+        @return:
+        """
+        if event_str is None or old_state is None or new_state is None:
+            return
+        if new_state.is_different_from(old_state):
+            self.state_transitions.add((event_str, old_state.tag, new_state.tag))
+
+    def dump(self):
+        """
+        dump the explored_views and state_transitions to file
+        @return:
+        """
+        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
+        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
+        state_transitions_file.close()
 
 
 class StateRecorderFactory(CustomizedEventFactory):
@@ -1202,7 +1272,7 @@ class StateRecorderFactory(CustomizedEventFactory):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            from types import DeviceState
+            from droidbot_types import DeviceState
             x, y = DeviceState.get_view_center(view_to_touch)
             result = TouchEvent(x, y)
 
@@ -1218,7 +1288,7 @@ class StateRecorderFactory(CustomizedEventFactory):
         @param state: DeviceState
         @return:
         """
-        from types import DeviceState
+        from droidbot_types import DeviceState
 
         views = []
         for view in state.views:

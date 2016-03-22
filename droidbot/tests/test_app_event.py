@@ -2,7 +2,7 @@ __author__ = 'yuanchun'
 import json
 import time
 import unittest
-from droidbot.types import Intent, Device
+from droidbot.droidbot_types import Intent, Device
 from droidbot.app_event import AppEvent, ContextEvent, DragEvent,\
     EmulatorEvent, KeyEvent, LongTouchEvent, IntentEvent, TouchEvent,\
     UIEvent, AppEventManager, ActivityNameContext, WindowNameContext

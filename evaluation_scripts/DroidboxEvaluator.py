@@ -11,7 +11,7 @@ import threading
 import time
 from datetime import datetime
 
-from droidbox_script.droidbox import DroidBox
+from droidbox_scripts.droidbox import DroidBox
 from droidbot.droidbot import DroidBot
 
 

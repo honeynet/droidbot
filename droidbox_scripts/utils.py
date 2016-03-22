@@ -490,8 +490,8 @@ def long2str(l):
 
 def str2long(s):
     """Convert a string to a long integer."""
-    import types
-    if type(s) not in (types.StringType, types.UnicodeType):
+    import droidbot_types
+    if type(s) not in (droidbot_types.StringType, droidbot_types.UnicodeType):
         raise ValueError, 'the input must be a string'
 
     l = 0L

@@ -1,6 +1,6 @@
 __author__ = 'yuanchun'
 
-from droidbot.types import Device, App
+from droidbot.droidbot_types import Device, App
 from droidbot.app_event import CustomizedEventFactory, AppEventManager, AppEvent
 
 

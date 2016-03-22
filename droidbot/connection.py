@@ -3,7 +3,6 @@ __author__ = 'liyc'
 import subprocess
 import logging
 import threading
-import time
 import signal
 
 
@@ -67,7 +66,7 @@ class ADB(object):
         """
         self.logger = logging.getLogger('ADB')
         self.device = device
-        self.args = ['adb']
+        self.cmd_prefix = ['adb']
         self.shell = None
 
         r = subprocess.check_output(['adb', 'devices']).split('\n')
@@ -93,8 +92,8 @@ class ADB(object):
         else:
             device.serial = online_devices[0]
 
-        self.args.append("-s")
-        self.args.append(device.serial)
+        self.cmd_prefix.append("-s")
+        self.cmd_prefix.append(device.serial)
 
         if self.check_connectivity():
             self.logger.info("adb successfully initiated, the device is %s" % device.serial)
@@ -106,17 +105,28 @@ class ADB(object):
         run an adb command and return the output
         :return: output of adb command
         """
-        args = [] + self.args
-        if isinstance(extra_args, list):
-            args += extra_args
-        else:
-            args.append(extra_args)
+        assert isinstance(extra_args, list)
+
+        args = [] + self.cmd_prefix
+        args += extra_args
+
         self.logger.debug('command:')
         self.logger.debug(args)
         r = subprocess.check_output(args)
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
+
+    def shell(self, extra_args):
+        """
+        run an `adb shell` command
+        @param extra_args:
+        @return: output of adb shell command
+        """
+        assert isinstance(extra_args, list)
+
+        shell_extra_args = ['shell'] + extra_args
+        return self.run_cmd(shell_extra_args)
 
     def check_connectivity(self):
         """

@@ -7,10 +7,10 @@ __author__ = 'liyc'
 import logging
 import sys
 import os
-from types import App, Device
+from droidbot_types import App, Device
 from app_env import AppEnvManager
 from app_event import AppEventManager
-from droidbox_script.droidbox import DroidBox
+from droidbox_scripts.droidbox import DroidBox
 
 class DroidBot(object):
     """
@@ -20,7 +20,7 @@ class DroidBot(object):
     # this is a single instance class
     instance = None
 
-    def __init__(self, app_path, device_serial=None, output_dir=None,
+    def __init__(self, app_path, device_serial, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None, quiet=False):
         """
@@ -38,10 +38,11 @@ class DroidBot(object):
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
 
-        if device_serial is None:
-            # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
-            #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
-            device_serial = '.*'
+        # if device_serial is None:
+        #     # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
+        #     #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
+        #     # FIXED by requiring device_serial in cmd
+        #     device_serial = '.*'
 
         self.device = Device(device_serial, output_dir=self.output_dir)
         self.app = App(app_path, output_dir=self.output_dir)

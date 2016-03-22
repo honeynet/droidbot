@@ -3,7 +3,7 @@ __author__ = 'yuanchun'
 import time
 import os
 import unittest
-from droidbot.types import Device, App, Intent
+from droidbot.droidbot_types import Device, App, Intent
 
 
 class DeviceTest(unittest.TestCase):

@@ -15,7 +15,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="start a robot to interact with Android app",
                                      formatter_class=RawTextHelpFormatter)
-    parser.add_argument("-d", action="store", dest="device_serial",
+    parser.add_argument("-d", action="store", dest="device_serial", required=True,
                         help="serial number of target device")
     parser.add_argument("-a", action="store", dest="apk_path", required=True,
                         help="file path of target apk")

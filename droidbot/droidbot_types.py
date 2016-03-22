@@ -1,5 +1,4 @@
 # utils for setting up Android environment and sending events
-import subprocess
 
 __author__ = 'yuanchun'
 import connection
@@ -7,6 +6,7 @@ import logging
 import time
 import os
 import re
+import subprocess
 from com.dtmilano.android.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
@@ -17,7 +17,7 @@ class Device(object):
     """
     this class describes a connected device
     """
-    def __init__(self, device_serial=None, is_emulator=True, output_dir=None):
+    def __init__(self, device_serial, is_emulator=True, output_dir=None):
         """
         create a device
         :param device_serial: serial number of target device

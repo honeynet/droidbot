@@ -1190,10 +1190,75 @@ class ManualEventFactory(CustomizedEventFactory):
         self.device.logger.info("Waiting for user input...")
 
         # TODO implement this using getevent
-        view = random.choice(state.views)
+        # @yzy
+        state_dict = state.to_dict()
+        touched_view = None
 
-        self.device.logger.info("Captured user input: %s" % view['view_str'])
-        return view
+        sp = subprocess.Popen(['adb', 'shell', 'getevent', '-lt'], 
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)#, bufsize=0)
+        
+        onClick = False
+        onDraw = False
+        startPosX = -1
+        startPosY = -1
+
+        while 1:
+            line = sp.stdout.readline()
+            if 'BTN_TOUCH' in line and 'DOWN' in line:
+                # clear btn_touch down's own positions
+                while True:
+                    position_line = sp.stdout.readline()
+                    if 'ABS_MT_POSITION_X' in position_line:
+                        startPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                    elif 'ABS_MT_POSITION_Y' in position_line:
+                        startPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        break
+                print "STARTPOS: %s, %s" % (str(startPosX), str(startPosY))
+                onDraw = False
+                onClick = True
+                
+            elif 'BTN_TOUCH' in line and 'UP' in line and (onClick or onDraw):
+                positionX = -1
+                positionY = -1
+                while True:
+                    position_line = sp.stdout.readline()
+                    if 'ABS_MT_POSITION_X' in position_line:
+                        positionX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                    elif 'ABS_MT_POSITION_Y' in position_line:
+                        positionY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        break
+
+                print "ENDPOS: %s, %s" % (str(positionX), str(positionY))
+
+                if onClick:
+                    for view in state_dict["views"]:
+                        bounds = view["bounds"]
+                        if view["parent"] == None or len(view["children"]) != 0:
+                            continue
+                        if positionX >= bounds[0][0] and positionX <= bounds[1][0] and \
+                           positionY >= bounds[0][1] and positionY <= bounds[1][1]:
+                            touched_view = view
+                            break
+                        
+                    if touched_view == None:
+                        print 'no view'
+                        touched_view = {"view_str": "UNKNOWN_TOUCH"}
+                else:
+                    touched_view = {"view_str": "DRAW_%s,%s_%s,%s" % (\
+                        str(startPosX), str(startPosY), str(positionX), str(positionY))}
+                
+                break
+
+            elif 'ABS_MT_POSITION' in line:
+                onClick = False
+                onDraw = True
+            
+        sp.kill()
+
+        #touched_view = random.choice(state.views)
+
+        self.device.logger.info("Captured user input: %s" % touched_view['view_str'])
+        return touched_view
 
     def save_state_transition(self, event_str, old_state, new_state):
         """

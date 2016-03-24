@@ -1201,6 +1201,9 @@ class ManualEventFactory(CustomizedEventFactory):
         onDraw = False
         startPosX = -1
         startPosY = -1
+        currPosX = -1
+        currPosY = -1
+        posList = []
 
         while 1:
             line = sp.stdout.readline()
@@ -1212,31 +1215,37 @@ class ManualEventFactory(CustomizedEventFactory):
                         startPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
                     elif 'ABS_MT_POSITION_Y' in position_line:
                         startPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        posList.append([startPosX, startPosY])
                         break
                 print "STARTPOS: %s, %s" % (str(startPosX), str(startPosY))
                 onDraw = False
                 onClick = True
                 
             elif 'BTN_TOUCH' in line and 'UP' in line and (onClick or onDraw):
-                positionX = -1
-                positionY = -1
+                endPosX = -1
+                endPosY = -1
                 while True:
                     position_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_X' in position_line:
-                        positionX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                        endPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
                     elif 'ABS_MT_POSITION_Y' in position_line:
-                        positionY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        endPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        break
+                    elif len(position_line) > 0:
+                        endPosX = currPosX
+                        endPosY = currPosY
+                        posList.append([endPosX, endPosY]);
                         break
 
-                print "ENDPOS: %s, %s" % (str(positionX), str(positionY))
+                print "ENDPOS: %s, %s" % (str(endPosX), str(endPosY))
 
                 if onClick:
                     for view in state_dict["views"]:
                         bounds = view["bounds"]
                         if view["parent"] == None or len(view["children"]) != 0:
                             continue
-                        if positionX >= bounds[0][0] and positionX <= bounds[1][0] and \
-                           positionY >= bounds[0][1] and positionY <= bounds[1][1]:
+                        if startPosX >= bounds[0][0] and startPosX <= bounds[1][0] and \
+                           startPosY >= bounds[0][1] and startPosY <= bounds[1][1]:
                             touched_view = view
                             break
                         
@@ -1244,14 +1253,21 @@ class ManualEventFactory(CustomizedEventFactory):
                         print 'no view'
                         touched_view = {"view_str": "UNKNOWN_TOUCH"}
                 else:
-                    touched_view = {"view_str": "DRAW_%s,%s_%s,%s" % (\
-                        str(startPosX), str(startPosY), str(positionX), str(positionY))}
+                    touched_view = {"view_str": "DRAW:%s" % json.dumps(posList)}
                 
                 break
 
-            elif 'ABS_MT_POSITION' in line:
+            elif 'ABS_MT_POSITION_X' in line:
                 onClick = False
                 onDraw = True
+                
+                currPosX = int(line[line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                while True:
+                    y_line = sp.stdout.readline()    
+                    if 'ABS_MT_POSITION_Y' in y_line:
+                        currPosY = int(y_line[y_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        posList.append([currPosX, currPosY])
+                        break
             
         sp.kill()
 

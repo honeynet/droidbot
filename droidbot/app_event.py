@@ -1201,8 +1201,7 @@ class ManualEventFactory(CustomizedEventFactory):
         sp = subprocess.Popen(['adb', 'shell', 'getevent', '-lt'], 
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)#, bufsize=0)
         
-        onClick = False
-        onDraw = False
+        onDown = False
         startPosX = -1
         startPosY = -1
         currPosX = -1
@@ -1211,40 +1210,47 @@ class ManualEventFactory(CustomizedEventFactory):
 
         while 1:
             line = sp.stdout.readline()
-            if 'BTN_TOUCH' in line and 'DOWN' in line:
+            if ('ABS_MT_TRACKING_ID' in line) and ('ffffffff' not in line):
                 # clear btn_touch down's own positions
                 while True:
                     position_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_X' in position_line:
-                        startPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                        startPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
                     elif 'ABS_MT_POSITION_Y' in position_line:
-                        startPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        startPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
                         posList.append([startPosX, startPosY])
                         break
                 print "STARTPOS: %s, %s" % (str(startPosX), str(startPosY))
-                onDraw = False
-                onClick = True
+                currPosX = startPosX
+                currPosY = startPosY
+                onDown = True
                 
-            elif 'BTN_TOUCH' in line and 'UP' in line and (onClick or onDraw):
-                endPosX = -1
-                endPosY = -1
+            elif ('ABS_MT_TRACKING_ID' in line) and ('ffffffff' in line) and onDown:
+                endPosX = currPosX
+                endPosY = currPosY
                 while True:
                     position_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_X' in position_line:
-                        endPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                        endPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
                     elif 'ABS_MT_POSITION_Y' in position_line:
-                        endPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        endPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
                         break
                     elif len(position_line) > 0:
-                        endPosX = currPosX
-                        endPosY = currPosY
                         posList.append([endPosX, endPosY]);
                         break
 
                 print "ENDPOS: %s, %s" % (str(endPosX), str(endPosY))
+                
+                onDraw = False
+                for point in posList:
+                    if (point[0]-startPosX) * (point[0]-startPosX) + \
+                       (point[1]-startPosY) * (point[0]-startPosY) >= 10000:
+                        onDraw = True
+                        break
 
-                if onClick:
+                if onDraw == False:
                     for view in state_dict["views"]:
+                        print view["bounds"]
                         bounds = view["bounds"]
                         if view["parent"] == None or len(view["children"]) != 0:
                             continue
@@ -1262,16 +1268,13 @@ class ManualEventFactory(CustomizedEventFactory):
                 break
 
             elif 'ABS_MT_POSITION_X' in line:
-                onClick = False
-                onDraw = True
-                
-                currPosX = int(line[line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16)
+                currPosX = int(line[line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
                 while True:
                     y_line = sp.stdout.readline()    
                     if 'ABS_MT_POSITION_Y' in y_line:
-                        currPosY = int(y_line[y_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16)
+                        currPosY = int(y_line[y_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
                         posList.append([currPosX, currPosY])
-                        break
+                    break
             
         sp.kill()
 

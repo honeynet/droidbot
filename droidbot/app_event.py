@@ -726,7 +726,11 @@ class EventFactory(object):
         count = 0
         while event_manager.enabled and count < event_manager.event_count:
             try:
-                event = self.generate_event()
+                # make sure the first event is to start the app
+                if count == 0:
+                    event = IntentEvent(self.app.get_start_intent())
+                else:
+                    event = self.generate_event()
                 event_manager.add_event(event)
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
@@ -1137,7 +1141,7 @@ class CustomizedEventFactory(EventFactory):
         from droidbot_types import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
-            assert isinstance(event, AppEvent)
+            assert isinstance(event, AppEvent) or event is None
         else:
             event = UIEvent.get_random_instance(self.device, self.app)
         return event
@@ -1337,14 +1341,12 @@ class StateRecorderFactory(CustomizedEventFactory):
                 # just pass to let viewclient deal with this case
                 pass
             else:
-                component = self.app.get_package_name()
-                if self.app.get_main_activity():
-                    component += "/%s" % self.app.get_main_activity()
+                start_app_intent = self.app.get_start_intent()
 
                 self.last_event_flag += EVENT_FLAG_START_APP
                 self.last_touched_view_str = None
                 self.last_state = state
-                return IntentEvent(Intent(suffix=component))
+                return IntentEvent(start_app_intent)
 
         # select a view to click
         view_to_touch = self.select_a_view(state)

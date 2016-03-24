@@ -718,6 +718,16 @@ class App(object):
             self.main_activity = self.get_androguard_analysis().a.get_main_activity()
         return self.main_activity
 
+    def get_start_intent(self):
+        """
+        get an intent to start the app
+        :return: Intent
+        """
+        package_name = self.get_package_name()
+        if self.get_main_activity():
+            package_name += "/%s" % self.get_main_activity()
+        return Intent(suffix=package_name)
+
     def get_possible_broadcasts(self):
         possible_broadcasts = set()
         androguard = self.get_androguard_analysis()

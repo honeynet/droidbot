@@ -726,8 +726,11 @@ class EventFactory(object):
         count = 0
         while event_manager.enabled and count < event_manager.event_count:
             try:
-                # make sure the first event is to start the app
+                # make sure the first event is go to HOME screen
+                # the second event is to start the app
                 if count == 0:
+                    event = KeyEvent(name="HOME")
+                elif count == 1:
                     event = IntentEvent(self.app.get_start_intent())
                 else:
                     event = self.generate_event()

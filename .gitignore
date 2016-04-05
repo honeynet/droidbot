@@ -60,3 +60,5 @@ docs/_build/
 target/
 .idea
 droidbot_out
+_site
+Gemfile.lock

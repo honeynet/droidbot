@@ -1,0 +1,10 @@
+*.pyc
+*.egg-info
+_site
+Gemfile.lock
+dist
+droidbox_script
+droidbox_scripts
+.idea
+droidbot_out
+

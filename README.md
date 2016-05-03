@@ -42,14 +42,6 @@ keyevents, and simulated broadcasts, etc.
     it sends activity-specific intents based on static analysis of app.
     + `file` policy which generates events from a json file.
 
-Moreover, to evaluate whether our bot exploit more app states, I plan to implement a 
-Android test coverage tool **which does not require repackaging or source code**. 
-(note that `Emma` can evaluate coverage with source code)
-Android's `traceviewer` is able to record entering and exiting of each method, and we can get a list
-of all methods of app via reverse engineering. By comparing `traceviewer` log and app dex, hopefully 
-we can get the method coverage of app. The challenge is, `traceviewer` brings too much overhead, because 
-it records much information we don't need.
-
 ## Prerequisite
 
 1. `Python` version `2.7`
@@ -70,11 +62,16 @@ pip install -e droidbot
 
 ## Usage
 
-1. Start an emulator (recommended) or connect to a device using adb.
+### Basic Usage
+
+1. Start an emulator or connect to a device using adb.
 2. Start droidbot:
 `droidbot -h`
 
 ### Usage with DroidBox (without docker)
+
+DroidBox print sensitive behaviours at runtime, which is useful in malware analysis.
+DroidBot can be used with DroidBox and is able to capture DroidBox logs.
 
 Step 1. Start droidbox emulator:
 

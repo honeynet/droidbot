@@ -12,6 +12,7 @@ from app_env import AppEnvManager
 from app_event import AppEventManager
 from droidbox_scripts.droidbox import DroidBox
 
+
 class DroidBot(object):
     """
     The main class of droidbot

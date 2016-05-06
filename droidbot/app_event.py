@@ -1444,3 +1444,9 @@ class StateRecorderFactory(CustomizedEventFactory):
         state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
         json.dump(list(self.state_transitions), state_transitions_file, indent=2)
         state_transitions_file.close()
+
+        import state_transition_graph
+        state_transition_graph = state_transition_graph.gen_state_transition_graph(self.device.output_dir)
+        state_transition_graph_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
+        json.dump(state_transition_graph, state_transition_graph_file, indent=2)
+        state_transition_graph_file.close()

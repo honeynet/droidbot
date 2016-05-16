@@ -1,5 +1,5 @@
 # A docker image, where DroidBot interacts with Droidbox instance.
-# https://github.com/lynnlyc/droidbot
+# https://github.com/ylimit/droidbot
 # the dockerized Droidbox instance was copied from https://github.com/aikinci/droidbox
 FROM ubuntu:14.04
 MAINTAINER ali@ikinci.info

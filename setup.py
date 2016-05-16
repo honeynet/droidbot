@@ -11,8 +11,8 @@ setup(
   author = 'Lynn',
   license='MIT',
   author_email = 'pkulyc@gmail.com',
-  url = 'https://github.com/lynnlyc/droidbot', # use the URL to the github repo
-  download_url = 'https://github.com/lynnlyc/droidbot/tarball/1.0.0a2',
+  url = 'https://github.com/ylimit/droidbot', # use the URL to the github repo
+  download_url = 'https://github.com/ylimit/droidbot/tarball/1.0.0a2',
   keywords = ['testing', 'monkey', 'exerciser'], # arbitrary keywords
   classifiers=[
     # How mature is this project? Common values are

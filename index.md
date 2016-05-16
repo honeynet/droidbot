@@ -1,6 +1,6 @@
 ---
 layout: default
-title: DroidBot by lynnlyc
+title: DroidBot by yli
 ---
 
 # DroidBot
@@ -86,7 +86,7 @@ you can download it from [here](http://droidbox.googlecode.com/files/DroidBox411
 After installed the requirements, clone the droidbot directory to your working directory and run `pip install`.
 
 {% highlight bash %}
-git clone https://github.com/lynnlyc/droidbot.git
+git clone https://github.com/ylimit/droidbot.git
 pip install -e droidbot
 {% endhighlight %}
 
@@ -103,7 +103,7 @@ docker pull honeynet/droidbot
 or, if you prefer, build your own from the GitHub repo:
 
 {% highlight bash %}
-git clone https://github.com/lynnlyc/droidbot.git
+git clone https://github.com/ylimit/droidbot.git
 docker build -t honeynet/droidbot droidbot
 {% endhighlight %}
 

@@ -8,7 +8,7 @@ in order to exploit more app states automatically.
 droidbot decides which actions to take based on static analysis result of app 
 and dynamic device information (view hierarchy).
 
-For more details, refer to my [blog posts](http://lynnlyc.github.io/droidbot/).
+For more details, refer to my [blog posts](http://ylimit.github.io/droidbot/).
 
 ## Introduction
 DroidBot mainly does following two things:
@@ -56,7 +56,7 @@ download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 Clone this repo and use pip install:
 
 ```shell
-git clone https://github.com/lynnlyc/droidbot.git
+git clone https://github.com/ylimit/droidbot.git
 pip install -e droidbot
 ```
 
@@ -110,7 +110,7 @@ docker pull honeynet/droidbot
 
 or, if you prefer, build your own from the GitHub repo:
 ```
-git clone https://github.com/lynnlyc/droidbot.git
+git clone https://github.com/ylimit/droidbot.git
 docker build -t honeynet/droidbot droidbot
 ```
 
@@ -126,7 +126,7 @@ ls ~/mobileSamples/out
 Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
 and adb monkey tool. The results are in [result](/evaluation_reports/README.md).
 
-Or see my visualized evaluation reports at [DroidBot Posts](http://lynnlyc.github.io/droidbot/).
+Or see my visualized evaluation reports at [DroidBot Posts](http://ylimit.github.io/droidbot/).
 
 ## Acknowledgement
 

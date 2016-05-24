@@ -677,8 +677,8 @@ class AppEventManager(object):
             elif self.policy == POLICY_NONE:
                 self.device.start_app(self.app)
                 while True:
-                    input = raw_input("press ENTER to save current state, type q to exit...")
-                    if input.startswith('q'):
+                    keyboard_input = raw_input("press ENTER to save current state, type q to exit...")
+                    if keyboard_input.startswith('q'):
                         break
                     state = self.device.get_current_state()
                     if state is not None:
@@ -1196,7 +1196,7 @@ class ManualEventFactory(CustomizedEventFactory):
         """
         self.device.logger.info("Waiting for user input...")
 
-        # TODO implement this using getevent
+        # implement this using getevent
         # @yzy
         state_dict = state.to_dict()
         touched_view = None
@@ -1239,7 +1239,7 @@ class ManualEventFactory(CustomizedEventFactory):
                         endPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
                         break
                     elif len(position_line) > 0:
-                        posList.append([endPosX, endPosY]);
+                        posList.append([endPosX, endPosY])
                         break
 
                 print "ENDPOS: %s, %s" % (str(endPosX), str(endPosY))
@@ -1255,14 +1255,14 @@ class ManualEventFactory(CustomizedEventFactory):
                     for view in state_dict["views"]:
                         print view["bounds"]
                         bounds = view["bounds"]
-                        if view["parent"] == None or len(view["children"]) != 0:
+                        if view["parent"] is None or len(view["children"]) != 0:
                             continue
-                        if startPosX >= bounds[0][0] and startPosX <= bounds[1][0] and \
-                           startPosY >= bounds[0][1] and startPosY <= bounds[1][1]:
+                        if bounds[0][0] <= startPosX <= bounds[1][0] and \
+                                                bounds[0][1] <= startPosY <= bounds[1][1]:
                             touched_view = view
                             break
                         
-                    if touched_view == None:
+                    if touched_view is None:
                         print 'no view'
                         touched_view = {"view_str": "UNKNOWN_TOUCH"}
                 else:
@@ -1445,8 +1445,8 @@ class StateRecorderFactory(CustomizedEventFactory):
         json.dump(list(self.state_transitions), state_transitions_file, indent=2)
         state_transitions_file.close()
 
-        import state_transition_graph
-        state_transition_graph = state_transition_graph.gen_state_transition_graph(self.device.output_dir)
-        state_transition_graph_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(state_transition_graph, state_transition_graph_file, indent=2)
-        state_transition_graph_file.close()
+        from state_transition_graph import TransitionGraph
+        utg = TransitionGraph(input_path=self.device.output_dir)
+        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
+        json.dump(utg.to_json(), utg_file, indent=2)
+        utg_file.close()

@@ -202,8 +202,8 @@ class DroidBox(object):
             self.timer.start()
 
         if self.adb is None:
-            self.adb = Popen(["adb", "logcat", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE)
+            self.adb = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Collect DroidBox logs
         self.is_counting_logs = True
@@ -220,14 +220,14 @@ class DroidBox(object):
                 if not logcatInput:
                     raise LostADBException("We have lost the connection with ADB.")
 
-
+                # TODO improve this to get the pid of each log message
                 boxlog = logcatInput.split('DroidBox:')
                 if len(boxlog) > 1:
                     try:
                         load = json.loads(decode(boxlog[1]))
 
                         # dirty workaround: filter out the logs produced by DroidBot
-                        self.filter_noises(load)
+                        # self.filter_noises(load)
 
                         # DexClassLoader
                         if load.has_key('DexClassLoader'):

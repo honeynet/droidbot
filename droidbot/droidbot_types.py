@@ -57,6 +57,9 @@ class Device(object):
         self.connect()
         self.get_display_info()
         self.logcat = self.redirect_logcat()
+        from state_monitor import StateMonitor
+        self.state_monitor = StateMonitor(device=self)
+        self.state_monitor.start()
         # assert self.display_info is not None
         # self.check_connectivity()
         # print self.is_emulator, self.host, self.port

@@ -220,11 +220,13 @@ class DroidBox(object):
                 if not logcatInput:
                     raise LostADBException("We have lost the connection with ADB.")
 
+
                 boxlog = logcatInput.split('DroidBox:')
                 if len(boxlog) > 1:
                     try:
                         load = json.loads(decode(boxlog[1]))
 
+                        # dirty workaround: filter out the logs produced by DroidBot
                         self.filter_noises(load)
 
                         # DexClassLoader

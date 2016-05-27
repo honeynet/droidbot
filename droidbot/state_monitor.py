@@ -12,13 +12,14 @@ class StateMonitor(object):
     Once there is a state change, notify the state listeners
     """
 
-    def __init__(self, device, app=None):
+    def __init__(self, device=None, app=None):
         """
-        initiate an AppStateMonitor
+        initiate a StateMonitor
         :param device: Device instance
         :param app: App instance
         :return:
         """
+        self.enabled = True
         self.device = device
         self.app = app
         self.pid2user = {}
@@ -49,17 +50,21 @@ class StateMonitor(object):
         :return:
         """
         import threading
+        self.enabled = True
         gps_thread = threading.Thread(
             target=self.maintain_process_mapping)
         gps_thread.start()
         return True
+
+    def stop(self):
+        self.enabled = False
 
     def maintain_process_mapping(self):
         """
         maintain pid2user mapping, pid2ppid mapping and pid2name mapping by continuously calling ps command
         """
         import time, subprocess
-        while self.device.is_connected:
+        while self.enabled:
             ps_out = subprocess.check_output(["adb", "shell", "ps", "-t"])
             # parse ps_out to update self.pid2uid mapping and self.pid2name mapping
             ps_out_lines = ps_out.splitlines()
@@ -79,7 +84,7 @@ class StateMonitor(object):
                 self.pid2ppid[pid] = ppid
                 self.pid2user[pid] = user
 
-            time.sleep(1)
+            time.sleep(3)
 
     def get_ppids_by_pid(self, pid):
         """

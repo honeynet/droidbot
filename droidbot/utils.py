@@ -25,6 +25,6 @@ def parse_log(log_msg):
     log_dict['tag'] = m.group('tag')
     log_dict['content'] = m.group('content')
     datetime_str = "%s-%s %s" % (datetime.today().year, date, time)
-    log_dict['datetime'] = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S:%f")
+    log_dict['datetime'] = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
 
     return log_dict

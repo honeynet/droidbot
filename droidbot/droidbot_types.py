@@ -170,6 +170,7 @@ class Device(object):
         if self.view_client:
             self.view_client = None
         self.logcat.terminate()
+        self.state_monitor.stop()
 
     def get_telnet(self):
         """
@@ -651,6 +652,7 @@ class DeviceState(object):
         import math
         return int(math.fabs((bounds[0][0]-bounds[1][0])*(bounds[0][1]-bounds[1][1])))
 
+
 class App(object):
     """
     this class describes an app
@@ -786,6 +788,8 @@ class AndroguardAnalysis(object):
         self.app_path = app_path
         from androguard.core.bytecodes.apk import APK
         self.a = APK(app_path)
+        self.d = None
+        self.dx = None
 
     def get_detailed_analysis(self):
         from androguard.misc import AnalyzeDex

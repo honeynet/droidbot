@@ -50,7 +50,7 @@ class DroidBot(object):
 
         self.droidbox = None
         if with_droidbox:
-            self.droidbox = DroidBox(output_dir=self.output_dir)
+            self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
 
         self.env_manager = AppEnvManager(self.device, self.app, env_policy)
         self.event_manager = AppEventManager(self.device, self.app, event_policy,

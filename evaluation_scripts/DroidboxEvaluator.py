@@ -163,7 +163,8 @@ class DroidboxEvaluator(object):
         if not self.enabled:
             return
         self.logger.info("starting droidbot")
-        self.droidbot = DroidBot(app_path=self.apk_path,
+        self.droidbot = DroidBot(device_serial=self.device_serial,
+                                 app_path=self.apk_path,
                                  env_policy=env_policy,
                                  event_policy=event_policy,
                                  event_count=self.event_count,

@@ -1,4 +1,5 @@
 # I have to modify droidbox scripts to let it work with droidbot
+# This is a compatible version which generate a report with the same format of original DroidBox
 __author__ = 'yuanchun'
 
 ################################################################################
@@ -30,13 +31,12 @@ Please keep in mind that all data received/sent,
 read/written are shown in hexadecimal since the handled data can contain binary data.
 """
 
-import json, time, signal, os, sys, re
+import json, time, signal, os, sys
 import zipfile
 import subprocess
 import threading
 
 from threading import Thread
-from datetime import datetime
 from xml.dom import minidom
 from subprocess import call, PIPE, Popen
 from utils import AXMLPrinter
@@ -55,12 +55,22 @@ class LostADBException(Exception):
 
 
 class DroidBox(object):
-    def __init__(self, droidbot=None, output_dir=None):
-        self.sensitive_behaviors = []
+    def __init__(self, output_dir=None):
+        self.sendsms = {}
+        self.phonecalls = {}
+        self.cryptousage = {}
+        self.dexclass = {}
+        self.dataleaks = {}
+        self.opennet = {}
+        self.sendnet = {}
+        self.recvnet = {}
+        self.closenet = {}
+        self.fdaccess = {}
+        self.servicestart = {}
+        self.accessedfiles = {}
         self.enabled = True
 
-        self.droidbot = droidbot
-        self.logcat = None
+        self.adb = None
 
         self.application = None
         self.apk_name = None
@@ -69,13 +79,6 @@ class DroidBox(object):
 
         self.is_counting_logs = False
         self.timer = None
-
-        self.state_monitor = None
-        if self.droidbot:
-            self.state_monitor = self.droidbot.device.state_monitor
-        else:
-            from droidbot.state_monitor import StateMonitor
-            self.state_monitor = StateMonitor()
 
         if output_dir:
             self.output_dir = output_dir
@@ -136,14 +139,14 @@ class DroidBox(object):
         stringApplicationStarted = "Start proc %s" % package_name
 
         # Open the adb logcat
-        if self.logcat is None:
-            self.logcat = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
+        if self.adb is None:
+            self.adb = Popen(["adb", "logcat", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
 
         # Wait for the application to start
         while 1:
             try:
-                logcatInput = self.logcat.stdout.readline()
+                logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
                     raise Exception("We have lost the connection with ADB.")
 
@@ -157,7 +160,7 @@ class DroidBox(object):
         if (self.applicationStarted == 0):
             print("Analysis has not been done.")
             # Kill ADB, otherwise it will never terminate
-            os.kill(self.logcat.pid, signal.SIGTERM)
+            os.kill(self.adb.pid, signal.SIGTERM)
             sys.exit(1)
 
         print("Application started")
@@ -170,11 +173,9 @@ class DroidBox(object):
         self.enabled = False
         if self.timer and self.timer.isAlive():
             self.timer.cancel()
-        if self.logcat is not None:
-            self.logcat.terminate()
-            self.logcat = None
-        if self.state_monitor:
-            self.state_monitor.stop()
+        if self.adb is not None:
+            self.adb.terminate()
+            self.adb = None
 
     def start_blocked(self, duration=0):
         if not self.enabled:
@@ -196,20 +197,23 @@ class DroidBox(object):
         count = CountingThread()
         count.start()
 
+        timeStamp = time.time()
         if duration:
             self.timer = threading.Timer(duration, self.stop)
             self.timer.start()
 
-        if self.logcat is None:
-            self.logcat = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"],
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        if self.adb is None:
+            self.adb = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # Collect DroidBox logs
         self.is_counting_logs = True
         self.lastScreenshot = 0
         first_log_time = None
 
-        fd2path = {}
+        from droidbot.state_monitor import StateMonitor
+        state_monitor = StateMonitor()
+        state_monitor.start()
 
         while self.enabled:
             try:
@@ -219,95 +223,239 @@ class DroidBox(object):
                               + "_$(date +%Y-%m-%d_%H%M%S).png")
                     self.lastScreenshot = time.time()
 
-                logcatInput = self.logcat.stdout.readline()
+                logcatInput = self.adb.stdout.readline()
                 if not logcatInput:
                     raise LostADBException("We have lost the connection with ADB.")
 
-                log_data = parse_log(logcatInput)
+                from droidbot import utils
+                log_data = utils.parse_log(logcatInput)
 
-                if log_data is None or not log_data['content'].startswith("DroidBox:"):
+                if log_data is None or log_data['tag'] != "DroidBox":
                     continue
 
                 log_time = log_data['datetime']
                 if first_log_time is None:
                     first_log_time = log_time
                 log_delta_seconds = (log_time - first_log_time).total_seconds()
+                log_content = json.loads(decode(log_data['content']))
 
-                log_content = json.loads(decode(log_data['content'][10:]))
-                log_process_names = self.state_monitor.get_names_by_pid(log_data['tid'])
-                log_process_name = "->".join(log_process_names)
+                # DroidBox style report
+                try:
+                    # dirty workaround: filter out the logs produced by DroidBot
+                    # self.filter_noises(log_content)
 
-                for log_type in log_content:
-                    log_detail = log_content[log_type]
-                    if log_type == "FdAccess":
-                        path = hexToStr(log_detail['path'])
-                        fd2path[log_detail['id']] = path
-                        log_detail['path'] = path
-                    if log_type == "FileRW" and log_detail['id'] in fd2path:
-                        log_detail['path'] = fd2path[log_detail['id']]
-                    if log_type == "DataLeak":
-                        log_detail['tag'] = getTags(int(log_detail['tag'], 16))
-                        if log_detail['sink'] == "File" and log_detail['id'] in fd2path:
-                            log_detail['path'] = fd2path[log_detail['id']]
+                    # DexClassLoader
+                    if log_content.has_key('DexClassLoader'):
+                        log_content['DexClassLoader']['type'] = 'dexload'
+                        self.dexclass[log_delta_seconds] = log_content['DexClassLoader']
+                        count.increaseCount()
 
-                    log_dict = {"type": log_type,
-                                "time": log_delta_seconds,
-                                "process": log_process_name,
-                                "detail": log_detail}
+                    # service started
+                    if log_content.has_key('ServiceStart'):
+                        log_content['ServiceStart']['type'] = 'service'
+                        self.servicestart[log_delta_seconds] = log_content['ServiceStart']
+                        count.increaseCount()
 
-                    self.sensitive_behaviors.append(log_dict)
-                    count.increaseCount()
+                    # received data from net
+                    if log_content.has_key('RecvNet'):
+                        host = log_content['RecvNet']['srchost']
+                        port = log_content['RecvNet']['srcport']
+
+                        self.recvnet[log_delta_seconds] = recvdata = {'type': 'net read', 'host': host,
+                                                                            'port': port,
+                                                                            'data': log_content['RecvNet']['data']}
+                        count.increaseCount()
+
+                    # fdaccess
+                    if log_content.has_key('FdAccess'):
+                        self.accessedfiles[log_content['FdAccess']['id']] = hexToStr(log_content['FdAccess']['path'])
+
+                    # file read or write
+                    if log_content.has_key('FileRW'):
+                        log_content['FileRW']['path'] = self.accessedfiles[log_content['FileRW']['id']]
+                        if log_content['FileRW']['operation'] == 'write':
+                            log_content['FileRW']['type'] = 'file write'
+                        else:
+                            log_content['FileRW']['type'] = 'file read'
+
+                        self.fdaccess[log_delta_seconds] = log_content['FileRW']
+                        count.increaseCount()
+
+                    # opened network connection log
+                    if log_content.has_key('OpenNet'):
+                        self.opennet[log_delta_seconds] = log_content['OpenNet']
+                        count.increaseCount()
+
+                    # closed socket
+                    if log_content.has_key('CloseNet'):
+                        self.closenet[log_delta_seconds] = log_content['CloseNet']
+                        count.increaseCount()
+
+                    # outgoing network activity log
+                    if log_content.has_key('SendNet'):
+                        log_content['SendNet']['type'] = 'net write'
+                        self.sendnet[log_delta_seconds] = log_content['SendNet']
+
+                        count.increaseCount()
+
+                    # data leak log
+                    if log_content.has_key('DataLeak'):
+                        my_time = log_delta_seconds
+                        log_content['DataLeak']['type'] = 'leak'
+                        log_content['DataLeak']['tag'] = getTags(int(log_content['DataLeak']['tag'], 16))
+                        self.dataleaks[my_time] = log_content['DataLeak']
+                        count.increaseCount()
+
+                        if log_content['DataLeak']['sink'] == 'Network':
+                            log_content['DataLeak']['type'] = 'net write'
+                            self.sendnet[my_time] = log_content['DataLeak']
+                            count.increaseCount()
+
+                        elif log_content['DataLeak']['sink'] == 'File':
+                            log_content['DataLeak']['path'] = self.accessedfiles[log_content['DataLeak']['id']]
+                            if log_content['DataLeak']['operation'] == 'write':
+                                log_content['DataLeak']['type'] = 'file write'
+                            else:
+                                log_content['DataLeak']['type'] = 'file read'
+
+                            self.fdaccess[my_time] = log_content['DataLeak']
+                            count.increaseCount()
+
+                        elif log_content['DataLeak']['sink'] == 'SMS':
+                            log_content['DataLeak']['type'] = 'sms'
+                            self.sendsms[my_time] = log_content['DataLeak']
+                            count.increaseCount()
+
+                    # sent sms log
+                    if log_content.has_key('SendSMS'):
+                        log_content['SendSMS']['type'] = 'sms'
+                        self.sendsms[log_delta_seconds] = log_content['SendSMS']
+                        count.increaseCount()
+
+                    # phone call log
+                    if log_content.has_key('PhoneCall'):
+                        log_content['PhoneCall']['type'] = 'call'
+                        self.phonecalls[log_delta_seconds] = log_content['PhoneCall']
+                        count.increaseCount()
+
+                    # crypto api usage log
+                    if log_content.has_key('CryptoUsage'):
+                        log_content['CryptoUsage']['type'] = 'crypto'
+                        self.cryptousage[log_delta_seconds] = log_content['CryptoUsage']
+                        count.increaseCount()
+                except ValueError:
+                    pass
             except KeyboardInterrupt:
                 break
             except LostADBException:
                 break
-            # except Exception as e:
-            #     print(e.message)
-            #     continue
+            except Exception as e:
+                print(e.message)
+                continue
 
         self.is_counting_logs = False
         count.stopCounting()
         count.join()
         # Kill ADB, otherwise it will never terminate
         self.stop()
-        self.logcat = None
+        self.adb = None
 
         print json.dumps(self.get_output())
         if self.output_dir is None:
             return
-        with open(os.path.join(self.output_dir, "analysis.json"),"w") as json_file:
-            json_file.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
+        with open(os.path.join(self.output_dir, "analysis.json"),"w") as jsonfile:
+            jsonfile.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
 
     def get_output(self):
         # Done? Store the objects in a dictionary, transform it in a dict object and return it
         output = dict()
 
         # Sort the items by their key
+        output["dexclass"] = self.dexclass
+        output["servicestart"] = self.servicestart
+
+        output["recvnet"] = self.recvnet
+        output["opennet"] = self.opennet
+        output["sendnet"] = self.sendnet
+        output["closenet"] = self.closenet
+
+        output["accessedfiles"] = self.accessedfiles
+        output["dataleaks"] = self.dataleaks
+
+        output["fdaccess"] = self.fdaccess
+        output["sendsms"] = self.sendsms
+        output["phonecalls"] = self.phonecalls
+        output["cryptousage"] = self.cryptousage
+
         output["recvsaction"] = self.application.getRecvsaction()
-        output["permissions"] = self.application.getPermissions()
+        output["enfperm"] = self.application.getEnfperm()
+
         output["hashes"] = self.apk_hashes
         output["apkName"] = self.apk_name
-        output["sensitiveBehaviors"] = self.sensitive_behaviors
         return output
 
     def get_counts(self):
         output = dict()
 
-        for behavior in self.sensitive_behaviors:
-            output[behavior['type']] = 0
-        for behavior in self.sensitive_behaviors:
-            output[behavior['type']] += 1
+        # Sort the items by their key
+        output["dexclass"] = len(self.dexclass)
+        output["servicestart"] = len(self.servicestart)
+
+        output["recvnet"] = len(self.recvnet)
+        output["opennet"] = len(self.opennet)
+        output["sendnet"] = len(self.sendnet)
+        output["closenet"] = len(self.closenet)
+
+        output["dataleaks"] = len(self.dataleaks)
+
+        output["fdaccess"] = len(self.fdaccess)
+        output["sendsms"] = len(self.sendsms)
+        output["phonecalls"] = len(self.phonecalls)
+        output["cryptousage"] = len(self.cryptousage)
 
         output["sum"] = sum(output.values())
+
         return output
 
     def filter_noises(self, log):
         """
         filter use less noises from log
-        :param log: DroidBox log in dict format
+        :param log: log of Droidbox in dict format
         :return: boolean
         """
+        if isinstance(log, dict):
+            # DexClassLoader
+            if 'DexClassLoader' in log.keys():
+                if log['DexClassLoader']['path'] in DEXCLASSLOADER_EXCLUDED:
+                    log.pop('DexClassLoader')
+
+            # fdaccess
+            if 'FdAccess' in log.keys():
+                for excluded_prefix in FDACCESS_EXCLUDED_PREFIX:
+                    if hexToStr(log['FdAccess']['path']).startswith(excluded_prefix):
+                        log.pop('FdAccess')
+                        break
+
+            # file read or write
+            if 'FileRW' in log.keys():
+                if log['FileRW']['id'] not in self.accessedfiles.keys():
+                    log.pop('FileRW')
+
         return log
+
+
+DEXCLASSLOADER_EXCLUDED = [
+    "/system/framework/monkey.jar",
+    "/system/framework/input.jar",
+    "/system/framework/am.jar",
+]
+
+
+FDACCESS_EXCLUDED_PREFIX = [
+    "pipe:",
+    "socket:",
+    "/dev/input/event",
+]
 
 
 class CountingThread(Thread):
@@ -344,12 +492,15 @@ class CountingThread(Thread):
         counter = 0
         while 1:
             sign = signs[counter % len(signs)]
-            print "[%s] Collected %s sandbox logs (Ctrl-C to view logs)\r" % (sign, str(self.logs))
+            sys.stdout.write("     \033[132m[%s] Collected %s sandbox logs\033[1m   (Ctrl-C to view logs)\r" % (
+                sign, str(self.logs)))
             sys.stdout.flush()
             time.sleep(0.5)
-            counter += 1
+            counter = counter + 1
             if self.stop:
-                print "[%s] Collected %s sandbox logs (Ctrl-C to view logs)\r" % ("*", str(self.logs))
+                sys.stdout.write(
+                    "   \033[132m[%s] Collected %s sandbox logs\033[1m%s\r" % ('*', str(self.logs), ' ' * 25))
+                sys.stdout.flush()
                 break
 
 
@@ -447,7 +598,6 @@ class Application:
         """
         Calculate MD5,SHA-1, SHA-256
         hashes of APK input file
-        @param block_size:
         """
         md5 = hashlib.md5()
         sha1 = hashlib.sha1()
@@ -503,35 +653,6 @@ def interruptHandler(signum, frame):
 
     """
     raise KeyboardInterrupt
-
-
-# logcat regex, which will match the log message generated by `adb logcat -v threadtime`
-LOGCAT_THREADTIME_RE = re.compile('^(?P<date>\S+)\s+(?P<time>\S+)\s+(?P<pid>[0-9]+)\s+(?P<tid>[0-9]+)\s+'
-                                  '(?P<level>[VDIWEFS])\s+(?P<tag>[^:]*):\s+(?P<content>.*)$')
-
-
-def parse_log(log_msg):
-    """
-    parse a logcat message
-    the log should be in threadtime format
-    @param log_msg:
-    @return:
-    """
-    m = LOGCAT_THREADTIME_RE.match(log_msg)
-    if not m:
-        return None
-    log_dict = {}
-    date = m.group('date')
-    time = m.group('time')
-    log_dict['pid'] = m.group('pid')
-    log_dict['tid'] = m.group('tid')
-    log_dict['level'] = m.group('level')
-    log_dict['tag'] = m.group('tag')
-    log_dict['content'] = m.group('content')
-    datetime_str = "%s-%s %s" % (datetime.today().year, date, time)
-    log_dict['datetime'] = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-
-    return log_dict
 
 
 def main():

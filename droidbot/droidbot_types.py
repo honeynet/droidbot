@@ -70,7 +70,7 @@ class Device(object):
         logcat_file = open("%s/logcat.log" % output_dir, "w")
         import subprocess
         subprocess.check_call(["adb", "logcat", "-c"])
-        logcat = subprocess.Popen(["adb", "logcat"],
+        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime"],
                                   stdin=subprocess.PIPE,
                                   stdout=logcat_file)
         return logcat

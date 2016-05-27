@@ -11,6 +11,7 @@ class StateMonitor(object):
     This class is responsible for monitoring the states of device and app
     Once there is a state change, notify the state listeners
     """
+    # TODO make this thread safe
 
     def __init__(self, device=None, app=None):
         """

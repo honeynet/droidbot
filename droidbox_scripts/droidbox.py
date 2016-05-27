@@ -193,8 +193,8 @@ class DroidBox(object):
         print "   \ \____/\ \_\ \____/\ \_\ \___,_\ \____/ \____//\_/\_\\"
         print "    \/___/  \/_/\/___/  \/_/\/__,_ /\/___/ \/___/ \//\/_/"
 
-        count = CountingThread()
-        count.start()
+        counter = CountingThread()
+        counter.start()
 
         if duration:
             self.timer = threading.Timer(duration, self.stop)
@@ -234,7 +234,8 @@ class DroidBox(object):
                 log_delta_seconds = (log_time - first_log_time).total_seconds()
 
                 log_content = json.loads(decode(log_data['content'][10:]))
-                log_process_names = self.state_monitor.get_names_by_pid(log_data['tid'])
+
+                log_process_names = self.state_monitor.get_names_by_pid(log_data['pid'])
                 log_process_name = "->".join(log_process_names)
 
                 for log_type in log_content:
@@ -255,19 +256,22 @@ class DroidBox(object):
                                 "process": log_process_name,
                                 "detail": log_detail}
 
+                    if self.filter_noises(log_dict):
+                        continue
+
                     self.sensitive_behaviors.append(log_dict)
-                    count.increaseCount()
+                    counter.increaseCount()
             except KeyboardInterrupt:
                 break
             except LostADBException:
                 break
-            # except Exception as e:
-            #     print(e.message)
-            #     continue
+            except Exception as e:
+                print(e.message)
+                continue
 
         self.is_counting_logs = False
-        count.stopCounting()
-        count.join()
+        counter.stopCounting()
+        counter.join()
         # Kill ADB, otherwise it will never terminate
         self.stop()
         self.logcat = None
@@ -301,13 +305,16 @@ class DroidBox(object):
         output["sum"] = sum(output.values())
         return output
 
-    def filter_noises(self, log):
+    def filter_noises(self, log_dict):
         """
         filter use less noises from log
-        :param log: DroidBox log in dict format
+        :param log_dict: DroidBox log in dict format
         :return: boolean
         """
-        return log
+        if log_dict['type'] in ["FdAccess", "FileRW"]:
+            if log_dict['detail']['path'].startswith("socket") or log_dict['detail']['path'].startswith("pipe"):
+                return True
+        return False
 
 
 class CountingThread(Thread):

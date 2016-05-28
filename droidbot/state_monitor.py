@@ -4,6 +4,7 @@
 #     2. intent state, i.e. a list of intents the app can receive
 #     3. process state, i.e. pid-uid-package_name mapping
 __author__ = 'liyc'
+import threading
 
 
 class StateMonitor(object):
@@ -11,7 +12,6 @@ class StateMonitor(object):
     This class is responsible for monitoring the states of device and app
     Once there is a state change, notify the state listeners
     """
-    # TODO make this thread safe
 
     def __init__(self, device=None, app=None):
         """
@@ -27,6 +27,7 @@ class StateMonitor(object):
         self.pid2ppid = {}
         self.pid2name = {}
         self.listeners = set()
+        self.lock = threading.Lock()
 
     def add_state_listener(self, state_listener):
         """
@@ -50,7 +51,6 @@ class StateMonitor(object):
         From now on, the on_state_updated method in listeners will be continuously called
         :return:
         """
-        import threading
         self.enabled = True
         gps_thread = threading.Thread(
             target=self.maintain_process_mapping)
@@ -81,21 +81,26 @@ class StateMonitor(object):
                 pid = segs[1]
                 ppid = segs[2]
                 name = segs[-1]
+                self.lock.acquire()
                 self.pid2name[pid] = name
                 self.pid2ppid[pid] = ppid
                 self.pid2user[pid] = user
+                self.lock.release()
 
-            time.sleep(3)
+            time.sleep(1)
 
     def get_ppids_by_pid(self, pid):
         """
         get the parent pids of given pid
         @return:
         """
+        self.lock.acquire()
         ppids = []
         while pid in self.pid2ppid:
             ppids.append(pid)
             pid = self.pid2ppid[pid]
+        self.lock.release()
+
         ppids.reverse()
         return ppids
 
@@ -106,6 +111,9 @@ class StateMonitor(object):
         """
         ppids = self.get_ppids_by_pid(pid)
         names = []
+        self.lock.acquire()
         for ppid in ppids:
             names.append(self.pid2name[ppid])
+        self.lock.release()
+
         return names

@@ -1,4 +1,21 @@
-# I have to modify droidbox scripts to let it work with droidbot
+import hashlib
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import threading
+import time
+import zipfile
+from datetime import datetime
+from subprocess import call, PIPE, Popen
+from threading import Thread
+from xml.dom import minidom
+
+from utils import AXMLPrinter
+
+# I have to modify DroidBox scripts to let it work with droidbot
 __author__ = 'yuanchun'
 
 ################################################################################
@@ -29,18 +46,6 @@ At the end of each analysis, it outputs the Android application's characteristic
 Please keep in mind that all data received/sent,
 read/written are shown in hexadecimal since the handled data can contain binary data.
 """
-
-import json, time, signal, os, sys, re
-import zipfile
-import subprocess
-import threading
-
-from threading import Thread
-from datetime import datetime
-from xml.dom import minidom
-from subprocess import call, PIPE, Popen
-from utils import AXMLPrinter
-import hashlib
 
 tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TAINT_PHONE_NUMBER",
         0x10: "TAINT_LOCATION_GPS", 0x20: "TAINT_LOCATION_NET", 0x40: "TAINT_LOCATION_LAST", 0x80: "TAINT_CAMERA",
@@ -82,7 +87,7 @@ class DroidBox(object):
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
         else:
-            #Posibility that no output-files is generated
+            # Posibility that no output-files is generated
             self.output_dir = None
 
     def set_apk(self, apk_name):
@@ -109,13 +114,13 @@ class DroidBox(object):
         package_name = self.application.getPackage()
         self.apk_hashes = self.application.getHashes()
 
-        # No Main acitvity found? Return an error
-        if main_activity == None:
+        # No Main activity found? Return an error
+        if main_activity is None:
             print("No activity to start. Terminate the analysis.")
             sys.exit(1)
 
         # No packages identified? Return an error
-        if package_name == None:
+        if package_name is None:
             print("No package found. Terminate the analysis.")
             sys.exit(1)
 
@@ -123,9 +128,9 @@ class DroidBox(object):
         call(["adb", "logcat", "-c"])
         ret = call(['monkeyrunner', 'monkeyrunner.py', apk_name,
                     package_name, main_activity], stderr=PIPE,
-                    cwd=os.path.dirname(os.path.realpath(__file__)))
+                   cwd=os.path.dirname(os.path.realpath(__file__)))
 
-        if (ret == 1):
+        if ret == 1:
             print("Failed to execute the application.")
             sys.exit(1)
 
@@ -137,7 +142,8 @@ class DroidBox(object):
 
         # Open the adb logcat
         if self.logcat is None:
-            self.logcat = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"], stdin=subprocess.PIPE,
+            self.logcat = Popen(["adb", "logcat", "-v", "threadtime", "DroidBox:W", "dalvikvm:W", "ActivityManager:I"],
+                                stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
 
         # Wait for the application to start
@@ -213,7 +219,7 @@ class DroidBox(object):
 
         while self.enabled:
             try:
-                if self.output_dir and (time.time() - self.lastScreenshot) >=5:
+                if self.output_dir and (time.time() - self.lastScreenshot) >= 5:
                     # Take screenshots every 5 seconds.
                     os.system("adb shell screencap -p | sed 's/\r$//' > %s" % os.path.join(self.output_dir, "screen") \
                               + "_$(date +%Y-%m-%d_%H%M%S).png")
@@ -279,8 +285,8 @@ class DroidBox(object):
         print json.dumps(self.get_output())
         if self.output_dir is None:
             return
-        with open(os.path.join(self.output_dir, "analysis.json"),"w") as json_file:
-            json_file.write(json.dumps(self.get_output(),sort_keys=True, indent=4))
+        with open(os.path.join(self.output_dir, "analysis.json"), "w") as json_file:
+            json_file.write(json.dumps(self.get_output(), sort_keys=True, indent=4))
 
     def get_output(self):
         # Done? Store the objects in a dictionary, transform it in a dict object and return it
@@ -351,12 +357,12 @@ class CountingThread(Thread):
         counter = 0
         while 1:
             sign = signs[counter % len(signs)]
-            print "[%s] Collected %s sandbox logs (Ctrl-C to view logs)\r" % (sign, str(self.logs))
+            sys.stdout.write("[%s] Collected %s sandbox logs (Ctrl-C to view logs)\r" % (sign, str(self.logs)))
             sys.stdout.flush()
             time.sleep(0.5)
             counter += 1
             if self.stop:
-                print "[%s] Collected %s sandbox logs (Ctrl-C to view logs)\r" % ("*", str(self.logs))
+                print "[%s] Collected %s sandbox logs (Ctrl-C to view logs)" % ("*", str(self.logs))
                 break
 
 
@@ -417,10 +423,9 @@ class Application:
                             if action == 'android.intent.action.MAIN':
                                 self.mainActivity = activity
                     error = False
-
                     break
 
-            if (error == False):
+            if not error:
                 return 1
             else:
                 return 0

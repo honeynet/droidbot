@@ -3,7 +3,6 @@
 
 __author__ = 'liyc'
 import argparse
-from argparse import RawTextHelpFormatter
 from droidbot import DroidBot
 import app_event
 
@@ -14,7 +13,7 @@ def parse_args():
     generate options including host name, port number
     """
     parser = argparse.ArgumentParser(description="start a robot to interact with Android app",
-                                     formatter_class=RawTextHelpFormatter)
+                                     formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-d", action="store", dest="device_serial", required=True,
                         help="serial number of target device")
     parser.add_argument("-a", action="store", dest="apk_path", required=True,

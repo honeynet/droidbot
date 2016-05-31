@@ -48,6 +48,8 @@ def parse_args():
                         help="directory of output")
     parser.add_argument("-droidbox", action="store_true", dest="with_droidbox",
                         help="start with droidbox")
+    parser.add_argument("-coverage", action="store_true", dest="measure_coverage",
+                        help="measure the coverage (this option may crash the target app, so only useful in testing)")
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="run in quiet mode (dump warning messages only).")
     options = parser.parse_args()

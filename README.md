@@ -123,16 +123,14 @@ ls ~/mobileSamples/out
 
 ## Evaluation
 
-Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
-and adb monkey tool. The results are in [result](/evaluation_reports/README.md).
+DroidBot is evaluated by comparing with DroidBot default mode (which does nothing)
+and adb Monkey tool. The results are in [result](/evaluation_reports/README.md).
 
 Or see my visualized evaluation reports at [DroidBot Posts](http://honeynet.github.io/droidbot/).
 
 ## Acknowledgement
 
 1. [AndroidViewClient](https://github.com/dtmilano/AndroidViewClient) 
-is an amazing tool simplifies test script creation providing higher level operations 
-and the ability of obtaining the tree of Views present at any given moment on the device 
-or emulator screen.
+is an amazing tool that simplifies test script creation.
 2. [Androguard](http://code.google.com/p/androguard/)
-is well-known for reverse-engineering of Android Apks.
+is well-known for reverse-engineering of Android APKs.

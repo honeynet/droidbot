@@ -77,6 +77,7 @@ def main():
                         event_interval=opts.event_interval,
                         event_duration=opts.event_duration,
                         event_count=opts.event_count,
+                        measure_coverage=opts.measure_coverage,
                         quiet=opts.quiet)
     droidbot.start()
     return

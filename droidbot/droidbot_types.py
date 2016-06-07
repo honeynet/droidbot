@@ -657,7 +657,7 @@ class App(object):
     """
     this class describes an app
     """
-    def __init__(self, app_path, output_dir=None, measure_coverage=False):
+    def __init__(self, app_path, output_dir=None):
         """
         create a App instance
         :param app_path: local file path of app
@@ -758,53 +758,6 @@ class App(object):
                     intent = Intent(prefix='broadcast', action=action, category=category)
                     possible_broadcasts.add(intent)
         return possible_broadcasts
-
-    def androcov_instrument(self, androcov_path):
-        """
-        instrument the app with androcov
-        @return:
-        """
-        androcov_output_dir = os.path.join(self.output_dir, 'androcov_output')
-        subprocess.check_call(["java", "-jar", androcov_path, "-i", self.app_path, "-o", androcov_output_dir])
-        result_json_file = open(os.path.join(androcov_output_dir, "instrumentation.json"))
-        import json
-        result_json = json.load(result_json_file)
-        self.app_path = result_json['outputAPK']
-        self.all_methods = result_json['allMethods']
-
-    def get_coverage(self):
-        """
-        calculate method coverage
-        idea:
-        in dalvik, the dvmFastMethodTraceEnter in profle.cpp will be called in each method
-        dvmFastMethodTraceEnter takes Method* as an argument
-        struct Method is defined in vm/oo/Object.cpp
-        Method has a field clazz (struct ClassObject)
-        ClassObject has a field pDvmDex (struct DvmDex in DvmDex.h)
-        DvmDex represent a dex file.
-        Hopefully, by monitoring method and comparing the belong dex file,
-        we are able to record each invoked method call of app.
-        coverage = (methods invoked) / (method declared)
-        """
-        reached_methods = self._get_reached_methods()
-        coverage = "%.0f%%" % (100.0 * len(reached_methods) / len(self.all_methods))
-        return coverage
-
-    def _get_reached_methods(self):
-        reached_methods = []
-        from utils import parse_log
-        logcat_path = os.path.join(self.output_dir, 'logcat.log')
-        log_msgs = open(logcat_path).readlines()
-        androcov_log_re = re.compile('^\[androcov\] reach \d+: (<.+>)$')
-        for log_msg in log_msgs:
-            log_data = parse_log(log_msg)
-            log_content = log_data['content']
-            m = re.match(androcov_log_re, log_content)
-            if not m:
-                continue
-            reached_method = m.group(1)
-            reached_methods.append(reached_method)
-        return reached_methods
 
 
 class AndroguardAnalysis(object):

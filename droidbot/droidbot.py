@@ -24,7 +24,7 @@ class DroidBot(object):
     def __init__(self, app_path, device_serial, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None,
-                 measure_coverage=False, quiet=False):
+                 quiet=False):
         """
         initiate droidbot with configurations
         :return:

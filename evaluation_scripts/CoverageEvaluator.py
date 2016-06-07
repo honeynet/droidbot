@@ -1,6 +1,6 @@
-# Evaluate DroidBot with DroidBox
+# Evaluate DroidBot with androcov
 # basic idea is:
-# A tool is better if more DroidBox logs are generated
+# A tool is better if it has higher coverage
 __author__ = 'yuanchun'
 
 import argparse
@@ -9,13 +9,14 @@ import logging
 import sys
 import threading
 import time
+import subprocess
+import re
 from datetime import datetime
 
-from droidbox_scripts.droidbox import DroidBox
 from droidbot.droidbot import DroidBot
 
 
-class DroidboxEvaluator(object):
+class CoverageEvaluator(object):
     """
     evaluate test tool with DroidBox
     make sure you have started droidbox emulator before evaluating
@@ -32,6 +33,7 @@ class DroidboxEvaluator(object):
         self.apk_path = os.path.abspath(apk_path)
         if output_dir is None:
             output_dir = "evaluation_reports/"
+        self.output_dir = output_dir
         now = datetime.now()
         self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
         result_file_name = self.report_title + ".md"
@@ -52,7 +54,6 @@ class DroidboxEvaluator(object):
             self.record_interval = 2
 
         self.droidbot = None
-        self.droidbox = None
 
         self.result = {}
 
@@ -71,15 +72,15 @@ class DroidboxEvaluator(object):
         """
         if not self.enabled:
             return
-        self.evaluate_mode(DroidboxEvaluator.MODE_DEFAULT,
+        self.evaluate_mode(CoverageEvaluator.MODE_DEFAULT,
                            self.default_mode)
-        self.evaluate_mode(DroidboxEvaluator.MODE_MONKEY,
+        self.evaluate_mode(CoverageEvaluator.MODE_MONKEY,
                            self.adb_monkey)
-        self.evaluate_mode(DroidboxEvaluator.MODE_RANDOM,
+        self.evaluate_mode(CoverageEvaluator.MODE_RANDOM,
                            self.droidbot_random)
-        self.evaluate_mode(DroidboxEvaluator.MODE_STATIC,
+        self.evaluate_mode(CoverageEvaluator.MODE_STATIC,
                            self.droidbot_static)
-        self.evaluate_mode(DroidboxEvaluator.MODE_DYNAMIC,
+        self.evaluate_mode(CoverageEvaluator.MODE_DYNAMIC,
                            self.droidbot_dynamic)
         self.dump(sys.stdout)
         if not self.enabled:
@@ -87,6 +88,53 @@ class DroidboxEvaluator(object):
         result_file = open(self.result_file_path, "w")
         self.dump(result_file)
         result_file.close()
+
+    def androcov_instrument(self, original_app_path, androcov_path):
+        """
+        instrument the app with androcov
+        @return:
+        """
+        androcov_output_dir = os.path.join(self.output_dir, 'androcov_output')
+        subprocess.check_call(["java", "-jar", androcov_path, "-i", self.app_path, "-o", androcov_output_dir])
+        result_json_file = open(os.path.join(androcov_output_dir, "instrumentation.json"))
+        import json
+        result_json = json.load(result_json_file)
+        self.app_path = result_json['outputAPK']
+        self.all_methods = result_json['allMethods']
+
+    def get_coverage(self):
+        """
+        calculate method coverage
+        idea:
+        in dalvik, the dvmFastMethodTraceEnter in profle.cpp will be called in each method
+        dvmFastMethodTraceEnter takes Method* as an argument
+        struct Method is defined in vm/oo/Object.cpp
+        Method has a field clazz (struct ClassObject)
+        ClassObject has a field pDvmDex (struct DvmDex in DvmDex.h)
+        DvmDex represent a dex file.
+        Hopefully, by monitoring method and comparing the belong dex file,
+        we are able to record each invoked method call of app.
+        coverage = (methods invoked) / (method declared)
+        """
+        reached_methods = self._get_reached_methods()
+        coverage = "%.0f%%" % (100.0 * len(reached_methods) / len(self.all_methods))
+        return coverage
+
+    def _get_reached_methods(self):
+        reached_methods = []
+        from utils import parse_log
+        logcat_path = os.path.join(self.output_dir, 'logcat.log')
+        log_msgs = open(logcat_path).readlines()
+        androcov_log_re = re.compile('^\[androcov\] reach \d+: (<.+>)$')
+        for log_msg in log_msgs:
+            log_data = parse_log(log_msg)
+            log_content = log_data['content']
+            m = re.match(androcov_log_re, log_content)
+            if not m:
+                continue
+            reached_method = m.group(1)
+            reached_methods.append(reached_method)
+        return reached_methods
 
     def evaluate_mode(self, mode, target):
         """
@@ -141,17 +189,6 @@ class DroidboxEvaluator(object):
 
     def stop(self):
         self.enabled = False
-
-    def default_mode(self):
-        """
-        just start droidbox and do nothing
-        :return:
-        """
-        if not self.enabled:
-            return
-        self.droidbox = DroidBox(output_dir=None) #Set output_dir=None -> no DroidBox Result Files are created
-        self.droidbox.set_apk(self.apk_path)
-        self.droidbox.start_blocked(self.event_duration)
 
     def start_droidbot(self, env_policy, event_policy):
         """
@@ -344,7 +381,7 @@ def parse_args():
 if __name__ == "__main__":
     opts = parse_args()
     logging.basicConfig(level=logging.INFO)
-    evaluator = DroidboxEvaluator(
+    evaluator = CoverageEvaluator(
         device_serial=opts.device_serial,
         apk_path=opts.apk_path,
         event_duration=opts.event_duration,

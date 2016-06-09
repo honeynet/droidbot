@@ -27,13 +27,16 @@ class CoverageEvaluator(object):
     MODE_STATIC = "4.static"
     MODE_DYNAMIC = "5.dynamic"
 
-    def __init__(self, device_serial, apk_path, event_duration, event_count, event_interval, output_dir):
+    def __init__(self, device_serial, apk_path,
+                 event_duration, event_count, event_interval,
+                 output_dir, androcov_path):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device_serial = device_serial,
         self.apk_path = os.path.abspath(apk_path)
-        if output_dir is None:
-            output_dir = "evaluation_reports/"
         self.output_dir = output_dir
+        self.androcov_path = androcov_path
+        if self.output_dir is None:
+            self.output_dir = "evaluation_reports/"
         now = datetime.now()
         self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
         result_file_name = self.report_title + ".md"
@@ -376,6 +379,8 @@ def parse_args():
                         type=int, help="duration of droidbot running (seconds)")
     parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
+    parser.add_argument("-androcov", action="store", dest="androcov_path",
+                        help="path to androcov.jar")
     options = parser.parse_args()
     # print options
     return options
@@ -391,6 +396,7 @@ if __name__ == "__main__":
         event_count=opts.event_count,
         event_interval=opts.event_interval,
         output_dir=opts.output_dir,
+        androcov_path=opts.androcov_path
     )
     try:
         evaluator.start_evaluate()

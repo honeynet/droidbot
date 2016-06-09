@@ -89,6 +89,9 @@ class CoverageEvaluator(object):
         self.dump(result_file)
         result_file.close()
 
+    def default_mode(self):
+        pass
+
     def androcov_instrument(self, original_app_path, androcov_path):
         """
         instrument the app with androcov

@@ -11,6 +11,7 @@ import threading
 import time
 import subprocess
 import re
+import json
 from datetime import datetime
 
 from droidbot.droidbot import DroidBot
@@ -35,12 +36,23 @@ class CoverageEvaluator(object):
         self.apk_path = os.path.abspath(apk_path)
         self.output_dir = output_dir
         self.androcov_path = androcov_path
+
         if self.output_dir is None:
             self.output_dir = "evaluation_reports/"
+        self.output_dir = os.path.abspath(self.output_dir)
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+        self.temp_dir = os.path.join(self.output_dir, "temp")
+        if os.path.exists(self.temp_dir):
+            os.rmdir(self.temp_dir)
+        os.mkdir(self.temp_dir)
+
+        self.androcov_instrument()
+
         now = datetime.now()
         self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
         result_file_name = self.report_title + ".md"
-        self.result_file_path = os.path.abspath(os.path.join(output_dir, result_file_name))
+        self.result_file_path = os.path.join(output_dir, result_file_name)
 
         self.event_duration = event_duration
         if self.event_duration is None:
@@ -93,19 +105,18 @@ class CoverageEvaluator(object):
         result_file.close()
 
     def default_mode(self):
-        pass
+        self.start_droidbot(env_policy="none", event_policy="none")
 
-    def androcov_instrument(self, original_app_path, androcov_path):
+    def androcov_instrument(self):
         """
         instrument the app with androcov
         @return:
         """
-        androcov_output_dir = os.path.join(self.output_dir, 'androcov_output')
-        subprocess.check_call(["java", "-jar", androcov_path, "-i", self.app_path, "-o", androcov_output_dir])
+        androcov_output_dir = self.temp_dir
+        subprocess.check_call(["java", "-jar", self.androcov_path, "-i", self.apk_path, "-o", androcov_output_dir])
         result_json_file = open(os.path.join(androcov_output_dir, "instrumentation.json"))
-        import json
         result_json = json.load(result_json_file)
-        self.app_path = result_json['outputAPK']
+        self.apk_path = result_json['outputAPK']
         self.all_methods = result_json['allMethods']
 
     def get_coverage(self):
@@ -153,26 +164,15 @@ class CoverageEvaluator(object):
             return
         self.logger.info("evaluating [%s] mode" % mode)
         self.droidbot = None
-        self.droidbox = None
         target_thread = threading.Thread(target=target)
         target_thread.start()
-        self.wait_for_droidbox()
         self.monitor_and_record(mode)
         self.stop_modules()
         self.logger.info("finished evaluating [%s] mode" % mode)
 
     def stop_modules(self):
-        if self.droidbox is not None:
-            self.droidbox.stop()
         if self.droidbot is not None:
             self.droidbot.stop()
-
-    def wait_for_droidbox(self):
-        # wait until droidbox starts counting
-        while self.enabled and self.droidbox is None:
-            time.sleep(2)
-        while self.enabled and not self.droidbox.is_counting_logs:
-            time.sleep(2)
 
     def monitor_and_record(self, mode):
         if not self.enabled:
@@ -213,9 +213,7 @@ class CoverageEvaluator(object):
                                  event_count=self.event_count,
                                  event_duration=self.event_duration,
                                  event_interval=self.event_interval,
-                                 with_droidbox=True,
                                  quiet=True)
-        self.droidbox = self.droidbot.droidbox
         self.droidbot.start()
 
     def adb_monkey(self):

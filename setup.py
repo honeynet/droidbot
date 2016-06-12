@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='droidbot',
-    packages=find_packages(exclude=['docker', 'droidbot/tests',
+    packages=find_packages(exclude=['docker', 'droidbot/tests', 'resources',
                                     'droidbot_out', 'evaluation_reports', ]),
     # this must be the same as the name above
     version='1.0.0a2',

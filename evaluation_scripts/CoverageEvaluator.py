@@ -10,7 +10,6 @@ import sys
 import threading
 import time
 import subprocess
-import re
 import json
 from datetime import datetime
 
@@ -124,7 +123,7 @@ class CoverageEvaluator(object):
         result_json_file = open(os.path.join(androcov_output_dir, "instrumentation.json"))
         result_json = json.load(result_json_file)
         self.apk_path = result_json['outputAPK']
-        self.all_methods = result_json['allMethods']
+        # all_methods = result_json['allMethods']
 
     def evaluate_mode(self, mode, target):
         """

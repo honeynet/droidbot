@@ -7,6 +7,7 @@ import time
 import os
 import re
 import subprocess
+import hashlib
 from com.dtmilano.android.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
@@ -778,6 +779,26 @@ class AndroguardAnalysis(object):
     def get_detailed_analysis(self):
         from androguard.misc import AnalyzeDex
         self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
+
+    def get_hashes(self, block_size=2 ** 8):
+        """
+        Calculate MD5,SHA-1, SHA-256
+        hashes of APK input file
+        @param block_size:
+        """
+        md5 = hashlib.md5()
+        sha1 = hashlib.sha1()
+        sha256 = hashlib.sha256()
+        f = open(self.app_path, 'rb')
+        while True:
+            data = f.read(block_size)
+            if not data:
+                break
+
+            md5.update(data)
+            sha1.update(data)
+            sha256.update(data)
+        return [md5.hexdigest(), sha1.hexdigest(), sha256.hexdigest()]
 
 
 class Intent(object):

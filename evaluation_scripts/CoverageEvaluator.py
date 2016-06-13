@@ -270,14 +270,16 @@ class CoverageEvaluator(object):
         out_file.write("## Apk Info\n\n")
         out_file.write("|Item|Value|\n")
         out_file.write("|----|----|\n")
-        out_file.write("|Package Name|%s|\n" % self.droidbox.application.getPackage())
-        out_file.write("|Main Activity|%s|\n" % self.droidbox.application.getMainActivity())
-        out_file.write("|Hash (md5)|%s|\n" % self.droidbox.apk_hashes[0])
-        out_file.write("|Hash (sha1)|%s|\n" % self.droidbox.apk_hashes[1])
-        out_file.write("|Hash (sha256)|%s|\n\n" % self.droidbox.apk_hashes[2])
+        out_file.write("|Package Name|%s|\n" % self.droidbot.app.get_package_name())
+        out_file.write("|Main Activity|%s|\n" % self.droidbot.app.get_main_activity())
+        apk_hashes = self.droidbot.app.get_hashes()
+        out_file.write("|Hash (md5)|%s|\n" % apk_hashes[0])
+        out_file.write("|Hash (sha1)|%s|\n" % apk_hashes[1])
+        out_file.write("|Hash (sha256)|%s|\n\n" % apk_hashes[2])
 
         out_file.write("### Permissions\n\n")
-        for permission in self.droidbox.application.getPermissions():
+        permissions = self.droidbot.app.get_androguard_analysis().a.get_permissions()
+        for permission in permissions:
             out_file.write("+ %s\n" % permission)
 
         out_file.write("\n## Data\n\n")

@@ -37,6 +37,14 @@ class CoverageEvaluator(object):
         self.output_dir = output_dir
         self.androcov_path = androcov_path
 
+        self.modes = {
+            CoverageEvaluator.MODE_DEFAULT: "none",
+            CoverageEvaluator.MODE_MONKEY: "monkey",
+            CoverageEvaluator.MODE_RANDOM: "random",
+            CoverageEvaluator.MODE_STATIC: "static",
+            CoverageEvaluator.MODE_DYNAMIC: "dynamic"
+        }
+
         if self.output_dir is None:
             self.output_dir = "evaluation_reports/"
         self.output_dir = os.path.abspath(self.output_dir)
@@ -46,6 +54,10 @@ class CoverageEvaluator(object):
         if os.path.exists(self.temp_dir):
             os.rmdir(self.temp_dir)
         os.mkdir(self.temp_dir)
+
+        self.output_dirs = {}
+        for mode in self.modes.keys():
+            self.output_dirs[mode] = os.path.join(self.output_dir, mode)
 
         self.androcov_instrument()
 
@@ -98,14 +110,9 @@ class CoverageEvaluator(object):
         self.evaluate_mode(CoverageEvaluator.MODE_DYNAMIC,
                            self.droidbot_dynamic)
         self.dump(sys.stdout)
-        if not self.enabled:
-            return
         result_file = open(self.result_file_path, "w")
         self.dump(result_file)
         result_file.close()
-
-    def default_mode(self):
-        self.start_droidbot(env_policy="none", event_policy="none")
 
     def androcov_instrument(self):
         """
@@ -118,40 +125,6 @@ class CoverageEvaluator(object):
         result_json = json.load(result_json_file)
         self.apk_path = result_json['outputAPK']
         self.all_methods = result_json['allMethods']
-
-    def get_coverage(self):
-        """
-        calculate method coverage
-        idea:
-        in dalvik, the dvmFastMethodTraceEnter in profle.cpp will be called in each method
-        dvmFastMethodTraceEnter takes Method* as an argument
-        struct Method is defined in vm/oo/Object.cpp
-        Method has a field clazz (struct ClassObject)
-        ClassObject has a field pDvmDex (struct DvmDex in DvmDex.h)
-        DvmDex represent a dex file.
-        Hopefully, by monitoring method and comparing the belong dex file,
-        we are able to record each invoked method call of app.
-        coverage = (methods invoked) / (method declared)
-        """
-        reached_methods = self._get_reached_methods()
-        coverage = "%.0f%%" % (100.0 * len(reached_methods) / len(self.all_methods))
-        return coverage
-
-    def _get_reached_methods(self):
-        reached_methods = []
-        from utils import parse_log
-        logcat_path = os.path.join(self.output_dir, 'logcat.log')
-        log_msgs = open(logcat_path).readlines()
-        androcov_log_re = re.compile('^\[androcov\] reach \d+: (<.+>)$')
-        for log_msg in log_msgs:
-            log_data = parse_log(log_msg)
-            log_content = log_data['content']
-            m = re.match(androcov_log_re, log_content)
-            if not m:
-                continue
-            reached_method = m.group(1)
-            reached_methods.append(reached_method)
-        return reached_methods
 
     def evaluate_mode(self, mode, target):
         """
@@ -182,8 +155,6 @@ class CoverageEvaluator(object):
         self.logger.info("start monitoring")
         try:
             while True:
-                log_counts = self.droidbox.get_counts()
-                self.result[mode][t] = log_counts
                 time.sleep(self.record_interval)
                 t += self.record_interval
                 if t > self.event_duration:
@@ -196,7 +167,7 @@ class CoverageEvaluator(object):
     def stop(self):
         self.enabled = False
 
-    def start_droidbot(self, env_policy, event_policy):
+    def start_droidbot(self, env_policy, event_policy, output_dir):
         """
         start droidbot with given arguments
         :param env_policy: policy to deploy environment
@@ -213,36 +184,50 @@ class CoverageEvaluator(object):
                                  event_count=self.event_count,
                                  event_duration=self.event_duration,
                                  event_interval=self.event_interval,
+                                 output_dir=output_dir,
                                  quiet=True)
         self.droidbot.start()
+
+    def default_mode(self):
+        self.start_droidbot(env_policy="none",
+                            event_policy="none",
+                            output_dir=self.output_dirs[CoverageEvaluator.MODE_DEFAULT])
 
     def adb_monkey(self):
         """
         try droidbot "monkey" mode
         :return:
         """
-        self.start_droidbot(env_policy="none", event_policy="monkey")
+        self.start_droidbot(env_policy="none",
+                            event_policy="monkey",
+                            output_dir=self.output_dirs[CoverageEvaluator.MODE_MONKEY])
 
     def droidbot_random(self):
         """
         try droidbot "random" mode
         :return:
         """
-        self.start_droidbot(env_policy="none", event_policy="random")
+        self.start_droidbot(env_policy="none",
+                            event_policy="random",
+                            output_dir=self.output_dirs[CoverageEvaluator.MODE_RANDOM])
 
     def droidbot_static(self):
         """
         try droidbot "static" mode
         :return:
         """
-        self.start_droidbot(env_policy="none", event_policy="static")
+        self.start_droidbot(env_policy="none",
+                            event_policy="static",
+                            output_dir=self.output_dirs[CoverageEvaluator.MODE_STATIC])
 
     def droidbot_dynamic(self):
         """
         try droidbot "dynamic" mode
         :return:
         """
-        self.start_droidbot(env_policy="none", event_policy="dynamic")
+        self.start_droidbot(env_policy="none",
+                            event_policy="dynamic",
+                            output_dir=self.output_dirs[CoverageEvaluator.MODE_DYNAMIC])
 
     def result_safe_get(self, mode_tag=None, time_tag=None, item_tag=None):
         """

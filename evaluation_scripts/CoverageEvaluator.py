@@ -1,8 +1,6 @@
 # Evaluate DroidBot with androcov
 # basic idea is:
 # A tool is better if it has higher coverage
-__author__ = 'yuanchun'
-
 import argparse
 import os
 import logging
@@ -10,9 +8,7 @@ import sys
 import threading
 import time
 import subprocess
-import json
 from datetime import datetime
-
 from droidbot.droidbot import DroidBot
 
 
@@ -29,20 +25,21 @@ class CoverageEvaluator(object):
 
     def __init__(self, device_serial, apk_path,
                  event_duration, event_count, event_interval,
-                 output_dir, androcov_path):
+                 output_dir, androcov_path, android_jar_path):
+        self.modes = [
+            CoverageEvaluator.MODE_DEFAULT,
+            CoverageEvaluator.MODE_MONKEY,
+            CoverageEvaluator.MODE_RANDOM,
+            CoverageEvaluator.MODE_STATIC,
+            CoverageEvaluator.MODE_DYNAMIC
+        ]
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device_serial = device_serial,
         self.apk_path = os.path.abspath(apk_path)
         self.output_dir = output_dir
         self.androcov_path = androcov_path
-
-        self.modes = {
-            CoverageEvaluator.MODE_DEFAULT: "none",
-            CoverageEvaluator.MODE_MONKEY: "monkey",
-            CoverageEvaluator.MODE_RANDOM: "random",
-            CoverageEvaluator.MODE_STATIC: "static",
-            CoverageEvaluator.MODE_DYNAMIC: "dynamic"
-        }
+        self.android_jar_path = android_jar_path
 
         if self.output_dir is None:
             self.output_dir = "evaluation_reports/"
@@ -51,14 +48,18 @@ class CoverageEvaluator(object):
             os.mkdir(self.output_dir)
         self.temp_dir = os.path.join(self.output_dir, "temp")
         if os.path.exists(self.temp_dir):
-            os.rmdir(self.temp_dir)
+            import shutil
+            shutil.rmtree(self.temp_dir)
         os.mkdir(self.temp_dir)
+        self.androcov_output_dir = os.path.join(self.temp_dir, "androcov_out")
+        os.mkdir(self.androcov_output_dir)
 
         self.output_dirs = {}
-        for mode in self.modes.keys():
+        for mode in self.modes:
             self.output_dirs[mode] = os.path.join(self.output_dir, mode)
 
-        self.androcov_instrument()
+        self.androcov = self.androcov_instrument()
+        self.apk_path = self.androcov.apk_path
 
         now = datetime.now()
         self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
@@ -118,12 +119,11 @@ class CoverageEvaluator(object):
         instrument the app with androcov
         @return:
         """
-        androcov_output_dir = self.temp_dir
-        subprocess.check_call(["java", "-jar", self.androcov_path, "-i", self.apk_path, "-o", androcov_output_dir])
-        result_json_file = open(os.path.join(androcov_output_dir, "instrumentation.json"))
-        result_json = json.load(result_json_file)
-        self.apk_path = result_json['outputAPK']
-        # all_methods = result_json['allMethods']
+        subprocess.check_call(["java", "-jar", self.androcov_path,
+                               "-i", self.apk_path, "-o", self.androcov_output_dir,
+                               "-sdk", self.android_jar_path])
+        import androcov_report
+        return androcov_report.Androcov(androcov_dir=self.androcov_output_dir)
 
     def evaluate_mode(self, mode, target):
         """
@@ -157,9 +157,11 @@ class CoverageEvaluator(object):
                 time.sleep(self.record_interval)
                 t += self.record_interval
                 if t > self.event_duration:
-                    return
+                    break
         except KeyboardInterrupt:
             self.stop()
+        mode_logcat_path = os.path.join(self.output_dirs[mode], "logcat.log")
+        self.result[mode] = self.androcov.gen_androcov_report(mode_logcat_path)
         self.logger.info("stop monitoring")
         self.logger.debug(self.result)
 
@@ -171,6 +173,7 @@ class CoverageEvaluator(object):
         start droidbot with given arguments
         :param env_policy: policy to deploy environment
         :param event_policy: policy to send events
+        :param output_dir: droidbot output directory
         :return:
         """
         if not self.enabled:
@@ -351,7 +354,7 @@ def parse_args():
     description = "Run different testing bots on droidbox, and compare their log counts."
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-d", action="store", dest="device_serial",
+    parser.add_argument("-d", action="store", dest="device_serial", required=True,
                         help="serial number of target device")
     parser.add_argument("-a", action="store", dest="apk_path", required=True,
                         help="file path of target app, necessary for static analysis")
@@ -363,8 +366,10 @@ def parse_args():
                         type=int, help="duration of droidbot running (seconds)")
     parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
-    parser.add_argument("-androcov", action="store", dest="androcov_path",
+    parser.add_argument("-androcov", action="store", dest="androcov_path", required=True,
                         help="path to androcov.jar")
+    parser.add_argument("-sdk", action="store", dest="android_jar_path", required=True,
+                        help="path to Sdk/platforms/android-XX/android.jar")
     options = parser.parse_args()
     # print options
     return options
@@ -380,7 +385,8 @@ if __name__ == "__main__":
         event_count=opts.event_count,
         event_interval=opts.event_interval,
         output_dir=opts.output_dir,
-        androcov_path=opts.androcov_path
+        androcov_path=opts.androcov_path,
+        android_jar_path=opts.android_jar_path
     )
     try:
         evaluator.start_evaluate()

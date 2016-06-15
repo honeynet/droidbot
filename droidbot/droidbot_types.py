@@ -767,26 +767,6 @@ class App(object):
                     possible_broadcasts.add(intent)
         return possible_broadcasts
 
-
-class AndroguardAnalysis(object):
-    """
-    analysis result of androguard
-    """
-    def __init__(self, app_path):
-        """
-        :param app_path: local file path of app, should not be None
-        analyse app specified by app_path
-        """
-        self.app_path = app_path
-        from androguard.core.bytecodes.apk import APK
-        self.a = APK(app_path)
-        self.d = None
-        self.dx = None
-
-    def get_detailed_analysis(self):
-        from androguard.misc import AnalyzeDex
-        self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
-
     def get_hashes(self, block_size=2 ** 8):
         """
         Calculate MD5,SHA-1, SHA-256
@@ -806,6 +786,26 @@ class AndroguardAnalysis(object):
             sha1.update(data)
             sha256.update(data)
         return [md5.hexdigest(), sha1.hexdigest(), sha256.hexdigest()]
+
+
+class AndroguardAnalysis(object):
+    """
+    analysis result of androguard
+    """
+    def __init__(self, app_path):
+        """
+        :param app_path: local file path of app, should not be None
+        analyse app specified by app_path
+        """
+        self.app_path = app_path
+        from androguard.core.bytecodes.apk import APK
+        self.a = APK(app_path)
+        self.d = None
+        self.dx = None
+
+    def get_detailed_analysis(self):
+        from androguard.misc import AnalyzeDex
+        self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
 
 
 class Intent(object):

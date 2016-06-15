@@ -70,8 +70,8 @@ class Device(object):
             output_dir = self.output_dir
         logcat_file = open("%s/logcat.log" % output_dir, "w")
         import subprocess
-        subprocess.check_call(["adb", "logcat", "-c"])
-        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime"],
+        subprocess.check_call(["adb", "-s", self.serial, "logcat", "-c"])
+        logcat = subprocess.Popen(["adb", "-s", self.serial, "logcat", "-v", "threadtime"],
                                   stdin=subprocess.PIPE,
                                   stdout=logcat_file)
         return logcat
@@ -120,9 +120,9 @@ class Device(object):
         """
         self.logger.info("waiting for device")
         try:
-            subprocess.check_call(["adb", "wait-for-device"])
+            subprocess.check_call(["adb", "-s", self.serial, "wait-for-device"])
             while True:
-                out = subprocess.check_output(["adb", "shell", "getprop", "init.svc.bootanim"]).split()[0]
+                out = subprocess.check_output(["adb", "-s", self.serial, "shell", "getprop", "init.svc.bootanim"]).split()[0]
                 if out == "stopped":
                     break
                 time.sleep(3)
@@ -506,19 +506,19 @@ class Device(object):
         @return:
         """
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.check_call(["adb", "install", app.app_path],
+        subprocess.check_call(["adb", "-s", self.serial, "install", app.app_path],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
         package_info_file = open(package_info_file_name, "w")
-        subprocess.check_call(["adb", "shell", "dumpsys", "package", app.get_package_name()], stdout=package_info_file)
+        subprocess.check_call(["adb", "-s", self.serial, "shell", "dumpsys", "package", app.get_package_name()], stdout=package_info_file)
         package_info_file.close()
 
     def uninstall_app(self, app):
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_current_state(self):
@@ -699,7 +699,7 @@ class App(object):
             self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
             app_path_in_device = device.get_package_path(self.package_name)
             app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
-            subprocess.check_call(["adb", "pull", app_path_in_device, app_path])
+            subprocess.check_call(["adb", "-s", device.serial, "pull", app_path_in_device, app_path])
             self.app_path = app_path
             return self.app_path
         except Exception as e:

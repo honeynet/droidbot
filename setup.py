@@ -39,6 +39,6 @@ setup(
             'droidbot=droidbot:start',
         ],
     },
-    # androidviewclient doesnot support pip install, thus we put the directory in ours
-    install_requires=['androguard', 'androidviewclient'],
+    # androidviewclient doesnot support pip install, thus you should install it with easy_install
+    install_requires=['androguard', 'androidviewclient', 'pillow'],
 )

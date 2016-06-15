@@ -35,7 +35,7 @@ class CoverageEvaluator(object):
         ]
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.device_serial = device_serial,
+        self.device_serial = device_serial
         self.apk_path = os.path.abspath(apk_path)
         self.output_dir = output_dir
         self.androcov_path = androcov_path
@@ -64,7 +64,7 @@ class CoverageEvaluator(object):
         now = datetime.now()
         self.report_title = now.strftime("Evaluation_Report_%Y-%m-%d_%H%M")
         result_file_name = self.report_title + ".md"
-        self.result_file_path = os.path.join(output_dir, result_file_name)
+        self.result_file_path = os.path.join(self.output_dir, result_file_name)
 
         self.event_duration = event_duration
         if self.event_duration is None:

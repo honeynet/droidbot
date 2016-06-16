@@ -287,7 +287,7 @@ class CoverageEvaluator(object):
         out_file.write("\n## Data\n\n")
         out_file.write("### Summary\n\n")
         # gen head lines
-        th1 = "|\tcategory\t|"
+        th1 = "|\titem\t|"
         th2 = "|----|"
         for mode in modes:
             th1 += "\t%s\t|" % mode
@@ -298,22 +298,24 @@ class CoverageEvaluator(object):
         out_file.write(th2)
 
         # gen content
-        categories = self.result_safe_get(modes[0], 0)
-        if categories is None:
-            categories = []
+        items = self.result_safe_get(modes[0])
+        if items is None:
+            items = []
         else:
-            categories = list(categories.keys())
-            categories.sort()
+            items = items.keys()
 
-        for category in categories:
-            tl = "|\t%s\t|" % category
+        for item in items:
+            item_sample_value = self.result_safe_get(modes[0], item)
+            if item_sample_value is None or isinstance(item_sample_value, list):
+                continue
+            tl = "|\t%s\t|" % item
             for mode in modes:
                 time_tags = self.result_safe_get(mode)
                 if time_tags is None:
                     tl += "\t0\t|"
                     continue
                 time_tag = max(time_tags.keys())
-                count = self.result_safe_get(mode, time_tag, category)
+                count = self.result_safe_get(mode, time_tag, item)
                 tl += "\t%d\t|" % count
             tl += "\n"
             out_file.write(tl)

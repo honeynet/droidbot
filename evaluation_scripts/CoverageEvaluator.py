@@ -231,7 +231,7 @@ class CoverageEvaluator(object):
                             event_policy="dynamic",
                             output_dir=self.output_dirs[CoverageEvaluator.MODE_DYNAMIC])
 
-    def result_safe_get(self, mode_tag=None, time_tag=None, item_tag=None):
+    def result_safe_get(self, mode_tag=None, item_key=None, timestamp=None):
         """
         get an item from result
         """
@@ -239,14 +239,14 @@ class CoverageEvaluator(object):
             return self.result
         if mode_tag in self.result.keys() and isinstance(self.result[mode_tag], dict):
             result_mode = self.result[mode_tag]
-            if time_tag is None:
+            if item_key is None:
                 return result_mode
-            if time_tag in result_mode.keys() and isinstance(result_mode[time_tag], dict):
-                result_item = result_mode[time_tag]
-                if item_tag is None:
+            if item_key in result_mode.keys() and isinstance(result_mode[item_key], dict):
+                result_item = result_mode[item_key]
+                if timestamp is None:
                     return result_item
-                if item_tag in result_item.keys():
-                    return result_item[item_tag]
+                if timestamp in result_item.keys():
+                    return result_item[timestamp]
         return None
 
     def dump(self, out_file):
@@ -306,17 +306,17 @@ class CoverageEvaluator(object):
 
         for item in items:
             item_sample_value = self.result_safe_get(modes[0], item)
-            if item_sample_value is None or isinstance(item_sample_value, list):
+            if item_sample_value is None:
                 continue
+            if not isinstance(item_sample_value, str)\
+                    and not isinstance(item_sample_value, int)\
+                    and not isinstance(item_sample_value, float):
+                continue
+
             tl = "|\t%s\t|" % item
             for mode in modes:
-                time_tags = self.result_safe_get(mode)
-                if time_tags is None:
-                    tl += "\t0\t|"
-                    continue
-                time_tag = max(time_tags.keys())
-                count = self.result_safe_get(mode, time_tag, item)
-                tl += "\t%d\t|" % count
+                item_value = self.result_safe_get(mode)
+                tl += "\t%d\t|" % item_value
             tl += "\n"
             out_file.write(tl)
 
@@ -333,17 +333,27 @@ class CoverageEvaluator(object):
         out_file.write(th2)
 
         # gen content
-        time_tags = self.result_safe_get(modes[0])
-        if time_tags is None:
-            time_tags = []
-        else:
-            time_tags = list(time_tags.keys())
-            time_tags.sort()
+        timestamps = []
+        for mode in modes:
+            mode_timestamps = self.result_safe_get(mode, "timestamp_count")
+            if not isinstance(mode_timestamps, dict):
+                continue
+            timestamps.extend(mode_timestamps)
+        timestamps = sorted(set(timestamps))
 
-        for time_tag in time_tags:
-            tl = "|\t%d\t|" % time_tag
+        reached_method_count_in_last_timestamp = {}
+        for mode in modes:
+            reached_method_count_in_last_timestamp[mode] = 0
+        for timestamp in timestamps:
+            tl = "|\t%d\t|" % timestamp
             for mode in modes:
-                tl += "\t%s\t|" % self.result_safe_get(mode, time_tag, "sum")
+                # all_methods_count = self.result_safe_get(mode, "all_methods_count")
+                reached_method_count = self.result_safe_get(mode, "timestamp_count", timestamp)
+                if isinstance(reached_method_count, int):
+                    reached_method_count_in_last_timestamp[mode] = reached_method_count
+                else:
+                    reached_method_count = reached_method_count_in_last_timestamp[mode]
+                tl += "\t%s\t|" % reached_method_count
             tl += "\n"
             out_file.write(tl)
 

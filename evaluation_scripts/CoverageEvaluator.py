@@ -135,7 +135,6 @@ class CoverageEvaluator(object):
         if not self.enabled:
             return
         self.logger.info("evaluating [%s] mode" % mode)
-        self.droidbot = None
         target_thread = threading.Thread(target=target)
         target_thread.start()
         self.monitor_and_record(mode)
@@ -145,6 +144,7 @@ class CoverageEvaluator(object):
     def stop_modules(self):
         if self.droidbot is not None:
             self.droidbot.stop()
+            time.sleep(5)
 
     def monitor_and_record(self, mode):
         if not self.enabled:
@@ -356,6 +356,7 @@ class CoverageEvaluator(object):
                 tl += "\t%s\t|" % reached_method_count
             tl += "\n"
             out_file.write(tl)
+        out_file.flush()
 
 
 def parse_args():

@@ -38,7 +38,7 @@ class Androcov(object):
         for timestamp in range(0, time_scale):
             timestamp_count[timestamp] = 0
         for reached_timestamp in reached_timestamps:
-            delta_time = int((reached_timestamp - first_timestamp).total_seconds())
+            delta_time = int((reached_timestamp - first_timestamp).total_seconds()) + 1
             timestamp_count[delta_time] += 1
         for timestamp in range(1, time_scale):
             timestamp_count[timestamp] += timestamp_count[timestamp - 1]

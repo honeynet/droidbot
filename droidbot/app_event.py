@@ -667,8 +667,9 @@ class AppEventManager(object):
                 self.event_factory.start(self)
             elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
-                monkey_cmd = "adb shell monkey %s --throttle %d -v %d" % (
-                    ("" if self.app.get_package_name() is None else "-p " + (self.app.get_package_name())),
+                monkey_cmd = "adb -s %s shell monkey %s --throttle %d -v %d" % (
+                    self.device.serial,
+                    "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
                     throttle, self.event_count)
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1039,7 +1040,7 @@ class DynamicEventFactory(EventFactory):
 
             # if it is an EditText, try input something
             from com.dtmilano.android.viewclient import EditText
-            if isinstance(v, EditText) or 'edit' in v_cls_name\
+            if isinstance(v, EditText) or 'edit' in v_cls_name \
                     or 'text' in v_cls_name or 'input' in v_cls_name:
                 for key in self.possible_inputs.keys():
                     if key in v.getId().lower() or key in v_cls_name:
@@ -1152,6 +1153,7 @@ class CustomizedEventFactory(EventFactory):
     def gen_event_based_on_state(self, state):
         return UIEvent.get_random_instance(self.device, self.app)
 
+
 EVENT_FLAG_STARTED = "+started"
 EVENT_FLAG_START_APP = "+start_app"
 EVENT_FLAG_TOUCH = "+touch"
@@ -1165,6 +1167,7 @@ class ManualEventFactory(CustomizedEventFactory):
     """
     record device state during execution
     """
+
     def __init__(self, device, app):
         super(ManualEventFactory, self).__init__(device, app)
         self.state_transitions = set()
@@ -1201,9 +1204,9 @@ class ManualEventFactory(CustomizedEventFactory):
         state_dict = state.to_dict()
         touched_view = None
 
-        sp = subprocess.Popen(['adb', 'shell', 'getevent', '-lt'], 
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE)#, bufsize=0)
-        
+        sp = subprocess.Popen(['adb', '-s', self.device.serial, 'shell', 'getevent', '-lt'],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE)  # , bufsize=0)
+
         onDown = False
         startPosX = -1
         startPosY = -1
@@ -1218,36 +1221,44 @@ class ManualEventFactory(CustomizedEventFactory):
                 while True:
                     position_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_X' in position_line:
-                        startPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
+                        startPosX = int(
+                            position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):],
+                            16) / 2.0
                     elif 'ABS_MT_POSITION_Y' in position_line:
-                        startPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
+                        startPosY = int(
+                            position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):],
+                            16) / 2.0
                         posList.append([startPosX, startPosY])
                         break
                 print "STARTPOS: %s, %s" % (str(startPosX), str(startPosY))
                 currPosX = startPosX
                 currPosY = startPosY
                 onDown = True
-                
+
             elif ('ABS_MT_TRACKING_ID' in line) and ('ffffffff' in line) and onDown:
                 endPosX = currPosX
                 endPosY = currPosY
                 while True:
                     position_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_X' in position_line:
-                        endPosX = int(position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
+                        endPosX = int(
+                            position_line[position_line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):],
+                            16) / 2.0
                     elif 'ABS_MT_POSITION_Y' in position_line:
-                        endPosY = int(position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
+                        endPosY = int(
+                            position_line[position_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):],
+                            16) / 2.0
                         break
                     elif len(position_line) > 0:
                         posList.append([endPosX, endPosY])
                         break
 
                 print "ENDPOS: %s, %s" % (str(endPosX), str(endPosY))
-                
+
                 onDraw = False
                 for point in posList:
-                    if (point[0]-startPosX) * (point[0]-startPosX) + \
-                       (point[1]-startPosY) * (point[0]-startPosY) >= 10000:
+                    if (point[0] - startPosX) * (point[0] - startPosX) + \
+                                    (point[1] - startPosY) * (point[0] - startPosY) >= 10000:
                         onDraw = True
                         break
 
@@ -1261,27 +1272,27 @@ class ManualEventFactory(CustomizedEventFactory):
                                                 bounds[0][1] <= startPosY <= bounds[1][1]:
                             touched_view = view
                             break
-                        
+
                     if touched_view is None:
                         print 'no view'
                         touched_view = {"view_str": "UNKNOWN_TOUCH"}
                 else:
                     touched_view = {"view_str": "DRAW:%s" % json.dumps(posList)}
-                
+
                 break
 
             elif 'ABS_MT_POSITION_X' in line:
                 currPosX = int(line[line.find('ABS_MT_POSITION_X') + len('ABS_MT_POSITION_X'):], 16) / 2.0
                 while True:
-                    y_line = sp.stdout.readline()    
+                    y_line = sp.stdout.readline()
                     if 'ABS_MT_POSITION_Y' in y_line:
                         currPosY = int(y_line[y_line.find('ABS_MT_POSITION_Y') + len('ABS_MT_POSITION_Y'):], 16) / 2.0
                         posList.append([currPosX, currPosY])
                     break
-            
+
         sp.kill()
 
-        #touched_view = random.choice(state.views)
+        # touched_view = random.choice(state.views)
 
         self.device.logger.info("Captured user input: %s" % touched_view['view_str'])
         return touched_view
@@ -1313,6 +1324,7 @@ class StateRecorderFactory(CustomizedEventFactory):
     """
     record device state during execution
     """
+
     def __init__(self, device, app):
         super(StateRecorderFactory, self).__init__(device, app)
         self.explored_views = set()

@@ -1,9 +1,9 @@
-# Evaluate droidbot with droidbox
+# Evaluate DroidBot with DroidBox
 # basic idea is:
-# A tool is better if more droidbox logs are generated when using the tool
-import argparse
-
+# A tool is better if more DroidBox logs are generated
 __author__ = 'yuanchun'
+
+import argparse
 import os
 import logging
 import sys
@@ -17,7 +17,7 @@ from droidbot.droidbot import DroidBot
 
 class DroidboxEvaluator(object):
     """
-    evaluate test tool with droidbox
+    evaluate test tool with DroidBox
     make sure you have started droidbox emulator before evaluating
     """
     MODE_DEFAULT = "1.default"

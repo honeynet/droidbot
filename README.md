@@ -1,14 +1,14 @@
 # DroidBot
 
 ## About
-A robot which automatically interacts with Android app.
+A robot which automatically interacts with Android apps.
 
 DroidBot sends keyevent, gestures and simulates system events 
 in order to exploit more app states automatically.
-droidbot decides which actions to take based on static analysis result of app 
+DroidBot decides which actions to take based on static analysis result of app
 and dynamic device information (view hierarchy).
 
-For more details, refer to my [blog posts](http://ylimit.github.io/droidbot/).
+For more details, refer to my [blog posts](http://honeynet.github.io/droidbot/).
 
 ## Introduction
 DroidBot mainly does following two things:
@@ -45,10 +45,11 @@ keyevents, and simulated broadcasts, etc.
 ## Prerequisite
 
 1. `Python` version `2.7`
-2. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
-3. `androidviewclient`, install with `sudo easy_install --upgrade androidviewclient`,
+2. `Java` version `1.7`
+3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
+4. `androidviewclient`, install with `sudo easy_install --upgrade androidviewclient`,
 or refer to its [wiki](https://github.com/dtmilano/AndroidViewClient/wiki)
-4. (Optional) `DroidBox` version `4.1.1`, 
+5. (Optional) `DroidBox` version `4.1.1`, 
 download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 
 ## Installation
@@ -56,7 +57,7 @@ download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 Clone this repo and use pip install:
 
 ```shell
-git clone https://github.com/ylimit/droidbot.git
+git clone https://github.com/honeynet/droidbot.git
 pip install -e droidbot
 ```
 
@@ -65,7 +66,7 @@ pip install -e droidbot
 ### Basic Usage
 
 1. Start an emulator or connect to a device using adb.
-2. Start droidbot:
+2. Start DroidBot:
 `droidbot -h`
 
 ### Usage with DroidBox (without docker)
@@ -91,7 +92,7 @@ cd DroidBox411RC
 sh startemu.sh droidbox
 ```
 
-Step 2. Start droidbot:
+Step 2. Start DroidBot:
 ```
 droidbot -a <sample.apk> -event dynamic -duration 100 -o droidbot_out
 ```
@@ -110,7 +111,7 @@ docker pull honeynet/droidbot
 
 or, if you prefer, build your own from the GitHub repo:
 ```
-git clone https://github.com/ylimit/droidbot.git
+git clone https://github.com/honeynet/droidbot.git
 docker build -t honeynet/droidbot droidbot
 ```
 
@@ -123,16 +124,14 @@ ls ~/mobileSamples/out
 
 ## Evaluation
 
-Droidbot is evaluated by comparing with droidbox default mode (which does nothing) 
-and adb monkey tool. The results are in [result](/evaluation_reports/README.md).
+DroidBot is evaluated by comparing with DroidBot default mode (which does nothing)
+and adb Monkey tool. The results are in [result](/evaluation_reports/README.md).
 
-Or see my visualized evaluation reports at [DroidBot Posts](http://ylimit.github.io/droidbot/).
+Or see my visualized evaluation reports at [DroidBot Posts](http://honeynet.github.io/droidbot/).
 
 ## Acknowledgement
 
 1. [AndroidViewClient](https://github.com/dtmilano/AndroidViewClient) 
-is an amazing tool simplifies test script creation providing higher level operations 
-and the ability of obtaining the tree of Views present at any given moment on the device 
-or emulator screen.
+is an amazing tool that simplifies test script creation.
 2. [Androguard](http://code.google.com/p/androguard/)
-is well-known for reverse-engineering of Android Apks.
+is well-known for reverse-engineering of Android APKs.

@@ -1,13 +1,14 @@
 # utils for setting up Android environment and sending events
-
-__author__ = 'yuanchun'
-import connection
+import hashlib
 import logging
-import time
 import os
 import re
 import subprocess
+import time
+
 from com.dtmilano.android.viewclient import ViewClient
+
+import connection
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -69,8 +70,8 @@ class Device(object):
             output_dir = self.output_dir
         logcat_file = open("%s/logcat.log" % output_dir, "w")
         import subprocess
-        subprocess.check_call(["adb", "logcat", "-c"])
-        logcat = subprocess.Popen(["adb", "logcat", "-v", "threadtime"],
+        subprocess.check_call(["adb", "-s", self.serial, "logcat", "-c"])
+        logcat = subprocess.Popen(["adb", "-s", self.serial, "logcat", "-v", "threadtime"],
                                   stdin=subprocess.PIPE,
                                   stdout=logcat_file)
         return logcat
@@ -119,15 +120,15 @@ class Device(object):
         """
         self.logger.info("waiting for device")
         try:
-            subprocess.check_call(["adb", "wait-for-device"])
+            subprocess.check_call(["adb", "-s", self.serial, "wait-for-device"])
             while True:
-                out = subprocess.check_output(["adb", "shell", "getprop", "init.svc.bootanim"]).split()[0]
+                out = subprocess.check_output(["adb", "-s", self.serial, "shell",
+                                               "getprop", "init.svc.bootanim"]).split()[0]
                 if out == "stopped":
                     break
                 time.sleep(3)
         except:
             self.logger.warning("error waiting for device")
-
 
     def connect(self):
         """
@@ -187,7 +188,7 @@ class Device(object):
         """
         if self.adb_enabled and self.adb is None:
             # use adbclient class in com.dtmilano.adb.adbclient
-            self.adb, self.serial = ViewClient.connectToDeviceOrExit(verbose=True,serialno=self.serial)
+            self.adb, self.serial = ViewClient.connectToDeviceOrExit(verbose=True, serialno=self.serial)
         return self.adb
 
     def get_monkeyrunner(self):
@@ -328,8 +329,8 @@ class Device(object):
         send_sms_intent = Intent(prefix='start',
                                  action="android.intent.action.SENDTO",
                                  data_uri="sms:%s" % phone,
-                                 extra_string={'sms_body':content},
-                                 extra_boolean={'exit_on_sent':'true'})
+                                 extra_string={'sms_body': content},
+                                 extra_boolean={'exit_on_sent': 'true'})
         self.send_intent(intent=send_sms_intent)
         time.sleep(2)
         self.get_adb().press('66')
@@ -367,8 +368,12 @@ class Device(object):
         """
         simulate GPS on device via telnet
         this method is blocked
+        @param center_x: x coordinate of GPS position
+        @param center_y: y coordinate of GPS position
+        @param delta_x: range of x coordinate
+        @param delta_y: range of y coordinate
         """
-        import random, time
+        import random
         while self.is_connected:
             x = random.random() * delta_x * 2 + center_x - delta_x
             y = random.random() * delta_y * 2 + center_y - delta_y
@@ -384,7 +389,7 @@ class Device(object):
         system_settings = {}
         out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "system"))
         out_lines = out.splitlines()
-        for line in out.splitlines():
+        for line in out_lines:
             segs = line.split('|')
             if len(segs) != 3:
                 continue
@@ -463,10 +468,10 @@ class Device(object):
         services = []
         dat = self.get_adb().shell('dumpsys activity services')
         lines = dat.splitlines()
-        serviceRE = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
+        service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
 
         for line in lines:
-            m = serviceRE.search(line)
+            m = service_re.search(line)
             if m:
                 package = m.group(1)
                 service = m.group(2)
@@ -480,8 +485,8 @@ class Device(object):
         :return: package path of app in device
         """
         dat = self.get_adb().shell('pm path %s' % package_name)
-        package_path_RE = re.compile('^package:(.+)$')
-        m = package_path_RE.match(dat)
+        package_path_re = re.compile('^package:(.+)$')
+        m = package_path_re.match(dat)
         if m:
             path = m.group(1)
             return path.strip()
@@ -490,6 +495,7 @@ class Device(object):
     def start_activity_via_monkey(self, package):
         """
         use monkey to start activity
+        @param package: package name of target activity
         """
         cmd = 'monkey'
         if package:
@@ -505,19 +511,20 @@ class Device(object):
         @return:
         """
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.check_call(["adb", "install", app.app_path],
+        subprocess.check_call(["adb", "-s", self.serial, "install", app.app_path],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
         package_info_file = open(package_info_file_name, "w")
-        subprocess.check_call(["adb", "shell", "dumpsys", "package", app.get_package_name()], stdout=package_info_file)
+        subprocess.check_call(["adb", "-s", self.serial, "shell",
+                               "dumpsys", "package", app.get_package_name()], stdout=package_info_file)
         package_info_file.close()
 
     def uninstall_app(self, app):
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "uninstall", app.get_package_name()],
+        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_current_state(self):
@@ -565,7 +572,8 @@ class DeviceState(object):
         import json
         return json.dumps(self.to_dict(), indent=2)
 
-    def views2list(self, view_client_views):
+    @staticmethod
+    def views2list(view_client_views):
         views = []
         view2id_map = {}
         id2view_map = {}
@@ -698,7 +706,7 @@ class App(object):
             self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
             app_path_in_device = device.get_package_path(self.package_name)
             app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
-            subprocess.check_call(["adb", "pull", app_path_in_device, app_path])
+            subprocess.check_call(["adb", "-s", device.serial, "pull", app_path_in_device, app_path])
             self.app_path = app_path
             return self.app_path
         except Exception as e:
@@ -744,11 +752,11 @@ class App(object):
 
         for receiver in receivers:
             intent_filters = androguard_a.get_intent_filters('receiver', receiver)
-            if intent_filters.has_key('action'):
+            if 'action' in intent_filters:
                 actions = intent_filters['action']
             else:
                 actions = []
-            if intent_filters.has_key('category'):
+            if 'category' in intent_filters:
                 categories = intent_filters['category']
             else:
                 categories = []
@@ -759,21 +767,25 @@ class App(object):
                     possible_broadcasts.add(intent)
         return possible_broadcasts
 
-    def get_coverage(self):
+    def get_hashes(self, block_size=2 ** 8):
         """
-        calculate method coverage
-        idea:
-        in dalvik, the dvmFastMethodTraceEnter in profle.cpp will be called in each method
-        dvmFastMethodTraceEnter takes Method* as an argument
-        struct Method is defined in vm/oo/Object.cpp
-        Method has a field clazz (struct ClassObject)
-        ClassObject has a field pDvmDex (struct DvmDex in DvmDex.h)
-        DvmDex represent a dex file.
-        Hopefully, by monitoring method and comparing the belong dex file,
-        we are able to record each invoked method call of app.
-        coverage = (methods invoked) / (method declared)
+        Calculate MD5,SHA-1, SHA-256
+        hashes of APK input file
+        @param block_size:
         """
-        pass
+        md5 = hashlib.md5()
+        sha1 = hashlib.sha1()
+        sha256 = hashlib.sha256()
+        f = open(self.app_path, 'rb')
+        while True:
+            data = f.read(block_size)
+            if not data:
+                break
+
+            md5.update(data)
+            sha1.update(data)
+            sha256.update(data)
+        return [md5.hexdigest(), sha1.hexdigest(), sha256.hexdigest()]
 
 
 class AndroguardAnalysis(object):

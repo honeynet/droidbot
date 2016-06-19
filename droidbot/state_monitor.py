@@ -66,7 +66,11 @@ class StateMonitor(object):
         """
         import time, subprocess
         while self.enabled:
-            ps_out = subprocess.check_output(["adb", "shell", "ps", "-t"])
+            if self.device is not None:
+                ps_cmd = ["adb", "-s", self.device.serial, "shell", "ps", "-t"]
+            else:
+                ps_cmd = ["adb", "shell", "ps", "-t"]
+            ps_out = subprocess.check_output(ps_cmd)
             # parse ps_out to update self.pid2uid mapping and self.pid2name mapping
             ps_out_lines = ps_out.splitlines()
             ps_out_head = ps_out_lines[0].split()

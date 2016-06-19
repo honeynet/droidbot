@@ -237,15 +237,15 @@ class CoverageEvaluator(object):
         """
         if mode_tag is None:
             return self.result
-        if mode_tag in self.result.keys() and isinstance(self.result[mode_tag], dict):
+        if mode_tag in self.result:
             result_mode = self.result[mode_tag]
             if item_key is None:
                 return result_mode
-            if item_key in result_mode.keys() and isinstance(result_mode[item_key], dict):
+            if isinstance(result_mode, dict) and item_key in result_mode:
                 result_item = result_mode[item_key]
                 if timestamp is None:
                     return result_item
-                if timestamp in result_item.keys():
+                if isinstance(result_item, dict) and timestamp in result_item:
                     return result_item[timestamp]
         return None
 
@@ -298,14 +298,14 @@ class CoverageEvaluator(object):
         out_file.write(th2)
 
         # gen content
-        items = self.result_safe_get(modes[0])
-        if items is None:
-            items = []
+        item_keys = self.result_safe_get(modes[0])
+        if item_keys is None:
+            item_keys = []
         else:
-            items = items.keys()
+            item_keys = item_keys.keys()
 
-        for item in items:
-            item_sample_value = self.result_safe_get(modes[0], item)
+        for item_key in item_keys:
+            item_sample_value = self.result_safe_get(modes[0], item_key)
             if item_sample_value is None:
                 continue
             if not isinstance(item_sample_value, str)\
@@ -313,10 +313,10 @@ class CoverageEvaluator(object):
                     and not isinstance(item_sample_value, float):
                 continue
 
-            tl = "|\t%s\t|" % item
+            tl = "|\t%s\t|" % item_key
             for mode in modes:
-                item_value = self.result_safe_get(mode)
-                tl += "\t%d\t|" % item_value
+                item_value = self.result_safe_get(mode, item_key)
+                tl += "\t%s\t|" % item_value
             tl += "\n"
             out_file.write(tl)
 

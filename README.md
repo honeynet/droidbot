@@ -122,6 +122,16 @@ docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/sampl
 ls ~/mobileSamples/out
 ```
 
+## Script
+
+DroidBot supports semi-automatic testing.
+Users can write scripts to affect the process of testing.
+
+The script is in json format, which contains two basic objects:
+
+1. `State` selector, which can be used to select a state (such as a login Activity).
+2. `Event` object, which defines an event to be sent to device (such as a screen-touching event).
+
 ## Evaluation
 
 DroidBot is evaluated by comparing with DroidBot default mode (which does nothing)

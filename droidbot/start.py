@@ -43,7 +43,7 @@ def parse_args():
                              '%s\tmanually interact with your app, and we will record the events.\n' %
                              (app_event.POLICY_NONE, app_event.POLICY_MONKEY, app_event.POLICY_RANDOM,
                               app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_FILE,
-                              app_event.POLICY_STATE_RECORDER, app_event.POLICY_MANUAL))
+                              app_event.POLICY_UTG_DYNAMIC, app_event.POLICY_MANUAL))
     parser.add_argument("-o", action="store", dest="output_dir",
                         help="directory of output")
     parser.add_argument("-droidbox", action="store_true", dest="with_droidbox",

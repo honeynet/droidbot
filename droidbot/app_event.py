@@ -14,11 +14,12 @@ from threading import Timer
 from droidbot_types import Intent
 
 POLICY_NONE = "none"
+POLICY_STATE_RECORDER = "state_recorder"
 POLICY_MONKEY = "monkey"
 POLICY_RANDOM = "random"
 POLICY_STATIC = "static"
 POLICY_DYNAMIC = "dynamic"
-POLICY_STATE_RECORDER = "state_recorder"
+POLICY_UTG_DYNAMIC = "utg_dynamic"
 POLICY_MANUAL = "manual"
 POLICY_FILE = "file"
 
@@ -595,6 +596,8 @@ class AppEventManager(object):
 
         if self.policy == POLICY_NONE:
             self.event_factory = None
+        elif self.policy == POLICY_STATE_RECORDER:
+            self.event_factory = None
         elif self.policy == POLICY_MONKEY:
             self.event_factory = None
         elif self.policy == POLICY_RANDOM:
@@ -603,8 +606,8 @@ class AppEventManager(object):
             self.event_factory = StaticEventFactory(device, app)
         elif self.policy == POLICY_DYNAMIC:
             self.event_factory = DynamicEventFactory(device, app)
-        elif self.policy == POLICY_STATE_RECORDER:
-            self.event_factory = StateRecorderFactory(device, app)
+        elif self.policy == POLICY_UTG_DYNAMIC:
+            self.event_factory = UtgDynamicFactory(device, app)
         elif self.policy == POLICY_MANUAL:
             self.event_factory = ManualEventFactory(device, app)
         else:
@@ -635,15 +638,6 @@ class AppEventManager(object):
         if self.event_factory is not None:
             self.event_factory.dump()
 
-    # def on_state_update(self, old_state, new_state):
-    #     """
-    #     callback method invoked by AppstateMonitor
-    #     :param old_state: origin state of App
-    #     :param new_state: new state of App
-    #     :return:
-    #     """
-    #
-
     def set_event_factory(self, event_factory):
         """
         set event factory of the app
@@ -665,6 +659,10 @@ class AppEventManager(object):
         try:
             if self.event_factory is not None:
                 self.event_factory.start(self)
+            elif self.policy == POLICY_NONE:
+                self.device.start_app(self.app)
+                while self.enabled:
+                    time.sleep(1)
             elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
                 monkey_cmd = "adb -s %s shell monkey %s --throttle %d -v %d" % (
@@ -675,9 +673,9 @@ class AppEventManager(object):
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 while self.enabled:
                     time.sleep(1)
-            elif self.policy == POLICY_NONE:
+            elif self.policy == POLICY_STATE_RECORDER:
                 self.device.start_app(self.app)
-                while True:
+                while self.enabled:
                     keyboard_input = raw_input("press ENTER to save current state, type q to exit...")
                     if keyboard_input.startswith('q'):
                         break
@@ -1320,13 +1318,13 @@ class ManualEventFactory(CustomizedEventFactory):
         state_transitions_file.close()
 
 
-class StateRecorderFactory(CustomizedEventFactory):
+class UtgDynamicFactory(CustomizedEventFactory):
     """
     record device state during execution
     """
 
     def __init__(self, device, app):
-        super(StateRecorderFactory, self).__init__(device, app)
+        super(UtgDynamicFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
 

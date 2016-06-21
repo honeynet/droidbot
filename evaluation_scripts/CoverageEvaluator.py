@@ -26,13 +26,13 @@ class CoverageEvaluator(object):
     def __init__(self, device_serial, apk_path,
                  event_duration, event_count, event_interval,
                  output_dir, androcov_path, android_jar_path):
-        self.modes = [
-            CoverageEvaluator.MODE_DEFAULT,
-            CoverageEvaluator.MODE_MONKEY,
-            CoverageEvaluator.MODE_RANDOM,
-            CoverageEvaluator.MODE_STATIC,
-            CoverageEvaluator.MODE_DYNAMIC
-        ]
+        self.modes = {
+            CoverageEvaluator.MODE_DEFAULT: self.default_mode,
+            CoverageEvaluator.MODE_MONKEY: self.adb_monkey,
+            # CoverageEvaluator.MODE_RANDOM: self.droidbot_random,
+            # CoverageEvaluator.MODE_STATIC: self.droidbot_static,
+            CoverageEvaluator.MODE_DYNAMIC: self.droidbot_dynamic
+        }
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device_serial = device_serial
@@ -99,19 +99,12 @@ class CoverageEvaluator(object):
         """
         if not self.enabled:
             return
-        self.evaluate_mode(CoverageEvaluator.MODE_DEFAULT,
-                           self.default_mode)
-        self.evaluate_mode(CoverageEvaluator.MODE_MONKEY,
-                           self.adb_monkey)
-        self.evaluate_mode(CoverageEvaluator.MODE_RANDOM,
-                           self.droidbot_random)
-        self.evaluate_mode(CoverageEvaluator.MODE_STATIC,
-                           self.droidbot_static)
-        self.evaluate_mode(CoverageEvaluator.MODE_DYNAMIC,
-                           self.droidbot_dynamic)
-        self.dump(sys.stdout)
+
+        for mode in self.modes:
+            self.evaluate_mode(mode, self.modes[mode])
+        self.dump_result(sys.stdout)
         result_file = open(self.result_file_path, "w")
-        self.dump(result_file)
+        self.dump_result(result_file)
         result_file.close()
 
     def androcov_instrument(self):
@@ -249,7 +242,7 @@ class CoverageEvaluator(object):
                     return result_item[timestamp]
         return None
 
-    def dump(self, out_file):
+    def dump_result(self, out_file):
         modes = self.result_safe_get()
         if modes is None or not modes:
             return
@@ -405,4 +398,4 @@ if __name__ == "__main__":
         evaluator.start_evaluate()
     except KeyboardInterrupt:
         evaluator.stop()
-        evaluator.dump(sys.stdout)
+        evaluator.dump_result(sys.stdout)

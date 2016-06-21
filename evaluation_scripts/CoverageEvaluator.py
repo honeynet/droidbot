@@ -157,6 +157,7 @@ class CoverageEvaluator(object):
         if not self.emulator:
             return
         self.emulator.terminate()
+        time.sleep(5)
 
     def wait_for_device(self):
         """

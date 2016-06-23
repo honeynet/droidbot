@@ -1095,31 +1095,30 @@ class FileEventFactory(EventFactory):
         :param in_file path string
         """
         super(FileEventFactory, self).__init__(device, app)
-        self.events = []
         self.file = in_file
         f = open(in_file, 'r')
-        events_json = f.readall()
-        events_array = json.loads(events_json)
-        for event_dict in events_array:
-            if not isinstance(event_dict, dict):
-                raise UnknownEventException
-            if 'event_type' not in event_dict.keys():
-                raise UnknownEventException
-            event_type = event_dict['event_type']
-            if 'event_type' not in EVENT_TYPES.keys():
-                raise UnknownEventException
-            EventType = EVENT_TYPES[event_type]
-            event = EventType(dict=event_dict)
-            self.events.append(event)
-        self.index = 0
+        self.events_json = json.load(f)
+
+        if 'views' in self.events_json \
+                and 'states' in self.events_json \
+                and 'operations' in self.events_json \
+                and 'main' in self.events_json:
+            pass
+        else:
+            self.device.logger.warning("invalid script.")
+
+        self.views = self.events_json['views']
+        self.states = self.events_json['states']
+        self.operations = self.events_json['operations']
+        self.main = self.events_json['main']
 
     def generate_event(self):
         """
         generate a event
         """
-        event = self.events[self.index]
-        self.index += 1
-        return event
+        # TODO implement this
+        pass
+        return None
 
 
 class CustomizedEventFactory(EventFactory):

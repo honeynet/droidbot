@@ -154,7 +154,7 @@ An example of the DroidBot script is as follows:
     'states': {
         'login_state': {
             'activity': 'LoginActivity',
-            'contains_view': ['login_email', 'login_password', 'login_button']
+            'views': ['login_email', 'login_password', 'login_button']
         }
         'normal_state': {
         }

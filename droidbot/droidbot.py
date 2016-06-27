@@ -96,3 +96,7 @@ class DroidBot(object):
             self.droidbox.stop()
         self.device.uninstall_app(self.app)
         self.device.disconnect()
+
+
+class DroidBotException(Exception):
+    pass

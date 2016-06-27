@@ -10,8 +10,8 @@ VIEW_ID = '<view_id>'
 STATE_ID = '<state_id>'
 OPERATION_ID = '<operation_id>'
 DEFAULT_ID = 'default'
-INTEGER_VAL = '<int>'
-REGEX_VAL = '<regex>'
+INTEGER_VAL = 0
+REGEX_VAL = r'<regex>'
 EVENT_POLICY_VAL = '<event_policy>'
 IDENTIFIER_RE = re.compile(r'^[^\d\W]\w*\Z', re.UNICODE)
 
@@ -35,10 +35,10 @@ class DroidBotScript(object):
         }
     }
 
-    def __init__(self, script):
+    def __init__(self, script_dict):
         self.tag = self.__class__.__name__
         self.logger = logging.getLogger(self.tag)
-        self.script = script
+        self.script_dict = script_dict
         self.views = {}
         self.states = {}
         self.operations = {}
@@ -46,13 +46,13 @@ class DroidBotScript(object):
         self.parse()
 
     def parse(self):
-        script = self.script
+        script_dict = self.script_dict
         grammar = DroidBotScript.script_grammar
-        self.check_grammar_type(script, grammar, self.tag)
-        for script_key in script:
+        self.check_grammar_type(script_dict, grammar, self.tag)
+        for script_key in script_dict:
             self.check_grammar_key_is_valid(script_key, grammar, self.tag)
             key_tag = "%s.%s" % (self.tag, script_key)
-            script_value = script[script_key]
+            script_value = script_dict[script_key]
             grammar_value = grammar[script_key]
             self.check_grammar_type(script_value, grammar_value, key_tag)
             if script_key is 'views':
@@ -99,6 +99,15 @@ class DroidBotScript(object):
         m = IDENTIFIER_RE.match(value)
         if not m:
             msg = "invalid identifier: %s" % value
+            raise ScriptSyntaxError(msg)
+
+    @staticmethod
+    def check_grammar_is_coordinate(value):
+        if not isinstance(value, tuple) or len(value) != 2:
+            msg = "illegal coordinate format: %s, should be 2-tuple" % value
+            raise ScriptSyntaxError(msg)
+        if not isinstance(value[0], int) or not isinstance(value[1], int):
+            msg = "illegal coordinate value: %s, should be integer" % value
             raise ScriptSyntaxError(msg)
 
     def check_duplicated_ids(self):
@@ -159,11 +168,46 @@ class ViewSelector(object):
         'text': REGEX_VAL,
         'resource_id': REGEX_VAL,
         'class': REGEX_VAL,
-        'package': REGEX_VAL
+        'package': REGEX_VAL,
+        'out_coordinates': [(INTEGER_VAL, INTEGER_VAL)],
+        'in_coordinates': [(INTEGER_VAL, INTEGER_VAL)]
     }
 
-    def __init__(self, selector):
-        pass
+    def __init__(self, selector_dict):
+        self.tag = self.__class__.__name__
+        self.seletor_dict = selector_dict
+        self.text_re = None
+        self.resource_id_re = None
+        self.class_re = None
+        self.package_re = None
+        self.out_coordinates = []
+        self.in_coordinates = []
+        self.parse()
+
+    def parse(self):
+        DroidBotScript.check_grammar_type(self.seletor_dict, self.selector_grammar, self.tag)
+        for selector_key in self.seletor_dict:
+            DroidBotScript.check_grammar_key_is_valid(selector_key, self.selector_grammar, self.tag)
+            selector_value = self.seletor_dict[selector_key]
+            grammar_value = self.selector_grammar[selector_key]
+            key_tag = "%s.%s" % (self.tag, selector_key)
+            DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
+            if selector_key is 'text':
+                self.text_re = re.compile(selector_value)
+            elif selector_key is 'resource_id':
+                self.resource_id_re = re.compile(selector_value)
+            elif selector_key is 'class':
+                self.class_re = re.compile(selector_value)
+            elif selector_key is 'package':
+                self.package_re = re.compile(selector_value)
+            elif selector_key is 'out_coordinates':
+                for out_coordinate in grammar_value:
+                    DroidBotScript.check_grammar_is_coordinate(out_coordinate)
+                    self.out_coordinates.append(out_coordinate)
+            elif selector_key is 'in_coordinates':
+                for in_coordinate in grammar_value:
+                    DroidBotScript.check_grammar_is_coordinate(in_coordinate)
+                    self.in_coordinates.append(in_coordinate)
 
 
 class StateSelector(object):
@@ -176,7 +220,8 @@ class StateSelector(object):
         'views': [VIEW_ID]
     }
 
-    def __init__(self, selector):
+    def __init__(self, selector_dict):
+        self.tag = self.__class__.__name__
         self.activity = None
         self.service = set()
         self.views = set()
@@ -210,6 +255,7 @@ class DroidBotOperation(object):
     }
 
     def __init__(self, operation_dict):
+        self.tag = self.__class__.__name__
         self.used_views = set()
 
     def get_used_views(self):

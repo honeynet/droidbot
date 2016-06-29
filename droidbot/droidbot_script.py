@@ -175,7 +175,7 @@ class ViewSelector(object):
 
     def __init__(self, selector_dict):
         self.tag = self.__class__.__name__
-        self.seletor_dict = selector_dict
+        self.selector_dict = selector_dict
         self.text_re = None
         self.resource_id_re = None
         self.class_re = None
@@ -185,10 +185,10 @@ class ViewSelector(object):
         self.parse()
 
     def parse(self):
-        DroidBotScript.check_grammar_type(self.seletor_dict, self.selector_grammar, self.tag)
-        for selector_key in self.seletor_dict:
+        DroidBotScript.check_grammar_type(self.selector_dict, self.selector_grammar, self.tag)
+        for selector_key in self.selector_dict:
             DroidBotScript.check_grammar_key_is_valid(selector_key, self.selector_grammar, self.tag)
-            selector_value = self.seletor_dict[selector_key]
+            selector_value = self.selector_dict[selector_key]
             grammar_value = self.selector_grammar[selector_key]
             key_tag = "%s.%s" % (self.tag, selector_key)
             DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
@@ -216,18 +216,38 @@ class StateSelector(object):
     """
     selector_grammar = {
         'activity': REGEX_VAL,
-        'service': [REGEX_VAL],
+        'services': [REGEX_VAL],
         'views': [VIEW_ID]
     }
 
     def __init__(self, selector_dict):
         self.tag = self.__class__.__name__
-        self.activity = None
-        self.service = set()
+        self.selector_dict = selector_dict
+        self.activity_re = None
+        self.service_re_set = set()
         self.views = set()
+        self.parse()
 
     def get_used_views(self):
         return set(self.views)
+
+    def parse(self):
+        DroidBotScript.check_grammar_type(self.selector_dict, self.selector_grammar, self.tag)
+        for selector_key in self.selector_dict:
+            DroidBotScript.check_grammar_key_is_valid(selector_key, self.selector_grammar, self.tag)
+            selector_value = self.selector_dict[selector_key]
+            grammar_value = self.selector_grammar[selector_key]
+            key_tag = "%s.%s" % (self.tag, selector_key)
+            DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
+            if selector_key is 'activity':
+                self.activity_re = re.compile(selector_value)
+            elif selector_key is 'services':
+                for service_re_str in selector_value:
+                    service_re = re.compile(service_re_str)
+                    self.service_re_set.add(service_re)
+            elif selector_key is 'views':
+                for view_id in selector_value:
+                    self.views.add(view_id)
 
 
 class DroidBotOperation(object):
@@ -256,7 +276,12 @@ class DroidBotOperation(object):
 
     def __init__(self, operation_dict):
         self.tag = self.__class__.__name__
+        self.operation_dict = operation_dict
         self.used_views = set()
+        self.parse()
+
+    def parse(self):
+        pass
 
     def get_used_views(self):
         return self.used_views

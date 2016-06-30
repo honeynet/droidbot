@@ -154,6 +154,9 @@ class DroidBotScript(object):
         defined_operation_ids.add(DEFAULT_ID)
         used_operation_ids = set()
         used_operation_ids.update(self.main.values())
+        for operation_id in self.operations:
+            operation = self.operations[operation_id]
+            used_operation_ids.update(operation.get_used_operations())
         if not defined_operation_ids.issuperset(used_operation_ids):
             undefined_operation_ids = used_operation_ids - defined_operation_ids
             msg = "using undefined operations: %s" % list(undefined_operation_ids)
@@ -281,10 +284,24 @@ class DroidBotOperation(object):
         self.parse()
 
     def parse(self):
-        pass
+        if 'operation_type' not in self.operation_dict:
+            msg = "key required in %s: operation_type" % self.tag
+            raise ScriptSyntaxError(msg)
+        operation_type = self.operation_dict['operation_type']
+        if operation_type is 'custom':
+            pass
+        elif operation_type is 'policy':
+            pass
+        elif operation_type is 'hybrid':
+            pass
 
     def get_used_views(self):
         return self.used_views
+
+    def get_used_operations(self):
+        if 'operations' in self.operation_dict:
+            return set(self.operation_dict['operations'])
+        return None
 
 
 class ScriptException(DroidBotException):

@@ -95,6 +95,12 @@ class DroidBotScript(object):
             raise ScriptSyntaxError(msg)
 
     @staticmethod
+    def check_grammar_has_key(dict_keys, required_key, tag):
+        if not required_key in dict_keys:
+            msg = 'key required in %s: %s' % (tag, required_key)
+            raise ScriptSyntaxError(msg)
+
+    @staticmethod
     def check_grammar_identifier_is_valid(value):
         m = IDENTIFIER_RE.match(value)
         if not m:
@@ -276,6 +282,7 @@ class DroidBotOperation(object):
         'operation_type': 'hybrid',
         'operations': [OPERATION_ID],
     }
+    possible_operation_types = ['custom', 'policy', 'hybrid']
 
     def __init__(self, operation_dict):
         self.tag = self.__class__.__name__
@@ -284,16 +291,21 @@ class DroidBotOperation(object):
         self.parse()
 
     def parse(self):
-        if 'operation_type' not in self.operation_dict:
-            msg = "key required in %s: operation_type" % self.tag
-            raise ScriptSyntaxError(msg)
+        DroidBotScript.check_grammar_has_key(self.operation_dict, 'operation_type', self.tag)
         operation_type = self.operation_dict['operation_type']
+        if operation_type not in self.possible_operation_types:
+            msg = "invalid operation type: %s" % operation_type
+            raise ScriptSyntaxError(msg)
+        self.tag = "%s (%s)" % (self.tag, operation_type)
         if operation_type is 'custom':
-            pass
+            operation_grammar = self.custom_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'events', self.tag)
         elif operation_type is 'policy':
-            pass
+            operation_grammar = self.policy_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_policy', self.tag)
         elif operation_type is 'hybrid':
-            pass
+            operation_grammar = self.hybrid_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'operations', self.tag)
 
     def get_used_views(self):
         return self.used_views

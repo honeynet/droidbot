@@ -1112,21 +1112,6 @@ class FileEventFactory(EventFactory):
         self.operations = self.events_json['operations']
         self.main = self.events_json['main']
 
-    @staticmethod
-    def check_script_syntax(script_file):
-        fp = open(script_file, 'r')
-        events_json = json.load(fp)
-
-        if 'views' in events_json \
-                and 'states' in events_json \
-                and 'operations' in events_json \
-                and 'main' in events_json:
-            pass
-        else:
-            print "invalid"
-            return False
-        return True
-
     def generate_event(self):
         """
         generate a event

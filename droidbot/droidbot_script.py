@@ -13,6 +13,7 @@ DEFAULT_ID = 'default'
 INTEGER_VAL = 0
 REGEX_VAL = r'<regex>'
 EVENT_POLICY_VAL = '<event_policy>'
+EVENT_TYPE_VAL = '<event_type>'
 IDENTIFIER_RE = re.compile(r'^[^\d\W]\w*\Z', re.UNICODE)
 
 
@@ -92,6 +93,12 @@ class DroidBotScript(object):
     def check_grammar_key_is_valid(value, valid_keys, tag):
         if not value in valid_keys:
             msg = '%s\'s key should be %s, %s given' % (tag, list(valid_keys), value)
+            raise ScriptSyntaxError(msg)
+
+    @staticmethod
+    def check_grammar_has_key(dict_keys, required_key, tag):
+        if not required_key in dict_keys:
+            msg = 'key required in %s: %s' % (tag, required_key)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
@@ -260,7 +267,7 @@ class DroidBotOperation(object):
     """
     custom_operation_grammar = {
         'operation_type': 'custom',
-        'events': [AppEvent],
+        'events': [ScriptEvent],
         'event_duration': INTEGER_VAL,
         'event_interval': INTEGER_VAL,
         'event_count': INTEGER_VAL
@@ -276,6 +283,10 @@ class DroidBotOperation(object):
         'operation_type': 'hybrid',
         'operations': [OPERATION_ID],
     }
+    possible_operation_types = ['custom', 'policy', 'hybrid']
+    import app_event
+    valid_event_policies = [app_event.POLICY_NONE, app_event.POLICY_MONKEY, app_event.POLICY_RANDOM,
+                            app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_UTG_DYNAMIC]
 
     def __init__(self, operation_dict):
         self.tag = self.__class__.__name__
@@ -284,16 +295,33 @@ class DroidBotOperation(object):
         self.parse()
 
     def parse(self):
-        if 'operation_type' not in self.operation_dict:
-            msg = "key required in %s: operation_type" % self.tag
-            raise ScriptSyntaxError(msg)
+        operation_dict = self.operation_dict
+        DroidBotScript.check_grammar_has_key(operation_dict, 'operation_type', self.tag)
         operation_type = self.operation_dict['operation_type']
+        if operation_type not in self.possible_operation_types:
+            msg = "invalid operation type: %s" % operation_type
+            raise ScriptSyntaxError(msg)
+        self.tag = "%s (%s)" % (self.tag, operation_type)
         if operation_type is 'custom':
-            pass
+            operation_grammar = self.custom_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'events', self.tag)
+            for operation_key in operation_dict:
+                DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
+            for event in operation_dict['events']:
+                if 'target_view' in event:
+                    self.used_views.add(event['target_view'])
         elif operation_type is 'policy':
-            pass
+            operation_grammar = self.policy_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_policy', self.tag)
+            event_policy = operation_dict['event_policy']
+            DroidBotScript.check_grammar_key_is_valid(event_policy, self.valid_event_policies, self.tag)
+            for operation_key in operation_dict:
+                DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
         elif operation_type is 'hybrid':
-            pass
+            operation_grammar = self.hybrid_operation_grammar
+            DroidBotScript.check_grammar_has_key(self.operation_dict, 'operations', self.tag)
+            for operation_key in operation_dict:
+                DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
 
     def get_used_views(self):
         return self.used_views
@@ -302,6 +330,25 @@ class DroidBotOperation(object):
         if 'operations' in self.operation_dict:
             return set(self.operation_dict['operations'])
         return None
+
+
+class ScriptEvent(AppEvent):
+    """
+    an event define in DroidBotScript
+    """
+    event_grammar = {
+        "target_view": VIEW_ID,
+        "event_type": EVENT_TYPE_VAL
+    }
+    def __init__(self, event_dict):
+        self.event_dict = event_dict
+
+    @staticmethod
+    def get_random_instance(device, app):
+        pass
+
+    def send(self, device):
+        pass
 
 
 class ScriptException(DroidBotException):

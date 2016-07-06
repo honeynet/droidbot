@@ -137,56 +137,54 @@ An example of the DroidBot script is as follows:
 
 ```
 {
-    'views': {
-        'login_email': {
-            'id': '*email*',
-            'class': 'EditText'
+    "views": {
+        "login_email": {
+            "id": "*email*",
+            "class": "EditText"
         },
-        'login_password': {
-            'id': '*password*',
-            'class': 'EditText'
+        "login_password": {
+            "id": "*password*",
+            "class": "EditText"
         },
-        'login_button': {
-            'id': '*login*',
-            'class': 'Button'
+        "login_button": {
+            "id": "*login*",
+            "class": "Button"
         }
-    }
-    'states': {
-        'login_state': {
-            'activity': 'LoginActivity',
-            'views': ['login_email', 'login_password', 'login_button']
+    },
+    "states": {
+        "login_state": {
+            "activity": "LoginActivity",
+            "views": ["login_email", "login_password", "login_button"]
         }
-        'normal_state': {
-        }
-    }
-    'operations': {
-        'login_operation': {
-            'operation_type': 'custom',
-            'events': [
+    },
+    "operations": {
+        "login_operation": {
+            "operation_type": "custom",
+            "events": [
                 {
-                    'event_type': 'text_input',
-                    'target_view': 'login_email',
-                    'text_content': 'ylimit@honeynet.org'
-                }
+                    "event_type": "text_input",
+                    "target_view": "login_email",
+                    "text_content": "ylimit@honeynet.org"
+                },
                 {
-                    'event_type': 'text_input',
-                    'target_view': 'login_password',
-                    'text_content': 'ylimit's password'
-                }
+                    "event_type": "text_input",
+                    "target_view": "login_password",
+                    "text_content": "ylimitpassword"
+                },
                 {
-                    'event_type': 'touch',
-                    'target_view': 'login_button'
+                    "event_type": "touch",
+                    "target_view": "login_button"
                 }
             ]
+        },
+        "default_operation": {
+            "operation_type": "policy",
+            "event_policy": "dynamic"
         }
-        'normal_operation': {
-            'operation_type': 'policy',
-            'event_policy': 'dynamic'
-        }
-    }
-    'main': {
-        'login_state': 'login_operation',
-        'normal_state': 'normal_operation'
+    },
+    "main": {
+        "login_state": "login_operation",
+        "normal_state": "default_operation"
     }
 }
 ```

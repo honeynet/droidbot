@@ -611,7 +611,7 @@ class AppEventManager(object):
         elif self.policy == POLICY_MANUAL:
             self.event_factory = ManualEventFactory(device, app)
         else:
-            self.event_factory = FileEventFactory(device, app, self.policy)
+            self.event_factory = ScriptEventFactory(device, app, self.policy)
 
     def add_event(self, event):
         """
@@ -1084,43 +1084,6 @@ EVENT_TYPES = {
 }
 
 
-class FileEventFactory(EventFactory):
-    """
-    factory which produces events from file
-    """
-
-    def __init__(self, device, app, in_file):
-        """
-        create a FileEventFactory from a json file
-        :param in_file path string
-        """
-        super(FileEventFactory, self).__init__(device, app)
-        self.file = in_file
-        f = open(in_file, 'r')
-        self.events_json = json.load(f)
-
-        if 'views' in self.events_json \
-                and 'states' in self.events_json \
-                and 'operations' in self.events_json \
-                and 'main' in self.events_json:
-            pass
-        else:
-            self.device.logger.warning("invalid script.")
-
-        self.views = self.events_json['views']
-        self.states = self.events_json['states']
-        self.operations = self.events_json['operations']
-        self.main = self.events_json['main']
-
-    def generate_event(self):
-        """
-        generate a event
-        """
-        # TODO implement this
-        pass
-        return None
-
-
 class CustomizedEventFactory(EventFactory):
     """
     factory with customized actions
@@ -1459,3 +1422,49 @@ class UtgDynamicFactory(CustomizedEventFactory):
         utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
         json.dump(utg.to_json(), utg_file, indent=2)
         utg_file.close()
+
+
+class ScriptEventFactory(CustomizedEventFactory):
+    """
+    factory which produces events from file
+    """
+
+    def __init__(self, device, app, in_file):
+        """
+        create a FileEventFactory from a json file
+        :param in_file path string
+        """
+        super(ScriptEventFactory, self).__init__(device, app)
+        self.file = in_file
+        f = open(in_file, 'r')
+        self.script_json = json.load(f)
+        from droidbot_script import DroidBotScript
+        self.script = DroidBotScript(self.script_json)
+        self.default_policy = "monkey"
+        self.script_event_queue = []
+
+    def gen_event_based_on_state(self, state):
+        if len(self.script_event_queue) != 0:
+            script_event = self.script_event_queue.pop(0)
+            return script_event
+        state_events = self.gen_events_based_on_state(state)
+        if len(state_events) > 0:
+            self.script_event_queue = state_events
+            script_event = self.script_event_queue.pop(0)
+            return script_event
+        return self.gen_event_with_policy(state, self.default_policy)
+
+    def gen_events_based_on_state(self, state):
+        """
+        generate a event
+        """
+        events = []
+        for state_id in self.script.main:
+            script_state = self.script.states[state_id]
+            if script_state.matches(state):
+                events = self.script.main[state_id]
+        return events
+
+    def gen_event_with_policy(self, state, policy):
+        # TODO implement this
+        pass

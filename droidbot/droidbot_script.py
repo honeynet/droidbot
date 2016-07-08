@@ -259,6 +259,14 @@ class StateSelector(object):
                 for view_id in selector_value:
                     self.views.add(view_id)
 
+    def matches(self, device_state):
+        """
+        check if the selector matches the DeviceState
+        @param device_state: DeviceState
+        @return:
+        """
+        # TODO implement this
+        pass
 
 class DroidBotOperation(object):
     """

@@ -5,9 +5,7 @@ import os
 import re
 import subprocess
 import time
-
 from com.dtmilano.android.viewclient import ViewClient
-
 import connection
 
 DEFAULT_NUM = '1234567890'
@@ -18,6 +16,7 @@ class Device(object):
     """
     this class describes a connected device
     """
+
     def __init__(self, device_serial, is_emulator=True, output_dir=None):
         """
         create a device
@@ -549,6 +548,7 @@ class DeviceState(object):
     """
     the state of the current device
     """
+
     def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, snapshot=None):
         self.device = device
         self.view_client_views = view_client_views
@@ -635,8 +635,11 @@ class DeviceState(object):
         @param view_dict: dict, element of list device.get_current_state().views
         @return:
         """
-        view_str = "package:%s,class:%s,resource-id:%s,text:%s" %\
-                   (view_dict['package'], view_dict['class'], view_dict['resource-id'], view_dict['text'])
+        view_str = "package:%s,class:%s,resource-id:%s,text:%s" % \
+                   (view_dict['package'] if 'package' in view_dict else 'nopackage',
+                    view_dict['class'] if 'class' in view_dict else 'noclass',
+                    view_dict['resource-id'] if 'resource-id' in view_dict else 'noresource-id',
+                    view_dict['text'] if 'text' in view_dict else 'notext')
         return view_str
 
     @staticmethod
@@ -647,7 +650,7 @@ class DeviceState(object):
         @return:
         """
         bounds = view_dict['bounds']
-        return (bounds[0][0]+bounds[1][0])/2, (bounds[0][1]+bounds[1][1])/2
+        return (bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2
 
     @staticmethod
     def get_view_size(view_dict):
@@ -658,13 +661,14 @@ class DeviceState(object):
         """
         bounds = view_dict['bounds']
         import math
-        return int(math.fabs((bounds[0][0]-bounds[1][0])*(bounds[0][1]-bounds[1][1])))
+        return int(math.fabs((bounds[0][0] - bounds[1][0]) * (bounds[0][1] - bounds[1][1])))
 
 
 class App(object):
     """
     this class describes an app
     """
+
     def __init__(self, app_path, output_dir=None):
         """
         create a App instance
@@ -792,6 +796,7 @@ class AndroguardAnalysis(object):
     """
     analysis result of androguard
     """
+
     def __init__(self, app_path):
         """
         :param app_path: local file path of app, should not be None
@@ -812,6 +817,7 @@ class Intent(object):
     """
     this class describes a intent event
     """
+
     def __init__(self, prefix="start", action=None, data_uri=None, mime_type=None, category=None,
                  component=None, flag=None, extra_keys=None, extra_string=None, extra_boolean=None,
                  extra_int=None, extra_long=None, extra_float=None, extra_uri=None, extra_component=None,

@@ -1461,7 +1461,7 @@ class ScriptEventFactory(CustomizedEventFactory):
         events = []
         for state_id in self.script.main:
             script_state = self.script.states[state_id]
-            if script_state.matches(state):
+            if script_state.match(state):
                 events = self.script.main[state_id]
         return events
 

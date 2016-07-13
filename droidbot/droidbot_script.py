@@ -32,7 +32,7 @@ class DroidBotScript(object):
             OPERATION_ID: DroidBotOperation
         },
         'main': {
-            STATE_ID: OPERATION_ID
+            STATE_ID: [OPERATION_ID]
         },
         'default_policy': EVENT_POLICY_VAL
     }
@@ -52,44 +52,57 @@ class DroidBotScript(object):
         self.parse()
 
     def parse(self):
-        script_dict = self.script_dict
-        grammar = DroidBotScript.script_grammar
-        self.check_grammar_type(script_dict, grammar, self.tag)
-        for script_key in script_dict:
-            self.check_grammar_key_is_valid(script_key, grammar, self.tag)
-            key_tag = "%s.%s" % (self.tag, script_key)
-            script_value = script_dict[script_key]
-            grammar_value = grammar[script_key]
-            self.check_grammar_type(script_value, grammar_value, key_tag)
-            if script_key is 'views':
-                for view_id in script_value:
-                    self.check_grammar_identifier_is_valid(view_id)
-                    view_selector_dict = script_value[view_id]
-                    view_selector = ViewSelector(view_selector_dict)
-                    self.views[view_id] = view_selector
-            elif script_key is 'states':
-                for state_id in script_value:
-                    self.check_grammar_identifier_is_valid(state_id)
-                    state_selector_dict = script_value[state_id]
-                    state_seletor = StateSelector(state_selector_dict)
-                    self.states[state_id] = state_seletor
-            elif script_key is 'operations':
-                for operation_id in script_value:
-                    self.check_grammar_identifier_is_valid(operation_id)
-                    operation_dict = script_value[operation_id]
-                    operation = DroidBotOperation(operation_dict)
-                    self.states[operation_id] = operation
-            elif script_key is 'main':
-                for state_id in script_value:
-                    self.check_grammar_identifier_is_valid(state_id)
-                    operation_id = script_value[state_id]
-                    self.check_grammar_identifier_is_valid(operation_id)
-                    self.operations[state_id] = operation_id
-            elif script_key is 'default_policy':
-                self.check_grammar_key_is_valid(script_value, self.valid_event_policies, key_tag)
-                self.default_policy = script_value
+        self.check_grammar_type(self.script_dict, self.script_grammar, self.tag)
+        self.parse_default_policy()
+        self.parse_views()
+        self.parse_states()
+        self.parse_operations()
+        self.parse_main()
         self.check_duplicated_ids()
         self.check_id_not_defined()
+
+    def parse_views(self):
+        script_key = 'views'
+        script_value = self.check_and_get_script_value(script_key)
+        for view_id in script_value:
+            self.check_grammar_identifier_is_valid(view_id)
+            view_selector_dict = script_value[view_id]
+            view_selector = ViewSelector(view_selector_dict, self)
+            self.views[view_id] = view_selector
+
+    def parse_states(self):
+        script_key = 'states'
+        script_value = self.check_and_get_script_value(script_key)
+        for state_id in script_value:
+            self.check_grammar_identifier_is_valid(state_id)
+            state_selector_dict = script_value[state_id]
+            state_seletor = StateSelector(state_selector_dict, self)
+            self.states[state_id] = state_seletor
+
+    def parse_operations(self):
+        script_key = 'operations'
+        script_value = self.check_and_get_script_value(script_key)
+        for operation_id in script_value:
+            self.check_grammar_identifier_is_valid(operation_id)
+            operation_dict = script_value[operation_id]
+            operation = DroidBotOperation(operation_dict, self)
+            self.operations[operation_id] = operation
+
+    def parse_main(self):
+        script_key = 'main'
+        script_value = self.check_and_get_script_value(script_key)
+        for state_id in script_value:
+            self.check_grammar_identifier_is_valid(state_id)
+            operation_ids = script_value[state_id]
+            for operation_id in operation_ids:
+                self.check_grammar_identifier_is_valid(operation_id)
+            self.main[state_id] = operation_ids
+
+    def parse_default_policy(self):
+        script_key = 'default_policy'
+        script_value = self.check_and_get_script_value(script_key)
+        self.check_grammar_key_is_valid(script_value, self.valid_event_policies, self.tag)
+        self.default_policy = script_value
 
     @staticmethod
     def check_grammar_type(value, grammar, tag):
@@ -124,6 +137,14 @@ class DroidBotScript(object):
         if not isinstance(value[0], int) or not isinstance(value[1], int):
             msg = "illegal coordinate value: %s, should be integer" % value
             raise ScriptSyntaxError(msg)
+
+    def check_and_get_script_value(self, script_key):
+        self.check_grammar_has_key(self.script_dict, script_key, self.tag)
+        key_tag = "%s.%s" % (self.tag, script_key)
+        script_value = self.script_dict[script_key]
+        grammar_value = self.script_grammar[script_key]
+        self.check_grammar_type(script_value, grammar_value, key_tag)
+        return script_value
 
     def check_duplicated_ids(self):
         all_ids = []
@@ -165,7 +186,8 @@ class DroidBotScript(object):
         defined_operation_ids = set()
         defined_operation_ids.update(self.operations)
         used_operation_ids = set()
-        used_operation_ids.update(self.main.values())
+        for state_id in self.main:
+            used_operation_ids.update(self.main[state_id])
         for operation_id in self.operations:
             operation = self.operations[operation_id]
             used_operation_ids.update(operation.get_used_operations())
@@ -181,20 +203,21 @@ class ViewSelector(object):
     """
     selector_grammar = {
         'text': REGEX_VAL,
-        'resource_id': REGEX_VAL,
+        'resource-id': REGEX_VAL,
         'class': REGEX_VAL,
         'package': REGEX_VAL,
-        'out_coordinates': [(INTEGER_VAL, INTEGER_VAL)],
-        'in_coordinates': [(INTEGER_VAL, INTEGER_VAL)]
+        'out-coordinates': [(INTEGER_VAL, INTEGER_VAL)],
+        'in-coordinates': [(INTEGER_VAL, INTEGER_VAL)]
     }
 
-    def __init__(self, selector_dict):
+    def __init__(self, selector_dict, script):
         self.tag = self.__class__.__name__
         self.selector_dict = selector_dict
         self.text_re = None
         self.resource_id_re = None
         self.class_re = None
         self.package_re = None
+        self.script = script
         self.out_coordinates = []
         self.in_coordinates = []
         self.parse()
@@ -224,6 +247,39 @@ class ViewSelector(object):
                     DroidBotScript.check_grammar_is_coordinate(in_coordinate)
                     self.in_coordinates.append(in_coordinate)
 
+    def match(self, view_dict):
+        """
+        return True if this view_selector matches a view_dict
+        @param view_dict: a view in dict, element of DeviceState.views
+        @return:
+        """
+        if 'text' in view_dict and 'resource-id' in view_dict \
+            and 'class' in view_dict and 'package' in view_dict \
+            and 'bounds' in view_dict:
+            pass
+        else:
+            return False
+        if self.text_re and self.text_re.match(view_dict['text']):
+            return False
+        if self.resource_id_re and self.resource_id_re.match(view_dict['resource-id']):
+            return False
+        if self.class_re and self.class_re.match(view_dict['class']):
+            return False
+        if self.package_re and self.package_re.match(view_dict['package']):
+            return False
+        bounds = view_dict['bounds']
+        bound_x_min = bounds[0][0]
+        bound_x_max = bounds[1][0]
+        bound_y_min = bounds[0][1]
+        bound_y_max = bounds[1][1]
+        for (x, y) in self.in_coordinates:
+            if x < bound_x_min or x > bound_x_max or y < bound_y_min or y > bound_y_max:
+                return False
+        for (x, y) in self.out_coordinates:
+            if bound_x_min < x < bound_x_max and bound_y_min < y < bound_y_max:
+                return False
+        return True
+
 
 class StateSelector(object):
     """
@@ -232,12 +288,13 @@ class StateSelector(object):
     selector_grammar = {
         'activity': REGEX_VAL,
         'services': [REGEX_VAL],
-        'views': [VIEW_ID]
+        'views': [ViewSelector]
     }
 
-    def __init__(self, selector_dict):
+    def __init__(self, selector_dict, script):
         self.tag = self.__class__.__name__
         self.selector_dict = selector_dict
+        self.script = script
         self.activity_re = None
         self.service_re_set = set()
         self.views = set()
@@ -262,16 +319,44 @@ class StateSelector(object):
                     self.service_re_set.add(service_re)
             elif selector_key is 'views':
                 for view_id in selector_value:
-                    self.views.add(view_id)
+                    DroidBotScript.check_grammar_key_is_valid(view_id, self.script.views, key_tag)
+                    self.views.add(self.script.views[view_id])
 
-    def matches(self, device_state):
+    def match(self, device_state):
         """
         check if the selector matches the DeviceState
         @param device_state: DeviceState
         @return:
         """
-        # TODO implement this
-        pass
+        if self.activity_re and self.activity_re.match(device_state.foreground_activity):
+            return False
+        for service_re in self.service_re_set:
+            service_re_matched = False
+            if device_state.background_services is None:
+                return False
+            if not isinstance(device_state.background_services, list):
+                return False
+            for background_service in device_state.background_services:
+                if service_re.match(background_service):
+                    service_re_matched = True
+                    break
+            if not service_re_matched:
+                return False
+        for view_selector in self.views:
+            view_selector_matched = False
+            view_dicts = device_state.views
+            if view_dicts is None:
+                return False
+            if not isinstance(view_dicts, list):
+                return False
+            for view_dict in view_dicts:
+                if view_selector.match(view_dict):
+                    view_selector_matched = True
+                    break
+            if not view_selector_matched:
+                return False
+        return True
+
 
 class DroidBotOperation(object):
     """
@@ -284,10 +369,11 @@ class DroidBotOperation(object):
     }
     possible_operation_types = ['custom']
 
-    def __init__(self, operation_dict):
+    def __init__(self, operation_dict, script):
         self.tag = self.__class__.__name__
         self.operation_dict = operation_dict
         self.operation_type = None
+        self.script = script
         self.events = []
         self.used_views = set()
         self.parse()

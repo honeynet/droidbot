@@ -16,6 +16,11 @@ EVENT_POLICY_VAL = '<event_policy>'
 EVENT_TYPE_VAL = '<event_type>'
 IDENTIFIER_RE = re.compile(r'^[^\d\W]\w*\Z', re.UNICODE)
 
+ViewSelector_VAL = 'ViewSelector'
+StateSelector_VAL = 'StateSelector'
+DroidBotOperation_VAL = 'DroidBotOperation'
+ScriptEvent_VAL = 'ScriptEvent'
+
 
 class DroidBotScript(object):
     """
@@ -23,13 +28,13 @@ class DroidBotScript(object):
     """
     script_grammar = {
         'views': {
-            VIEW_ID: ViewSelector
+            VIEW_ID: ViewSelector_VAL
         },
         'states': {
-            STATE_ID: StateSelector
+            STATE_ID: StateSelector_VAL
         },
         'operations': {
-            OPERATION_ID: DroidBotOperation
+            OPERATION_ID: DroidBotOperation_VAL
         },
         'main': {
             STATE_ID: [OPERATION_ID]
@@ -37,8 +42,8 @@ class DroidBotScript(object):
         'default_policy': EVENT_POLICY_VAL
     }
     import app_event
-    valid_event_policies = [app_event.POLICY_NONE, app_event.POLICY_MONKEY, app_event.POLICY_RANDOM,
-                            app_event.POLICY_STATIC, app_event.POLICY_DYNAMIC, app_event.POLICY_UTG_DYNAMIC]
+    valid_event_policies = [app_event.POLICY_RANDOM, app_event.POLICY_STATIC,
+                            app_event.POLICY_DYNAMIC, app_event.POLICY_UTG_DYNAMIC]
 
     def __init__(self, script_dict):
         self.tag = self.__class__.__name__
@@ -67,7 +72,7 @@ class DroidBotScript(object):
         for view_id in script_value:
             self.check_grammar_identifier_is_valid(view_id)
             view_selector_dict = script_value[view_id]
-            view_selector = ViewSelector(view_selector_dict, self)
+            view_selector = ViewSelector(view_id, view_selector_dict, self)
             self.views[view_id] = view_selector
 
     def parse_states(self):
@@ -76,7 +81,7 @@ class DroidBotScript(object):
         for state_id in script_value:
             self.check_grammar_identifier_is_valid(state_id)
             state_selector_dict = script_value[state_id]
-            state_seletor = StateSelector(state_selector_dict, self)
+            state_seletor = StateSelector(state_id, state_selector_dict, self)
             self.states[state_id] = state_seletor
 
     def parse_operations(self):
@@ -85,7 +90,7 @@ class DroidBotScript(object):
         for operation_id in script_value:
             self.check_grammar_identifier_is_valid(operation_id)
             operation_dict = script_value[operation_id]
-            operation = DroidBotOperation(operation_dict, self)
+            operation = DroidBotOperation(operation_id, operation_dict, self)
             self.operations[operation_id] = operation
 
     def parse_main(self):
@@ -110,13 +115,13 @@ class DroidBotScript(object):
         self.check_grammar_key_is_valid(script_value, self.valid_event_policies, self.tag)
         self.default_policy = script_value
 
-    def get_events_based_on_state(self, state):
+    def get_operation_based_on_state(self, state):
         """
         get ScriptEvents based on the DeviceState given, according to the script definition
         @param state: DeviceState
         @return:
         """
-        events = []
+        operation = None
         matched_state_selector = None
 
         # find the state that matches current DeviceState
@@ -125,21 +130,27 @@ class DroidBotScript(object):
                 matched_state_selector = state_selector
                 break
         if not matched_state_selector:
-            return events
+            return None
 
         # get the operation corresponding to the matched state
         operations = self.main[matched_state_selector]
         if len(operations) > 0:
-            events = operations[0].events
+            operation = operations[0]
 
         # rotate operations
         operations = operations[1:] + operations[:1]
         self.main[matched_state_selector] = operations
 
-        return events
+        if operation:
+            msg = "matched state: %s, taking operation: %s" % (matched_state_selector.id, operation.id)
+            self.logger.info(msg)
+
+        return operation
 
     @staticmethod
     def check_grammar_type(value, grammar, tag):
+        if isinstance(value, unicode) and isinstance(grammar, str):
+            return
         if not isinstance(value, type(grammar)):
             msg = '%s: type should be %s, %s given' % (tag, type(grammar), type(value))
             raise ScriptSyntaxError(msg)
@@ -152,7 +163,7 @@ class DroidBotScript(object):
 
     @staticmethod
     def check_grammar_has_key(dict_keys, required_key, tag):
-        if not required_key in dict_keys:
+        if required_key not in dict_keys:
             msg = '%s: key required: %s' % (tag, required_key)
             raise ScriptSyntaxError(msg)
 
@@ -244,8 +255,9 @@ class ViewSelector(object):
         'in-coordinates': [(INTEGER_VAL, INTEGER_VAL)]
     }
 
-    def __init__(self, selector_dict, script):
+    def __init__(self, view_selector_id, selector_dict, script):
         self.tag = self.__class__.__name__
+        self.id = view_selector_id
         self.selector_dict = selector_dict
         self.text_re = None
         self.resource_id_re = None
@@ -322,11 +334,12 @@ class StateSelector(object):
     selector_grammar = {
         'activity': REGEX_VAL,
         'services': [REGEX_VAL],
-        'views': [ViewSelector]
+        'views': [ViewSelector_VAL]
     }
 
-    def __init__(self, selector_dict, script):
+    def __init__(self, state_selector_id, selector_dict, script):
         self.tag = self.__class__.__name__
+        self.id = state_selector_id
         self.selector_dict = selector_dict
         self.script = script
         self.activity_re = None
@@ -342,13 +355,13 @@ class StateSelector(object):
             grammar_value = self.selector_grammar[selector_key]
             key_tag = "%s.%s" % (self.tag, selector_key)
             DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
-            if selector_key is 'activity':
+            if selector_key == 'activity':
                 self.activity_re = re.compile(selector_value)
-            elif selector_key is 'services':
+            elif selector_key == 'services':
                 for service_re_str in selector_value:
                     service_re = re.compile(service_re_str)
                     self.service_re_set.add(service_re)
-            elif selector_key is 'views':
+            elif selector_key == 'views':
                 for view_id in selector_value:
                     DroidBotScript.check_grammar_key_is_valid(view_id, self.script.views, key_tag)
                     self.views.add(self.script.views[view_id])
@@ -396,17 +409,24 @@ class DroidBotOperation(object):
     """
     custom_operation_grammar = {
         'operation_type': 'custom',
-        'events': [ScriptEvent]
+        'events': [ScriptEvent_VAL]
     }
-    possible_operation_types = ['custom']
+    policy_operation_grammar = {
+        'operation_type': 'policy',
+        'event_count': INTEGER_VAL,
+        'event_policy': EVENT_POLICY_VAL
+    }
+    possible_operation_types = ['custom', 'policy']
 
-    def __init__(self, operation_dict, script):
+    def __init__(self, operation_id, operation_dict, script):
         self.tag = self.__class__.__name__
+        self.id = operation_id
         self.operation_dict = operation_dict
         self.operation_type = None
         self.script = script
         self.events = []
-        self.used_views = set()
+        self.event_policy = None
+        self.event_count = 0
         self.parse()
 
     def parse(self):
@@ -418,19 +438,34 @@ class DroidBotOperation(object):
             raise ScriptSyntaxError(msg)
         self.operation_type = operation_type
         self.tag = "%s (%s)" % (self.tag, operation_type)
-        if operation_type is 'custom':
-            operation_grammar = self.custom_operation_grammar
-            DroidBotScript.check_grammar_has_key(self.operation_dict, 'events', self.tag)
-            for operation_key in operation_dict:
-                DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
-            for event_dict in operation_dict['events']:
-                if 'target_view' in event_dict:
-                    target_view_id = event_dict['target_view']
-                    DroidBotScript.check_grammar_key_is_valid(target_view_id, self.script.views, self.tag)
-                    target_view_selector = self.script.views[target_view_id]
-                    event_dict['target_view_selector'] = target_view_selector
-                script_event = ScriptEvent(event_dict)
-                self.events.append(script_event)
+        if operation_type == 'custom':
+            self.parse_custom_operation()
+        elif operation_type == 'policy':
+            self.parse_policy_operation()
+
+    def parse_custom_operation(self):
+        operation_grammar = self.custom_operation_grammar
+        DroidBotScript.check_grammar_has_key(self.operation_dict, 'events', self.tag)
+        for operation_key in self.operation_dict:
+            DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
+        for event_dict in self.operation_dict['events']:
+            if 'target_view' in event_dict:
+                target_view_id = event_dict['target_view']
+                DroidBotScript.check_grammar_key_is_valid(target_view_id, self.script.views, self.tag)
+                target_view_selector = self.script.views[target_view_id]
+                event_dict['target_view_selector'] = target_view_selector
+            script_event = ScriptEvent(event_dict)
+            self.events.append(script_event)
+
+    def parse_policy_operation(self):
+        operation_grammar = self.custom_operation_grammar
+        DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_policy', self.tag)
+        self.event_policy = self.operation_dict['event_policy']
+        DroidBotScript.check_grammar_key_is_valid(self.event_policy, DroidBotScript.valid_event_policies, self.tag)
+        DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_count', self.tag)
+        self.event_count = self.operation_dict['event_count']
+        for operation_key in self.operation_dict:
+            DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
 
 
 class ScriptEvent(AppEvent):

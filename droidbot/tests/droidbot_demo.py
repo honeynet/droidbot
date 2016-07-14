@@ -1,10 +1,10 @@
 __author__ = 'yuanchun'
 
 from droidbot.droidbot_types import Device, App
-from droidbot.app_event import CustomizedEventFactory, AppEventManager, AppEvent
+from droidbot.app_event import StateBasedEventFactory, AppEventManager, AppEvent
 
 
-class MyEventFactory(CustomizedEventFactory):
+class MyEventFactory(StateBasedEventFactory):
     def gen_event_based_on_state(self, state):
         print state
         return AppEvent.get_random_instance(self.device, self.app)

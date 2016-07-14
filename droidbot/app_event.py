@@ -331,6 +331,10 @@ class TypeEvent(UIEvent):
     type some word
     """
 
+    @staticmethod
+    def get_random_instance(device, app):
+        pass
+
     def __init__(self, text, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -429,7 +433,7 @@ class EmulatorEvent(AppEvent):
 class ContextEvent(AppEvent):
     """
     An extended event, which knows the device context in which it is performing
-    This is reproducable
+    This is reproducible
     """
 
     @staticmethod
@@ -469,6 +473,7 @@ class ContextEvent(AppEvent):
         """
         to send a ContextEvent:
         assert the context matches the device, then send the event
+        @param device: Device
         """
         if not self.context.assert_in_device(device):
             device.logger.warning("Context not in device: %s" % self.context.__str__())
@@ -486,6 +491,7 @@ class Context(object):
     def assert_in_device(self, device):
         """
         assert that the context is currently in device
+        @param device: Device
         """
         return NotImplementedError
 
@@ -594,24 +600,32 @@ class AppEventManager(object):
         if not self.event_interval or self.event_interval is None:
             self.event_interval = 2
 
-        if self.policy == POLICY_NONE:
-            self.event_factory = None
-        elif self.policy == POLICY_STATE_RECORDER:
-            self.event_factory = None
-        elif self.policy == POLICY_MONKEY:
-            self.event_factory = None
-        elif self.policy == POLICY_RANDOM:
-            self.event_factory = RandomEventFactory(device, app)
-        elif self.policy == POLICY_STATIC:
-            self.event_factory = StaticEventFactory(device, app)
-        elif self.policy == POLICY_DYNAMIC:
-            self.event_factory = DynamicEventFactory(device, app)
-        elif self.policy == POLICY_UTG_DYNAMIC:
-            self.event_factory = UtgDynamicFactory(device, app)
-        elif self.policy == POLICY_MANUAL:
-            self.event_factory = ManualEventFactory(device, app)
+        self.event_factory = self.get_event_factory(self.policy, device, app)
+
+    @staticmethod
+    def get_event_factory(policy, device, app):
+        if policy == POLICY_NONE:
+            event_factory = None
+        elif policy == POLICY_STATE_RECORDER:
+            event_factory = None
+        elif policy == POLICY_MONKEY:
+            event_factory = None
+        elif policy == POLICY_RANDOM:
+            event_factory = RandomEventFactory(device, app)
+        elif policy == POLICY_STATIC:
+            event_factory = StaticEventFactory(device, app)
+        elif policy == POLICY_DYNAMIC:
+            event_factory = DynamicEventFactory(device, app)
+        elif policy == POLICY_UTG_DYNAMIC:
+            event_factory = UtgDynamicFactory(device, app)
+        elif policy == POLICY_MANUAL:
+            event_factory = ManualEventFactory(device, app)
         else:
-            self.event_factory = ScriptEventFactory(device, app, self.policy)
+            script_file_path = policy
+            f = open(script_file_path, 'r')
+            script_dict = json.load(f)
+            event_factory = ScriptEventFactory(device, app, script_dict)
+        return event_factory
 
     def add_event(self, event):
         """
@@ -748,11 +762,13 @@ class EventFactory(object):
                 continue
             count += 1
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
-        raise NotImplementedError
+        pass
 
     def dump(self):
         """
@@ -770,9 +786,11 @@ class NoneEventFactory(EventFactory):
     def __init__(self, device, app):
         super(NoneEventFactory, self).__init__(device, app)
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         return None
 
@@ -790,9 +808,11 @@ class RandomEventFactory(EventFactory):
             KeyEvent: 1
         }
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         event_type = weighted_choice(self.choices)
         event = event_type.get_random_instance(self.device, self.app)
@@ -814,9 +834,11 @@ class StaticEventFactory(EventFactory):
         }
         self.possible_broadcasts = app.get_possible_broadcasts()
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         event_type = weighted_choice(self.choices)
         if event_type == IntentEvent and self.possible_broadcasts:
@@ -888,7 +910,12 @@ class DynamicEventFactory(EventFactory):
         # use this flag to indicate the last sent event
         self.last_event_flag = ""
 
-    def generate_event(self):
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
         if self.event_stack:
             event = self.event_stack.pop()
             return event
@@ -1084,16 +1111,22 @@ EVENT_TYPES = {
 }
 
 
-class CustomizedEventFactory(EventFactory):
+class StateBasedEventFactory(EventFactory):
     """
     factory with customized actions
     """
 
     def __init__(self, device, app):
-        super(CustomizedEventFactory, self).__init__(device, app)
+        super(StateBasedEventFactory, self).__init__(device, app)
 
-    def generate_event(self):
-        state = self.device.get_current_state()
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        if state is None:
+            state = self.device.get_current_state()
         return self.gen_event_based_on_state_wrapper(state)
 
     def gen_event_based_on_state_wrapper(self, state):
@@ -1119,13 +1152,10 @@ EVENT_FLAG_START_APP = "+start_app"
 EVENT_FLAG_TOUCH = "+touch"
 
 
-class ManualEventFactory(CustomizedEventFactory):
+class ManualEventFactory(StateBasedEventFactory):
     """
     manually send events
     droidbot will record the events and states
-    """
-    """
-    record device state during execution
     """
 
     def __init__(self, device, app):
@@ -1280,7 +1310,7 @@ class ManualEventFactory(CustomizedEventFactory):
         state_transitions_file.close()
 
 
-class UtgDynamicFactory(CustomizedEventFactory):
+class UtgDynamicFactory(StateBasedEventFactory):
     """
     record device state during execution
     """
@@ -1424,36 +1454,57 @@ class UtgDynamicFactory(CustomizedEventFactory):
         utg_file.close()
 
 
-class ScriptEventFactory(CustomizedEventFactory):
+class ScriptEventFactory(EventFactory):
     """
     factory which produces events from file
     """
 
-    def __init__(self, device, app, in_file):
+    def __init__(self, device, app, script_dict):
         """
         create a FileEventFactory from a json file
         :param in_file path string
         """
         super(ScriptEventFactory, self).__init__(device, app)
-        self.file = in_file
-        f = open(in_file, 'r')
-        self.script_json = json.load(f)
+        self.script_dict = script_dict
         from droidbot_script import DroidBotScript
-        self.script = DroidBotScript(self.script_json)
-        self.default_policy = "monkey"
+        self.script = DroidBotScript(self.script_dict)
         self.script_event_queue = []
 
-    def gen_event_based_on_state(self, state):
+        self.default_policy = self.script.default_policy
+        self.policy_event_factories = {}
+        self.current_policy = None
+        self.current_policy_count = 0
+
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        # if the previous operation is not finished, continue
         if len(self.script_event_queue) != 0:
             script_event = self.script_event_queue.pop(0)
             return script_event
-        state_events = self.script.get_events_based_on_state(state)
-        if len(state_events) > 0:
-            self.script_event_queue = state_events
-            script_event = self.script_event_queue.pop(0)
-            return script_event
-        return self.gen_event_with_policy(state, self.default_policy)
+        if self.current_policy_count > 0:
+            self.current_policy_count -= 1
+            return self.gen_event_with_policy(self.current_policy, state)
 
-    def gen_event_with_policy(self, state, policy):
-        # TODO implement this
-        pass
+        # if the previous operation is finished, try to get a new operation based on current state
+        if state is None:
+            state = self.device.get_current_state()
+        operation = self.script.get_operation_based_on_state(state)
+        if operation is not None:
+            self.script_event_queue = operation.events
+            self.current_policy = operation.event_policy
+            self.current_policy_count = operation.event_count
+            return self.generate_event()
+
+        # if current state is not defined in script, use the default policy
+        return self.gen_event_with_policy(self.default_policy, state)
+
+    def gen_event_with_policy(self, policy, state):
+        if policy not in self.policy_event_factories:
+            self.policy_event_factories[policy] =\
+                AppEventManager.get_event_factory(policy, self.device, self.app)
+        event_factory = self.policy_event_factories[policy]
+        return event_factory.generate_event(state)

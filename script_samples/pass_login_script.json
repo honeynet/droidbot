@@ -1,15 +1,15 @@
 {
     "views": {
         "login_email": {
-            "id": ".*email.*",
+            "resource-id": ".*email.*",
             "class": ".*EditText"
         },
         "login_password": {
-            "id": ".*password.*",
+            "resource-id": ".*password.*",
             "class": ".*EditText"
         },
         "login_button": {
-            "id": ".*login.*",
+            "resource-id": ".*login.*",
             "class": ".*Button"
         }
     },
@@ -41,7 +41,7 @@
         }
     },
     "main": {
-        "login_state": "login_operation"
+        "login_state": ["login_operation"]
     },
     "default_policy": "dynamic"
 }

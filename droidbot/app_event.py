@@ -1447,23 +1447,12 @@ class ScriptEventFactory(CustomizedEventFactory):
         if len(self.script_event_queue) != 0:
             script_event = self.script_event_queue.pop(0)
             return script_event
-        state_events = self.gen_events_based_on_state(state)
+        state_events = self.script.get_events_based_on_state(state)
         if len(state_events) > 0:
             self.script_event_queue = state_events
             script_event = self.script_event_queue.pop(0)
             return script_event
         return self.gen_event_with_policy(state, self.default_policy)
-
-    def gen_events_based_on_state(self, state):
-        """
-        generate a event
-        """
-        events = []
-        for state_id in self.script.main:
-            script_state = self.script.states[state_id]
-            if script_state.match(state):
-                events = self.script.main[state_id]
-        return events
 
     def gen_event_with_policy(self, state, policy):
         # TODO implement this

@@ -59,7 +59,7 @@ class DroidBotScript(object):
         self.parse_operations()
         self.parse_main()
         self.check_duplicated_ids()
-        self.check_id_not_defined()
+        # self.check_id_not_defined()
 
     def parse_views(self):
         script_key = 'views'
@@ -90,13 +90,19 @@ class DroidBotScript(object):
 
     def parse_main(self):
         script_key = 'main'
+        key_tag = "%s.%s" % (self.tag, script_key)
         script_value = self.check_and_get_script_value(script_key)
         for state_id in script_value:
             self.check_grammar_identifier_is_valid(state_id)
+            self.check_grammar_key_is_valid(state_id, self.states, key_tag)
+            state_selector = self.states[state_id]
+            self.main[state_selector] = []
             operation_ids = script_value[state_id]
             for operation_id in operation_ids:
                 self.check_grammar_identifier_is_valid(operation_id)
-            self.main[state_id] = operation_ids
+                self.check_grammar_key_is_valid(operation_id, self.operations, key_tag)
+                operation = self.operations[operation_id]
+                self.main[state_selector].append(operation)
 
     def parse_default_policy(self):
         script_key = 'default_policy'
@@ -104,22 +110,50 @@ class DroidBotScript(object):
         self.check_grammar_key_is_valid(script_value, self.valid_event_policies, self.tag)
         self.default_policy = script_value
 
+    def get_events_based_on_state(self, state):
+        """
+        get ScriptEvents based on the DeviceState given, according to the script definition
+        @param state: DeviceState
+        @return:
+        """
+        events = []
+        matched_state_selector = None
+
+        # find the state that matches current DeviceState
+        for state_selector in self.main:
+            if state_selector.match(state):
+                matched_state_selector = state_selector
+                break
+        if not matched_state_selector:
+            return events
+
+        # get the operation corresponding to the matched state
+        operations = self.main[matched_state_selector]
+        if len(operations) > 0:
+            events = operations[0].events
+
+        # rotate operations
+        operations = operations[1:] + operations[:1]
+        self.main[matched_state_selector] = operations
+
+        return events
+
     @staticmethod
     def check_grammar_type(value, grammar, tag):
         if not isinstance(value, type(grammar)):
-            msg = '%s\' type should be %s, %s given' % (tag, type(grammar), type(value))
+            msg = '%s: type should be %s, %s given' % (tag, type(grammar), type(value))
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_key_is_valid(value, valid_keys, tag):
-        if not value in valid_keys:
-            msg = '%s\'s key should be %s, %s given' % (tag, list(valid_keys), value)
+        if value not in valid_keys:
+            msg = '%s: key should be %s, %s given' % (tag, list(valid_keys), value)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_has_key(dict_keys, required_key, tag):
         if not required_key in dict_keys:
-            msg = 'key required in %s: %s' % (tag, required_key)
+            msg = '%s: key required: %s' % (tag, required_key)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
@@ -300,9 +334,6 @@ class StateSelector(object):
         self.views = set()
         self.parse()
 
-    def get_used_views(self):
-        return set(self.views)
-
     def parse(self):
         DroidBotScript.check_grammar_type(self.selector_dict, self.selector_grammar, self.tag)
         for selector_key in self.selector_dict:
@@ -393,18 +424,13 @@ class DroidBotOperation(object):
             for operation_key in operation_dict:
                 DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
             for event_dict in operation_dict['events']:
+                if 'target_view' in event_dict:
+                    target_view_id = event_dict['target_view']
+                    DroidBotScript.check_grammar_key_is_valid(target_view_id, self.script.views, self.tag)
+                    target_view_selector = self.script.views[target_view_id]
+                    event_dict['target_view_selector'] = target_view_selector
                 script_event = ScriptEvent(event_dict)
                 self.events.append(script_event)
-                if 'target_view' in event_dict:
-                    self.used_views.add(event_dict['target_view'])
-
-    def get_used_views(self):
-        return self.used_views
-
-    def get_used_operations(self):
-        if 'operations' in self.operation_dict:
-            return set(self.operation_dict['operations'])
-        return None
 
 
 class ScriptEvent(AppEvent):

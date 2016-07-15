@@ -248,11 +248,11 @@ class ViewSelector(object):
     """
     selector_grammar = {
         'text': REGEX_VAL,
-        'resource-id': REGEX_VAL,
+        'resource_id': REGEX_VAL,
         'class': REGEX_VAL,
         'package': REGEX_VAL,
-        'out-coordinates': [(INTEGER_VAL, INTEGER_VAL)],
-        'in-coordinates': [(INTEGER_VAL, INTEGER_VAL)]
+        'out_coordinates': [(INTEGER_VAL, INTEGER_VAL)],
+        'in_coordinates': [(INTEGER_VAL, INTEGER_VAL)]
     }
 
     def __init__(self, view_selector_id, selector_dict, script):
@@ -276,19 +276,19 @@ class ViewSelector(object):
             grammar_value = self.selector_grammar[selector_key]
             key_tag = "%s.%s" % (self.tag, selector_key)
             DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
-            if selector_key is 'text':
+            if selector_key == 'text':
                 self.text_re = re.compile(selector_value)
-            elif selector_key is 'resource_id':
+            elif selector_key == 'resource_id':
                 self.resource_id_re = re.compile(selector_value)
-            elif selector_key is 'class':
+            elif selector_key == 'class':
                 self.class_re = re.compile(selector_value)
-            elif selector_key is 'package':
+            elif selector_key == 'package':
                 self.package_re = re.compile(selector_value)
-            elif selector_key is 'out_coordinates':
+            elif selector_key == 'out_coordinates':
                 for out_coordinate in grammar_value:
                     DroidBotScript.check_grammar_is_coordinate(out_coordinate)
                     self.out_coordinates.append(out_coordinate)
-            elif selector_key is 'in_coordinates':
+            elif selector_key == 'in_coordinates':
                 for in_coordinate in grammar_value:
                     DroidBotScript.check_grammar_is_coordinate(in_coordinate)
                     self.in_coordinates.append(in_coordinate)
@@ -305,13 +305,13 @@ class ViewSelector(object):
             pass
         else:
             return False
-        if self.text_re and self.text_re.match(view_dict['text']):
+        if self.text_re and not self.text_re.match(view_dict['text']):
             return False
-        if self.resource_id_re and self.resource_id_re.match(view_dict['resource-id']):
+        if self.resource_id_re and not self.resource_id_re.match(view_dict['resource-id']):
             return False
-        if self.class_re and self.class_re.match(view_dict['class']):
+        if self.class_re and not self.class_re.match(view_dict['class']):
             return False
-        if self.package_re and self.package_re.match(view_dict['package']):
+        if self.package_re and not self.package_re.match(view_dict['package']):
             return False
         bounds = view_dict['bounds']
         bound_x_min = bounds[0][0]
@@ -372,7 +372,7 @@ class StateSelector(object):
         @param device_state: DeviceState
         @return:
         """
-        if self.activity_re and self.activity_re.match(device_state.foreground_activity):
+        if self.activity_re and not self.activity_re.match(device_state.foreground_activity):
             return False
         for service_re in self.service_re_set:
             service_re_matched = False
@@ -484,7 +484,32 @@ class ScriptEvent(AppEvent):
         pass
 
     def send(self, device):
-        pass
+        event = self.get_transformed_event(device)
+        event.send(device)
+
+    def get_transformed_event(self, device):
+        event_dict = self.event_dict.copy()
+        if 'target_view' in event_dict:
+            target_view = event_dict.pop('target_view')
+            target_view_selector = event_dict.pop('target_view_selector')
+            state = device.get_current_state()
+            matched_view = None
+            for view_dict in state.views:
+                if target_view_selector.match(view_dict):
+                    matched_view = view_dict
+                    break
+            if matched_view is None:
+                device.logger.warning("target_view no match: %s" % target_view)
+            else:
+                from droidbot_types import DeviceState
+                (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
+        return AppEvent.get_event(event_dict)
+
+    def to_dict(self):
+        event_dict = self.event_dict.copy()
+        if 'target_view_selector' in event_dict:
+            event_dict.pop('target_view_selector')
+        return event_dict
 
 
 class ScriptException(DroidBotException):

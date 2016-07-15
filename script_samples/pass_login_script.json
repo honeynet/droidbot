@@ -1,15 +1,15 @@
 {
     "views": {
         "login_email": {
-            "resource-id": ".*email.*",
+            "resource_id": ".*email.*",
             "class": ".*EditText"
         },
         "login_password": {
-            "resource-id": ".*password.*",
+            "resource_id": ".*password.*",
             "class": ".*EditText"
         },
         "login_button": {
-            "resource-id": ".*login.*",
+            "resource_id": ".*login.*",
             "class": ".*Button"
         }
     },

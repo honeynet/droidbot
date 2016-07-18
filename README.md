@@ -122,6 +122,80 @@ docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/sampl
 ls ~/mobileSamples/out
 ```
 
+## Script
+
+DroidBot supports semi-automatic testing.
+Users can write scripts to affect the process of testing.
+
+The script is in json format, which contains three basic objects:
+
+1. `View` selector, which can be used to select a view (aka. a UI component);
+2. `State` selector, which can be used to select a state (such as a login Activity);
+3. `Operation` object, which defines a set of events to be sent to device (such as screen-touching events).
+
+An example of the DroidBot script is as follows:
+
+```
+{
+    "views": {
+        "login_email": {
+            "resource_id": ".*email.*",
+            "class": ".*EditText"
+        },
+        "login_password": {
+            "resource_id": ".*password.*",
+            "class": ".*EditText"
+        },
+        "login_button": {
+            "resource_id": ".*login.*",
+            "class": ".*Button"
+        }
+    },
+    "states": {
+        "login_state": {
+            "activity": "LoginActivity",
+            "views": ["login_email", "login_password", "login_button"]
+        }
+    },
+    "operations": {
+        "login_operation": {
+            "operation_type": "custom",
+            "events": [
+                {
+                    "event_type": "text_input",
+                    "target_view": "login_email",
+                    "text_content": "ylimit@honeynet.org"
+                },
+                {
+                    "event_type": "text_input",
+                    "target_view": "login_password",
+                    "text_content": "ylimitpassword"
+                },
+                {
+                    "event_type": "touch",
+                    "target_view": "login_button"
+                }
+            ]
+        }
+    },
+    "main": {
+        "login_state": ["login_operation"]
+    },
+    "default_policy": "dynamic"
+}
+```
+Explanation of the example:
+
++ In `views`, we define the view selectors which will be used to select the views we are interested in.
+In this example, we define three views which are the email input view, password input view a the login button.
++ In `states`, we define the states in which we want DroidBot to take different operations.
+In this example, we define a `login_state` which is a login screen waiting for users to input email and password.
+The `login_state` can be recognized by checking the foreground activity name and the view on the screen.
++ In `operations`, we define the operations which will be used in different states.
+In this example, we define a `login_operation` which is simply typing email, typing password and press login button.
++ In `main`, we connect the states to corresponding operations.
+In this example, we let DroidBot to take `login_operation` in Login state, and use dynamic event policy in other states.
+
 ## Evaluation
 
 DroidBot is evaluated by comparing with DroidBot default mode (which does nothing)

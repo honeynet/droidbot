@@ -50,13 +50,24 @@ class DroidBot(object):
         self.app = App(app_path, output_dir=self.output_dir)
 
         self.droidbox = None
-        if with_droidbox:
-            self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
+        self.env_manager = None
+        self.event_manager = None
 
-        self.env_manager = AppEnvManager(self.device, self.app, env_policy)
-        self.event_manager = AppEventManager(self.device, self.app, event_policy,
-                                             event_count, event_interval,
-                                             event_duration)
+        self.enabled = True
+
+        try:
+            if with_droidbox:
+                self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
+
+            self.env_manager = AppEnvManager(self.device, self.app, env_policy)
+            self.event_manager = AppEventManager(self.device, self.app, event_policy,
+                                                 event_count, event_interval,
+                                                 event_duration)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.stop()
+            print e
 
     @staticmethod
     def get_instance():
@@ -70,6 +81,8 @@ class DroidBot(object):
         start interacting
         :return:
         """
+        if not self.enabled:
+            return
         self.logger.info("Starting DroidBot")
         try:
             self.device.install_app(self.app)
@@ -90,9 +103,16 @@ class DroidBot(object):
         self.logger.info("DroidBot Stopped")
 
     def stop(self):
-        self.env_manager.stop()
-        self.event_manager.stop()
+        if self.env_manager is not None:
+            self.env_manager.stop()
+        if self.event_manager is not None:
+            self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
         self.device.uninstall_app(self.app)
         self.device.disconnect()
+        self.enabled = False
+
+
+class DroidBotException(Exception):
+    pass

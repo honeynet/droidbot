@@ -11,8 +11,8 @@ class TransitionGraph(object):
         self.unique_states = {}
         self.state_name_map = {}
         self.input_path = input_path
-        self.device_state_path = self.input_path + "\\device_states\\" if self.input_path is not None else None
-        self.event_file_path = self.input_path + "\\droidbot_event.json" if self.input_path is not None else None
+        self.device_state_path = self.input_path + "/device_states/" if self.input_path is not None else None
+        self.event_file_path = self.input_path + "/droidbot_event.json" if self.input_path is not None else None
 
         self.similarity_threshold = 0.8 if similarity_threshold is None else similarity_threshold
         self.compare_keys = ["class", "package", "view_str", "content-desc", "resource-id"] \
@@ -57,7 +57,7 @@ class TransitionGraph(object):
                         self.device_state_offset -= 1
                         continue
                     self.state_files.append(state[-22: -5])
-                    self.state_json.append(json.loads(open(root + "\\" + state).read()))
+                    self.state_json.append(json.loads(open(root + "/" + state).read()))
         self.state_files.append("end")
         self.state_json.append({})
 
@@ -215,6 +215,6 @@ class TransitionGraph(object):
 
 
 if __name__ == '__main__':
-    graph = TransitionGraph(input_path="E:\\app\\droidbot_samples\\com.devexpert.weather_droidbot")
+    graph = TransitionGraph(input_path="~/droidbot_samples/com.devexpert.weather_droidbot")
 
     data = graph.to_json()

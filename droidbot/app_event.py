@@ -14,11 +14,12 @@ from threading import Timer
 from droidbot_types import Intent
 
 POLICY_NONE = "none"
+POLICY_STATE_RECORDER = "state_recorder"
 POLICY_MONKEY = "monkey"
 POLICY_RANDOM = "random"
 POLICY_STATIC = "static"
 POLICY_DYNAMIC = "dynamic"
-POLICY_STATE_RECORDER = "state_recorder"
+POLICY_UTG_DYNAMIC = "utg_dynamic"
 POLICY_MANUAL = "manual"
 POLICY_FILE = "file"
 
@@ -145,6 +146,16 @@ android.intent.action.WALLPAPER_CHANGED
 android.intent.action.WEB_SEARCH
 '''.splitlines()
 
+KEY_KeyEvent = "key"
+KEY_TouchEvent = "touch"
+KEY_LongTouchEvent = "long_touch"
+KEY_DragEvent = "drag"
+KEY_SwipeEvent = "swipe"
+KEY_TypeEvent = "type"
+KEY_IntentEvent = "intent"
+KEY_EmulatorEvent = "emulator"
+KEY_ContextEvent = "context"
+
 
 def weighted_choice(choices):
     total = sum(choices[c] for c in choices.keys())
@@ -191,17 +202,42 @@ class AppEvent(object):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def get_event(event_dict):
+        if not isinstance(event_dict, dict):
+            return None
+        if 'event_type' not in event_dict:
+            return None
+        event_type = event_dict['event_type']
+        if event_type == KEY_KeyEvent:
+            return KeyEvent(None, event_dict=event_dict)
+        elif event_type == KEY_TouchEvent:
+            return TouchEvent(None, None, event_dict=event_dict)
+        elif event_type == KEY_LongTouchEvent:
+            return LongTouchEvent(None, None, event_dict=event_dict)
+        elif event_type == KEY_DragEvent:
+            return DragEvent(None, None, None, None, event_dict=event_dict)
+        elif event_type == KEY_SwipeEvent:
+            return SwipeEvent(None, None, event_dict=event_dict)
+        elif event_type == KEY_TypeEvent:
+            return TypeEvent(None, event_dict=event_dict)
+        elif event_type == KEY_IntentEvent:
+            return IntentEvent(None, event_dict=event_dict)
+        elif event_type == KEY_EmulatorEvent:
+            return EmulatorEvent(None, None, event_dict=event_dict)
+        elif event_type == KEY_ContextEvent:
+            return ContextEvent(None, None, event_dict=event_dict)
+
 
 class KeyEvent(AppEvent):
     """
     a key pressing event
     """
-
     def __init__(self, name, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'key'
+        self.event_type = KEY_KeyEvent
         self.name = name
 
     @staticmethod
@@ -251,7 +287,7 @@ class TouchEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'touch'
+        self.event_type = KEY_TouchEvent
         self.x = x
         self.y = y
 
@@ -276,7 +312,7 @@ class LongTouchEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'long_touch'
+        self.event_type = KEY_LongTouchEvent
         self.x = x
         self.y = y
         self.duration = duration
@@ -297,12 +333,11 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
-
     def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'drag'
+        self.event_type = KEY_DragEvent
         self.start_x = start_x
         self.start_y = start_y
         self.end_x = end_x
@@ -325,16 +360,59 @@ class DragEvent(UIEvent):
         return True
 
 
+class SwipeEvent(UIEvent):
+    """
+    swipe gesture
+    """
+    def __init__(self, x, y, direction="UP", event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
+        self.event_type = KEY_SwipeEvent
+        self.x = x
+        self.y = y
+        self.direction = direction
+
+    @staticmethod
+    def get_random_instance(device, app):
+        x = random.uniform(0, device.get_display_info()['width'])
+        y = random.uniform(0, device.get_display_info()['height'])
+        direction = random.choice(["UP", "DOWN", "LEFT", "RIGHT"])
+        return SwipeEvent(x, y, direction)
+
+    def send(self, device):
+        assert device.get_adb() is not None
+        end_x = self.x
+        end_y = self.y
+        duration = 200
+
+        if self.direction == "UP":
+            end_y = 0
+        elif self.direction == "DOWN":
+            end_y = device.get_display_info()['height']
+        elif self.direction == "LEFT":
+            end_x = 0
+        elif self.direction == "RIGHT":
+            end_x = device.get_display_info()['width']
+
+        device.get_adb().drag((self.x, self.y), (end_x, end_y), duration)
+        return True
+
+
 class TypeEvent(UIEvent):
     """
     type some word
     """
 
+    @staticmethod
+    def get_random_instance(device, app):
+        pass
+
     def __init__(self, text, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'type'
+        self.event_type = KEY_TypeEvent
         self.text = text
 
     def send(self, device):
@@ -354,7 +432,7 @@ class IntentEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'intent'
+        self.event_type = KEY_IntentEvent
         self.intent = intent.get_cmd()
 
     @staticmethod
@@ -383,7 +461,7 @@ class EmulatorEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'emulator'
+        self.event_type = KEY_EmulatorEvent
         self.event_name = event_name
         self.event_data = event_data
 
@@ -428,7 +506,7 @@ class EmulatorEvent(AppEvent):
 class ContextEvent(AppEvent):
     """
     An extended event, which knows the device context in which it is performing
-    This is reproducable
+    This is reproducible
     """
 
     @staticmethod
@@ -443,12 +521,12 @@ class ContextEvent(AppEvent):
         """
         if event_dict is not None:
             assert 'event_type' in event_dict.keys()
-            assert 'context' in event_dict.keys()
+            assert KEY_ContextEvent in event_dict.keys()
             assert 'event' in event_dict.keys()
-            assert event_dict['event_type'] == 'context'
+            assert event_dict['event_type'] == KEY_ContextEvent
             self.event_type = event_dict['event_type']
 
-            context_dict = event_dict['context']
+            context_dict = event_dict[KEY_ContextEvent]
             context_type = context_dict['context_type']
             ContextType = CONTEXT_TYPES[context_type]
             self.context = ContextType(context_dict=context_dict)
@@ -456,11 +534,11 @@ class ContextEvent(AppEvent):
             sub_event_dict = event_dict['event']
             sub_event_type = sub_event_dict['event_type']
             SubEventType = EVENT_TYPES[sub_event_type]
-            self.event = SubEventType(dict=sub_event_dict)
+            self.event = SubEventType(event_dict=sub_event_dict)
             return
 
         assert isinstance(event, AppEvent)
-        self.event_type = 'context'
+        self.event_type = KEY_ContextEvent
         self.context = context
         self.event = event
 
@@ -468,13 +546,14 @@ class ContextEvent(AppEvent):
         """
         to send a ContextEvent:
         assert the context matches the device, then send the event
+        @param device: Device
         """
         if not self.context.assert_in_device(device):
             device.logger.warning("Context not in device: %s" % self.context.__str__())
         return self.event.send(device)
 
     def to_dict(self):
-        return {'event_type': self.event_type, 'context': self.context.__dict__, 'event': self.event.__dict__}
+        return {'event_type': self.event_type, KEY_ContextEvent: self.context.__dict__, 'event': self.event.__dict__}
 
 
 class Context(object):
@@ -485,6 +564,7 @@ class Context(object):
     def assert_in_device(self, device):
         """
         assert that the context is currently in device
+        @param device: Device
         """
         return NotImplementedError
 
@@ -593,22 +673,32 @@ class AppEventManager(object):
         if not self.event_interval or self.event_interval is None:
             self.event_interval = 2
 
-        if self.policy == POLICY_NONE:
-            self.event_factory = None
-        elif self.policy == POLICY_MONKEY:
-            self.event_factory = None
-        elif self.policy == POLICY_RANDOM:
-            self.event_factory = RandomEventFactory(device, app)
-        elif self.policy == POLICY_STATIC:
-            self.event_factory = StaticEventFactory(device, app)
-        elif self.policy == POLICY_DYNAMIC:
-            self.event_factory = DynamicEventFactory(device, app)
-        elif self.policy == POLICY_STATE_RECORDER:
-            self.event_factory = StateRecorderFactory(device, app)
-        elif self.policy == POLICY_MANUAL:
-            self.event_factory = ManualEventFactory(device, app)
+        self.event_factory = self.get_event_factory(self.policy, device, app)
+
+    @staticmethod
+    def get_event_factory(policy, device, app):
+        if policy == POLICY_NONE:
+            event_factory = None
+        elif policy == POLICY_STATE_RECORDER:
+            event_factory = None
+        elif policy == POLICY_MONKEY:
+            event_factory = None
+        elif policy == POLICY_RANDOM:
+            event_factory = RandomEventFactory(device, app)
+        elif policy == POLICY_STATIC:
+            event_factory = StaticEventFactory(device, app)
+        elif policy == POLICY_DYNAMIC:
+            event_factory = DynamicEventFactory(device, app)
+        elif policy == POLICY_UTG_DYNAMIC:
+            event_factory = UtgDynamicFactory(device, app)
+        elif policy == POLICY_MANUAL:
+            event_factory = ManualEventFactory(device, app)
         else:
-            self.event_factory = FileEventFactory(device, app, self.policy)
+            script_file_path = policy
+            f = open(script_file_path, 'r')
+            script_dict = json.load(f)
+            event_factory = ScriptEventFactory(device, app, script_dict)
+        return event_factory
 
     def add_event(self, event):
         """
@@ -635,15 +725,6 @@ class AppEventManager(object):
         if self.event_factory is not None:
             self.event_factory.dump()
 
-    # def on_state_update(self, old_state, new_state):
-    #     """
-    #     callback method invoked by AppstateMonitor
-    #     :param old_state: origin state of App
-    #     :param new_state: new state of App
-    #     :return:
-    #     """
-    #
-
     def set_event_factory(self, event_factory):
         """
         set event factory of the app
@@ -665,6 +746,10 @@ class AppEventManager(object):
         try:
             if self.event_factory is not None:
                 self.event_factory.start(self)
+            elif self.policy == POLICY_NONE:
+                self.device.start_app(self.app)
+                while self.enabled:
+                    time.sleep(1)
             elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
                 monkey_cmd = "adb -s %s shell monkey %s --throttle %d -v %d" % (
@@ -675,9 +760,9 @@ class AppEventManager(object):
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 while self.enabled:
                     time.sleep(1)
-            elif self.policy == POLICY_NONE:
+            elif self.policy == POLICY_STATE_RECORDER:
                 self.device.start_app(self.app)
-                while True:
+                while self.enabled:
                     keyboard_input = raw_input("press ENTER to save current state, type q to exit...")
                     if keyboard_input.startswith('q'):
                         break
@@ -739,22 +824,24 @@ class EventFactory(object):
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
-            except StopSendingEventException as e:
-                self.device.logger.warning(e.message)
-                break
-            except RuntimeError as e:
-                self.device.logger.warning(e.message)
-                break
-            except Exception as e:
-                self.device.logger.warning(e.message)
-                continue
+            # except StopSendingEventException as e:
+            #     self.device.logger.warning(e.message)
+            #     break
+            # except RuntimeError as e:
+            #     self.device.logger.warning(e.message)
+            #     break
+            # except Exception as e:
+            #     self.device.logger.warning(e.message)
+            #     continue
             count += 1
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
-        raise NotImplementedError
+        pass
 
     def dump(self):
         """
@@ -772,9 +859,11 @@ class NoneEventFactory(EventFactory):
     def __init__(self, device, app):
         super(NoneEventFactory, self).__init__(device, app)
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         return None
 
@@ -792,9 +881,11 @@ class RandomEventFactory(EventFactory):
             KeyEvent: 1
         }
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         event_type = weighted_choice(self.choices)
         event = event_type.get_random_instance(self.device, self.app)
@@ -816,9 +907,11 @@ class StaticEventFactory(EventFactory):
         }
         self.possible_broadcasts = app.get_possible_broadcasts()
 
-    def generate_event(self):
+    def generate_event(self, state=None):
         """
-        generate a event
+        generate an event
+        @param state: DeviceState
+        @return:
         """
         event_type = weighted_choice(self.choices)
         if event_type == IntentEvent and self.possible_broadcasts:
@@ -890,7 +983,12 @@ class DynamicEventFactory(EventFactory):
         # use this flag to indicate the last sent event
         self.last_event_flag = ""
 
-    def generate_event(self):
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
         if self.event_stack:
             event = self.event_stack.pop()
             return event
@@ -1076,64 +1174,34 @@ class DynamicEventFactory(EventFactory):
 
 
 EVENT_TYPES = {
-    'key': KeyEvent,
-    'touch': TouchEvent,
-    'long_touch': LongTouchEvent,
-    'drag': DragEvent,
-    'type': TypeEvent,
-    'emulator': EmulatorEvent,
-    'context': ContextEvent
+    KEY_KeyEvent: KeyEvent,
+    KEY_TouchEvent: TouchEvent,
+    KEY_LongTouchEvent: LongTouchEvent,
+    KEY_DragEvent: DragEvent,
+    KEY_SwipeEvent: SwipeEvent,
+    KEY_TypeEvent: TypeEvent,
+    KEY_IntentEvent: IntentEvent,
+    KEY_EmulatorEvent: EmulatorEvent,
+    KEY_ContextEvent: ContextEvent
 }
 
 
-class FileEventFactory(EventFactory):
-    """
-    factory which produces events from file
-    """
-
-    def __init__(self, device, app, in_file):
-        """
-        create a FileEventFactory from a json file
-        :param in_file path string
-        """
-        super(FileEventFactory, self).__init__(device, app)
-        self.events = []
-        self.file = in_file
-        f = open(in_file, 'r')
-        events_json = f.readall()
-        events_array = json.loads(events_json)
-        for event_dict in events_array:
-            if not isinstance(event_dict, dict):
-                raise UnknownEventException
-            if 'event_type' not in event_dict.keys():
-                raise UnknownEventException
-            event_type = event_dict['event_type']
-            if 'event_type' not in EVENT_TYPES.keys():
-                raise UnknownEventException
-            EventType = EVENT_TYPES[event_type]
-            event = EventType(dict=event_dict)
-            self.events.append(event)
-        self.index = 0
-
-    def generate_event(self):
-        """
-        generate a event
-        """
-        event = self.events[self.index]
-        self.index += 1
-        return event
-
-
-class CustomizedEventFactory(EventFactory):
+class StateBasedEventFactory(EventFactory):
     """
     factory with customized actions
     """
 
     def __init__(self, device, app):
-        super(CustomizedEventFactory, self).__init__(device, app)
+        super(StateBasedEventFactory, self).__init__(device, app)
 
-    def generate_event(self):
-        state = self.device.get_current_state()
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        if state is None:
+            state = self.device.get_current_state()
         return self.gen_event_based_on_state_wrapper(state)
 
     def gen_event_based_on_state_wrapper(self, state):
@@ -1159,13 +1227,10 @@ EVENT_FLAG_START_APP = "+start_app"
 EVENT_FLAG_TOUCH = "+touch"
 
 
-class ManualEventFactory(CustomizedEventFactory):
+class ManualEventFactory(StateBasedEventFactory):
     """
     manually send events
     droidbot will record the events and states
-    """
-    """
-    record device state during execution
     """
 
     def __init__(self, device, app):
@@ -1320,13 +1385,13 @@ class ManualEventFactory(CustomizedEventFactory):
         state_transitions_file.close()
 
 
-class StateRecorderFactory(CustomizedEventFactory):
+class UtgDynamicFactory(StateBasedEventFactory):
     """
     record device state during execution
     """
 
     def __init__(self, device, app):
-        super(StateRecorderFactory, self).__init__(device, app)
+        super(UtgDynamicFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
 
@@ -1460,5 +1525,61 @@ class StateRecorderFactory(CustomizedEventFactory):
         from state_transition_graph import TransitionGraph
         utg = TransitionGraph(input_path=self.device.output_dir)
         utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(utg.to_json(), utg_file, indent=2)
+        json.dump(utg.data, utg_file, indent=2)
         utg_file.close()
+
+
+class ScriptEventFactory(EventFactory):
+    """
+    factory which produces events from file
+    """
+
+    def __init__(self, device, app, script_dict):
+        """
+        create a FileEventFactory from a json file
+        :param in_file path string
+        """
+        super(ScriptEventFactory, self).__init__(device, app)
+        self.script_dict = script_dict
+        from droidbot_script import DroidBotScript
+        self.script = DroidBotScript(self.script_dict)
+        self.script_event_queue = []
+
+        self.default_policy = self.script.default_policy
+        self.policy_event_factories = {}
+        self.current_policy = None
+        self.current_policy_count = 0
+
+    def generate_event(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        # if the previous operation is not finished, continue
+        if len(self.script_event_queue) != 0:
+            script_event = self.script_event_queue.pop(0)
+            return script_event
+        if self.current_policy_count > 0:
+            self.current_policy_count -= 1
+            return self.gen_event_with_policy(self.current_policy, state)
+
+        # if the previous operation is finished, try to get a new operation based on current state
+        if state is None:
+            state = self.device.get_current_state()
+        operation = self.script.get_operation_based_on_state(state)
+        if operation is not None:
+            self.script_event_queue = list(operation.events)
+            self.current_policy = operation.event_policy
+            self.current_policy_count = operation.event_count
+            return self.generate_event()
+
+        # if current state is not defined in script, use the default policy
+        return self.gen_event_with_policy(self.default_policy, state)
+
+    def gen_event_with_policy(self, policy, state):
+        if policy not in self.policy_event_factories:
+            self.policy_event_factories[policy] =\
+                AppEventManager.get_event_factory(policy, self.device, self.app)
+        event_factory = self.policy_event_factories[policy]
+        return event_factory.generate_event(state)

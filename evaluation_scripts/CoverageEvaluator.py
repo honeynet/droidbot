@@ -12,6 +12,10 @@ from datetime import datetime
 from droidbot.droidbot import DroidBot
 
 
+START_EMULATOR_CMD = "emulator -avd %s -port %d -wipe-data"
+AVD_PORT = 5564
+
+
 class CoverageEvaluator(object):
     """
     evaluate test tool with DroidBox
@@ -23,18 +27,19 @@ class CoverageEvaluator(object):
     MODE_STATIC = "4.static"
     MODE_DYNAMIC = "5.dynamic"
 
-    def __init__(self, device_serial, apk_path,
+    def __init__(self, start_emu_cmd, device_serial, apk_path,
                  event_duration, event_count, event_interval,
                  output_dir, androcov_path, android_jar_path):
-        self.modes = [
-            CoverageEvaluator.MODE_DEFAULT,
-            CoverageEvaluator.MODE_MONKEY,
-            CoverageEvaluator.MODE_RANDOM,
-            CoverageEvaluator.MODE_STATIC,
-            CoverageEvaluator.MODE_DYNAMIC
-        ]
+        self.modes = {
+            CoverageEvaluator.MODE_DEFAULT: self.default_mode,
+            CoverageEvaluator.MODE_MONKEY: self.adb_monkey,
+            # CoverageEvaluator.MODE_RANDOM: self.droidbot_random,
+            # CoverageEvaluator.MODE_STATIC: self.droidbot_static,
+            CoverageEvaluator.MODE_DYNAMIC: self.droidbot_dynamic
+        }
 
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.start_emu_cmd = start_emu_cmd
         self.device_serial = device_serial
         self.apk_path = os.path.abspath(apk_path)
         self.output_dir = output_dir
@@ -80,6 +85,7 @@ class CoverageEvaluator(object):
         if self.record_interval < 2:
             self.record_interval = 2
 
+        self.emulator = None
         self.droidbot = None
 
         self.result = {}
@@ -99,19 +105,12 @@ class CoverageEvaluator(object):
         """
         if not self.enabled:
             return
-        self.evaluate_mode(CoverageEvaluator.MODE_DEFAULT,
-                           self.default_mode)
-        self.evaluate_mode(CoverageEvaluator.MODE_MONKEY,
-                           self.adb_monkey)
-        self.evaluate_mode(CoverageEvaluator.MODE_RANDOM,
-                           self.droidbot_random)
-        self.evaluate_mode(CoverageEvaluator.MODE_STATIC,
-                           self.droidbot_static)
-        self.evaluate_mode(CoverageEvaluator.MODE_DYNAMIC,
-                           self.droidbot_dynamic)
-        self.dump(sys.stdout)
+
+        for mode in self.modes:
+            self.evaluate_mode(mode, self.modes[mode])
+        self.dump_result(sys.stdout)
         result_file = open(self.result_file_path, "w")
-        self.dump(result_file)
+        self.dump_result(result_file)
         result_file.close()
 
     def androcov_instrument(self):
@@ -135,29 +134,54 @@ class CoverageEvaluator(object):
         if not self.enabled:
             return
         self.logger.info("evaluating [%s] mode" % mode)
+        self.start_emulator()
         target_thread = threading.Thread(target=target)
         target_thread.start()
         self.monitor_and_record(mode)
         self.stop_modules()
+        self.stop_emulator()
         self.logger.info("finished evaluating [%s] mode" % mode)
+
+    def start_emulator(self):
+        self.emulator = subprocess.Popen(self.start_emu_cmd.split(),
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE)
+        self.wait_for_device()
 
     def stop_modules(self):
         if self.droidbot is not None:
             self.droidbot.stop()
             time.sleep(5)
 
+    def stop_emulator(self):
+        if not self.emulator:
+            return
+        self.emulator.terminate()
+        time.sleep(5)
+
+    def wait_for_device(self):
+        """
+        wait until the device is fully booted
+        :return:
+        """
+        try:
+            subprocess.check_call(["adb", "-s", self.device_serial, "wait-for-device"])
+            while True:
+                out = subprocess.check_output(["adb", "-s", self.device_serial, "shell",
+                                               "getprop", "init.svc.bootanim"]).split()[0]
+                if out == "stopped":
+                    break
+                time.sleep(3)
+        except:
+            self.logger.warning("error waiting for device")
+
     def monitor_and_record(self, mode):
         if not self.enabled:
             return
         self.result[mode] = {}
-        t = 0
         self.logger.info("start monitoring")
         try:
-            while True:
-                time.sleep(self.record_interval)
-                t += self.record_interval
-                if t > self.event_duration:
-                    break
+            time.sleep(self.event_duration)
         except KeyboardInterrupt:
             self.stop()
         mode_logcat_path = os.path.join(self.output_dirs[mode], "logcat.log")
@@ -249,7 +273,7 @@ class CoverageEvaluator(object):
                     return result_item[timestamp]
         return None
 
-    def dump(self, out_file):
+    def dump_result(self, out_file):
         modes = self.result_safe_get()
         if modes is None or not modes:
             return
@@ -367,8 +391,8 @@ def parse_args():
     description = "Run different testing bots on droidbox, and compare their log counts."
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-d", action="store", dest="device_serial", required=True,
-                        help="serial number of target device")
+    parser.add_argument("-avd", action="store", dest="avd_name", required=True,
+                        help="avd name of target emulator")
     parser.add_argument("-a", action="store", dest="apk_path", required=True,
                         help="file path of target app, necessary for static analysis")
     parser.add_argument("-count", action="store", dest="event_count",
@@ -391,8 +415,11 @@ def parse_args():
 if __name__ == "__main__":
     opts = parse_args()
     logging.basicConfig(level=logging.INFO)
+    device_serial = "emulator-%d" % AVD_PORT
+    start_emu_cmd = START_EMULATOR_CMD % (opts.avd_name, AVD_PORT)
     evaluator = CoverageEvaluator(
-        device_serial=opts.device_serial,
+        start_emu_cmd=start_emu_cmd,
+        device_serial=device_serial,
         apk_path=opts.apk_path,
         event_duration=opts.event_duration,
         event_count=opts.event_count,
@@ -405,4 +432,4 @@ if __name__ == "__main__":
         evaluator.start_evaluate()
     except KeyboardInterrupt:
         evaluator.stop()
-        evaluator.dump(sys.stdout)
+        evaluator.dump_result(sys.stdout)

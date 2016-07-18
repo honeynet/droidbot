@@ -1,0 +1,47 @@
+{
+    "views": {
+        "login_email": {
+            "resource_id": ".*email.*",
+            "class": ".*EditText"
+        },
+        "login_password": {
+            "resource_id": ".*password.*",
+            "class": ".*EditText"
+        },
+        "login_button": {
+            "resource_id": ".*login.*",
+            "class": ".*Button"
+        }
+    },
+    "states": {
+        "login_state": {
+            "activity": "LoginActivity",
+            "views": ["login_email", "login_password", "login_button"]
+        }
+    },
+    "operations": {
+        "login_operation": {
+            "operation_type": "custom",
+            "events": [
+                {
+                    "event_type": "text_input",
+                    "target_view": "login_email",
+                    "text_content": "ylimit@honeynet.org"
+                },
+                {
+                    "event_type": "text_input",
+                    "target_view": "login_password",
+                    "text_content": "ylimitpassword"
+                },
+                {
+                    "event_type": "touch",
+                    "target_view": "login_button"
+                }
+            ]
+        }
+    },
+    "main": {
+        "login_state": ["login_operation"]
+    },
+    "default_policy": "dynamic"
+}

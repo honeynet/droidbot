@@ -1,4 +1,5 @@
 __author__ = 'yuanchun'
 
-import droidbox
-start = droidbox.main
+import droidbox, droidbox_compatible
+droidbox = droidbox.main
+droidbox_compatible = droidbox_compatible.main

@@ -37,6 +37,8 @@ setup(
     entry_points={
         "console_scripts": [
             'droidbot=droidbot:start',
+            'droidbox=droidbox_scripts:droidbox',
+            'droidbox_compatible=droidbox_scripts:droidbox_compatible'
         ],
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install

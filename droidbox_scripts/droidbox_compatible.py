@@ -658,7 +658,7 @@ def interruptHandler(signum, frame):
 def main():
     argv = sys.argv
     if len(argv) < 2 or len(argv) > 3:
-        print("Usage: droidbox.py filename.apk <duration in seconds>")
+        print("Usage: droidbox_compatible.py filename.apk <duration in seconds>")
         sys.exit(1)
 
     duration = 0

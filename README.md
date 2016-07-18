@@ -139,16 +139,16 @@ An example of the DroidBot script is as follows:
 {
     "views": {
         "login_email": {
-            "id": "*email*",
-            "class": "EditText"
+            "resource_id": ".*email.*",
+            "class": ".*EditText"
         },
         "login_password": {
-            "id": "*password*",
-            "class": "EditText"
+            "resource_id": ".*password.*",
+            "class": ".*EditText"
         },
         "login_button": {
-            "id": "*login*",
-            "class": "Button"
+            "resource_id": ".*login.*",
+            "class": ".*Button"
         }
     },
     "states": {
@@ -176,16 +176,12 @@ An example of the DroidBot script is as follows:
                     "target_view": "login_button"
                 }
             ]
-        },
-        "default_operation": {
-            "operation_type": "policy",
-            "event_policy": "dynamic"
         }
     },
     "main": {
-        "login_state": "login_operation",
-        "normal_state": "default_operation"
-    }
+        "login_state": ["login_operation"]
+    },
+    "default_policy": "dynamic"
 }
 ```
 Explanation of the example:

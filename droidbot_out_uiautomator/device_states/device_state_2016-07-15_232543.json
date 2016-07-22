@@ -1,0 +1,168 @@
+{
+  "background_services": [
+    "com.google.android.gms/auth.GoogleAccountAuthenticatorService", 
+    "com.android.systemui/keyguard.KeyguardService", 
+    "com.google.android.gms/om.google.android.location.places.service.PlaceDetectionService", 
+    "com.android.systemui/ImageWallpaper", 
+    "com.google.android.gms/om.google.android.location.geocode.GeocodeService", 
+    "com.google.android.gms/gcm.GcmService", 
+    "com.android.inputmethod.latin/LatinIME", 
+    "com.google.android.gms/om.google.android.location.fused.FusedLocationService", 
+    "com.paypal.android.p2pmobile/om.paypal.android.lib.logmonitor.wallet.LogMonitoringService", 
+    "com.google.android.gms/om.google.android.location.geofencer.service.GeofenceProviderService", 
+    "com.android.systemui/SystemUIService", 
+    "android/hardware.location.GeofenceHardwareService", 
+    "com.google.android.googlequicksearchbox/om.google.android.apps.gsa.reflection.ReflectionService", 
+    "com.google.android.gms/om.google.android.location.internal.server.GoogleLocationService", 
+    "com.google.android.gms/om.google.android.location.network.NetworkLocationService", 
+    "com.google.android.gms/om.google.android.location.internal.GoogleLocationManagerService", 
+    "com.android.server.telecom/components.TelecomService", 
+    "com.google.android.gms/deviceconnection.service.DeviceConnectionServiceBroker", 
+    "com.google.android.googlequicksearchbox/om.google.android.voiceinteraction.GsaVoiceInteractionService", 
+    "android/om.android.internal.backup.LocalTransportService", 
+    "com.google.android.gms/common.stats.GmsCoreStatsService", 
+    "com.android.mms.service/MmsService", 
+    "com.android.phone/TelephonyDebugService", 
+    "com.google.android.gms/backup.BackupTransportService"
+  ], 
+  "tag": "2016-07-15_232543", 
+  "foreground_activity": "com.paypal.android.p2pmobile/.activity.FirstTimeUseCarouselActivity", 
+  "views": [
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        1, 
+        2, 
+        3
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 0, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/1", 
+      "parent": null, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.paypal.android.p2pmobile", 
+      "view_str": "package:com.paypal.android.p2pmobile,class:android.widget.FrameLayout,resource-id:,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          27, 
+          735
+        ], 
+        [
+          1053, 
+          1113
+        ]
+      ]
+    }, 
+    {
+      "text": "By tapping \"Agree\" you agree to PayPal's terms of service.", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 1, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "android:id/message", 
+      "uniqueId": "id/no_id/2", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.paypal.android.p2pmobile", 
+      "view_str": "package:com.paypal.android.p2pmobile,class:android.widget.TextView,resource-id:android:id/message,text:By tapping \"Agree\" you agree to PayPal's terms of service.", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          75, 
+          759
+        ], 
+        [
+          1005, 
+          943
+        ]
+      ]
+    }, 
+    {
+      "text": "View Terms", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "1", 
+      "checked": "false", 
+      "temp_id": 2, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "android:id/button2", 
+      "uniqueId": "id/no_id/3", 
+      "parent": 0, 
+      "focusable": "true", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.Button", 
+      "scrollable": "false", 
+      "package": "com.paypal.android.p2pmobile", 
+      "view_str": "package:com.paypal.android.p2pmobile,class:android.widget.Button,resource-id:android:id/button2,text:View Terms", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          75, 
+          945
+        ], 
+        [
+          564, 
+          1089
+        ]
+      ]
+    }, 
+    {
+      "text": "Agree", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "2", 
+      "checked": "false", 
+      "temp_id": 3, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "android:id/button1", 
+      "uniqueId": "id/no_id/4", 
+      "parent": 0, 
+      "focusable": "true", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.Button", 
+      "scrollable": "false", 
+      "package": "com.paypal.android.p2pmobile", 
+      "view_str": "package:com.paypal.android.p2pmobile,class:android.widget.Button,resource-id:android:id/button1,text:Agree", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          566, 
+          945
+        ], 
+        [
+          1005, 
+          1089
+        ]
+      ]
+    }
+  ]
+}

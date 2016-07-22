@@ -1,0 +1,621 @@
+{
+  "background_services": [
+    "com.google.android.gms/auth.GoogleAccountAuthenticatorService", 
+    "com.android.systemui/keyguard.KeyguardService", 
+    "com.google.android.gms/playlog.uploader.UploaderService", 
+    "com.google.android.gms/om.google.android.location.places.service.PlaceDetectionService", 
+    "com.android.systemui/ImageWallpaper", 
+    "com.google.android.gms/om.google.android.location.geocode.GeocodeService", 
+    "com.google.android.gms/gcm.GcmService", 
+    "com.android.inputmethod.latin/LatinIME", 
+    "com.google.android.gms/om.google.android.location.fused.FusedLocationService", 
+    "com.paypal.android.p2pmobile/om.paypal.android.lib.logmonitor.wallet.LogMonitoringService", 
+    "com.google.android.gms/checkin.CheckinService", 
+    "com.google.android.googlequicksearchbox/om.google.android.search.core.service.SearchService", 
+    "com.google.android.gms/om.google.android.location.geofencer.service.GeofenceProviderService", 
+    "com.android.systemui/SystemUIService", 
+    "android/hardware.location.GeofenceHardwareService", 
+    "com.google.android.googlequicksearchbox/om.google.android.apps.gsa.reflection.ReflectionService", 
+    "com.google.android.gms/om.google.android.location.internal.server.GoogleLocationService", 
+    "com.google.android.gms/om.google.android.location.network.NetworkLocationService", 
+    "com.google.android.gms/om.google.android.location.internal.GoogleLocationManagerService", 
+    "com.android.server.telecom/components.TelecomService", 
+    "com.google.android.gms/deviceconnection.service.DeviceConnectionServiceBroker", 
+    "com.google.android.googlequicksearchbox/om.google.android.voiceinteraction.GsaVoiceInteractionService", 
+    "android/om.android.internal.backup.LocalTransportService", 
+    "com.google.android.gms/common.stats.GmsCoreStatsService", 
+    "com.google.android.gms/clearcut.service.ClearcutLoggerService", 
+    "com.android.mms.service/MmsService", 
+    "com.android.phone/TelephonyDebugService", 
+    "com.google.android.gms/icing.service.IndexService", 
+    "com.google.android.gms/backup.BackupTransportService"
+  ], 
+  "tag": "2016-07-15_230022", 
+  "foreground_activity": "com.google.android.googlequicksearchbox/com.google.android.launcher.GEL", 
+  "views": [
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        1, 
+        4, 
+        10, 
+        11
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 0, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/1", 
+      "parent": null, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.FrameLayout,resource-id:,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1080, 
+          1776
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        2
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 1, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/workspace", 
+      "uniqueId": "id/no_id/2", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "com.android.launcher3.Workspace", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:com.android.launcher3.Workspace,resource-id:com.google.android.googlequicksearchbox:id/workspace,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1080, 
+          1776
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        3
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 2, 
+      "selected": "false", 
+      "content-desc": "Folder: Google", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/3", 
+      "parent": 1, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.FrameLayout,resource-id:,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          12, 
+          1167
+        ], 
+        [
+          276, 
+          1464
+        ]
+      ]
+    }, 
+    {
+      "text": "Google", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 3, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/folder_icon_name", 
+      "uniqueId": "id/no_id/4", 
+      "parent": 2, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:com.google.android.googlequicksearchbox:id/folder_icon_name,text:Google", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          21, 
+          1385
+        ], 
+        [
+          267, 
+          1464
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        5
+      ], 
+      "index": "1", 
+      "checked": "false", 
+      "temp_id": 4, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/search_overlay", 
+      "uniqueId": "id/no_id/5", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.FrameLayout,resource-id:com.google.android.googlequicksearchbox:id/search_overlay,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1080, 
+          1776
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        6, 
+        7, 
+        8
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 5, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/search_plate_container", 
+      "uniqueId": "id/no_id/6", 
+      "parent": 4, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.FrameLayout,resource-id:com.google.android.googlequicksearchbox:id/search_plate_container,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          0, 
+          72
+        ], 
+        [
+          1080, 
+          264
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "1", 
+      "checked": "false", 
+      "temp_id": 6, 
+      "selected": "false", 
+      "content-desc": "Search", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/launcher_search_button", 
+      "uniqueId": "id/no_id/7", 
+      "parent": 5, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.ImageView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.ImageView,resource-id:com.google.android.googlequicksearchbox:id/launcher_search_button,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          24, 
+          96
+        ], 
+        [
+          900, 
+          240
+        ]
+      ]
+    }, 
+    {
+      "text": "Say \"Ok Google\"", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "2", 
+      "checked": "false", 
+      "temp_id": 7, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/say_ok_google", 
+      "uniqueId": "id/no_id/8", 
+      "parent": 5, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:com.google.android.googlequicksearchbox:id/say_ok_google,text:Say \"Ok Google\"", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          572, 
+          135
+        ], 
+        [
+          876, 
+          200
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        9
+      ], 
+      "index": "3", 
+      "checked": "false", 
+      "temp_id": 8, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/progress_or_clear_or_voice", 
+      "uniqueId": "id/no_id/9", 
+      "parent": 5, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.FrameLayout,resource-id:com.google.android.googlequicksearchbox:id/progress_or_clear_or_voice,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          900, 
+          96
+        ], 
+        [
+          1044, 
+          240
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 9, 
+      "selected": "false", 
+      "content-desc": "Voice Search", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/clear_or_voice_button", 
+      "uniqueId": "id/no_id/10", 
+      "parent": 8, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.ImageView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.ImageView,resource-id:com.google.android.googlequicksearchbox:id/clear_or_voice_button,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          936, 
+          132
+        ], 
+        [
+          1008, 
+          204
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "5", 
+      "checked": "false", 
+      "temp_id": 10, 
+      "selected": "false", 
+      "content-desc": "Home screen 1 of 1, Settings", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/page_indicator", 
+      "uniqueId": "id/no_id/11", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.LinearLayout,resource-id:com.google.android.googlequicksearchbox:id/page_indicator,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          522, 
+          1488
+        ], 
+        [
+          558, 
+          1524
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        12, 
+        13, 
+        14, 
+        15, 
+        16
+      ], 
+      "index": "6", 
+      "checked": "false", 
+      "temp_id": 11, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.google.android.googlequicksearchbox:id/layout", 
+      "uniqueId": "id/no_id/12", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.view.ViewGroup", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.view.ViewGroup,resource-id:com.google.android.googlequicksearchbox:id/layout,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          0, 
+          1524
+        ], 
+        [
+          1080, 
+          1776
+        ]
+      ]
+    }, 
+    {
+      "text": "Phone", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 12, 
+      "selected": "false", 
+      "content-desc": "Phone", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/13", 
+      "parent": 11, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:,text:Phone", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          45, 
+          1532
+        ], 
+        [
+          232, 
+          1768
+        ]
+      ]
+    }, 
+    {
+      "text": "Messaging", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "1", 
+      "checked": "false", 
+      "temp_id": 13, 
+      "selected": "false", 
+      "content-desc": "Messaging", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/14", 
+      "parent": 11, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:,text:Messaging", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          246, 
+          1532
+        ], 
+        [
+          433, 
+          1768
+        ]
+      ]
+    }, 
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "2", 
+      "checked": "false", 
+      "temp_id": 14, 
+      "selected": "false", 
+      "content-desc": "Apps", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/15", 
+      "parent": 11, 
+      "focusable": "true", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          447, 
+          1532
+        ], 
+        [
+          634, 
+          1768
+        ]
+      ]
+    }, 
+    {
+      "text": "Browser", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "3", 
+      "checked": "false", 
+      "temp_id": 15, 
+      "selected": "false", 
+      "content-desc": "Browser", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/16", 
+      "parent": 11, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:,text:Browser", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          648, 
+          1532
+        ], 
+        [
+          835, 
+          1768
+        ]
+      ]
+    }, 
+    {
+      "text": "Camera", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "4", 
+      "checked": "false", 
+      "temp_id": 16, 
+      "selected": "false", 
+      "content-desc": "Camera", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/17", 
+      "parent": 11, 
+      "focusable": "true", 
+      "long-clickable": "true", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.google.android.googlequicksearchbox", 
+      "view_str": "package:com.google.android.googlequicksearchbox,class:android.widget.TextView,resource-id:,text:Camera", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          849, 
+          1532
+        ], 
+        [
+          1036, 
+          1768
+        ]
+      ]
+    }
+  ]
+}

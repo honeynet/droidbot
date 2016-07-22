@@ -246,8 +246,7 @@ class KeyEvent(AppEvent):
         return KeyEvent(key_name)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().press(self.name)
+        device.key_press(self.name)
         return True
 
 
@@ -298,8 +297,7 @@ class TouchEvent(UIEvent):
         return TouchEvent(x, y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().longTouch(self.x, self.y, duration=300)
+        device.view_long_touch(self.x, self.y, duration=300)
         return True
 
 
@@ -324,8 +322,7 @@ class LongTouchEvent(UIEvent):
         return LongTouchEvent(x, y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().longTouch(self.x, self.y, self.duration)
+        device.view_long_touch(self.x, self.y, self.duration)
         return True
 
 
@@ -353,10 +350,9 @@ class DragEvent(UIEvent):
         return DragEvent(start_x, start_y, end_x, end_y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().drag((self.start_x, self.start_y),
-                              (self.end_x, self.end_y),
-                              self.duration)
+        device.view_drag((self.start_x, self.start_y),
+                         (self.end_x, self.end_y),
+                         self.duration)
         return True
 
 
@@ -381,7 +377,6 @@ class SwipeEvent(UIEvent):
         return SwipeEvent(x, y, direction)
 
     def send(self, device):
-        assert device.get_adb() is not None
         end_x = self.x
         end_y = self.y
         duration = 200
@@ -395,7 +390,7 @@ class SwipeEvent(UIEvent):
         elif self.direction == "RIGHT":
             end_x = device.get_display_info()['width']
 
-        device.get_adb().drag((self.x, self.y), (end_x, end_y), duration)
+        device.view_drag((self.x, self.y), (end_x, end_y), duration)
         return True
 
 
@@ -416,7 +411,6 @@ class TypeEvent(UIEvent):
         self.text = text
 
     def send(self, device):
-        assert device.get_adb() is not None
         escaped = self.text.replace('%s', '\\%s')
         encoded = escaped.replace(' ', '%s')
         device.adb.type(encoded)
@@ -433,7 +427,7 @@ class IntentEvent(AppEvent):
             self.__dict__ = event_dict
             return
         self.event_type = KEY_IntentEvent
-        self.intent = intent.get_cmd()
+        self.intent = intent
 
     @staticmethod
     def get_random_instance(device, app):
@@ -442,7 +436,7 @@ class IntentEvent(AppEvent):
         return IntentEvent(intent)
 
     def send(self, device):
-        device.get_adb().shell(self.intent)
+        device.send_intent(intent=self.intent)
         return True
 
 
@@ -588,7 +582,7 @@ class ActivityNameContext(Context):
         return self.activity_name
 
     def assert_in_device(self, device):
-        current_top_activity = device.get_adb().getTopActivityName()
+        current_top_activity = device.get_top_activity_name()
         return self.activity_name == current_top_activity
 
 
@@ -611,7 +605,7 @@ class WindowNameContext(Context):
         return self.window_name
 
     def assert_in_device(self, device):
-        current_focused_window = device.get_adb().getFocusedWindowName()
+        current_focused_window = device.get_focused_window_name()
         return self.window_name == current_focused_window
 
 
@@ -930,8 +924,6 @@ class DynamicEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(DynamicEventFactory, self).__init__(device, app)
-        assert device.get_adb() is not None
-        assert device.get_view_client() is not None
 
         self.exploited_contexts = set()
         self.exploited_services = set()
@@ -1000,14 +992,14 @@ class DynamicEventFactory(EventFactory):
         find some event, return the first, and add the rest to event stack
         """
         # get current running Activity
-        top_activity_name = self.device.get_adb().getTopActivityName()
+        top_activity_name = self.device.get_top_activity_name()
         # if the activity switches, wait a few seconds
         if top_activity_name != self.previous_activity:
             time.sleep(3)
         self.previous_activity = top_activity_name
 
         # get focused window
-        focused_window = self.device.get_adb().getFocusedWindow()
+        focused_window = self.device.get_focused_window_name()
         focused_window_id = -1
         focused_window_name = None
         if focused_window is not None:
@@ -1092,7 +1084,7 @@ class DynamicEventFactory(EventFactory):
 
         # if no views were saved, dump view via AndroidViewClient
         if current_context_str not in self.saved_views.keys():
-            views = self.device.get_view_client().dump(window=focused_window_id)
+            views = self.device.dump_views()
             self.saved_views[current_context_str] = views
             self.window_passes[current_context_str] = 0
         else:

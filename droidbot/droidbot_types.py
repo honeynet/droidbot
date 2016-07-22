@@ -207,7 +207,7 @@ class Device(object):
         if self.view_client_enabled and self.view_client is None:
             kwargs = {'startviewserver': True,
                       'autodump': False,
-                      # 'forceviewserveruse': True,
+                      'forceviewserveruse': False,
                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client
@@ -459,6 +459,17 @@ class Device(object):
         intent = Intent(suffix=package_name)
         self.send_intent(intent)
 
+    def get_top_activity_name(self):
+        """
+        Get current activity
+        """
+        data = self.get_adb().shell("dumpsys activity top").splitlines()
+        regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
+        m = regex.search(data[1])
+        if m:
+            return m.group(1) + "/" + m.group(2)
+        return None
+
     def get_service_names(self):
         """
         get current running services
@@ -476,6 +487,9 @@ class Device(object):
                 service = m.group(2)
                 services.append("%s/%s" % (package, service))
         return services
+
+    def get_focused_window_name(self):
+        return self.get_adb().getFocusedWindowName()
 
     def get_package_path(self, package_name):
         """
@@ -529,8 +543,8 @@ class Device(object):
     def get_current_state(self):
         self.logger.info("getting current device state...")
         try:
-            view_client_views = self.get_view_client().dump()
-            foreground_activity = self.get_adb().getTopActivityName()
+            view_client_views = self.dump_views()
+            foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
             snapshot = self.get_adb().takeSnapshot(reconnect=True)
             self.logger.info("finish getting current device state...")
@@ -542,6 +556,35 @@ class Device(object):
         except Exception as e:
             self.logger.warning(e)
             return None
+
+    def view_touch(self, x, y):
+        self.get_adb().touch(x, y)
+
+    def view_long_touch(self, x, y, duration=2000):
+        """
+        Long touches at (x, y)
+        @param duration: duration in ms
+        This workaround was suggested by U{HaMi<http://stackoverflow.com/users/2571957/hami>}
+        """
+        self.get_adb().longTouch(x, y, duration)
+
+    def view_drag(self, (x0, y0), (x1, y1), duration):
+        """
+        Sends drag event n PX (actually it's using C{input swipe} command.
+        @param (x0, y0): starting point in PX
+        @param (x1, y1): ending point in PX
+        @param duration: duration of the event in ms
+        """
+        self.get_adb().drag((x0, y0), (x1, y1), duration)
+
+    def view_input_text(self, text):
+        self.get_adb().type(text)
+
+    def key_press(self, key_code):
+        self.get_adb().press(key_code)
+
+    def dump_views(self, focused_window=True):
+        return self.get_view_client().dump()
 
 
 class DeviceState(object):
@@ -586,7 +629,11 @@ class DeviceState(object):
         from com.dtmilano.android.viewclient import View
         for view in view_client_views:
             if isinstance(view, View):
-                view_dict = view.map
+                view_dict = {}
+                view_dict['class'] = view.getClass()
+                view_dict['text'] = view.getText()
+                view.getBounds()
+                view_dict['resource_id'] = view.getId()
                 view_dict['temp_id'] = view2id_map.get(view)
                 view_dict['parent'] = view2id_map.get(view.getParent())
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
@@ -734,6 +781,15 @@ class App(object):
         if self.main_activity is None:
             self.main_activity = self.get_androguard_analysis().a.get_main_activity()
         return self.main_activity
+
+    def get_permissions(self):
+        """
+        get package name of current app
+        :return:
+        """
+        if self.permissions is None:
+            self.permissions = self.get_androguard_analysis().a.get_permissions()
+        return self.permissions
 
     def get_start_intent(self):
         """
@@ -908,3 +964,6 @@ class Intent(object):
             cmd += " " + self.suffix
         self.cmd = cmd
         return self.cmd
+
+    def __str__(self):
+        return self.get_cmd()

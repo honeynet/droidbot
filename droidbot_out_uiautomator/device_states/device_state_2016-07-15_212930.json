@@ -1,0 +1,142 @@
+{
+  "background_services": [
+    "ru.sberbankmobile/u.sberbank.mobile.map.GeoService", 
+    "com.android.systemui/keyguard.KeyguardService", 
+    "com.google.android.gms/playlog.uploader.UploaderService", 
+    "com.google.android.gms/om.google.android.location.places.service.PlaceDetectionService", 
+    "com.android.systemui/ImageWallpaper", 
+    "com.google.android.gms/om.google.android.location.geocode.GeocodeService", 
+    "com.google.android.gms/gcm.GcmService", 
+    "ru.sberbankmobile/u.sberbank.kavsdk.SdkService", 
+    "com.android.inputmethod.latin/LatinIME", 
+    "com.google.android.gms/om.google.android.location.fused.FusedLocationService", 
+    "com.paypal.android.p2pmobile/om.paypal.android.lib.logmonitor.wallet.LogMonitoringService", 
+    "com.google.android.gms/herrevad.services.RemoteReportsRefreshService", 
+    "com.gnom.anton/rYba", 
+    "com.google.android.gms/om.google.android.location.geofencer.service.GeofenceProviderService", 
+    "com.android.systemui/SystemUIService", 
+    "android/hardware.location.GeofenceHardwareService", 
+    "com.google.android.googlequicksearchbox/om.google.android.apps.gsa.reflection.ReflectionService", 
+    "com.google.android.gms/om.google.android.location.internal.server.GoogleLocationService", 
+    "com.google.android.gms/om.google.android.location.network.NetworkLocationService", 
+    "com.google.android.gms/om.google.android.location.internal.GoogleLocationManagerService", 
+    "ru.sberbankmobile/SbtSBOLService", 
+    "com.android.server.telecom/components.TelecomService", 
+    "com.google.android.gms/deviceconnection.service.DeviceConnectionServiceBroker", 
+    "ru.sberbankmobile/om.kavsdk.SdkService", 
+    "com.google.android.googlequicksearchbox/om.google.android.voiceinteraction.GsaVoiceInteractionService", 
+    "android/om.android.internal.backup.LocalTransportService", 
+    "com.google.android.gms/common.stats.GmsCoreStatsService", 
+    "com.google.android.gms/clearcut.service.ClearcutLoggerService", 
+    "com.android.inputmethod.latin/spellcheck.AndroidSpellCheckerService", 
+    "com.android.mms.service/MmsService", 
+    "com.android.phone/TelephonyDebugService", 
+    "com.google.android.gms/backup.BackupTransportService"
+  ], 
+  "tag": "2016-07-15_212930", 
+  "foreground_activity": "com.paypal.android.p2pmobile/.activity.FirstTimeUseCarouselActivity", 
+  "views": [
+    {
+      "text": "", 
+      "checkable": "false", 
+      "children": [
+        1, 
+        2
+      ], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 0, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "", 
+      "uniqueId": "id/no_id/1", 
+      "parent": null, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": "false", 
+      "package": "com.gnom.anton", 
+      "view_str": "package:com.gnom.anton,class:android.widget.LinearLayout,resource-id:,text:", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          131, 
+          669
+        ], 
+        [
+          949, 
+          1178
+        ]
+      ]
+    }, 
+    {
+      "text": "\nAction required.\n\nThis is system application.\n\n   You must activate device administator.   \n", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "0", 
+      "checked": "false", 
+      "temp_id": 1, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.gnom.anton:id/promo", 
+      "uniqueId": "id/no_id/2", 
+      "parent": 0, 
+      "focusable": "false", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "false", 
+      "password": "false", 
+      "class": "android.widget.TextView", 
+      "scrollable": "false", 
+      "package": "com.gnom.anton", 
+      "view_str": "package:com.gnom.anton,class:android.widget.TextView,resource-id:com.gnom.anton:id/promo,text:\nAction required.\n\nThis is system application.\n\n   You must activate device administator.   \n", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          143, 
+          675
+        ], 
+        [
+          937, 
+          1028
+        ]
+      ]
+    }, 
+    {
+      "text": "OK", 
+      "checkable": "false", 
+      "children": [], 
+      "index": "1", 
+      "checked": "false", 
+      "temp_id": 2, 
+      "selected": "false", 
+      "content-desc": "", 
+      "resource-id": "com.gnom.anton:id/ZBLK", 
+      "uniqueId": "id/no_id/3", 
+      "parent": 0, 
+      "focusable": "true", 
+      "long-clickable": "false", 
+      "focused": "false", 
+      "clickable": "true", 
+      "password": "false", 
+      "class": "android.widget.Button", 
+      "scrollable": "false", 
+      "package": "com.gnom.anton", 
+      "view_str": "package:com.gnom.anton,class:android.widget.Button,resource-id:com.gnom.anton:id/ZBLK,text:OK", 
+      "enabled": "true", 
+      "bounds": [
+        [
+          143, 
+          1028
+        ], 
+        [
+          937, 
+          1172
+        ]
+      ]
+    }
+  ]
+}

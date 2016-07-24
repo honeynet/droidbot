@@ -6,10 +6,6 @@ import threading
 import signal
 import re
 
-UP = 0
-DOWN = 1
-DOWN_AND_UP = 2
-
 
 class ADBException(Exception):
     """
@@ -62,6 +58,10 @@ class ADB(object):
     send adb commands via this, see:
     http://developer.android.com/tools/help/adb.html
     """
+    UP = 0
+    DOWN = 1
+    DOWN_AND_UP = 2
+
     def __init__(self, device):
         """
         initiate a ADB connection from serial no
@@ -141,16 +141,13 @@ class ADB(object):
         r = self.run_cmd("get-state")
         return r.startswith("device")
 
-    def checkConnected(self):
-        return self.check_connectivity()
-
     def disconnect(self):
         """
         disconnect adb
         """
         self.logger.info("disconnected")
 
-    def getPackagePath(self, package_name):
+    def get_package_path(self, package_name):
         """
         Get installed path of a package
         """
@@ -343,7 +340,7 @@ class ADB(object):
                 py = 0
                 visibility = -1
                 policyVisibility = 0x0
-                sdkVer = getSDKVersion()
+                sdkVer = self.getSDKVersion()
 
                 for l2 in range(l + 1, len(lines)):
                     m = widRE.search(lines[l2])

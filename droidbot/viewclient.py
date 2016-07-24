@@ -1,22 +1,22 @@
 # Copyright (C) 2012-2015  Diego Torres Milano
 # Copyright (C) 2016 Cuckoo Foundation.
-# This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
-# See the file 'docs/LICENSE' for copying permission.
+# Copyright (C) 2016 Yuanchun Li.
 
 import re
 import sys
 import time
 import copy
 import types
+import logging
 import socket
-import window
 import xml.parsers.expat
 from connection import ADB
-from common import _nd, _nh, _ns, obtainPxPy, obtainVxVy, obtainVwVh
 
 VIEW_SERVER_HOST = 'localhost'
 VIEW_SERVER_PORT = 4939
 VERSION_SDK_PROPERTY = 'ro.build.version.sdk'
+VERSION_RELEASE_PROPERTY = 'ro.build.version.release'
+
 # some constants for the attributes
 VIEW_CLIENT_TOUCH_WORKAROUND_ENABLED = False
 ID_PROPERTY = 'mID'
@@ -24,7 +24,7 @@ ID_PROPERTY_UI_AUTOMATOR = 'uniqueId'
 TEXT_PROPERTY = 'text:mText'
 TEXT_PROPERTY_API_10 = 'mText'
 TEXT_PROPERTY_UI_AUTOMATOR = 'text'
-WS = u"\xfe" # the whitespace replacement char for TEXT_PROPERTY
+WS = u"\xfe"  # the whitespace replacement char for TEXT_PROPERTY
 TAG_PROPERTY = 'getTag()'
 LEFT_PROPERTY = 'layout:mLeft'
 LEFT_PROPERTY_API_8 = 'mLeft'
@@ -38,6 +38,8 @@ GET_VISIBILITY_PROPERTY = 'getVisibility()'
 LAYOUT_TOP_MARGIN_PROPERTY = 'layout:layout_topMargin'
 IS_FOCUSED_PROPERTY_UI_AUTOMATOR = 'focused'
 IS_FOCUSED_PROPERTY = 'focus:isFocused()'
+IS_ENABLED_PROPERTY_UI_AUTOMATOR = 'enabled'
+IS_ENABLED_PROPERTY = 'isEnabled()'
 
 # visibility
 VISIBLE = 0x0
@@ -46,40 +48,104 @@ GONE = 0x8
 
 ID_RE = re.compile('id/([^/]*)(/(\d+))?')
 
+
+def _nd(name):
+    '''
+    @return: Returns a named decimal regex
+    '''
+    return '(?P<%s>\d+)' % name
+
+
+def _nh(name):
+    '''
+    @return: Returns a named hex regex
+    '''
+    return '(?P<%s>[0-9a-f]+)' % name
+
+
+def _ns(name, greedy=False):
+    '''
+    NOTICE: this is using a non-greedy (or minimal) regex
+    @type name: str
+    @param name: the name used to tag the expression
+    @type greedy: bool
+    @param greedy: Whether the regex is greedy or not
+    @return: Returns a named string regex (only non-whitespace characters allowed)
+    '''
+    return '(?P<%s>\S+%s)' % (name, '' if greedy else '?')
+
+
+def obtainPxPy(m):
+    px = int(m.group('px'))
+    py = int(m.group('py'))
+    return (px, py)
+
+
+def obtainVxVy(m):
+    wvx = int(m.group('vx'))
+    wvy = int(m.group('vy'))
+    return wvx, wvy
+
+
+def obtainVwVh(m):
+    (wvx, wvy) = obtainVxVy(m)
+    wvx1 = int(m.group('vx1'))
+    wvy1 = int(m.group('vy1'))
+    return (wvx1 - wvx, wvy1 - wvy)
+
+
+class Window(object):
+    """
+    Window class
+    """
+
+    def __init__(self, num, winId, activity, wvx, wvy, wvw, wvh, px, py, visibility, focused=False):
+        '''
+        Constructor
+        @type num: int
+        @param num: Ordering number in Window Manager
+        @type winId: str
+        @param winId: the window ID
+        @type activity: str
+        @param activity: the activity (or sometimes other component) owning the window
+        @type wvx: int
+        @param wvx: window's virtual X
+        @type wvy: int
+        @param wvy: window's virtual Y
+        @type wvw: int
+        @param wvw: window's virtual width
+        @type wvh: int
+        @param wvh: window's virtual height
+        @type px: int
+        @param px: parent's X
+        @type py: int
+        @param py: parent's Y
+        @type visibility: int
+        @param visibility: visibility of the window
+        '''
+
+        self.num = num
+        self.winId = winId
+        self.activity = activity
+        self.wvx = wvx
+        self.wvy = wvy
+        self.wvw = wvw
+        self.wvh = wvh
+        self.px = px
+        self.py = py
+        self.visibility = visibility
+        self.focused = focused
+
+    def __str__(self):
+        return "Window(%d, wid=%s, a=%s, x=%d, y=%d, w=%d, h=%d, px=%d, py=%d, v=%d, f=%s)" % \
+               (self.num, self.winId, self.activity, self.wvx, self.wvy, self.wvw, self.wvh, self.px, self.py,
+                self.visibility, self.focused)
+
+
 class View:
-    '''
+    """
     View class
-    '''
-
-    @staticmethod
-    def factory(arg1, version=-1, forceviewserveruse=False, windowId=None):
-        '''
-        View factory
-        @type arg1: ClassType or dict
-        @type arg2: View instance or AdbClient
-        '''
-
-        if type(arg1) == types.ClassType:
-            cls = arg1
-            attrs = None
-        else:
-            cls = None
-            attrs = arg1
-
-        view = None
-
-        if attrs and attrs.has_key('class'):
-            clazz = attrs['class']
-            if clazz == 'android.widget.TextView':
-                return TextView(attrs, version, windowId)
-            elif clazz == 'android.widget.EditText':
-                return EditText(attrs, version, windowId)
-            elif clazz == 'android.widget.ListView':
-                return ListView(attrs, version, windowId)
-            else:
-                return View(attrs, version, windowId)
-        else:
-            return View(attrs, version, windowId)
+    """
 
     @classmethod
     def __copy(cls, view):
@@ -89,8 +155,8 @@ class View:
 
         return cls(view.map, view.version, view.windowId)
 
-    def __init__(self, _map, version=-1, windowId=None):
-        '''
+    def __init__(self, _map, view_client, adb, windowId=None):
+        """
         Constructor
         @type _map: map
         @param _map: the map containing the (attribute, value) pairs
@@ -105,9 +171,13 @@ class View:
                         to use C{UiAutomator}.
         @type uiAutomatorHelper: UiAutomatorHelper
         @:param uiAutomatorHelper: The UiAutomatorHelper if available
-        '''
+        """
         self.map = _map
         ''' The map that contains the C{attr},C{value} pairs '''
+        self.adb = adb
+        ''' adb connection to device '''
+        self.view_client = view_client
+        ''' viewclient connected to device '''
         self.children = []
         ''' The children of this View '''
         self.parent = None
@@ -119,17 +189,14 @@ class View:
         ''' The window this view resides '''
         self.build = {}
         ''' Build properties '''
+        version = self.adb.getSDKVersion()
+        self.build[VERSION_SDK_PROPERTY] = version
         self.version = version
         ''' API version number '''
         self.uiScrollable = None
         ''' If this is a scrollable View this keeps the L{UiScrollable} object '''
         self.target = False
         ''' Is this a touch target zone '''
-
-        if version != -1:
-            self.build[VERSION_SDK_PROPERTY] = version
-        else:
-            self.build[VERSION_SDK_PROPERTY] = adb.getSDKVersion()
 
         version = self.build[VERSION_SDK_PROPERTY]
         self.useUiAutomator = True
@@ -150,6 +217,7 @@ class View:
         ''' The height property depending on the View attribute format '''
         self.isFocusedProperty = None
         ''' The focused property depending on the View attribute format '''
+        self.isEnabledProperty = None
 
         if version >= 16 and self.useUiAutomator:
             self.idProperty = ID_PROPERTY_UI_AUTOMATOR
@@ -159,6 +227,7 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY_UI_AUTOMATOR
+            self.isEnabledProperty = IS_ENABLED_PROPERTY_UI_AUTOMATOR
         elif version > 10 and (version < 16 or self.useUiAutomator):
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY
@@ -168,6 +237,7 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
         elif version == 10:
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
@@ -177,7 +247,8 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
-        elif version >= 7 and version < 10:
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
+        elif 7 <= version < 10:
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
             self.tagProperty = TAG_PROPERTY
@@ -186,7 +257,8 @@ class View:
             self.widthProperty = WIDTH_PROPERTY_API_8
             self.heightProperty = HEIGHT_PROPERTY_API_8
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
-        elif version > 0 and version < 7:
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
+        elif 0 < version < 7:
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
             self.tagProperty = TAG_PROPERTY
@@ -195,6 +267,7 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
         elif version == -1:
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY
@@ -204,6 +277,7 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
         else:
             self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY
@@ -213,6 +287,7 @@ class View:
             self.widthProperty = WIDTH_PROPERTY
             self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY
+            self.isEnabledProperty = IS_ENABLED_PROPERTY
 
         try:
             if self.isScrollable():
@@ -267,7 +342,6 @@ class View:
             # Default behavior
             raise AttributeError, name
 
-
         if r == 'true':
             r = True
         elif r == 'false':
@@ -281,11 +355,10 @@ class View:
 
         # this should work, but then there's problems with the arguments of innerMethod
         # even if innerMethod(self) is added
-        #setattr(View, innerMethod.__name__, innerMethod)
-        #setattr(self, innerMethod.__name__, innerMethod)
+        # setattr(View, innerMethod.__name__, innerMethod)
+        # setattr(self, innerMethod.__name__, innerMethod)
 
         return innerMethod
-
 
     def getClass(self):
         '''
@@ -453,10 +526,10 @@ class View:
         @return: A tuple containing the View's coordinates ((L, T), (R, B))
         '''
 
-        (x, y) = self.getXY();
+        (x, y) = self.getXY()
         w = self.getWidth()
         h = self.getHeight()
-        return ((x, y), (x+w, y+h))
+        return ((x, y), (x + w, y + h))
 
     def getPositionAndSize(self):
         '''
@@ -515,20 +588,22 @@ class View:
     def __dumpWindowsInformation(self, debug=False):
         self.windows = {}
         self.currentFocus = None
-        dww = adb.shell('dumpsys window windows')
+        dww = self.adb.shell('dumpsys window windows')
         lines = dww.splitlines()
         widRE = re.compile('^ *Window #%s Window\{%s (u\d+ )?%s?.*\}:' %
-                            (_nd('num'), _nh('winId'), _ns('activity', greedy=True)))
+                           (_nd('num'), _nh('winId'), _ns('activity', greedy=True)))
         currentFocusRE = re.compile('^  mCurrentFocus=Window\{%s .*' % _nh('winId'))
         viewVisibilityRE = re.compile(' mViewVisibility=0x%s ' % _nh('visibility'))
         # This is for 4.0.4 API-15
         containingFrameRE = re.compile('^   *mContainingFrame=\[%s,%s\]\[%s,%s\] mParentFrame=\[%s,%s\]\[%s,%s\]' %
-                             (_nd('cx'), _nd('cy'), _nd('cw'), _nd('ch'), _nd('px'), _nd('py'), _nd('pw'), _nd('ph')))
+                                       (_nd('cx'), _nd('cy'), _nd('cw'), _nd('ch'), _nd('px'), _nd('py'), _nd('pw'),
+                                        _nd('ph')))
         contentFrameRE = re.compile('^   *mContentFrame=\[%s,%s\]\[%s,%s\] mVisibleFrame=\[%s,%s\]\[%s,%s\]' %
-                             (_nd('x'), _nd('y'), _nd('w'), _nd('h'), _nd('vx'), _nd('vy'), _nd('vx1'), _nd('vy1')))
+                                    (_nd('x'), _nd('y'), _nd('w'), _nd('h'), _nd('vx'), _nd('vy'), _nd('vx1'),
+                                     _nd('vy1')))
         # This is for 4.1 API-16
         framesRE = re.compile('^   *Frames: containing=\[%s,%s\]\[%s,%s\] parent=\[%s,%s\]\[%s,%s\]' %
-                               (_nd('cx'), _nd('cy'), _nd('cw'), _nd('ch'), _nd('px'), _nd('py'), _nd('pw'), _nd('ph')))
+                              (_nd('cx'), _nd('cy'), _nd('cw'), _nd('ch'), _nd('px'), _nd('py'), _nd('pw'), _nd('ph')))
         contentRE = re.compile('^     *content=\[%s,%s\]\[%s,%s\] visible=\[%s,%s\]\[%s,%s\]' %
                                (_nd('x'), _nd('y'), _nd('w'), _nd('h'), _nd('vx'), _nd('vy'), _nd('vx1'), _nd('vy1')))
         policyVisibilityRE = re.compile('mPolicyVisibility=%s ' % _ns('policyVisibility', greedy=True))
@@ -548,10 +623,10 @@ class View:
                 visibility = -1
                 policyVisibility = 0x0
 
-                for l2 in range(l+1, len(lines)):
+                for l2 in range(l + 1, len(lines)):
                     m = widRE.search(lines[l2])
                     if m:
-                        l += (l2-1)
+                        l += (l2 - 1)
                         break
                     m = viewVisibilityRE.search(lines[l2])
                     if m:
@@ -560,7 +635,7 @@ class View:
                         m = framesRE.search(lines[l2])
                         if m:
                             px, py = obtainPxPy(m)
-                            m = contentRE.search(lines[l2+2])
+                            m = contentRE.search(lines[l2 + 2])
                             if m:
                                 wvx, wvy = obtainVxVy(m)
                                 wvw, wvh = obtainVwVh(m)
@@ -568,7 +643,7 @@ class View:
                         m = framesRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
-                            m = contentRE.search(lines[l2+1])
+                            m = contentRE.search(lines[l2 + 1])
                             if m:
                                 # FIXME: the information provided by 'dumpsys window windows' in 4.2.1 (API 16)
                                 # when there's a system dialog may not be correct and causes the View coordinates
@@ -580,7 +655,7 @@ class View:
                         m = containingFrameRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
-                            m = contentFrameRE.search(lines[l2+1])
+                            m = contentFrameRE.search(lines[l2 + 1])
                             if m:
                                 wvx, wvy = self.__obtainVxVy(m)
                                 wvw, wvh = self.__obtainVwVh(m)
@@ -588,34 +663,35 @@ class View:
                         m = containingFrameRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
-                            m = contentFrameRE.search(lines[l2+1])
+                            m = contentFrameRE.search(lines[l2 + 1])
                             if m:
                                 wvx, wvy = self.__obtainVxVy(m)
                                 wvw, wvh = self.__obtainVwVh(m)
                     else:
-                        warnings.warn("Unsupported Android version %d" % self.build[VERSION_SDK_PROPERTY])
+                        self.logger.warn("Unsupported Android version %d" % self.build[VERSION_SDK_PROPERTY])
 
-                    #print >> sys.stderr, "Searching policyVisibility in", lines[l2]
+                    # print >> sys.stderr, "Searching policyVisibility in", lines[l2]
                     m = policyVisibilityRE.search(lines[l2])
                     if m:
                         policyVisibility = 0x0 if m.group('policyVisibility') == 'true' else 0x8
 
-                self.windows[winId] = Window(num, winId, activity, wvx, wvy, wvw, wvh, px, py, visibility + policyVisibility)
+                self.windows[winId] = Window(num, winId, activity, wvx, wvy, wvw, wvh, px, py,
+                                             visibility + policyVisibility)
             else:
                 m = currentFocusRE.search(lines[l])
                 if m:
                     self.currentFocus = m.group('winId')
 
-        if  self.windowId and self.windowId in self.windows and self.windows[self.windowId].visibility == 0:
+        if self.windowId and self.windowId in self.windows and self.windows[self.windowId].visibility == 0:
             w = self.windows[self.windowId]
             return (w.wvx, w.wvy)
         elif self.currentFocus in self.windows and self.windows[self.currentFocus].visibility == 0:
             w = self.windows[self.currentFocus]
             return (w.wvx, w.wvy)
         else:
-            return (0,0)
+            return (0, 0)
 
-    def touch(self, eventType = adb.DOWN_AND_UP, deltaX=0, deltaY=0):
+    def touch(self, eventType=ADB.DOWN_AND_UP, deltaX=0, deltaY=0):
         '''
         Touches the center of this C{View}. The touch can be displaced from the center by
         using C{deltaX} and C{deltaY} values.
@@ -632,12 +708,12 @@ class View:
             x += deltaX
         if deltaY:
             y += deltaY
-        if VIEW_CLIENT_TOUCH_WORKAROUND_ENABLED and eventType == adb.DOWN_AND_UP:
-            adb.touch(x, y, eventType=adb.DOWN)
-            time.sleep(50/1000.0)
-            adb.touch(x+10, y+10, eventType=adb.UP)
+        if VIEW_CLIENT_TOUCH_WORKAROUND_ENABLED and eventType == self.adb.DOWN_AND_UP:
+            self.adb.touch(x, y, eventType=ADB.DOWN)
+            time.sleep(50 / 1000.0)
+            self.adb.touch(x + 10, y + 10, eventType=ADB.UP)
         else:
-            adb.touch(x, y, eventType=eventType)
+            self.adb.touch(x, y, eventType=eventType)
 
     def escapeSelectorChars(self, selector):
         return selector.replace('@', '\\@').replace(',', '\\,')
@@ -664,7 +740,7 @@ class View:
 
         (x, y) = self.getCenter()
         # FIXME: get orientation
-        adb.longTouch(x, y, duration, orientation=-1)
+        self.adb.longTouch(x, y, duration, orientation=-1)
 
     def allPossibleNamesWithColon(self, name):
         l = []
@@ -678,7 +754,7 @@ class View:
 
     def containsPoint(self, (x, y)):
         (X, Y, W, H) = self.getPositionAndSize()
-        return (((x >= X) and (x <= (X+W)) and ((y >= Y) and (y <= (Y+H)))))
+        return (((x >= X) and (x <= (X + W)) and ((y >= Y) and (y <= (Y + H)))))
 
     def add(self, child):
         '''
@@ -692,15 +768,55 @@ class View:
     def isClickable(self):
         return self.__getattr__('isClickable')()
 
+    def type(self, text, alreadyTouched=False):
+        if not text:
+            return
+        if not alreadyTouched:
+            self.touch()
+        time.sleep(0.5)
+        self.adb.type(text)
+        time.sleep(0.5)
+
+    def setText(self, text):
+        """
+        This function makes sure that any previously entered text is deleted before
+        setting the value of the field.
+        """
+        if self.text() == text:
+            return
+        self.touch()
+        guardrail = 0
+        maxSize = len(self.text()) + 1
+        while maxSize > guardrail:
+            guardrail += 1
+            self.adb.press('KEYCODE_DEL', self.adb.DOWN_AND_UP)
+            self.adb.press('KEYCODE_FORWARD_DEL', self.adb.DOWN_AND_UP)
+        self.type(text, alreadyTouched=True)
+
+    def backspace(self):
+        self.touch()
+        time.sleep(1)
+        self.adb.press('KEYCODE_DEL', self.adb.DOWN_AND_UP)
 
     def isFocused(self):
-        '''
+        """
         Gets the focused value
         @return: the focused value. If the property cannot be found returns C{False}
-        '''
+        """
 
         try:
             return True if self.map[self.isFocusedProperty].lower() == 'true' else False
+        except Exception:
+            return False
+
+    def isEnabled(self):
+        '''
+        Gets the enabled value
+        @return: the enabled value. If the property cannot be found returns C{False}
+        '''
+
+        try:
+            return True if self.map[self.isEnabledProperty].lower() == 'true' else False
         except Exception:
             return False
 
@@ -759,7 +875,6 @@ class View:
 
         return __str
 
-
     def __str__(self):
         __str = unicode("View[", 'utf-8', 'replace')
         if "class" in self.map:
@@ -784,59 +899,10 @@ class View:
         return __str
 
 
-class TextView(View):
-    '''
-    TextView class.
-    '''
-
-    pass
-
-class ListView(View):
-    '''
-    ListView class.
-    '''
-
-    pass
-
-class EditText(TextView):
-    '''
-    EditText class.
-    '''
-
-    def type(self, text, alreadyTouched=False):
-        if not text:
-            return
-        if not alreadyTouched:
-            self.touch()
-        time.sleep(0.5)
-        adb.type(text)
-        time.sleep(0.5)
-
-    def setText(self, text):
-        """
-        This function makes sure that any previously entered text is deleted before
-        setting the value of the field.
-        """
-        if self.text() == text:
-            return
-        self.touch()
-        guardrail = 0
-        maxSize = len(self.text()) + 1
-        while maxSize > guardrail:
-            guardrail += 1
-            adb.press('KEYCODE_DEL', adb.DOWN_AND_UP)
-            adb.press('KEYCODE_FORWARD_DEL', adb.DOWN_AND_UP)
-        self.type(text, alreadyTouched=True)
-
-    def backspace(self):
-        self.touch()
-        time.sleep(1)
-        adb.press('KEYCODE_DEL', adb.DOWN_AND_UP)
-
-class UiAutomator2AndroidViewClient():
-    '''
+class UiAutomator2AndroidViewClient:
+    """
     UiAutomator XML to AndroidViewClient
-    '''
+    """
 
     def __init__(self, version):
         self.version = version
@@ -858,7 +924,7 @@ class UiAutomator2AndroidViewClient():
             bounds = re.split('[\][,]', attributes['bounds'])
             attributes['bounds'] = ((int(bounds[1]), int(bounds[2])), (int(bounds[4]), int(bounds[5])))
             self.idCount += 1
-            child = View.factory(attributes, version = self.version)
+            child = View.factory(attributes, version=self.version)
             self.views.append(child)
             # Push element onto the stack and make it a child of parent
             if not self.nodeStack:
@@ -900,24 +966,25 @@ class UiAutomator2AndroidViewClient():
             encoded = uiautomatorxml.encode(encoding='utf-8', errors='replace')
             _ = parser.Parse(encoded, True)
         except xml.parsers.expat.ExpatError, ex:  # @UndefinedVariable
-            print >>sys.stderr, "ERROR: Offending XML:\n", repr(uiautomatorxml)
+            print >> sys.stderr, "ERROR: Offending XML:\n", repr(uiautomatorxml)
             raise RuntimeError(ex)
         return self.root
 
+
 class UiCollection():
-    '''
+    """
     Used to enumerate a container's user interface (UI) elements for the purpose of counting, or
     targeting a sub elements by a child's text or description.
-    '''
+    """
 
     pass
 
 
 class UiScrollable(UiCollection):
-    '''
+    """
     A L{UiCollection} that supports searching for items in scrollable layout elements.
     This class can be used with horizontally or vertically scrollable controls.
-    '''
+    """
 
     def __init__(self, view):
         self.vc = None
@@ -932,21 +999,21 @@ class UiScrollable(UiCollection):
 
     def flingBackward(self):
         if self.vertical:
-            s = (self.x + self.w/2, self.y + self.h * self.swipeDeadZonePercentage)
-            e = (self.x + self.w/2, self.y + self.h - self.h * self.swipeDeadZonePercentage)
+            s = (self.x + self.w / 2, self.y + self.h * self.swipeDeadZonePercentage)
+            e = (self.x + self.w / 2, self.y + self.h - self.h * self.swipeDeadZonePercentage)
         else:
-            s = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h/2)
-            e = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h/2)
-        self.view.device.drag(s, e, self.duration, self.steps, adb.getOrientation())
+            s = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h / 2)
+            e = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h / 2)
+        self.view.device.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
 
     def flingForward(self):
         if self.vertical:
-            s = (self.x + self.w/2, (self.y + self.h ) - self.h * self.swipeDeadZonePercentage)
-            e = (self.x + self.w/2, self.y + self.h * self.swipeDeadZonePercentage)
+            s = (self.x + self.w / 2, (self.y + self.h) - self.h * self.swipeDeadZonePercentage)
+            e = (self.x + self.w / 2, self.y + self.h * self.swipeDeadZonePercentage)
         else:
-            s = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h/2)
-            e = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h/2)
-        adb.drag(s, e, self.duration, self.steps, adb.getOrientation())
+            s = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h / 2)
+            e = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h / 2)
+        self.adb.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
 
     def flingToBeginning(self, maxSwipes=10):
         if self.vertical:
@@ -970,12 +1037,12 @@ class UiScrollable(UiCollection):
             # FIXME: now I need to figure out the best way of navigating to the ViewClient asossiated
             # with this UiScrollable.
             # It's using setViewClient() now.
-            #v = self.vc.findViewWithText(text, root=self.view)
+            # v = self.vc.findViewWithText(text, root=self.view)
             v = self.vc.findViewWithText(text)
             if v is not None:
                 return v
             self.flingForward()
-            #self.vc.sleep(1)
+            # self.vc.sleep(1)
             self.vc.dump(-1)
             # WARNING: after this dump, the value kept in self.view is outdated, it should be refreshed
             # in some way
@@ -993,36 +1060,278 @@ class UiScrollable(UiCollection):
     def setViewClient(self, vc):
         self.vc = vc
 
+
 class ViewClient:
+    def __init__(self, device, forceviewserveruse=False,
+                 localport=VIEW_SERVER_PORT, remoteport=VIEW_SERVER_PORT,
+                 startviewserver=True, ignoreuiautomatorkilled=False,
+                 compresseddump=True, useuiautomatorhelper=False):
+        """
+        Constructor
 
-    def __init__(self):
-        pass
+        @type device: Device
+        @param device: The device running the C{View server} to which this client will connect
+        @type forceviewserveruse: boolean
+        @param forceviewserveruse: Force the use of C{ViewServer} even if the conditions to use
+                            C{UiAutomator} are satisfied
+        @type localport: int
+        @param localport: the local port used in the redirection
+        @type remoteport: int
+        @param remoteport: the remote port used to start the C{ViewServer} in the device or
+                           emulator
+        @type startviewserver: boolean
+        @param startviewserver: Whether to start the B{global} ViewServer
+        @type ignoreuiautomatorkilled: boolean
+        @param ignoreuiautomatorkilled: Ignores received B{Killed} message from C{uiautomator}
+        @type compresseddump: boolean
+        @param compresseddump: turns --compressed flag for uiautomator dump on/off
+        @:type useuiautomatorhelper: boolean
+        @:param useuiautomatorhelper: use UiAutomatorHelper Android app as backend
+        """
+        self.logger = logging.getLogger("ViewClient")
+        if not device:
+            raise Exception('Device is not connected')
+        self.device = device
+        self.adb = device.get_adb()
 
-    def dump(self, window = -1, sleep = 1):
+        self.root = None
+        ''' The root node '''
+        self.viewsById = {}
+        ''' The map containing all the L{View}s indexed by their L{View.getUniqueId()} '''
+        self.display = {}
+        ''' The map containing the device's display properties: width, height and density '''
+
+        for prop in ['width', 'height', 'density', 'orientation']:
+            self.display[prop] = self.device.display[prop]
+
+        self.build = {}
+        ''' The map containing the device's build properties: version.sdk, version.release '''
+
+        for prop in [VERSION_SDK_PROPERTY, VERSION_RELEASE_PROPERTY]:
+            self.build[prop] = -1
+            try:
+                self.build[prop] = device.getProperty(prop)
+            except:
+                self.logger.warning(("Couldn't determine build %s" % prop))
+
+            if prop == VERSION_SDK_PROPERTY:
+                # we expect it to be an int
+                self.build[prop] = int(self.build[prop]) if self.build[prop] else -1
+
+        self.ro = {}
+        ''' The map containing the device's ro properties: secure, debuggable '''
+        for prop in ['secure', 'debuggable']:
+            try:
+                self.ro[prop] = self.adb.shell('getprop ro.' + prop)[:-2]
+            except:
+                self.logger.warning("Couldn't determine ro %s" % prop)
+                self.ro[prop] = 'UNKNOWN'
+
+        self.forceViewServerUse = forceviewserveruse
+        ''' Force the use of ViewServer even if the conditions to use UiAutomator are satisfied '''
+        self.useUiAutomator = (
+                              self.build[VERSION_SDK_PROPERTY] >= 16) and not forceviewserveruse  # jelly bean 4.1 & 4.2
+        self.logger.debug("ViewClient.__init__: useUiAutomator=%s;sdk=%s;forceviewserveruse=%s." %
+                          (self.useUiAutomator, self.build[VERSION_SDK_PROPERTY], forceviewserveruse))
+        ''' If UIAutomator is supported by the device it will be used '''
+        self.ignoreUiAutomatorKilled = ignoreuiautomatorkilled
+        ''' On some devices (i.e. Nexus 7 running 4.2.2) uiautomator is killed just after generating
+        the dump file. In many cases the file is already complete so we can ask to ignore the 'Killed'
+        message by setting L{ignoreuiautomatorkilled} to C{True}.
+
+        Changes in v2.3.21 that uses C{/dev/tty} instead of a file may have turned this variable
+        unnecessary, however it has been kept for backward compatibility.
+        '''
+
+        if self.useUiAutomator:
+            self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
+        else:
+            if self.build[VERSION_SDK_PROPERTY] <= 10:
+                self.textProperty = TEXT_PROPERTY_API_10
+            else:
+                self.textProperty = TEXT_PROPERTY
+            if startviewserver:
+                if not self.serviceResponse(self.adb.shell('service call window 3')):
+                    try:
+                        self.assertServiceResponse(self.adb.shell('service call window 1 i32 %d' % remoteport))
+                    except:
+                        msg = 'Cannot start View server.\n' \
+                              'This only works on emulator and devices running developer versions.\n' \
+                              'Does hierarchyviewer work on your device?\n' \
+                              'See https://github.com/dtmilano/AndroidViewClient/wiki/Secure-mode\n\n' \
+                              'Device properties:\n' \
+                              '    ro.secure=%s\n' \
+                              '    ro.debuggable=%s\n' % (self.ro['secure'], self.ro['debuggable'])
+                        raise Exception(msg)
+
+            self.localPort = localport
+            self.remotePort = remoteport
+            self.adb.run_cmd(['forward', 'tcp:%d' % self.localPort, 'tcp:%d' % self.remotePort])
+
+        self.windows = None
+        ''' The list of windows as obtained by L{ViewClient.list()} '''
+
+        # The output of compressed dump is different than output of uncompressed one.
+        # If one requires uncompressed output, this option should be set to False
+        self.compressedDump = compresseddump
+
+    def dump(self, window=-1, sleep=1):
+        """
+        Dumps the window content.
+
+        Sleep is useful to wait some time before obtaining the new content when something in the
+        window has changed.
+
+        @type window: int or str
+        @param window: the window id or name of the window to dump.
+                    The B{name} is the package name or the window name (i.e. StatusBar) for
+                    system windows.
+                    The window id can be provided as C{int} or C{str}. The C{str} should represent
+                    and C{int} in either base 10 or 16.
+                    Use -1 to dump all windows.
+                    This parameter only is used when the backend is B{ViewServer} and it's
+                    ignored for B{UiAutomator}.
+        @type sleep: int
+        @param sleep: sleep in seconds before proceeding to dump the content
+
+        @return: the list of Views as C{str} received from the server after being split into lines
+        """
+
         if sleep > 0:
             time.sleep(sleep)
-        version = adb.getSDKVersion()
-        if version >= 23:
-            pathname = '/storage/self'
-            filename = 'window_dump.xml'
-            cmd = 'sh /system/bin/uiautomator dump --compressed %s/%s >/dev/null' % (pathname, filename)
-            adb.shell(cmd)
-            cmd = 'cat %s/%s' % (pathname, filename)
-            received = adb.shell(cmd)
-        else:
-            if version >= 18:
-                adb.shell('sh /system/bin/uiautomator dump --compressed window_dump.xml')
-                received = adb.shell('cat window_dump.xml')
+
+        if self.useUiAutomator:
+            if self.uiAutomatorHelper:
+                received = self.uiAutomatorHelper.dumpWindowHierarchy()
             else:
-                adb.shell('sh /system/bin/uiautomator dump window_dump.xml')
-                received = adb.shell('cat window_dump.xml')
+                api = self.getSdkVersion()
+                if api >= 23:
+                    # In API 23 the process' stdout,in and err are connected to the socket not to the pts as in
+                    # previous versions, so we can't redirect to /dev/tty
+                    received = self.self.adb.shell(
+                        'uiautomator dump %s /sdcard/window_dump.xml >/dev/null && cat /sdcard/window_dump.xml' % (
+                        '--compressed' if self.compressedDump else ''))
+                else:
+                    # NOTICE:
+                    # Using /dev/tty this works even on devices with no sdcard
+                    received = self.self.adb.shell('uiautomator dump %s /dev/tty >/dev/null' % (
+                    '--compressed' if api >= 18 and self.compressedDump else ''))
+                if received:
+                    received = unicode(received, encoding='utf-8', errors='replace')
+            if not received:
+                raise RuntimeError('ERROR: Empty UiAutomator dump was received')
+            if DEBUG:
+                self.received = received
+            if DEBUG_RECEIVED:
+                print >> sys.stderr, "received %d chars" % len(received)
+                print >> sys.stderr
+                print >> sys.stderr, repr(received)
+                print >> sys.stderr
+            onlyKilledRE = re.compile('[\n\S]*Killed[\n\r\S]*', re.MULTILINE)
+            if onlyKilledRE.search(received):
+                MONKEY = 'com.android.commands.monkey'
+                extraInfo = ''
+                if self.self.adb.shell('ps | grep "%s"' % MONKEY):
+                    extraInfo = "\nIt is know that '%s' conflicts with 'uiautomator'. Please kill it and try again." % MONKEY
+                raise RuntimeError(
+                    '''ERROR: UiAutomator output contains no valid information. UiAutomator was killed, no reason given.''' + extraInfo)
+            if self.ignoreUiAutomatorKilled:
+                if DEBUG_RECEIVED:
+                    print >> sys.stderr, "ignoring UiAutomator Killed"
+                killedRE = re.compile('</hierarchy>[\n\S]*Killed', re.MULTILINE)
+                if killedRE.search(received):
+                    received = re.sub(killedRE, '</hierarchy>', received)
+                elif DEBUG_RECEIVED:
+                    print "UiAutomator Killed: NOT FOUND!"
+                # It seems that API18 uiautomator spits this message to stdout
+                dumpedToDevTtyRE = re.compile('</hierarchy>[\n\S]*UI hierchary dumped to: /dev/tty.*', re.MULTILINE)
+                if dumpedToDevTtyRE.search(received):
+                    received = re.sub(dumpedToDevTtyRE, '</hierarchy>', received)
+                if DEBUG_RECEIVED:
+                    print >> sys.stderr, "received=", received
+            # API19 seems to send this warning as part of the XML.
+            # Let's remove it if present
+            received = received.replace(
+                'WARNING: linker: libdvm.so has text relocations. This is wasting memory and is a security risk. Please fix.\r\n',
+                '')
+            if re.search('\[: not found', received):
+                raise RuntimeError('''ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
+While UiAutomator back-end might be supported 'uiautomator' command fails.
+You should force ViewServer back-end.''')
 
-        if received:
-            received = unicode(received, encoding = 'utf-8', errors = 'replace')
-        if not received:
-            raise RuntimeError('ERROR: Empty UiAutomator dump was received')
+            if received.startswith('ERROR: could not get idle state.'):
+                # See https://android.googlesource.com/platform/frameworks/testing/+/jb-mr2-release/uiautomator/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java
+                raise RuntimeError('''The views are being refreshed too frequently to dump.''')
+            self.setViewsFromUiAutomatorDump(received)
+        else:
+            if isinstance(window, str):
+                if window != '-1':
+                    self.list(sleep=0)
+                    found = False
+                    for wId in self.windows:
+                        try:
+                            if window == self.windows[wId]:
+                                window = wId
+                                found = True
+                                break
+                        except:
+                            pass
+                        try:
+                            if int(window) == wId:
+                                window = wId
+                                found = True
+                                break
+                        except:
+                            pass
+                        try:
+                            if int(window, 16) == wId:
+                                window = wId
+                                found = True
+                                break
+                        except:
+                            pass
 
-        self.setViewsFromUiAutomatorDump(received)
+                    if not found:
+                        raise RuntimeError("ERROR: Cannot find window '%s' in %s" % (window, self.windows))
+                else:
+                    window = -1
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((VIEW_SERVER_HOST, self.localPort))
+            except socket.error, ex:
+                raise RuntimeError("ERROR: Connecting to %s:%d: %s" % (VIEW_SERVER_HOST, self.localPort, ex))
+            cmd = 'dump %x\r\n' % window
+            if DEBUG:
+                print >> sys.stderr, "executing: '%s'" % cmd
+            s.send(cmd)
+            received = ""
+            doneRE = re.compile("DONE")
+            ViewClient.setAlarm(120)
+            while True:
+                if DEBUG_RECEIVED:
+                    print >> sys.stderr, "    reading from socket..."
+                received += s.recv(1024)
+                if doneRE.search(received[-7:]):
+                    break
+            s.close()
+            ViewClient.setAlarm(0)
+            if DEBUG:
+                self.received = received
+            if DEBUG_RECEIVED:
+                print >> sys.stderr, "received %d chars" % len(received)
+                print >> sys.stderr
+                print >> sys.stderr, received
+                print >> sys.stderr
+            if received:
+                for c in received:
+                    if ord(c) > 127:
+                        received = unicode(received, encoding='utf-8', errors='replace')
+                        break
+            self.setViews(received, hex(window)[2:])
+
+            if DEBUG_TREE:
+                self.traverse(self.root)
 
         return self.views
 
@@ -1031,7 +1340,7 @@ class ViewClient:
         self.__parseTreeFromUiAutomatorDump(received)
 
     def __parseTreeFromUiAutomatorDump(self, receivedXml):
-        version = adb.getSDKVersion()
+        version = self.adb.getSDKVersion()
         parser = UiAutomator2AndroidViewClient(version)
         try:
             start_xml_index = receivedXml.index("<")
@@ -1039,7 +1348,7 @@ class ViewClient:
         except ValueError:
             raise ValueError("received does not contain valid XML: " + receivedXml)
 
-        self.root = parser.Parse(receivedXml[start_xml_index:end_xml_index+1])
+        self.root = parser.Parse(receivedXml[start_xml_index:end_xml_index + 1])
         self.views = parser.views
         self.viewsById = {}
         for v in self.views:
@@ -1101,7 +1410,6 @@ class ViewClient:
                         return root;
                 else:
                     return root
-
 
         for ch in root.children:
             foundView = self.findViewById(viewId, ch, viewFilter)

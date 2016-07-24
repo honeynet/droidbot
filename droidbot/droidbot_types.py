@@ -207,7 +207,7 @@ class Device(object):
         if self.view_client_enabled and self.view_client is None:
             kwargs = {'startviewserver': True,
                       'autodump': False,
-                      'forceviewserveruse': False,
+                      'forceviewserveruse': True,
                       'ignoreuiautomatorkilled': True}
             self.view_client = ViewClient(self.adb, self.serial, **kwargs)
         return self.view_client

@@ -1,6 +1,6 @@
 import logging
 import subprocess
-from droidbot.utils import Timeout
+from utils import Timeout
 
 
 class MonkeyRunnerException(Exception):

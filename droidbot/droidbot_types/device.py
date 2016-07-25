@@ -3,12 +3,13 @@ import os
 import re
 import subprocess
 import time
-from droidbot.types.app import App
-from droidbot.types.intent import Intent
-from droidbot.connections.adb import ADB
-from droidbot.connections.telnet import TelnetConsole, TelnetException
-from droidbot.connections.viewclient import ViewClient
-from droidbot.connections.monkey_runner import MonkeyRunner
+
+from app import App
+from intent import Intent
+from droidbot_connections.adb import ADB
+from droidbot_connections.telnet import TelnetConsole, TelnetException
+from droidbot_connections.viewclient import ViewClient
+from droidbot_connections.monkey_runner import MonkeyRunner
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'

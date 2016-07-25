@@ -10,7 +10,7 @@ import time
 import types
 import xml.parsers.expat
 
-from connections.adb import ADB
+from droidbot_connections.adb import ADB
 
 VIEW_SERVER_HOST = 'localhost'
 VIEW_SERVER_PORT = 4939

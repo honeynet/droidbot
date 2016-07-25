@@ -70,6 +70,8 @@ class ADB(object):
         run an adb command and return the output
         :return: output of adb command
         """
+        if isinstance(extra_args, str):
+            extra_args = extra_args.split()
         assert isinstance(extra_args, list)
 
         args = [] + self.cmd_prefix
@@ -88,6 +90,8 @@ class ADB(object):
         @param extra_args:
         @return: output of adb shell command
         """
+        if isinstance(extra_args, str):
+            extra_args = extra_args.split()
         assert isinstance(extra_args, list)
 
         shell_extra_args = ['shell'] + extra_args

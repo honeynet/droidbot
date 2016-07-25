@@ -11,7 +11,8 @@ import sys
 from app_env import AppEnvManager
 from app_event import AppEventManager
 from droidbox_scripts.droidbox import DroidBox
-from types.device import App, Device
+from droidbot_types.app import App
+from droidbot_types.device import Device
 
 
 class DroidBot(object):

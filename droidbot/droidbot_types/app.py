@@ -2,7 +2,8 @@ import logging
 import os
 import subprocess
 import hashlib
-from droidbot.types.intent import Intent
+from droidbot_types.intent import Intent
+
 
 class App(object):
     """

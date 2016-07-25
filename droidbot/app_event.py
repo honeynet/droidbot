@@ -3,7 +3,6 @@
 #     1. UI events. click, touch, etc
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
-__author__ = 'liyc'
 import json
 import logging
 import os
@@ -11,8 +10,6 @@ import random
 import subprocess
 import time
 from threading import Timer
-
-from types.device import Intent
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -266,6 +263,7 @@ class UIEvent(AppEvent):
             component = app.get_package_name()
             if app.get_main_activity():
                 component += "/%s" % app.get_main_activity()
+            from droidbot.types.intent import Intent
             return IntentEvent(Intent(suffix=component))
 
         else:
@@ -433,6 +431,7 @@ class IntentEvent(AppEvent):
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
+        from droidbot.types.intent import Intent
         intent = Intent(prefix='broadcast', action=action)
         return IntentEvent(intent)
 
@@ -1000,12 +999,7 @@ class DynamicEventFactory(EventFactory):
         self.previous_activity = top_activity_name
 
         # get focused window
-        focused_window = self.device.get_focused_window_name()
-        focused_window_id = -1
-        focused_window_name = None
-        if focused_window is not None:
-            focused_window_id = focused_window.winId
-            focused_window_name = focused_window.activity
+        focused_window_name = self.device.get_focused_window_name()
 
         current_context = WindowNameContext(window_name=focused_window_name)
         current_context_str = current_context.__str__()
@@ -1078,6 +1072,7 @@ class DynamicEventFactory(EventFactory):
                 component = self.app.get_package_name()
                 if self.app.get_main_activity():
                     component += "/%s" % self.app.get_main_activity()
+                from droidbot.types.intent import Intent
                 return IntentEvent(Intent(suffix=component))
 
         if current_context_str not in self.exploited_views.keys():

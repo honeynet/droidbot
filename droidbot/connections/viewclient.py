@@ -2,15 +2,15 @@
 # Copyright (C) 2016 Cuckoo Foundation.
 # Copyright (C) 2016 Yuanchun Li.
 
+import logging
 import re
+import socket
 import sys
 import time
-import copy
 import types
-import logging
-import socket
 import xml.parsers.expat
-from connection import ADB
+
+from connections.adb import ADB
 
 VIEW_SERVER_HOST = 'localhost'
 VIEW_SERVER_PORT = 4939
@@ -1130,7 +1130,8 @@ class ViewClient:
         self.forceViewServerUse = forceviewserveruse
         ''' Force the use of ViewServer even if the conditions to use UiAutomator are satisfied '''
         self.useUiAutomator = (
-                              self.build[VERSION_SDK_PROPERTY] >= 16) and not forceviewserveruse  # jelly bean 4.1 & 4.2
+                                  self.build[
+                                      VERSION_SDK_PROPERTY] >= 16) and not forceviewserveruse  # jelly bean 4.1 & 4.2
         self.logger.debug("ViewClient.__init__: useUiAutomator=%s;sdk=%s;forceviewserveruse=%s." %
                           (self.useUiAutomator, self.build[VERSION_SDK_PROPERTY], forceviewserveruse))
         ''' If UIAutomator is supported by the device it will be used '''
@@ -1201,54 +1202,23 @@ class ViewClient:
             time.sleep(sleep)
 
         if self.useUiAutomator:
-            if self.uiAutomatorHelper:
-                received = self.uiAutomatorHelper.dumpWindowHierarchy()
-            else:
-                api = self.getSdkVersion()
-                if api >= 23:
-                    # In API 23 the process' stdout,in and err are connected to the socket not to the pts as in
-                    # previous versions, so we can't redirect to /dev/tty
-                    received = self.self.adb.shell(
-                        'uiautomator dump %s /sdcard/window_dump.xml >/dev/null && cat /sdcard/window_dump.xml' % (
+            api = self.adb.getSdkVersion()
+            if api >= 23:
+                # In API 23 the process' stdout,in and err are connected to the socket not to the pts as in
+                # previous versions, so we can't redirect to /dev/tty
+                received = self.adb.shell(
+                    'uiautomator dump %s /sdcard/window_dump.xml >/dev/null && cat /sdcard/window_dump.xml' % (
                         '--compressed' if self.compressedDump else ''))
-                else:
-                    # NOTICE:
-                    # Using /dev/tty this works even on devices with no sdcard
-                    received = self.self.adb.shell('uiautomator dump %s /dev/tty >/dev/null' % (
+            else:
+                # NOTICE:
+                # Using /dev/tty this works even on devices with no sdcard
+                received = self.adb.shell('uiautomator dump %s /dev/tty >/dev/null' % (
                     '--compressed' if api >= 18 and self.compressedDump else ''))
-                if received:
-                    received = unicode(received, encoding='utf-8', errors='replace')
-            if not received:
+            if received:
+                received = unicode(received, encoding='utf-8', errors='replace')
+            else:
                 raise RuntimeError('ERROR: Empty UiAutomator dump was received')
-            if DEBUG:
-                self.received = received
-            if DEBUG_RECEIVED:
-                print >> sys.stderr, "received %d chars" % len(received)
-                print >> sys.stderr
-                print >> sys.stderr, repr(received)
-                print >> sys.stderr
-            onlyKilledRE = re.compile('[\n\S]*Killed[\n\r\S]*', re.MULTILINE)
-            if onlyKilledRE.search(received):
-                MONKEY = 'com.android.commands.monkey'
-                extraInfo = ''
-                if self.self.adb.shell('ps | grep "%s"' % MONKEY):
-                    extraInfo = "\nIt is know that '%s' conflicts with 'uiautomator'. Please kill it and try again." % MONKEY
-                raise RuntimeError(
-                    '''ERROR: UiAutomator output contains no valid information. UiAutomator was killed, no reason given.''' + extraInfo)
-            if self.ignoreUiAutomatorKilled:
-                if DEBUG_RECEIVED:
-                    print >> sys.stderr, "ignoring UiAutomator Killed"
-                killedRE = re.compile('</hierarchy>[\n\S]*Killed', re.MULTILINE)
-                if killedRE.search(received):
-                    received = re.sub(killedRE, '</hierarchy>', received)
-                elif DEBUG_RECEIVED:
-                    print "UiAutomator Killed: NOT FOUND!"
-                # It seems that API18 uiautomator spits this message to stdout
-                dumpedToDevTtyRE = re.compile('</hierarchy>[\n\S]*UI hierchary dumped to: /dev/tty.*', re.MULTILINE)
-                if dumpedToDevTtyRE.search(received):
-                    received = re.sub(dumpedToDevTtyRE, '</hierarchy>', received)
-                if DEBUG_RECEIVED:
-                    print >> sys.stderr, "received=", received
+
             # API19 seems to send this warning as part of the XML.
             # Let's remove it if present
             received = received.replace(
@@ -1302,8 +1272,6 @@ You should force ViewServer back-end.''')
             except socket.error, ex:
                 raise RuntimeError("ERROR: Connecting to %s:%d: %s" % (VIEW_SERVER_HOST, self.localPort, ex))
             cmd = 'dump %x\r\n' % window
-            if DEBUG:
-                print >> sys.stderr, "executing: '%s'" % cmd
             s.send(cmd)
             received = ""
             doneRE = re.compile("DONE")
@@ -1316,13 +1284,6 @@ You should force ViewServer back-end.''')
                     break
             s.close()
             ViewClient.setAlarm(0)
-            if DEBUG:
-                self.received = received
-            if DEBUG_RECEIVED:
-                print >> sys.stderr, "received %d chars" % len(received)
-                print >> sys.stderr
-                print >> sys.stderr, received
-                print >> sys.stderr
             if received:
                 for c in received:
                     if ord(c) > 127:
@@ -1330,10 +1291,221 @@ You should force ViewServer back-end.''')
                         break
             self.setViews(received, hex(window)[2:])
 
-            if DEBUG_TREE:
-                self.traverse(self.root)
-
         return self.views
+
+    def list(self, sleep=1):
+        '''
+        List the windows.
+
+        Sleep is useful to wait some time before obtaining the new content when something in the
+        window has changed.
+        This also sets L{self.windows} as the list of windows.
+
+        @type sleep: int
+        @param sleep: sleep in seconds before proceeding to dump the content
+
+        @return: the list of windows
+        '''
+
+        if sleep > 0:
+            time.sleep(sleep)
+
+        if self.useUiAutomator:
+            raise Exception("Not implemented yet: listing windows with UiAutomator")
+        else:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                s.connect((VIEW_SERVER_HOST, self.localPort))
+            except socket.error, ex:
+                raise RuntimeError("ERROR: Connecting to %s:%d: %s" % (VIEW_SERVER_HOST, self.localPort, ex))
+            s.send('list\r\n')
+            received = ""
+            doneRE = re.compile("DONE")
+            while True:
+                received += s.recv(1024)
+                if doneRE.search(received[-7:]):
+                    break
+            s.close()
+
+            self.windows = {}
+            for line in received.split('\n'):
+                if not line:
+                    break
+                if doneRE.search(line):
+                    break
+                values = line.split()
+                if len(values) > 1:
+                    package = values[1]
+                else:
+                    package = "UNKNOWN"
+                if len(values) > 0:
+                    wid = values[0]
+                else:
+                    wid = '00000000'
+                self.windows[int('0x' + wid, 16)] = package
+            return self.windows
+
+    def setViews(self, received, windowId=None):
+        '''
+        Sets L{self.views} to the received value splitting it into lines.
+
+        @type received: str
+        @param received: the string received from the I{View Server}
+        '''
+
+        if not received or received == "":
+            raise ValueError("received is empty")
+        if not isinstance(received, str):
+            raise ValueError("received is not str")
+        self.views = []
+        ''' The list of Views represented as C{str} obtained after splitting it into lines after being received from the server. Done by L{self.setViews()}. '''
+        self.__parseTree(received.split("\n"), windowId)
+
+    def __parseTree(self, receivedLines, windowId=None):
+        '''
+        Parses the View tree contained in L{receivedLines}. The tree is created and the root node assigned to L{self.root}.
+        This method also assigns L{self.viewsById} values using L{View.getUniqueId} as the key.
+
+        @type receivedLines: list
+        @param receivedLines: the string received from B{View Server}
+        '''
+
+        self.root = None
+        self.viewsById = {}
+        self.views = []
+        parent = None
+        parents = []
+        treeLevel = -1
+        newLevel = -1
+        lastView = None
+        for v in receivedLines:
+            if v == '' or v == 'DONE' or v == 'DONE.':
+                break
+            attrs = self.__splitAttrs(v)
+            if not self.root:
+                if v[0] == ' ':
+                    raise Exception("Unexpected root element starting with ' '.")
+                self.root = View.factory(attrs, self.device, self.build[VERSION_SDK_PROPERTY], self.forceViewServerUse, windowId)
+                treeLevel = 0
+                newLevel = 0
+                lastView = self.root
+                parent = self.root
+                parents.append(parent)
+            else:
+                newLevel = (len(v) - len(v.lstrip()))
+                if newLevel == 0:
+                    raise Exception("newLevel==0 treeLevel=%d but tree can have only one root, v=%s" % (treeLevel, v))
+                child = View.factory(attrs, self.device, self.build[VERSION_SDK_PROPERTY], self.forceViewServerUse, windowId)
+                if newLevel == treeLevel:
+                    parent.add(child)
+                    lastView = child
+                elif newLevel > treeLevel:
+                    if (newLevel - treeLevel) != 1:
+                        raise Exception("newLevel jumps %d levels, v=%s" % ((newLevel-treeLevel), v))
+                    parent = lastView
+                    parents.append(parent)
+                    parent.add(child)
+                    lastView = child
+                    treeLevel = newLevel
+                else: # newLevel < treeLevel
+                    for _ in range(treeLevel - newLevel):
+                        parents.pop()
+                    parent = parents.pop()
+                    parents.append(parent)
+                    parent.add(child)
+                    treeLevel = newLevel
+                    lastView = child
+            self.views.append(lastView)
+            self.viewsById[lastView.getUniqueId()] = lastView
+
+    def __splitAttrs(self, strArgs):
+        '''
+        Splits the C{View} attributes in C{strArgs} and optionally adds the view id to the C{viewsById} list.
+
+        Unique Ids
+        ==========
+        It is very common to find C{View}s having B{NO_ID} as the Id. This turns very difficult to
+        use L{self.findViewById()}. To help in this situation this method assigns B{unique Ids}.
+
+        The B{unique Ids} are generated using the pattern C{id/no_id/<number>} with C{<number>} starting
+        at 1.
+
+        @type strArgs: str
+        @param strArgs: the string containing the raw list of attributes and values
+
+        @return: Returns the attributes map.
+        '''
+
+        if self.useUiAutomator:
+            raise RuntimeError("This method is not compatible with UIAutomator")
+        # replace the spaces in text:mText to preserve them in later split
+        # they are translated back after the attribute matches
+        textRE = re.compile('%s=%s,' % (self.textProperty, _nd('len')))
+        m = textRE.search(strArgs)
+        if m:
+            __textStart = m.end()
+            __textLen = int(m.group('len'))
+            __textEnd = m.end() + __textLen
+            s1 = strArgs[__textStart:__textEnd]
+            s2 = s1.replace(' ', WS)
+            strArgs = strArgs.replace(s1, s2, 1)
+
+        idRE = re.compile("(?P<viewId>id/\S+)")
+        attrRE = re.compile('%s(?P<parens>\(\))?=%s,(?P<val>[^ ]*)' % (_ns('attr'), _nd('len')), flags=re.DOTALL)
+        hashRE = re.compile('%s@%s' % (_ns('class'), _nh('oid')))
+
+        attrs = {}
+        viewId = None
+        m = idRE.search(strArgs)
+        if m:
+            viewId = m.group('viewId')
+            if DEBUG:
+                print >>sys.stderr, "found view with id=%s" % viewId
+
+        for attr in strArgs.split():
+            m = attrRE.match(attr)
+            if m:
+                __attr = m.group('attr')
+                __parens = '()' if m.group('parens') else ''
+                __len = int(m.group('len'))
+                __val = m.group('val')
+                if WARNINGS and __len != len(__val):
+                    warnings.warn("Invalid len: expected: %d   found: %d   s=%s   e=%s" % (__len, len(__val), __val[:50], __val[-50:]))
+                if __attr == self.textProperty:
+                    # restore spaces that have been replaced
+                    __val = __val.replace(WS, ' ')
+                attrs[__attr + __parens] = __val
+            else:
+                m = hashRE.match(attr)
+                if m:
+                    attrs['class'] = m.group('class')
+                    attrs['oid'] = m.group('oid')
+                else:
+                    if DEBUG:
+                        print >>sys.stderr, attr, "doesn't match"
+
+        if True: # was assignViewById
+            if not viewId:
+                # If the view has NO_ID we are assigning a default id here (id/no_id) which is
+                # immediately incremented if another view with no id was found before to generate
+                # a unique id
+                viewId = "id/no_id/1"
+            if viewId in self.viewsById:
+                # sometimes the view ids are not unique, so let's generate a unique id here
+                i = 1
+                while True:
+                    newId = re.sub('/\d+$', '', viewId) + '/%d' % i
+                    if not newId in self.viewsById:
+                        break
+                    i += 1
+                viewId = newId
+                if DEBUG:
+                    print >>sys.stderr, "adding viewById %s" % viewId
+            # We are assigning a new attribute to keep the original id preserved, which could have
+            # been NO_ID repeated multiple times
+            attrs['uniqueId'] = viewId
+
+        return attrs
 
     def setViewsFromUiAutomatorDump(self, received):
         self.views = []

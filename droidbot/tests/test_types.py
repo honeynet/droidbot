@@ -1,9 +1,9 @@
 # test script of types.py
 __author__ = 'yuanchun'
 import time
-import os
 import unittest
-from droidbot.droidbot_types import Device, App, Intent
+
+from types.device import Device, App
 
 
 class DeviceTest(unittest.TestCase):

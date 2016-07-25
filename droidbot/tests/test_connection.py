@@ -1,8 +1,8 @@
 __author__ = 'yuanchun'
-import time
 import unittest
-from droidbot.connection import ADB, TelnetConsole, MonkeyRunner
-from droidbot.droidbot_types import Device
+
+from connections.adb import ADB, TelnetConsole
+from types.device import Device
 
 
 class TestADB(unittest.TestCase):

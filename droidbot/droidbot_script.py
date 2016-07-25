@@ -1,8 +1,9 @@
 # DroidBotScript
 # This file contains the definition of DroidBotScript
 # DroidBotScript is a domain-specific language, which defines how DroidBot interacts with target app
-import re
 import logging
+import re
+
 from app_event import AppEvent
 from droidbot import DroidBotException
 
@@ -501,7 +502,7 @@ class ScriptEvent(AppEvent):
             if matched_view is None:
                 device.logger.warning("target_view no match: %s" % target_view)
             else:
-                from droidbot_types import DeviceState
+                from types.device import DeviceState
                 (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
         return AppEvent.get_event(event_dict)
 

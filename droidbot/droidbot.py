@@ -5,12 +5,13 @@
 
 __author__ = 'liyc'
 import logging
-import sys
 import os
-from droidbot_types import App, Device
+import sys
+
 from app_env import AppEnvManager
 from app_event import AppEventManager
 from droidbox_scripts.droidbox import DroidBox
+from types.device import App, Device
 
 
 class DroidBot(object):

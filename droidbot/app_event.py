@@ -4,14 +4,15 @@
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
 __author__ = 'liyc'
-import logging
 import json
-import time
+import logging
 import os
 import random
 import subprocess
+import time
 from threading import Timer
-from droidbot_types import Intent
+
+from types.device import Intent
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -1202,7 +1203,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from droidbot_types import DeviceState
+        from types.device import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None
@@ -1430,7 +1431,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            from droidbot_types import DeviceState
+            from types.device import DeviceState
             x, y = DeviceState.get_view_center(view_to_touch)
             result = TouchEvent(x, y)
 
@@ -1446,7 +1447,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return:
         """
-        from droidbot_types import DeviceState
+        from types.device import DeviceState
 
         views = []
         for view in state.views:

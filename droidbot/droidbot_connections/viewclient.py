@@ -50,28 +50,28 @@ ID_RE = re.compile('id/([^/]*)(/(\d+))?')
 
 
 def _nd(name):
-    '''
+    """
     @return: Returns a named decimal regex
-    '''
+    """
     return '(?P<%s>\d+)' % name
 
 
 def _nh(name):
-    '''
+    """
     @return: Returns a named hex regex
-    '''
+    """
     return '(?P<%s>[0-9a-f]+)' % name
 
 
 def _ns(name, greedy=False):
-    '''
+    """
     NOTICE: this is using a non-greedy (or minimal) regex
     @type name: str
     @param name: the name used to tag the expression
     @type greedy: bool
     @param greedy: Whether the regex is greedy or not
     @return: Returns a named string regex (only non-whitespace characters allowed)
-    '''
+    """
     return '(?P<%s>\S+%s)' % (name, '' if greedy else '?')
 
 
@@ -100,7 +100,7 @@ class Window(object):
     """
 
     def __init__(self, num, winId, activity, wvx, wvy, wvw, wvh, px, py, visibility, focused=False):
-        '''
+        """
         Constructor
         @type num: int
         @param num: Ordering number in Window Manager
@@ -122,7 +122,7 @@ class Window(object):
         @param py: parent's Y
         @type visibility: int
         @param visibility: visibility of the window
-        '''
+        """
 
         self.num = num
         self.winId = winId
@@ -149,9 +149,9 @@ class View:
 
     @classmethod
     def __copy(cls, view):
-        '''
+        """
         Copy constructor
-        '''
+        """
 
         return cls(view.map, view.version, view.windowId)
 
@@ -173,50 +173,50 @@ class View:
         @:param uiAutomatorHelper: The UiAutomatorHelper if available
         """
         self.map = _map
-        ''' The map that contains the C{attr},C{value} pairs '''
+        """ The map that contains the C{attr},C{value} pairs """
         self.adb = adb
-        ''' adb connection to device '''
+        """ adb connection to device """
         self.view_client = view_client
-        ''' viewclient connected to device '''
+        """ viewclient connected to device """
         self.children = []
-        ''' The children of this View '''
+        """ The children of this View """
         self.parent = None
-        ''' The parent of this View '''
+        """ The parent of this View """
         self.windows = {}
         self.currentFocus = None
-        ''' The current focus '''
+        """ The current focus """
         self.windowId = windowId
-        ''' The window this view resides '''
+        """ The window this view resides """
         self.build = {}
-        ''' Build properties '''
+        """ Build properties """
         version = self.adb.getSDKVersion()
         self.build[VERSION_SDK_PROPERTY] = version
         self.version = version
-        ''' API version number '''
+        """ API version number """
         self.uiScrollable = None
-        ''' If this is a scrollable View this keeps the L{UiScrollable} object '''
+        """ If this is a scrollable View this keeps the L{UiScrollable} object """
         self.target = False
-        ''' Is this a touch target zone '''
+        """ Is this a touch target zone """
 
         version = self.build[VERSION_SDK_PROPERTY]
         self.useUiAutomator = True
-        ''' Whether to use UIAutomator or ViewServer '''
+        """ Whether to use UIAutomator or ViewServer """
         self.idProperty = None
-        ''' The id property depending on the View attribute format '''
+        """ The id property depending on the View attribute format """
         self.textProperty = None
-        ''' The text property depending on the View attribute format '''
+        """ The text property depending on the View attribute format """
         self.tagProperty = None
-        ''' The tag property depending on the View attribute format '''
+        """ The tag property depending on the View attribute format """
         self.leftProperty = None
-        ''' The left property depending on the View attribute format '''
+        """ The left property depending on the View attribute format """
         self.topProperty = None
-        ''' The top property depending on the View attribute format '''
+        """ The top property depending on the View attribute format """
         self.widthProperty = None
-        ''' The width property depending on the View attribute format '''
+        """ The width property depending on the View attribute format """
         self.heightProperty = None
-        ''' The height property depending on the View attribute format '''
+        """ The height property depending on the View attribute format """
         self.isFocusedProperty = None
-        ''' The focused property depending on the View attribute format '''
+        """ The focused property depending on the View attribute format """
         self.isEnabledProperty = None
 
         if version >= 16 and self.useUiAutomator:
@@ -361,10 +361,10 @@ class View:
         return innerMethod
 
     def getClass(self):
-        '''
+        """
         Gets the L{View} class
         @return:  the L{View} class or C{None} if not defined
-        '''
+        """
 
         try:
             return self.map['class']
@@ -372,11 +372,11 @@ class View:
             return None
 
     def getId(self):
-        '''
+        """
         Gets the L{View} Id
         @return: the L{View} C{Id} or C{None} if not defined
         @see: L{getUniqueId()}
-        '''
+        """
 
         try:
             return self.map['resource-id']
@@ -389,9 +389,9 @@ class View:
             return None
 
     def getContentDescription(self):
-        '''
+        """
         Gets the content description.
-        '''
+        """
 
         try:
             return self.map['content-desc']
@@ -399,9 +399,9 @@ class View:
             return None
 
     def getTag(self):
-        '''
+        """
         Gets the tag.
-        '''
+        """
 
         try:
             return self.map[self.tagProperty]
@@ -409,24 +409,24 @@ class View:
             return None
 
     def getParent(self):
-        '''
+        """
         Gets the parent.
-        '''
+        """
 
         return self.parent
 
     def getChildren(self):
-        '''
+        """
         Gets the children of this L{View}.
-        '''
+        """
 
         return self.children
 
     def getText(self):
-        '''
+        """
         Gets the text attribute.
         @return: the text attribute or C{None} if not defined
-        '''
+        """
 
         try:
             return self.map[self.textProperty]
@@ -434,24 +434,24 @@ class View:
             return None
 
     def getHeight(self):
-        '''
+        """
         Gets the height.
-        '''
+        """
 
         return self.map['bounds'][1][1] - self.map['bounds'][0][1]
 
     def getWidth(self):
-        '''
+        """
         Gets the width.
-        '''
+        """
 
         return self.map['bounds'][1][0] - self.map['bounds'][0][0]
 
     def getUniqueId(self):
-        '''
+        """
         Gets the unique Id of this View.
         @see: L{ViewClient.__splitAttrs()} for a discussion on B{Unique Ids}
-        '''
+        """
 
         try:
             return self.map['uniqueId']
@@ -459,9 +459,9 @@ class View:
             return None
 
     def getVisibility(self):
-        '''
+        """
         Gets the View visibility
-        '''
+        """
 
         try:
             if self.map[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
@@ -476,44 +476,44 @@ class View:
             return -1
 
     def getX(self):
-        '''
+        """
         Gets the View X coordinate
-        '''
+        """
 
         return self.getXY()[0]
 
     def __getX(self):
-        '''
+        """
         Gets the View X coordinate
-        '''
+        """
 
         x = self.map['bounds'][0][0]
 
         return x
 
     def getY(self):
-        '''
+        """
         Gets the View Y coordinate
-        '''
+        """
 
         return self.getXY()[1]
 
     def __getY(self):
-        '''
+        """
         Gets the View Y coordinate
-        '''
+        """
 
         y = self.map['bounds'][0][1]
 
         return y
 
     def getXY(self, debug=False):
-        '''
+        """
         Returns the I{screen} coordinates of this C{View}.
         WARNING: Don't call self.getX() or self.getY() inside this method
         or it will enter an infinite loop
         @return: The I{screen} coordinates of this C{View}
-        '''
+        """
 
         x = self.__getX()
         y = self.__getY()
@@ -521,10 +521,10 @@ class View:
         return (x, y)
 
     def getCoords(self):
-        '''
+        """
         Gets the coords of the View
         @return: A tuple containing the View's coordinates ((L, T), (R, B))
-        '''
+        """
 
         (x, y) = self.getXY()
         w = self.getWidth()
@@ -532,10 +532,10 @@ class View:
         return ((x, y), (x + w, y + h))
 
     def getPositionAndSize(self):
-        '''
+        """
         Gets the position and size (X,Y, W, H)
         @return: A tuple containing the View's coordinates (X, Y, W, H)
-        '''
+        """
 
         (x, y) = self.getXY();
         w = self.getWidth()
@@ -543,9 +543,9 @@ class View:
         return (x, y, w, h)
 
     def getBounds(self):
-        '''
+        """
         Gets the View bounds
-        '''
+        """
 
         if 'bounds' in self.map:
             return self.map['bounds']
@@ -553,10 +553,10 @@ class View:
             return self.getCoords()
 
     def getCenter(self):
-        '''
+        """
         Gets the center coords of the View
         @author: U{Dean Morin <https://github.com/deanmorin>}
-        '''
+        """
 
         (left, top), (right, bottom) = self.getCoords()
         x = left + (right - left) / 2
@@ -692,7 +692,7 @@ class View:
             return (0, 0)
 
     def touch(self, eventType=ADB.DOWN_AND_UP, deltaX=0, deltaY=0):
-        '''
+        """
         Touches the center of this C{View}. The touch can be displaced from the center by
         using C{deltaX} and C{deltaY} values.
         @param eventType: The event type
@@ -701,7 +701,7 @@ class View:
         @type deltaX: int
         @param deltaY: Displacement from center (Y axis)
         @type deltaY: int
-        '''
+        """
 
         (x, y) = self.getCenter()
         if deltaX:
@@ -733,10 +733,10 @@ class View:
         return selector
 
     def longTouch(self, duration=2000):
-        '''
+        """
         Long touches this C{View}
         @param duration: duration in ms
-        '''
+        """
 
         (x, y) = self.getCenter()
         # FIXME: get orientation
@@ -757,11 +757,11 @@ class View:
         return (((x >= X) and (x <= (X + W)) and ((y >= Y) and (y <= (Y + H)))))
 
     def add(self, child):
-        '''
+        """
         Adds a child
         @type child: View
         @param child: The child to add
-        '''
+        """
         child.parent = self
         self.children.append(child)
 
@@ -810,10 +810,10 @@ class View:
             return False
 
     def isEnabled(self):
-        '''
+        """
         Gets the enabled value
         @return: the enabled value. If the property cannot be found returns C{False}
-        '''
+        """
 
         try:
             return True if self.map[self.isEnabledProperty].lower() == 'true' else False
@@ -913,9 +913,9 @@ class UiAutomator2AndroidViewClient:
         self.idCount = 1
 
     def StartElement(self, name, attributes):
-        '''
+        """
         Expat start element event handler
-        '''
+        """
         if name == 'hierarchy':
             pass
         elif name == 'node':
@@ -935,9 +935,9 @@ class UiAutomator2AndroidViewClient:
             self.nodeStack.append(child)
 
     def EndElement(self, name):
-        '''
+        """
         Expat end element event handler
-        '''
+        """
 
         if name == 'hierarchy':
             pass
@@ -945,9 +945,9 @@ class UiAutomator2AndroidViewClient:
             self.nodeStack.pop()
 
     def CharacterData(self, data):
-        '''
+        """
         Expat character data event handler
-        '''
+        """
 
         if data.strip():
             data = data.encode()
@@ -1026,10 +1026,10 @@ class UiScrollable(UiCollection):
                 self.flingForward()
 
     def scrollTextIntoView(self, text):
-        '''
+        """
         Performs a forward scroll action on the scrollable layout element until the text you provided is visible,
         or until swipe attempts have been exhausted. See setMaxSearchSwipes(int)
-        '''
+        """
 
         if self.vc is None:
             raise ValueError('vc must be set in order to use this method')
@@ -1095,17 +1095,17 @@ class ViewClient:
         self.adb = device.get_adb()
 
         self.root = None
-        ''' The root node '''
+        """ The root node """
         self.viewsById = {}
-        ''' The map containing all the L{View}s indexed by their L{View.getUniqueId()} '''
+        """ The map containing all the L{View}s indexed by their L{View.getUniqueId()} """
         self.display = {}
-        ''' The map containing the device's display properties: width, height and density '''
+        """ The map containing the device's display properties: width, height and density """
 
         for prop in ['width', 'height', 'density', 'orientation']:
             self.display[prop] = self.device.display[prop]
 
         self.build = {}
-        ''' The map containing the device's build properties: version.sdk, version.release '''
+        """ The map containing the device's build properties: version.sdk, version.release """
 
         for prop in [VERSION_SDK_PROPERTY, VERSION_RELEASE_PROPERTY]:
             self.build[prop] = -1
@@ -1119,7 +1119,7 @@ class ViewClient:
                 self.build[prop] = int(self.build[prop]) if self.build[prop] else -1
 
         self.ro = {}
-        ''' The map containing the device's ro properties: secure, debuggable '''
+        """ The map containing the device's ro properties: secure, debuggable """
         for prop in ['secure', 'debuggable']:
             try:
                 self.ro[prop] = self.adb.shell('getprop ro.' + prop)[:-2]
@@ -1128,21 +1128,21 @@ class ViewClient:
                 self.ro[prop] = 'UNKNOWN'
 
         self.forceViewServerUse = forceviewserveruse
-        ''' Force the use of ViewServer even if the conditions to use UiAutomator are satisfied '''
+        """ Force the use of ViewServer even if the conditions to use UiAutomator are satisfied """
         self.useUiAutomator = (
                                   self.build[
                                       VERSION_SDK_PROPERTY] >= 16) and not forceviewserveruse  # jelly bean 4.1 & 4.2
         self.logger.debug("ViewClient.__init__: useUiAutomator=%s;sdk=%s;forceviewserveruse=%s." %
                           (self.useUiAutomator, self.build[VERSION_SDK_PROPERTY], forceviewserveruse))
-        ''' If UIAutomator is supported by the device it will be used '''
+        """ If UIAutomator is supported by the device it will be used """
         self.ignoreUiAutomatorKilled = ignoreuiautomatorkilled
-        ''' On some devices (i.e. Nexus 7 running 4.2.2) uiautomator is killed just after generating
+        """ On some devices (i.e. Nexus 7 running 4.2.2) uiautomator is killed just after generating
         the dump file. In many cases the file is already complete so we can ask to ignore the 'Killed'
         message by setting L{ignoreuiautomatorkilled} to C{True}.
 
         Changes in v2.3.21 that uses C{/dev/tty} instead of a file may have turned this variable
         unnecessary, however it has been kept for backward compatibility.
-        '''
+        """
 
         if self.useUiAutomator:
             self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
@@ -1170,7 +1170,7 @@ class ViewClient:
             self.adb.run_cmd(['forward', 'tcp:%d' % self.localPort, 'tcp:%d' % self.remotePort])
 
         self.windows = None
-        ''' The list of windows as obtained by L{ViewClient.list()} '''
+        """ The list of windows as obtained by L{ViewClient.list()} """
 
         # The output of compressed dump is different than output of uncompressed one.
         # If one requires uncompressed output, this option should be set to False
@@ -1225,13 +1225,13 @@ class ViewClient:
                 'WARNING: linker: libdvm.so has text relocations. This is wasting memory and is a security risk. Please fix.\r\n',
                 '')
             if re.search('\[: not found', received):
-                raise RuntimeError('''ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
+                raise RuntimeError("""ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
 While UiAutomator back-end might be supported 'uiautomator' command fails.
-You should force ViewServer back-end.''')
+You should force ViewServer back-end.""")
 
             if received.startswith('ERROR: could not get idle state.'):
                 # See https://android.googlesource.com/platform/frameworks/testing/+/jb-mr2-release/uiautomator/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java
-                raise RuntimeError('''The views are being refreshed too frequently to dump.''')
+                raise RuntimeError("""The views are being refreshed too frequently to dump.""")
             self.setViewsFromUiAutomatorDump(received)
         else:
             if isinstance(window, str):
@@ -1294,7 +1294,7 @@ You should force ViewServer back-end.''')
         return self.views
 
     def list(self, sleep=1):
-        '''
+        """
         List the windows.
 
         Sleep is useful to wait some time before obtaining the new content when something in the
@@ -1305,7 +1305,7 @@ You should force ViewServer back-end.''')
         @param sleep: sleep in seconds before proceeding to dump the content
 
         @return: the list of windows
-        '''
+        """
 
         if sleep > 0:
             time.sleep(sleep)
@@ -1346,29 +1346,29 @@ You should force ViewServer back-end.''')
             return self.windows
 
     def setViews(self, received, windowId=None):
-        '''
+        """
         Sets L{self.views} to the received value splitting it into lines.
 
         @type received: str
         @param received: the string received from the I{View Server}
-        '''
+        """
 
         if not received or received == "":
             raise ValueError("received is empty")
         if not isinstance(received, str):
             raise ValueError("received is not str")
         self.views = []
-        ''' The list of Views represented as C{str} obtained after splitting it into lines after being received from the server. Done by L{self.setViews()}. '''
+        """ The list of Views represented as C{str} obtained after splitting it into lines after being received from the server. Done by L{self.setViews()}. """
         self.__parseTree(received.split("\n"), windowId)
 
     def __parseTree(self, receivedLines, windowId=None):
-        '''
+        """
         Parses the View tree contained in L{receivedLines}. The tree is created and the root node assigned to L{self.root}.
         This method also assigns L{self.viewsById} values using L{View.getUniqueId} as the key.
 
         @type receivedLines: list
         @param receivedLines: the string received from B{View Server}
-        '''
+        """
 
         self.root = None
         self.viewsById = {}
@@ -1419,7 +1419,7 @@ You should force ViewServer back-end.''')
             self.viewsById[lastView.getUniqueId()] = lastView
 
     def __splitAttrs(self, strArgs):
-        '''
+        """
         Splits the C{View} attributes in C{strArgs} and optionally adds the view id to the C{viewsById} list.
 
         Unique Ids
@@ -1434,7 +1434,7 @@ You should force ViewServer back-end.''')
         @param strArgs: the string containing the raw list of attributes and values
 
         @return: Returns the attributes map.
-        '''
+        """
 
         if self.useUiAutomator:
             raise RuntimeError("This method is not compatible with UIAutomator")
@@ -1547,7 +1547,7 @@ You should force ViewServer back-end.''')
             self.navRecentApps = None
 
     def findViewById(self, viewId, root="ROOT", viewFilter=None):
-        '''
+        """
         Finds the View with the specified viewId.
         @type viewId: str
         @param viewId: the ID of the view to find
@@ -1560,7 +1560,7 @@ You should force ViewServer back-end.''')
                            selected and returned as the result of C{findViewById()} or ignored.
                            This can be C{None} and no extra filtering is applied.
         @return: the C{View} found or C{None}
-        '''
+        """
 
         if not root:
             return None
@@ -1579,7 +1579,7 @@ You should force ViewServer back-end.''')
             if root.getUniqueId() == viewId:
                 if viewFilter:
                     if viewFilter(root):
-                        return root;
+                        return root
                 else:
                     return root
 

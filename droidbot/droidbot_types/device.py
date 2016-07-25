@@ -206,11 +206,7 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and self.view_client is None:
-            kwargs = {'startviewserver': True,
-                      'autodump': False,
-                      'forceviewserveruse': True,
-                      'ignoreuiautomatorkilled': True}
-            self.view_client = ViewClient(self.adb, self.serial, **kwargs)
+            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=True)
         return self.view_client
 
     def is_foreground(self, app):

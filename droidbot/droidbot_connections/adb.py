@@ -136,7 +136,8 @@ class ADB(object):
         Gets C{mDefaultViewport} and then C{deviceWidth} and C{deviceHeight} values from dumpsys.
         This is a method to obtain display logical dimensions and density
         """
-        logicalDisplayRE = re.compile(".*DisplayViewport{valid=true, .*orientation=(?P<orientation>\d+), .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
+        logicalDisplayRE = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
+                                      " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
         for line in self.shell("dumpsys display").splitlines():
             m = logicalDisplayRE.search(line, 0)
             if m:
@@ -230,23 +231,6 @@ class ADB(object):
         Get version of current SDK
         """
         return int(self.shell("getprop ro.build.version.sdk"))
-
-    def getServiceNames(self):
-        """
-        Get current running services
-        """
-        services = []
-        data = self.shell("dumpsys activity services").splitlines()
-        serviceRE = re.compile("^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}")
-
-        for line in data:
-            m = serviceRE.search(line)
-            if m:
-                package = m.group(1)
-                service = m.group(2)
-                services.append("%s/%s" % (package, service))
-
-        return services
 
     def getFocusedWindow(self):
         """

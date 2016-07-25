@@ -2,8 +2,6 @@
 # It can be used after AVD was started, app was installed, and adb had been set up properly
 # By configuring and creating a droidbot instance,
 # droidbot will start interacting with Android in AVD like a human
-
-__author__ = 'liyc'
 import logging
 import os
 import sys

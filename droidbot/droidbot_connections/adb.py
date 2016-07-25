@@ -111,15 +111,7 @@ class ADB(object):
         """
         self.logger.info("disconnected")
 
-    def get_package_path(self, package_name):
-        """
-        Get installed path of a package
-        """
-        command = "pm path %s" % package_name
-        path = self.shell(command)
-        if path:
-            path = path.split(":")[1]
-        return path
+    from com.dtmilano.android import viewclient
 
     def getDisplayInfo(self):
         displayInfo = self.getLogicalDisplayInfo()
@@ -158,7 +150,8 @@ class ADB(object):
         """
         Gets C{mPhysicalDisplayInfo} values from dumpsys. This is a method to obtain display dimensions and density
         """
-        phyDispRE = re.compile("Physical size: (?P<width>)x(?P<height>).*Physical density: (?P<density>)", re.MULTILINE)
+        phyDispRE = re.compile("Physical size: (?P<width>\d+)x(?P<height>\d+).*"
+                               "Physical density: (?P<density>\d+)", re.MULTILINE)
         data = self.shell("wm size") + self.shell("wm density")
         m = phyDispRE.search(data)
         if m:
@@ -212,25 +205,6 @@ class ADB(object):
                         displayInfo[prop] = -1.0
                 return displayInfo
         return None
-
-    def unlock(self):
-        """
-        Unlock the screen of the device
-        """
-        self.shell("input keyevent MENU")
-        self.shell("input keyevent BACK")
-
-    def press(self, key_code):
-        """
-        Press a key
-        """
-        self.shell("input keyevent %s" % key_code)
-
-    def getSDKVersion(self):
-        """
-        Get version of current SDK
-        """
-        return int(self.shell("getprop ro.build.version.sdk"))
 
     def getFocusedWindow(self):
         """
@@ -348,7 +322,6 @@ class ADB(object):
 
         return windows
 
-
     def __transformPointByOrientation(self, (x, y), orientationOrig, orientationDest):
         if orientationOrig != orientationDest:
             if orientationDest == 1:
@@ -373,6 +346,19 @@ class ADB(object):
         if m:
             return int(m.group(1))
         return -1
+
+    def unlock(self):
+        """
+        Unlock the screen of the device
+        """
+        self.shell("input keyevent MENU")
+        self.shell("input keyevent BACK")
+
+    def press(self, key_code):
+        """
+        Press a key
+        """
+        self.shell("input keyevent %s" % key_code)
 
     def touch(self, x, y, orientation=-1, eventType=DOWN_AND_UP):
         if orientation == -1:

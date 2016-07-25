@@ -189,7 +189,7 @@ class View:
         """ The window this view resides """
         self.build = {}
         """ Build properties """
-        version = self.adb.getSDKVersion()
+        version = self.adb.get_sdk_version()
         self.build[VERSION_SDK_PROPERTY] = version
         self.version = version
         """ API version number """
@@ -1459,8 +1459,6 @@ You should force ViewServer back-end.""")
         m = idRE.search(strArgs)
         if m:
             viewId = m.group('viewId')
-            if DEBUG:
-                print >>sys.stderr, "found view with id=%s" % viewId
 
         for attr in strArgs.split():
             m = attrRE.match(attr)
@@ -1469,8 +1467,6 @@ You should force ViewServer back-end.""")
                 __parens = '()' if m.group('parens') else ''
                 __len = int(m.group('len'))
                 __val = m.group('val')
-                if WARNINGS and __len != len(__val):
-                    warnings.warn("Invalid len: expected: %d   found: %d   s=%s   e=%s" % (__len, len(__val), __val[:50], __val[-50:]))
                 if __attr == self.textProperty:
                     # restore spaces that have been replaced
                     __val = __val.replace(WS, ' ')
@@ -1481,8 +1477,7 @@ You should force ViewServer back-end.""")
                     attrs['class'] = m.group('class')
                     attrs['oid'] = m.group('oid')
                 else:
-                    if DEBUG:
-                        print >>sys.stderr, attr, "doesn't match"
+                    self.logger.warning("doesn't match: %s" % attrs)
 
         if True: # was assignViewById
             if not viewId:
@@ -1499,8 +1494,6 @@ You should force ViewServer back-end.""")
                         break
                     i += 1
                 viewId = newId
-                if DEBUG:
-                    print >>sys.stderr, "adding viewById %s" % viewId
             # We are assigning a new attribute to keep the original id preserved, which could have
             # been NO_ID repeated multiple times
             attrs['uniqueId'] = viewId
@@ -1512,7 +1505,7 @@ You should force ViewServer back-end.""")
         self.__parseTreeFromUiAutomatorDump(received)
 
     def __parseTreeFromUiAutomatorDump(self, receivedXml):
-        version = self.adb.getSDKVersion()
+        version = self.adb.get_sdk_version()
         parser = UiAutomator2AndroidViewClient(version)
         try:
             start_xml_index = receivedXml.index("<")

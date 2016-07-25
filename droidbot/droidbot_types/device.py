@@ -58,6 +58,7 @@ class Device(object):
 
         self.is_connected = False
         self.connect()
+        self.get_sdk_version()
         self.get_display_info()
         self.logcat = self.redirect_logcat()
         from state_monitor import StateMonitor
@@ -227,6 +228,14 @@ class Device(object):
             return False
         return top_activity_name.startswith(package_name)
 
+    def get_sdk_version(self):
+        """
+        Get version of current SDK
+        """
+        if self.sdk_version is None:
+            self.sdk_version = int(self.get_adb().shell("getprop ro.build.version.sdk"))
+        return self.sdk_version
+
     def get_display_info(self):
         """
         get device display infomation, including width, height, and density
@@ -249,7 +258,7 @@ class Device(object):
         # unlock screen
         self.get_adb().unlock()
 
-        # DOWN skip first-use turorials, we don't have to
+        # DONE skip first-use turorials, we don't have to
 
     def add_env(self, env):
         """

@@ -111,100 +111,26 @@ class ADB(object):
         """
         self.logger.info("disconnected")
 
-    from com.dtmilano.android import viewclient
-
     def getDisplayInfo(self):
-        displayInfo = self.getLogicalDisplayInfo()
-        if displayInfo:
-            return displayInfo
-        displayInfo = self.getPhysicalDisplayInfo()
-        if displayInfo:
-            return displayInfo
-        self.logger.error("Error getting display info")
-        return None
-
-    def getLogicalDisplayInfo(self):
         """
         Gets C{mDefaultViewport} and then C{deviceWidth} and C{deviceHeight} values from dumpsys.
-        This is a method to obtain display logical dimensions and density
+        This is a method to obtain display dimensions and density
         """
+        displayInfo = {}
         logicalDisplayRE = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
                                       " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
+        phyicalDisplayRE = re.compile(".*PhysicalDisplayInfo{(?P<physical_width>\d+) x (?P<physical_height>\d+),"
+                                      " .*, density (?P<density>[\d.]+).*")
         for line in self.shell("dumpsys display").splitlines():
             m = logicalDisplayRE.search(line, 0)
             if m:
-                displayInfo = {}
                 for prop in ["width", "height", "orientation"]:
                     displayInfo[prop] = int(m.group(prop))
-                for prop in ["density"]:
-                    d = self.getDisplayDensity(None, strip=True, invokeGetPhysicalDisplayIfNotFound=True)
-                    if d:
-                        displayInfo[prop] = d
-                    else:
-                        # No available density information
-                        displayInfo[prop] = -1.0
-                return displayInfo
-        return None
-
-    def getPhysicalDisplayInfo(self):
-        """
-        Gets C{mPhysicalDisplayInfo} values from dumpsys. This is a method to obtain display dimensions and density
-        """
-        phyDispRE = re.compile("Physical size: (?P<width>\d+)x(?P<height>\d+).*"
-                               "Physical density: (?P<density>\d+)", re.MULTILINE)
-        data = self.shell("wm size") + self.shell("wm density")
-        m = phyDispRE.search(data)
-        if m:
-            displayInfo = {}
-            for prop in ["width", "height"]:
-                displayInfo[prop] = int(m.group(prop))
-            for prop in ["density"]:
-                displayInfo[prop] = float(m.group(prop))
-            return displayInfo
-        phyDispRE = re.compile(
-            ".*PhysicalDisplayInfo{(?P<width>\d+) x (?P<height>\d+), .*, density (?P<density>[\d.]+).*")
-        for line in self.shell("dumpsys display").splitlines():
-            m = phyDispRE.search(line, 0)
+            m = phyicalDisplayRE.search(line, 0)
             if m:
-                displayInfo = {}
-                for prop in ["width", "height"]:
+                for prop in ["physical_width", "physical_height", "density"]:
                     displayInfo[prop] = int(m.group(prop))
-                for prop in ["density"]:
-                    # In mPhysicalDisplayInfo density is already a factor, no need to calculate
-                    displayInfo[prop] = float(m.group(prop))
-                return displayInfo
-        # This could also be mSystem or mOverscanScreen
-        phyDispRE = re.compile("\s*mUnrestrictedScreen=\((?P<x>\d+),(?P<y>\d+)\) (?P<width>\d+)x(?P<height>\d+)")
-        # This is known to work on older versions (i.e. API 10) where mrestrictedScreen is not available
-        dispWHRE = re.compile("\s*DisplayWidth=(?P<width>\d+) *DisplayHeight=(?P<height>\d+)")
-        for line in self.shell("dumpsys window").splitlines():
-            m = phyDispRE.search(line, 0)
-            if not m:
-                m = dispWHRE.search(line, 0)
-            if m:
-                displayInfo = {}
-                BASE_DPI = 160.0
-                for prop in ["width", "height"]:
-                    displayInfo[prop] = int(m.group(prop))
-                for prop in ["density"]:
-                    d = 0
-                    if displayInfo and "density" in displayInfo:
-                        d = displayInfo["density"]
-                    else:
-                        _d = self.shell("getprop ro.sf.lcd_density").strip()
-                        if _d:
-                            d = float(_d) / BASE_DPI
-                        else:
-                            _d = self.shell("getprop qemu.sf.lcd_density").strip()
-                            if _d:
-                                d = float(_d) / BASE_DPI
-                    if d:
-                        displayInfo[prop] = d
-                    else:
-                        # No available density information
-                        displayInfo[prop] = -1.0
-                return displayInfo
-        return None
+        return displayInfo
 
     def getFocusedWindow(self):
         """

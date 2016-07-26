@@ -1,5 +1,4 @@
 # This is the interface for adb
-__author__ = 'liyc'
 import subprocess
 import logging
 import re
@@ -52,7 +51,7 @@ class ADB(object):
             raise ADBException()
 
         if device.serial:
-            if not device.serial in online_devices:
+            if device.serial not in online_devices:
                 raise ADBException()
         else:
             device.serial = online_devices[0]
@@ -69,6 +68,7 @@ class ADB(object):
         """
         run an adb command and return the output
         :return: output of adb command
+        @param extra_args: arguments to run in adb
         """
         if isinstance(extra_args, str):
             extra_args = extra_args.split()
@@ -111,6 +111,8 @@ class ADB(object):
         """
         self.logger.info("disconnected")
 
+    # The following methods are originally from androidviewclient project.
+    # https://github.com/dtmilano/AndroidViewClient.
     def getDisplayInfo(self):
         """
         Gets C{mDefaultViewport} and then C{deviceWidth} and C{deviceHeight} values from dumpsys.
@@ -151,12 +153,13 @@ class ADB(object):
         return None
 
     def getWindows(self):
+        from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
         windows = {}
         dww = self.shell("dumpsys window windows")
         lines = dww.splitlines()
-        widRE = re.compile("^ *Window #%s Window{%s (u\d+ )?%s?.*}:" %
+        widRE = re.compile("^ *Window #%s Window\{%s (u\d+ )?%s?.*}:" %
                            (_nd("num"), _nh("winId"), _ns("activity", greedy=True)))
-        currentFocusRE = re.compile("^  mCurrentFocus=Window{%s .*" % _nh("winId"))
+        currentFocusRE = re.compile("^  mCurrentFocus=Window\{%s .*" % _nh("winId"))
         viewVisibilityRE = re.compile(" mViewVisibility=0x%s " % _nh("visibility"))
         # This is for 4.0.4 API-15
         containingFrameRE = re.compile("^   *mContainingFrame=\[%s,%s\]\[%s,%s\] mParentFrame=\[%s,%s\]\[%s,%s\]" %
@@ -188,7 +191,7 @@ class ADB(object):
                 py = 0
                 visibility = -1
                 policyVisibility = 0x0
-                sdkVer = self.getSDKVersion()
+                sdkVer = self.device.get_sdk_version()
 
                 for l2 in range(l + 1, len(lines)):
                     m = widRE.search(lines[l2])
@@ -230,7 +233,7 @@ class ADB(object):
                                 wvx, wvy = obtainVxVy(m)
                                 wvw, wvh = obtainVwVh(m)
                     else:
-                        log.warning("Unsupported Android version %d" % sdkVer)
+                        self.logger.warning("Unsupported Android version %d" % sdkVer)
 
                     # print >> sys.stderr, "Searching policyVisibility in", lines[l2]
                     m = policyVisibilityRE.search(lines[l2])
@@ -289,7 +292,10 @@ class ADB(object):
     def touch(self, x, y, orientation=-1, eventType=DOWN_AND_UP):
         if orientation == -1:
             orientation = self.getOrientation()
-        self.shell("input tap %d %d" % self.__transformPointByOrientation((x, y), orientation, self.display["orientation"]))
+        self.shell("input tap %d %d" %
+                   self.__transformPointByOrientation((x, y),
+                                                      orientation,
+                                                      self.device.get_display_info()["orientation"]))
 
     def longTouch(self, x, y, duration=2000, orientation=-1):
         """
@@ -314,7 +320,7 @@ class ADB(object):
         (x0, y0) = self.__transformPointByOrientation((x0, y0), orientation, self.getOrientation())
         (x1, y1) = self.__transformPointByOrientation((x1, y1), orientation, self.getOrientation())
 
-        version = self.getSDKVersion()
+        version = self.device.get_sdk_version()
         if version <= 15:
             self.logger.error("drag: API <= 15 not supported (version=%d)" % version)
         elif version <= 17:

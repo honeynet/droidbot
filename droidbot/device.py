@@ -6,10 +6,6 @@ import time
 
 from app import App
 from intent import Intent
-from droidbot_connections.adb import ADB
-from droidbot_connections.telnet import TelnetConsole, TelnetException
-from droidbot_connections.viewclient import ViewClient
-from droidbot_connections.monkey_runner import MonkeyRunner
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -185,6 +181,7 @@ class Device(object):
         note that only emulator have telnet connection
         """
         if self.telnet_enabled and self.telnet is None:
+            from connections.telnet import TelnetConsole, TelnetException
             try:
                 self.telnet = TelnetConsole(self)
             except TelnetException:
@@ -196,6 +193,7 @@ class Device(object):
         get adb connection of the device
         """
         if self.adb_enabled and self.adb is None:
+            from connections.adb import ADB
             self.adb = ADB(self)
         return self.adb
 
@@ -205,6 +203,7 @@ class Device(object):
         :return:
         """
         if self.monkeyrunner_enabled and self.monkeyrunner is None:
+            from connections.monkey_runner import MonkeyRunner
             self.monkeyrunner = MonkeyRunner(self)
         return self.monkeyrunner
 
@@ -214,7 +213,8 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and self.view_client is None:
-            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=False)
+            from connections.viewclient import ViewClient
+            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=True)
         return self.view_client
 
     def is_foreground(self, app):
@@ -677,7 +677,7 @@ class DeviceState(object):
             id2view_map[temp_id] = view
             temp_id += 1
 
-        from droidbot_connections.viewclient import View
+        from connections.viewclient import View
         for view in view_client_views:
             if isinstance(view, View):
                 view_dict = {}

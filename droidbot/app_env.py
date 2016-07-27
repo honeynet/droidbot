@@ -5,8 +5,6 @@
 # The environment should be determined before app start running.
 # We don't need to set up all environment aspects for one app,
 # instead we select a subset according to static analysis result of app.
-__author__ = 'liyc'
-
 import logging
 import json
 import time

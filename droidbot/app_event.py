@@ -10,9 +10,8 @@ import random
 import subprocess
 import time
 from threading import Timer
-from droidbot_types.intent import Intent
-from droidbot_types.device import DeviceState
-
+from intent import Intent
+from device import DeviceState
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -433,7 +432,7 @@ class IntentEvent(AppEvent):
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
-        from droidbot_types.intent import Intent
+        from intent import Intent
         intent = Intent(prefix='broadcast', action=action)
         return IntentEvent(intent)
 
@@ -1128,9 +1127,7 @@ class DynamicEventFactory(EventFactory):
             v_cls_name = v.getClass().lower()
 
             # if it is an EditText, try input something
-            from com.dtmilano.android.viewclient import EditText
-            if isinstance(v, EditText) or 'edit' in v_cls_name \
-                    or 'text' in v_cls_name or 'input' in v_cls_name:
+            if 'edit' in v_cls_name or 'text' in v_cls_name or 'input' in v_cls_name:
                 for key in self.possible_inputs.keys():
                     if key in v.getId().lower() or key in v_cls_name:
                         next_event = TypeEvent(text=self.possible_inputs[key])
@@ -1201,7 +1198,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from droidbot_types.device import DeviceState
+        from device import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None

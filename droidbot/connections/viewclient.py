@@ -8,7 +8,7 @@ import sys
 import time
 import types
 import xml.parsers.expat
-from droidbot_connections.adb import ADB
+from adb import ADB
 from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
 
 VIEW_SERVER_HOST = 'localhost'

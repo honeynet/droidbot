@@ -214,7 +214,7 @@ class Device(object):
         """
         if self.view_client_enabled and self.view_client is None:
             from connections.viewclient import ViewClient
-            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=True)
+            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=False)
         return self.view_client
 
     def is_foreground(self, app):

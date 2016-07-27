@@ -20,6 +20,10 @@ class ADB(object):
     UP = 0
     DOWN = 1
     DOWN_AND_UP = 2
+    VERSION_SDK_PROPERTY = 'ro.build.version.sdk'
+    VERSION_RELEASE_PROPERTY = 'ro.build.version.release'
+    RO_SECURE_PROPERTY = 'ro.secure'
+    RO_DEBUGGABLE_PROPERTY = 'ro.debuggable'
 
     def __init__(self, device):
         """
@@ -31,7 +35,6 @@ class ADB(object):
         self.logger = logging.getLogger('ADB')
         self.device = device
         self.cmd_prefix = ['adb']
-        self.shell = None
 
         r = subprocess.check_output(['adb', 'devices']).split('\n')
         if not r[0].startswith("List of devices attached"):
@@ -70,9 +73,12 @@ class ADB(object):
         :return: output of adb command
         @param extra_args: arguments to run in adb
         """
-        if isinstance(extra_args, str):
+        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
             extra_args = extra_args.split()
-        assert isinstance(extra_args, list)
+        if not isinstance(extra_args, list):
+            msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
+            self.logger.warning(msg)
+            raise ADBException(msg)
 
         args = [] + self.cmd_prefix
         args += extra_args
@@ -90,9 +96,12 @@ class ADB(object):
         @param extra_args:
         @return: output of adb shell command
         """
-        if isinstance(extra_args, str):
+        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
             extra_args = extra_args.split()
-        assert isinstance(extra_args, list)
+        if not isinstance(extra_args, list):
+            msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
+            self.logger.warning(msg)
+            raise ADBException(msg)
 
         shell_extra_args = ['shell'] + extra_args
         return self.run_cmd(shell_extra_args)
@@ -111,6 +120,40 @@ class ADB(object):
         """
         self.logger.info("disconnected")
 
+    def get_property(self, property):
+        """
+        get the value of property
+        @param property:
+        @return:
+        """
+        return self.shell(["getprop", property])
+
+    def get_sdk_version(self):
+        """
+        Get version of SDK, e.g. 18, 20
+        """
+        return int(self.get_property(ADB.VERSION_SDK_PROPERTY))
+
+    def get_release_version(self):
+        """
+        Get release version, e.g. 4.3, 6.0
+        """
+        return self.get_property(ADB.VERSION_RELEASE_PROPERTY)
+
+    def get_ro_secure(self):
+        """
+        get ro.secure value
+        @return: 0/1
+        """
+        return int(self.get_property(ADB.RO_SECURE_PROPERTY))
+
+    def get_ro_debuggable(self):
+        """
+        get ro.debuggable value
+        @return: 0/1
+        """
+        return int(self.get_property(ADB.RO_DEBUGGABLE_PROPERTY))
+
     # The following methods are originally from androidviewclient project.
     # https://github.com/dtmilano/AndroidViewClient.
     def getDisplayInfo(self):
@@ -121,17 +164,28 @@ class ADB(object):
         displayInfo = {}
         logicalDisplayRE = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
                                       " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
-        phyicalDisplayRE = re.compile(".*PhysicalDisplayInfo{(?P<physical_width>\d+) x (?P<physical_height>\d+),"
-                                      " .*, density (?P<density>[\d.]+).*")
-        for line in self.shell("dumpsys display").splitlines():
+        dumpsys_display_result = self.shell("dumpsys display")
+        if dumpsys_display_result is None:
+            self.logger.warning("dumpsys display returns None")
+            return displayInfo
+        for line in dumpsys_display_result.splitlines():
             m = logicalDisplayRE.search(line, 0)
             if m:
                 for prop in ["width", "height", "orientation"]:
                     displayInfo[prop] = int(m.group(prop))
-            m = phyicalDisplayRE.search(line, 0)
-            if m:
-                for prop in ["physical_width", "physical_height", "density"]:
-                    displayInfo[prop] = int(m.group(prop))
+
+        physicalDisplayRE = re.compile('Physical size: (?P<physical_width>\d+)x(?P<physical_height>\d+)')
+        m = physicalDisplayRE.search(self.shell('wm size'))
+        if m:
+            for prop in ['physical_width', 'physical_height']:
+                displayInfo[prop] = int(m.group(prop))
+
+        physicalDensityRE = re.compile('Physical density: (?P<density>\d+)', re.MULTILINE)
+        m = physicalDensityRE.search(self.shell('wm density'))
+        if m:
+            for prop in ['density']:
+                displayInfo[prop] = float(m.group(prop))
+
         return displayInfo
 
     def getFocusedWindow(self):

@@ -10,6 +10,9 @@ import random
 import subprocess
 import time
 from threading import Timer
+from droidbot_types.intent import Intent
+from droidbot_types.device import DeviceState
+
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -263,7 +266,6 @@ class UIEvent(AppEvent):
             component = app.get_package_name()
             if app.get_main_activity():
                 component += "/%s" % app.get_main_activity()
-            from droidbot.types.intent import Intent
             return IntentEvent(Intent(suffix=component))
 
         else:
@@ -426,12 +428,12 @@ class IntentEvent(AppEvent):
             self.__dict__ = event_dict
             return
         self.event_type = KEY_IntentEvent
-        self.intent = intent
+        self.intent = intent.get_cmd()
 
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
-        from droidbot.types.intent import Intent
+        from droidbot_types.intent import Intent
         intent = Intent(prefix='broadcast', action=action)
         return IntentEvent(intent)
 
@@ -818,15 +820,17 @@ class EventFactory(object):
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
-            # except StopSendingEventException as e:
-            #     self.device.logger.warning(e.message)
-            #     break
+            except StopSendingEventException as e:
+                self.device.logger.warning("EventFactory stop sending event: ", e)
+                break
             # except RuntimeError as e:
             #     self.device.logger.warning(e.message)
             #     break
-            # except Exception as e:
-            #     self.device.logger.warning(e.message)
-            #     continue
+            except Exception as e:
+                self.device.logger.warning("exception in EventFactory: ", e)
+                import traceback
+                traceback.print_exc()
+                continue
             count += 1
 
     def generate_event(self, state=None):
@@ -1072,7 +1076,6 @@ class DynamicEventFactory(EventFactory):
                 component = self.app.get_package_name()
                 if self.app.get_main_activity():
                     component += "/%s" % self.app.get_main_activity()
-                from droidbot.types.intent import Intent
                 return IntentEvent(Intent(suffix=component))
 
         if current_context_str not in self.exploited_views.keys():
@@ -1198,7 +1201,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from types.device import DeviceState
+        from droidbot_types.device import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None
@@ -1426,7 +1429,6 @@ class UtgDynamicFactory(StateBasedEventFactory):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            from types.device import DeviceState
             x, y = DeviceState.get_view_center(view_to_touch)
             result = TouchEvent(x, y)
 
@@ -1442,8 +1444,6 @@ class UtgDynamicFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return:
         """
-        from types.device import DeviceState
-
         views = []
         for view in state.views:
             if view['enabled'] == "true" and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
@@ -1525,7 +1525,7 @@ class ScriptEventFactory(EventFactory):
     def __init__(self, device, app, script_dict):
         """
         create a FileEventFactory from a json file
-        :param in_file path string
+        :param script_dict script path string
         """
         super(ScriptEventFactory, self).__init__(device, app)
         self.script_dict = script_dict

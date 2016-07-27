@@ -38,6 +38,10 @@ class Device(object):
         self.view_client = None
         self.settings = {}
         self.display_info = None
+        self.sdk_version = None
+        self.release_version = None
+        self.ro_debuggable = None
+        self.ro_secure = None
 
         self.output_dir = output_dir
         if self.output_dir is None:
@@ -59,6 +63,9 @@ class Device(object):
         self.is_connected = False
         self.connect()
         self.get_sdk_version()
+        self.get_release_version()
+        self.get_ro_secure()
+        self.get_ro_debuggable()
         self.get_display_info()
         self.logcat = self.redirect_logcat()
         from state_monitor import StateMonitor
@@ -162,13 +169,13 @@ class Device(object):
         """
         self.is_connected = False
         if self.adb:
-            self.adb.close()
+            self.adb.disconnect()
         if self.telnet:
             self.telnet.disconnect()
         if self.monkeyrunner:
             self.monkeyrunner.disconnect()
         if self.view_client:
-            self.view_client = None
+            self.view_client.disconnect()
         self.logcat.terminate()
         self.state_monitor.stop()
 
@@ -207,7 +214,7 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and self.view_client is None:
-            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=True)
+            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=False)
         return self.view_client
 
     def is_foreground(self, app):
@@ -233,8 +240,26 @@ class Device(object):
         Get version of current SDK
         """
         if self.sdk_version is None:
-            self.sdk_version = int(self.get_adb().shell("getprop ro.build.version.sdk"))
+            self.sdk_version = self.get_adb().get_sdk_version()
         return self.sdk_version
+
+    def get_release_version(self):
+        """
+        Get version of current SDK
+        """
+        if self.release_version is None:
+            self.release_version = self.get_adb().get_release_version()
+        return self.release_version
+
+    def get_ro_secure(self):
+        if self.ro_secure is None:
+            self.ro_secure = self.get_adb().get_ro_secure()
+        return self.ro_secure
+
+    def get_ro_debuggable(self):
+        if self.ro_debuggable is None:
+            self.ro_debuggable = self.get_adb().get_release_version()
+        return self.ro_debuggable
 
     def get_display_info(self):
         """
@@ -435,7 +460,10 @@ class Device(object):
         """
         assert self.get_adb() is not None
         assert intent is not None
-        cmd = intent.get_cmd()
+        if isinstance(intent, Intent):
+            cmd = intent.get_cmd()
+        else:
+            cmd = intent
         return self.get_adb().shell(cmd)
 
     def send_event(self, event):
@@ -548,41 +576,37 @@ class Device(object):
 
     def take_snapshot(self):
         image = None
-        global PIL_AVAILABLE
-        if not PIL_AVAILABLE:
-            try:
-                global Image
-                from PIL import Image
-                PIL_AVAILABLE = True
-            except:
-                raise Exception("You have to install PIL to use takeSnapshot()")
 
         received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
         import StringIO
         stream = StringIO.StringIO(received)
 
         try:
+            from PIL import Image
             image = Image.open(stream)
-        except IOError, ex:
-            self.logger.warning(ex.message)
+        except IOError as e:
+            self.logger.warning("exception in take_snapshot: %s" % e)
         return image
 
     def get_current_state(self):
         self.logger.info("getting current device state...")
+        current_state = None
         try:
             view_client_views = self.dump_views()
             foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
             snapshot = self.take_snapshot()
             self.logger.info("finish getting current device state...")
-            return DeviceState(self,
-                               view_client_views=view_client_views,
-                               foreground_activity=foreground_activity,
-                               background_services=background_services,
-                               snapshot=snapshot)
+            current_state = DeviceState(self,
+                                        view_client_views=view_client_views,
+                                        foreground_activity=foreground_activity,
+                                        background_services=background_services,
+                                        snapshot=snapshot)
         except Exception as e:
-            self.logger.warning(e)
-            return None
+            self.logger.warning("exception in get_current_state: %s" % e)
+            import traceback
+            traceback.print_exc()
+        return current_state
 
     def view_touch(self, x, y):
         self.get_adb().touch(x, y)
@@ -653,13 +677,12 @@ class DeviceState(object):
             id2view_map[temp_id] = view
             temp_id += 1
 
-        from connections.viewclient import View
+        from droidbot_connections.viewclient import View
         for view in view_client_views:
             if isinstance(view, View):
                 view_dict = {}
                 view_dict['class'] = view.getClass()
                 view_dict['text'] = view.getText()
-                view.getBounds()
                 view_dict['resource_id'] = view.getId()
                 view_dict['temp_id'] = view2id_map.get(view)
                 view_dict['parent'] = view2id_map.get(view.getParent())
@@ -667,6 +690,7 @@ class DeviceState(object):
                 view_dict['view_str'] = DeviceState.get_view_str(view_dict)
                 view_dict['enabled'] = view.isEnabled()
                 view_dict['focused'] = view.isFocused()
+                view_dict['bounds'] = view.getBounds()
                 views.append(view_dict)
         return views
 

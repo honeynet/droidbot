@@ -1,7 +1,6 @@
 # Copyright (C) 2012-2015  Diego Torres Milano
 # Copyright (C) 2016 Cuckoo Foundation.
 # Copyright (C) 2016 Yuanchun Li.
-
 import logging
 import re
 import socket
@@ -9,14 +8,11 @@ import sys
 import time
 import types
 import xml.parsers.expat
-
 from droidbot_connections.adb import ADB
 from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
 
 VIEW_SERVER_HOST = 'localhost'
 VIEW_SERVER_PORT = 4939
-VERSION_SDK_PROPERTY = 'ro.build.version.sdk'
-VERSION_RELEASE_PROPERTY = 'ro.build.version.release'
 
 # some constants for the attributes
 VIEW_CLIENT_TOUCH_WORKAROUND_ENABLED = False
@@ -63,139 +59,66 @@ class View:
 
         return cls(view.map, view.version, view.windowId)
 
-    def __init__(self, _map, view_client, adb, windowId=None):
+    def __init__(self, attributes, device, useUiAutomator, windowId=None):
         """
         Constructor
-        @type _map: map
-        @param _map: the map containing the (attribute, value) pairs
-        @type device: AdbClient
+        @type attributes: map
+        @param attributes: the map containing the (attribute, value) pairs
+        @type device: Device
         @param device: the device containing this View
-        @type version: int
-        @param version: the Android SDK version number of the platform where this View belongs. If
-                        this is C{-1} then the Android SDK version will be obtained in this
-                        constructor.
-        @type forceviewserveruse: boolean
-        @param forceviewserveruse: Force the use of C{ViewServer} even if the conditions were given
-                        to use C{UiAutomator}.
-        @type uiAutomatorHelper: UiAutomatorHelper
-        @:param uiAutomatorHelper: The UiAutomatorHelper if available
+        @type useUiAutomator: boolean
+        @param useUiAutomator: whether the view is dumped using UIAutomator
         """
-        self.map = _map
+        self.logger = logging.getLogger("ViewClient.View")
+        self.attributes = attributes
         """ The map that contains the C{attr},C{value} pairs """
-        self.adb = adb
+        self.adb = device.get_adb()
         """ adb connection to device """
-        self.view_client = view_client
-        """ viewclient connected to device """
+        # self.view_client = device.get_view_client()
+        # """ viewclient connected to device """
         self.children = []
         """ The children of this View """
         self.parent = None
         """ The parent of this View """
-        self.windows = {}
         self.currentFocus = None
         """ The current focus """
         self.windowId = windowId
         """ The window this view resides """
-        self.build = {}
-        """ Build properties """
-        version = self.adb.get_sdk_version()
-        self.build[VERSION_SDK_PROPERTY] = version
+        version = device.get_sdk_version()
         self.version = version
         """ API version number """
         self.uiScrollable = None
         """ If this is a scrollable View this keeps the L{UiScrollable} object """
         self.target = False
         """ Is this a touch target zone """
-
-        version = self.build[VERSION_SDK_PROPERTY]
-        self.useUiAutomator = True
+        self.useUiAutomator = useUiAutomator
         """ Whether to use UIAutomator or ViewServer """
-        self.idProperty = None
-        """ The id property depending on the View attribute format """
-        self.textProperty = None
-        """ The text property depending on the View attribute format """
-        self.tagProperty = None
-        """ The tag property depending on the View attribute format """
-        self.leftProperty = None
-        """ The left property depending on the View attribute format """
-        self.topProperty = None
-        """ The top property depending on the View attribute format """
-        self.widthProperty = None
-        """ The width property depending on the View attribute format """
-        self.heightProperty = None
-        """ The height property depending on the View attribute format """
-        self.isFocusedProperty = None
-        """ The focused property depending on the View attribute format """
-        self.isEnabledProperty = None
+
+        self.idProperty = ID_PROPERTY
+        self.textProperty = TEXT_PROPERTY
+        self.tagProperty = TAG_PROPERTY
+        self.leftProperty = LEFT_PROPERTY
+        self.topProperty = TOP_PROPERTY
+        self.widthProperty = WIDTH_PROPERTY
+        self.heightProperty = HEIGHT_PROPERTY
+        self.isFocusedProperty = IS_FOCUSED_PROPERTY
+        self.isEnabledProperty = IS_ENABLED_PROPERTY
 
         if version >= 16 and self.useUiAutomator:
             self.idProperty = ID_PROPERTY_UI_AUTOMATOR
             self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
             self.isFocusedProperty = IS_FOCUSED_PROPERTY_UI_AUTOMATOR
             self.isEnabledProperty = IS_ENABLED_PROPERTY_UI_AUTOMATOR
-        elif version > 10 and (version < 16 or self.useUiAutomator):
-            self.idProperty = ID_PROPERTY
-            self.textProperty = TEXT_PROPERTY
-            self.tagProperty = TAG_PROPERTY
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
         elif version == 10:
-            self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
-            self.tagProperty = TAG_PROPERTY
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
         elif 7 <= version < 10:
-            self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
-            self.tagProperty = TAG_PROPERTY
             self.leftProperty = LEFT_PROPERTY_API_8
             self.topProperty = TOP_PROPERTY_API_8
             self.widthProperty = WIDTH_PROPERTY_API_8
             self.heightProperty = HEIGHT_PROPERTY_API_8
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
         elif 0 < version < 7:
-            self.idProperty = ID_PROPERTY
             self.textProperty = TEXT_PROPERTY_API_10
-            self.tagProperty = TAG_PROPERTY
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
-        elif version == -1:
-            self.idProperty = ID_PROPERTY
-            self.textProperty = TEXT_PROPERTY
-            self.tagProperty = TAG_PROPERTY
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
-        else:
-            self.idProperty = ID_PROPERTY
-            self.textProperty = TEXT_PROPERTY
-            self.tagProperty = TAG_PROPERTY
-            self.leftProperty = LEFT_PROPERTY
-            self.topProperty = TOP_PROPERTY
-            self.widthProperty = WIDTH_PROPERTY
-            self.heightProperty = HEIGHT_PROPERTY
-            self.isFocusedProperty = IS_FOCUSED_PROPERTY
-            self.isEnabledProperty = IS_ENABLED_PROPERTY
 
         try:
             if self.isScrollable():
@@ -204,45 +127,45 @@ class View:
             pass
 
     def __getitem__(self, key):
-        return self.map[key]
+        return self.attributes[key]
 
     def __getattr__(self, name):
         # NOTE:
         # I should try to see if 'name' is a defined method
         # but it seems that if I call locals() here an infinite loop is entered
 
-        if self.map.has_key(name):
-            r = self.map[name]
-        elif self.map.has_key(name + '()'):
+        if self.attributes.has_key(name):
+            r = self.attributes[name]
+        elif self.attributes.has_key(name + '()'):
             # the method names are stored in the map with their trailing '()'
-            r = self.map[name + '()']
+            r = self.attributes[name + '()']
         elif name.count("_") > 0:
             mangledList = self.allPossibleNamesWithColon(name)
-            mangledName = self.intersection(mangledList, self.map.keys())
-            if len(mangledName) > 0 and self.map.has_key(mangledName[0]):
-                r = self.map[mangledName[0]]
+            mangledName = self.intersection(mangledList, self.attributes.keys())
+            if len(mangledName) > 0 and self.attributes.has_key(mangledName[0]):
+                r = self.attributes[mangledName[0]]
             else:
                 # Default behavior
                 raise AttributeError, name
         elif name.startswith('is'):
             # try removing 'is' prefix
             suffix = name[2:].lower()
-            if self.map.has_key(suffix):
-                r = self.map[suffix]
+            if self.attributes.has_key(suffix):
+                r = self.attributes[suffix]
             else:
                 # Default behavior
                 raise AttributeError, name
         elif name.startswith('get'):
             # try removing 'get' prefix
             suffix = name[3:].lower()
-            if self.map.has_key(suffix):
-                r = self.map[suffix]
+            if self.attributes.has_key(suffix):
+                r = self.attributes[suffix]
             else:
                 # Default behavior
                 raise AttributeError, name
         elif name == 'getResourceId':
-            if self.map.has_key('resource-id'):
-                r = self.map['resource-id']
+            if self.attributes.has_key('resource-id'):
+                r = self.attributes['resource-id']
             else:
                 # Default behavior
                 raise AttributeError, name
@@ -275,7 +198,7 @@ class View:
         """
 
         try:
-            return self.map['class']
+            return self.attributes['class']
         except:
             return None
 
@@ -287,12 +210,12 @@ class View:
         """
 
         try:
-            return self.map['resource-id']
+            return self.attributes['resource-id']
         except:
             pass
 
         try:
-            return self.map[self.idProperty]
+            return self.attributes[self.idProperty]
         except:
             return None
 
@@ -302,7 +225,7 @@ class View:
         """
 
         try:
-            return self.map['content-desc']
+            return self.attributes['content-desc']
         except:
             return None
 
@@ -312,7 +235,7 @@ class View:
         """
 
         try:
-            return self.map[self.tagProperty]
+            return self.attributes[self.tagProperty]
         except:
             return None
 
@@ -327,7 +250,6 @@ class View:
         """
         Gets the children of this L{View}.
         """
-
         return self.children
 
     def getText(self):
@@ -337,7 +259,7 @@ class View:
         """
 
         try:
-            return self.map[self.textProperty]
+            return self.attributes[self.textProperty]
         except Exception:
             return None
 
@@ -345,24 +267,33 @@ class View:
         """
         Gets the height.
         """
-
-        return self.map['bounds'][1][1] - self.map['bounds'][0][1]
+        if self.useUiAutomator:
+            return self.attributes['bounds'][1][1] - self.attributes['bounds'][0][1]
+        else:
+            try:
+                return int(self.attributes[self.heightProperty])
+            except:
+                return 0
 
     def getWidth(self):
         """
         Gets the width.
         """
-
-        return self.map['bounds'][1][0] - self.map['bounds'][0][0]
+        if self.useUiAutomator:
+            return self.attributes['bounds'][1][0] - self.attributes['bounds'][0][0]
+        else:
+            try:
+                return int(self.attributes[self.widthProperty])
+            except:
+                return 0
 
     def getUniqueId(self):
         """
         Gets the unique Id of this View.
         @see: L{ViewClient.__splitAttrs()} for a discussion on B{Unique Ids}
         """
-
         try:
-            return self.map['uniqueId']
+            return self.attributes['uniqueId']
         except:
             return None
 
@@ -372,11 +303,11 @@ class View:
         """
 
         try:
-            if self.map[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
+            if self.attributes[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
                 return VISIBLE
-            elif self.map[GET_VISIBILITY_PROPERTY] == 'INVISIBLE':
+            elif self.attributes[GET_VISIBILITY_PROPERTY] == 'INVISIBLE':
                 return INVISIBLE
-            elif self.map[GET_VISIBILITY_PROPERTY] == 'GONE':
+            elif self.attributes[GET_VISIBILITY_PROPERTY] == 'GONE':
                 return GONE
             else:
                 return -2
@@ -394,111 +325,140 @@ class View:
         """
         Gets the View X coordinate
         """
-
-        x = self.map['bounds'][0][0]
-
+        x = 0
+        if self.useUiAutomator:
+            x = self.attributes['bounds'][0][0]
+        else:
+            try:
+                if GET_VISIBILITY_PROPERTY in self.attributes and self.attributes[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
+                    _x = int(self.attributes[self.leftProperty])
+                    x += _x
+            except:
+                self.logger.warning("View %s has no '%s' property" % (self.getId(), self.leftProperty))
         return x
-
-    def getY(self):
-        """
-        Gets the View Y coordinate
-        """
-
-        return self.getXY()[1]
 
     def __getY(self):
         """
         Gets the View Y coordinate
         """
-
-        y = self.map['bounds'][0][1]
-
+        y = 0
+        if self.useUiAutomator:
+            y = self.attributes['bounds'][0][1]
+        else:
+            try:
+                if GET_VISIBILITY_PROPERTY in self.attributes and self.attributes[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
+                    _y = int(self.attributes[self.topProperty])
+                    y += _y
+            except:
+                self.logger.warning("View %s has no '%s' property" % (self.getId(), self.topProperty))
         return y
+
+    def getY(self):
+        """
+        Gets the View Y coordinate
+        """
+        return self.getXY()[1]
 
     def getXY(self, debug=False):
         """
         Returns the I{screen} coordinates of this C{View}.
+
         WARNING: Don't call self.getX() or self.getY() inside this method
         or it will enter an infinite loop
+
         @return: The I{screen} coordinates of this C{View}
         """
+        self.logger.debug("getXY(%s %s ## %s)" % (self.getClass(), self.getId(), self.getUniqueId()))
 
         x = self.__getX()
         y = self.__getY()
+        if self.useUiAutomator:
+            return x, y
 
-        return (x, y)
+        parent = self.parent
+        self.logger.debug("   getXY: x=%s y=%s parent=%s" % (x, y, parent.getUniqueId() if parent else "None"))
+        hx = 0
+        ''' Hierarchy accumulated X '''
+        hy = 0
+        ''' Hierarchy accumulated Y '''
 
-    def getCoords(self):
-        """
-        Gets the coords of the View
-        @return: A tuple containing the View's coordinates ((L, T), (R, B))
-        """
+        self.logger.debug("   getXY: not using UiAutomator, calculating parent coordinates")
+        while parent is not None:
+            self.logger.debug("      getXY: parent: %s %s <<<<" % (parent.getClass(), parent.getId()))
+            # if SKIP_CERTAIN_CLASSES_IN_GET_XY_ENABLED:
+            #     if parent.getClass() in [ 'com.android.internal.widget.ActionBarView',
+            #                        'com.android.internal.widget.ActionBarContextView',
+            #                        'com.android.internal.view.menu.ActionMenuView',
+            #                        'com.android.internal.policy.impl.PhoneWindow$DecorView' ]:
+            #         if DEBUG_COORDS: print >> sys.stderr, "   getXY: skipping %s %s (%d,%d)" % (parent.getClass(), parent.getId(), parent.__getX(), parent.__getY())
+            #         parent = parent.parent
+            #         continue
+            # self.logger.debug("   getXY: parent=%s x=%d hx=%d y=%d hy=%d" % (parent.getId(), x, hx, y, hy))
+            hx += parent.__getX()
+            hy += parent.__getY()
+            parent = parent.parent
 
-        (x, y) = self.getXY()
-        w = self.getWidth()
-        h = self.getHeight()
-        return ((x, y), (x + w, y + h))
+        (wvx, wvy) = self.__dumpWindowsInformation(debug=debug)
+        self.logger.debug("   getXY: wv=(%d, %d) (windows information)" % (wvx, wvy))
+        try:
+            if self.windowId:
+                fw = self.windows[self.windowId]
+            else:
+                fw = self.windows[self.currentFocus]
+            self.logger.debug("    getXY: focused window=", fw)
+            self.logger.debug(
+                "    getXY: deciding whether to consider statusbar offset because current focused windows is at",
+                (fw.wvx, fw.wvy), "parent", (fw.px, fw.py))
+        except KeyError:
+            fw = None
+        (sbw, sbh) = self.__obtainStatusBarDimensionsIfVisible()
+        self.logger.debug("   getXY: sb=(%d, %d) (statusbar dimensions)" % (sbw, sbh))
+        statusBarOffset = 0
+        pwx = 0
+        pwy = 0
 
-    def getPositionAndSize(self):
-        """
-        Gets the position and size (X,Y, W, H)
-        @return: A tuple containing the View's coordinates (X, Y, W, H)
-        """
+        if fw:
+            self.logger.debug("    getXY: focused window=", fw, "sb=", (sbw, sbh))
+            if fw.wvy <= sbh:  # it's very unlikely that fw.wvy < sbh, that is a window over the statusbar
+                self.logger.debug("        getXY: yes, considering offset=", sbh)
+                statusBarOffset = sbh
+            else:
+                self.logger.debug("        getXY: no, ignoring statusbar offset fw.wvy=", fw.wvy, ">", sbh)
 
-        (x, y) = self.getXY();
-        w = self.getWidth()
-        h = self.getHeight()
-        return (x, y, w, h)
+            if fw.py == fw.wvy:
+                self.logger.debug("        getXY: but wait, fw.py == fw.wvy so we are adjusting by ", (fw.px, fw.py))
+                pwx = fw.px
+                pwy = fw.py
+            else:
+                self.logger.debug("    getXY: fw.py=%d <= fw.wvy=%d, no adjustment" % (fw.py, fw.wvy))
 
-    def getBounds(self):
-        """
-        Gets the View bounds
-        """
-
-        if 'bounds' in self.map:
-            return self.map['bounds']
-        else:
-            return self.getCoords()
-
-    def getCenter(self):
-        """
-        Gets the center coords of the View
-        @author: U{Dean Morin <https://github.com/deanmorin>}
-        """
-
-        (left, top), (right, bottom) = self.getCoords()
-        x = left + (right - left) / 2
-        y = top + (bottom - top) / 2
-        return (x, y)
+        self.logger.debug(
+            "   getXY: returning (%d, %d) ***\n" % (x + hx + wvx + pwx, y + hy + wvy - statusBarOffset + pwy) +
+            "                     x=%d+%d+%d+%d\n" % (x, hx, wvx, pwx) +
+            "                     y=%d+%d+%d-%d+%d\n" % (y, hy, wvy, statusBarOffset, pwy))
+        return x + hx + wvx + pwx, y + hy + wvy - statusBarOffset + pwy
 
     def __obtainStatusBarDimensionsIfVisible(self):
         sbw = 0
         sbh = 0
         for winId in self.windows:
             w = self.windows[winId]
+            self.logger.debug("      __obtainStatusBarDimensionsIfVisible: w=", w, "   w.activity=", w.activity, "%%%")
             if w.activity == 'StatusBar':
                 if w.wvy == 0 and w.visibility == 0:
+                    self.logger.debug("      __obtainStatusBarDimensionsIfVisible: statusBar=", (w.wvw, w.wvh))
                     sbw = w.wvw
                     sbh = w.wvh
                 break
 
         return (sbw, sbh)
 
-    def __obtainVxVy(self, m):
-        return obtainVxVy(m)
-
-    def __obtainVwVh(self, m):
-        return obtainVwVh(m)
-
-    def __obtainPxPy(self, m):
-        return obtainPxPy(m)
-
     def __dumpWindowsInformation(self, debug=False):
         self.windows = {}
         self.currentFocus = None
         dww = self.adb.shell('dumpsys window windows')
         lines = dww.splitlines()
-        widRE = re.compile('^ *Window #%s Window\{%s (u\d+ )?%s?.*\}:' %
+        widRE = re.compile('^ *Window #%s Window\{%s (u\d+ )?%s?.*}:' %
                            (_nd('num'), _nh('winId'), _ns('activity', greedy=True)))
         currentFocusRE = re.compile('^  mCurrentFocus=Window\{%s .*' % _nh('winId'))
         viewVisibilityRE = re.compile(' mViewVisibility=0x%s ' % _nh('visibility'))
@@ -539,7 +499,8 @@ class View:
                     m = viewVisibilityRE.search(lines[l2])
                     if m:
                         visibility = int(m.group('visibility'))
-                    if self.build[VERSION_SDK_PROPERTY] >= 17:
+                        self.logger.debug("__dumpWindowsInformation: visibility=", visibility)
+                    if self.version >= 17:
                         m = framesRE.search(lines[l2])
                         if m:
                             px, py = obtainPxPy(m)
@@ -547,7 +508,7 @@ class View:
                             if m:
                                 wvx, wvy = obtainVxVy(m)
                                 wvw, wvh = obtainVwVh(m)
-                    elif self.build[VERSION_SDK_PROPERTY] >= 16:
+                    elif self.version >= 16:
                         m = framesRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
@@ -559,7 +520,7 @@ class View:
                                 # https://github.com/dtmilano/AndroidViewClient/issues/29
                                 wvx, wvy = self.__obtainVxVy(m)
                                 wvw, wvh = self.__obtainVwVh(m)
-                    elif self.build[VERSION_SDK_PROPERTY] == 15:
+                    elif self.version == 15:
                         m = containingFrameRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
@@ -567,7 +528,7 @@ class View:
                             if m:
                                 wvx, wvy = self.__obtainVxVy(m)
                                 wvw, wvh = self.__obtainVwVh(m)
-                    elif self.build[VERSION_SDK_PROPERTY] == 10:
+                    elif self.version == 10:
                         m = containingFrameRE.search(lines[l2])
                         if m:
                             px, py = self.__obtainPxPy(m)
@@ -576,7 +537,7 @@ class View:
                                 wvx, wvy = self.__obtainVxVy(m)
                                 wvw, wvh = self.__obtainVwVh(m)
                     else:
-                        self.logger.warn("Unsupported Android version %d" % self.build[VERSION_SDK_PROPERTY])
+                        self.logger.warning("Unsupported Android version %d" % self.version)
 
                     # print >> sys.stderr, "Searching policyVisibility in", lines[l2]
                     m = policyVisibilityRE.search(lines[l2])
@@ -592,12 +553,54 @@ class View:
 
         if self.windowId and self.windowId in self.windows and self.windows[self.windowId].visibility == 0:
             w = self.windows[self.windowId]
-            return (w.wvx, w.wvy)
+            return w.wvx, w.wvy
         elif self.currentFocus in self.windows and self.windows[self.currentFocus].visibility == 0:
+            self.logger.debug("__dumpWindowsInformation: focus=%s" % self.currentFocus +
+                              "__dumpWindowsInformation: %s" % self.windows[self.currentFocus])
             w = self.windows[self.currentFocus]
-            return (w.wvx, w.wvy)
+            return w.wvx, w.wvy
         else:
-            return (0, 0)
+            self.logger.debug("__dumpWindowsInformation: (0,0)")
+            return 0, 0
+
+    def getCoords(self):
+        """
+        Gets the coords of the View
+        @return: A tuple containing the View's coordinates ((L, T), (R, B))
+        """
+        (x, y) = self.getXY()
+        w = self.getWidth()
+        h = self.getHeight()
+        return (x, y), (x + w, y + h)
+
+    def getPositionAndSize(self):
+        """
+        Gets the position and size (X,Y, W, H)
+        @return: A tuple containing the View's coordinates (X, Y, W, H)
+        """
+        (x, y) = self.getXY()
+        w = self.getWidth()
+        h = self.getHeight()
+        return x, y, w, h
+
+    def getBounds(self):
+        """
+        Gets the View bounds
+        """
+        if 'bounds' in self.attributes:
+            return self.attributes['bounds']
+        else:
+            return self.getCoords()
+
+    def getCenter(self):
+        """
+        Gets the center coords of the View
+        @author: U{Dean Morin <https://github.com/deanmorin>}
+        """
+        (left, top), (right, bottom) = self.getCoords()
+        x = left + (right - left) / 2
+        y = top + (bottom - top) / 2
+        return x, y
 
     def touch(self, eventType=ADB.DOWN_AND_UP, deltaX=0, deltaY=0):
         """
@@ -610,7 +613,6 @@ class View:
         @param deltaY: Displacement from center (Y axis)
         @type deltaY: int
         """
-
         (x, y) = self.getCenter()
         if deltaX:
             x += deltaX
@@ -645,10 +647,8 @@ class View:
         Long touches this C{View}
         @param duration: duration in ms
         """
-
         (x, y) = self.getCenter()
-        # FIXME: get orientation
-        self.adb.longTouch(x, y, duration, orientation=-1)
+        self.adb.longTouch(x, y, duration)
 
     def allPossibleNamesWithColon(self, name):
         l = []
@@ -662,7 +662,7 @@ class View:
 
     def containsPoint(self, (x, y)):
         (X, Y, W, H) = self.getPositionAndSize()
-        return (((x >= X) and (x <= (X + W)) and ((y >= Y) and (y <= (Y + H)))))
+        return (x >= X) and (x <= (X + W)) and ((y >= Y) and (y <= (Y + H)))
 
     def add(self, child):
         """
@@ -713,7 +713,7 @@ class View:
         """
 
         try:
-            return True if self.map[self.isFocusedProperty].lower() == 'true' else False
+            return True if self.attributes[self.isFocusedProperty].lower() == 'true' else False
         except Exception:
             return False
 
@@ -724,11 +724,12 @@ class View:
         """
 
         try:
-            return True if self.map[self.isEnabledProperty].lower() == 'true' else False
+            return True if self.attributes[self.isEnabledProperty].lower() == 'true' else False
         except Exception:
             return False
 
     def variableNameFromId(self):
+        var = None
         _id = self.getId()
         if _id:
             var = _id.replace('.', '_').replace(':', '___').replace('/', '_')
@@ -751,8 +752,8 @@ class View:
 
     def __smallStr__(self):
         __str = unicode("View[", 'utf-8', 'replace')
-        if "class" in self.map:
-            __str += " class=" + self.map['class']
+        if "class" in self.attributes:
+            __str += " class=" + self.attributes['class']
         __str += " id=%s" % self.getId()
         __str += " ]   parent="
         if self.parent and "class" in self.parent.map:
@@ -764,8 +765,8 @@ class View:
 
     def __tinyStr__(self):
         __str = unicode("View[", 'utf-8', 'replace')
-        if "class" in self.map:
-            __str += " class=" + re.sub('.*\.', '', self.map['class'])
+        if "class" in self.attributes:
+            __str += " class=" + re.sub('.*\.', '', self.attributes['class'])
         __str += " id=%s" % self.getId()
         __str += " ]"
 
@@ -773,8 +774,8 @@ class View:
 
     def __microStr__(self):
         __str = unicode('', 'utf-8', 'replace')
-        if "class" in self.map:
-            __str += re.sub('.*\.', '', self.map['class'])
+        if "class" in self.attributes:
+            __str += re.sub('.*\.', '', self.attributes['class'])
         _id = self.getId().replace('id/no_id/', '-')
         __str += _id
         ((L, T), (R, B)) = self.getCoords()
@@ -785,15 +786,15 @@ class View:
 
     def __str__(self):
         __str = unicode("View[", 'utf-8', 'replace')
-        if "class" in self.map:
-            __str += " class=" + self.map["class"].__str__() + " "
-        for a in self.map:
+        if "class" in self.attributes:
+            __str += " class=" + self.attributes["class"].__str__() + " "
+        for a in self.attributes:
             __str += a + "="
             # decode() works only on python's 8-bit strings
-            if isinstance(self.map[a], unicode):
-                __str += self.map[a]
+            if isinstance(self.attributes[a], unicode):
+                __str += self.attributes[a]
             else:
-                __str += unicode(str(self.map[a]), 'utf-8', errors='replace')
+                __str += unicode(str(self.attributes[a]), 'utf-8', errors='replace')
             __str += " "
         __str += "]   parent="
         if self.parent:
@@ -812,8 +813,14 @@ class UiAutomator2AndroidViewClient:
     UiAutomator XML to AndroidViewClient
     """
 
-    def __init__(self, version):
-        self.version = version
+    def __init__(self, device):
+        """
+        convert UiAutomator result to ViewClient result
+        @param device: the device where the views are dumped from
+        @type device: Device
+        @return:
+        """
+        self.device = device
         self.root = None
         self.nodeStack = []
         self.parent = None
@@ -832,7 +839,7 @@ class UiAutomator2AndroidViewClient:
             bounds = re.split('[\][,]', attributes['bounds'])
             attributes['bounds'] = ((int(bounds[1]), int(bounds[2])), (int(bounds[4]), int(bounds[5])))
             self.idCount += 1
-            child = View.factory(attributes, version=self.version)
+            child = View(attributes=attributes, device=self.device, useUiAutomator=True)
             self.views.append(child)
             # Push element onto the stack and make it a child of parent
             if not self.nodeStack:
@@ -856,7 +863,6 @@ class UiAutomator2AndroidViewClient:
         """
         Expat character data event handler
         """
-
         if data.strip():
             data = data.encode()
             element = self.nodeStack[-1]
@@ -897,6 +903,7 @@ class UiScrollable(UiCollection):
     def __init__(self, view):
         self.vc = None
         self.view = view
+        self.adb = view.adb
         self.vertical = True
         self.bounds = view.getBounds()
         (self.x, self.y, self.w, self.h) = view.getPositionAndSize()
@@ -912,7 +919,7 @@ class UiScrollable(UiCollection):
         else:
             s = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h / 2)
             e = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h / 2)
-        self.view.device.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
+        self.adb.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
 
     def flingForward(self):
         if self.vertical:
@@ -1010,39 +1017,16 @@ class ViewClient:
         """ The map containing the device's display properties: width, height and density """
 
         for prop in ['width', 'height', 'density', 'orientation']:
-            self.display[prop] = self.device.display[prop]
-
-        self.build = {}
-        """ The map containing the device's build properties: version.sdk, version.release """
-
-        for prop in [VERSION_SDK_PROPERTY, VERSION_RELEASE_PROPERTY]:
-            self.build[prop] = -1
-            try:
-                self.build[prop] = device.getProperty(prop)
-            except:
-                self.logger.warning(("Couldn't determine build %s" % prop))
-
-            if prop == VERSION_SDK_PROPERTY:
-                # we expect it to be an int
-                self.build[prop] = int(self.build[prop]) if self.build[prop] else -1
-
-        self.ro = {}
-        """ The map containing the device's ro properties: secure, debuggable """
-        for prop in ['secure', 'debuggable']:
-            try:
-                self.ro[prop] = self.adb.shell('getprop ro.' + prop)[:-2]
-            except:
-                self.logger.warning("Couldn't determine ro %s" % prop)
-                self.ro[prop] = 'UNKNOWN'
+            self.display[prop] = self.device.get_display_info()[prop]
 
         self.forceViewServerUse = forceviewserveruse
         """ Force the use of ViewServer even if the conditions to use UiAutomator are satisfied """
-        self.useUiAutomator = (
-                                  self.build[
-                                      VERSION_SDK_PROPERTY] >= 16) and not forceviewserveruse  # jelly bean 4.1 & 4.2
-        self.logger.debug("ViewClient.__init__: useUiAutomator=%s;sdk=%s;forceviewserveruse=%s." %
-                          (self.useUiAutomator, self.build[VERSION_SDK_PROPERTY], forceviewserveruse))
+
+        self.useUiAutomator = (self.device.get_sdk_version() >= 16) and not forceviewserveruse
         """ If UIAutomator is supported by the device it will be used """
+
+        self.logger.debug("ViewClient.__init__: useUiAutomator=%s;sdk=%s;forceviewserveruse=%s." %
+                          (self.useUiAutomator, self.device.get_sdk_version(), forceviewserveruse))
         self.ignoreUiAutomatorKilled = ignoreuiautomatorkilled
         """ On some devices (i.e. Nexus 7 running 4.2.2) uiautomator is killed just after generating
         the dump file. In many cases the file is already complete so we can ask to ignore the 'Killed'
@@ -1055,23 +1039,22 @@ class ViewClient:
         if self.useUiAutomator:
             self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
         else:
-            if self.build[VERSION_SDK_PROPERTY] <= 10:
+            if self.device.get_sdk_version() <= 10:
                 self.textProperty = TEXT_PROPERTY_API_10
             else:
                 self.textProperty = TEXT_PROPERTY
             if startviewserver:
-                if not self.serviceResponse(self.adb.shell('service call window 3')):
-                    try:
-                        self.assertServiceResponse(self.adb.shell('service call window 1 i32 %d' % remoteport))
-                    except:
-                        msg = 'Cannot start View server.\n' \
-                              'This only works on emulator and devices running developer versions.\n' \
-                              'Does hierarchyviewer work on your device?\n' \
-                              'See https://github.com/dtmilano/AndroidViewClient/wiki/Secure-mode\n\n' \
-                              'Device properties:\n' \
-                              '    ro.secure=%s\n' \
-                              '    ro.debuggable=%s\n' % (self.ro['secure'], self.ro['debuggable'])
-                        raise Exception(msg)
+                if not self.validServerResponse(self.adb.shell('service call window 3')) \
+                        and not self.validServerResponse(self.adb.shell('service call window 1 i32 %d' % remoteport)):
+                    msg = 'Cannot start View server.\n' \
+                          'This only works on emulator and devices running developer versions.\n' \
+                          'Does hierarchyviewer work on your device?\n' \
+                          'See https://github.com/dtmilano/AndroidViewClient/wiki/Secure-mode\n\n' \
+                          'Device properties:\n' \
+                          '    ro.secure=%s\n' \
+                          '    ro.debuggable=%s\n' \
+                          % (self.device.get_ro_secure(), self.device.get_ro_debuggable())
+                    raise Exception(msg)
 
             self.localPort = localport
             self.remotePort = remoteport
@@ -1083,6 +1066,16 @@ class ViewClient:
         # The output of compressed dump is different than output of uncompressed one.
         # If one requires uncompressed output, this option should be set to False
         self.compressedDump = compresseddump
+
+    def validServerResponse(self, response):
+        """
+        Checks the response received from the I{ViewServer}.
+
+        @return: C{True} if the response received matches L{PARCEL_TRUE}, C{False} otherwise
+        """
+        PARCEL_TRUE = "Result: Parcel(00000000 00000001   '........')\r\n"
+        ''' The TRUE response parcel '''
+        return response == PARCEL_TRUE
 
     def dump(self, window=-1, sleep=1):
         """
@@ -1110,7 +1103,7 @@ class ViewClient:
             time.sleep(sleep)
 
         if self.useUiAutomator:
-            api = self.adb.getSdkVersion()
+            api = self.device.get_sdk_version()
             if api >= 23:
                 # In API 23 the process' stdout,in and err are connected to the socket not to the pts as in
                 # previous versions, so we can't redirect to /dev/tty
@@ -1142,7 +1135,7 @@ You should force ViewServer back-end.""")
                 raise RuntimeError("""The views are being refreshed too frequently to dump.""")
             self.setViewsFromUiAutomatorDump(received)
         else:
-            if isinstance(window, str):
+            if isinstance(window, str) or isinstance(window, unicode):
                 if window != '-1':
                     self.list(sleep=0)
                     found = False
@@ -1185,8 +1178,6 @@ You should force ViewServer back-end.""")
             doneRE = re.compile("DONE")
             ViewClient.setAlarm(120)
             while True:
-                if DEBUG_RECEIVED:
-                    print >> sys.stderr, "    reading from socket..."
                 received += s.recv(1024)
                 if doneRE.search(received[-7:]):
                     break
@@ -1200,6 +1191,17 @@ You should force ViewServer back-end.""")
             self.setViews(received, hex(window)[2:])
 
         return self.views
+
+    def disconnect(self):
+        self.logger.info("disconnected")
+
+    @staticmethod
+    def setAlarm(timeout):
+        import platform, signal
+        osName = platform.system()
+        if osName.startswith('Windows'):  # alarm is not implemented in Windows
+            return
+        signal.alarm(timeout)
 
     def list(self, sleep=1):
         """
@@ -1258,13 +1260,13 @@ You should force ViewServer back-end.""")
         Sets L{self.views} to the received value splitting it into lines.
 
         @type received: str
-        @param received: the string received from the I{View Server}
+        @param received: the string received from the I{View Serverw}
         """
 
         if not received or received == "":
             raise ValueError("received is empty")
-        if not isinstance(received, str):
-            raise ValueError("received is not str")
+        if not isinstance(received, str) and not isinstance(received, unicode):
+            raise ValueError("received is %s instead of str: %s" % (type(received), received))
         self.views = []
         """ The list of Views represented as C{str} obtained after splitting it into lines after being received from the server. Done by L{self.setViews()}. """
         self.__parseTree(received.split("\n"), windowId)
@@ -1293,7 +1295,7 @@ You should force ViewServer back-end.""")
             if not self.root:
                 if v[0] == ' ':
                     raise Exception("Unexpected root element starting with ' '.")
-                self.root = View.factory(attrs, self.device, self.build[VERSION_SDK_PROPERTY], self.forceViewServerUse, windowId)
+                self.root = View(attrs, self.device, self.useUiAutomator, windowId)
                 treeLevel = 0
                 newLevel = 0
                 lastView = self.root
@@ -1303,19 +1305,19 @@ You should force ViewServer back-end.""")
                 newLevel = (len(v) - len(v.lstrip()))
                 if newLevel == 0:
                     raise Exception("newLevel==0 treeLevel=%d but tree can have only one root, v=%s" % (treeLevel, v))
-                child = View.factory(attrs, self.device, self.build[VERSION_SDK_PROPERTY], self.forceViewServerUse, windowId)
+                child = View(attrs, self.device, self.useUiAutomator, windowId)
                 if newLevel == treeLevel:
                     parent.add(child)
                     lastView = child
                 elif newLevel > treeLevel:
                     if (newLevel - treeLevel) != 1:
-                        raise Exception("newLevel jumps %d levels, v=%s" % ((newLevel-treeLevel), v))
+                        raise Exception("newLevel jumps %d levels, v=%s" % ((newLevel - treeLevel), v))
                     parent = lastView
                     parents.append(parent)
                     parent.add(child)
                     lastView = child
                     treeLevel = newLevel
-                else: # newLevel < treeLevel
+                else:  # newLevel < treeLevel
                     for _ in range(treeLevel - newLevel):
                         parents.pop()
                     parent = parents.pop()
@@ -1387,7 +1389,7 @@ You should force ViewServer back-end.""")
                 else:
                     self.logger.warning("doesn't match: %s" % attrs)
 
-        if True: # was assignViewById
+        if True:  # was assignViewById
             if not viewId:
                 # If the view has NO_ID we are assigning a default id here (id/no_id) which is
                 # immediately incremented if another view with no id was found before to generate
@@ -1398,10 +1400,10 @@ You should force ViewServer back-end.""")
                 i = 1
                 while True:
                     newId = re.sub('/\d+$', '', viewId) + '/%d' % i
-                    if not newId in self.viewsById:
+                    if newId not in self.viewsById:
+                        viewId = newId
                         break
                     i += 1
-                viewId = newId
             # We are assigning a new attribute to keep the original id preserved, which could have
             # been NO_ID repeated multiple times
             attrs['uniqueId'] = viewId
@@ -1413,8 +1415,7 @@ You should force ViewServer back-end.""")
         self.__parseTreeFromUiAutomatorDump(received)
 
     def __parseTreeFromUiAutomatorDump(self, receivedXml):
-        version = self.adb.get_sdk_version()
-        parser = UiAutomator2AndroidViewClient(version)
+        parser = UiAutomator2AndroidViewClient(self.device)
         try:
             start_xml_index = receivedXml.index("<")
             end_xml_index = receivedXml.rindex(">")

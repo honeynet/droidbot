@@ -25,7 +25,7 @@ class App(object):
         self.package_name = self.androguard.a.get_package()
         self.main_activity = self.androguard.a.get_main_activity()
         self.possible_broadcasts = self.get_possible_broadcasts()
-        self.permissions = self.get_permissions()
+        self.permissions = self.androguard.a.get_permissions()
 
     def get_androguard_analysis(self):
         """
@@ -98,9 +98,6 @@ class App(object):
 
     def get_possible_broadcasts(self):
         possible_broadcasts = set()
-        androguard = self.get_androguard_analysis()
-        if androguard is None:
-            return androguard
 
         androguard_a = self.get_androguard_analysis().a
         receivers = androguard_a.get_receivers()

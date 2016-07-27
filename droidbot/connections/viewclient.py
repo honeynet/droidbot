@@ -401,14 +401,15 @@ class View:
         (wvx, wvy) = self.__dumpWindowsInformation(debug=debug)
         self.logger.debug("   getXY: wv=(%d, %d) (windows information)" % (wvx, wvy))
         try:
-            if self.windowId:
+            if self.windowId and self.windowId in self.windows:
                 fw = self.windows[self.windowId]
             else:
                 fw = self.windows[self.currentFocus]
-            self.logger.debug("    getXY: focused window=", fw)
+            self.logger.debug("    getXY: focused window=%s" % fw)
             self.logger.debug(
-                "    getXY: deciding whether to consider statusbar offset because current focused windows is at",
-                (fw.wvx, fw.wvy), "parent", (fw.px, fw.py))
+                "    getXY: deciding whether to consider statusbar offset"
+                " because current focused windows is at (%d, %d) parent (%d, %d)" %
+                (fw.wvx, fw.wvy, fw.px, fw.py))
         except KeyError:
             fw = None
         (sbw, sbh) = self.__obtainStatusBarDimensionsIfVisible()
@@ -418,15 +419,16 @@ class View:
         pwy = 0
 
         if fw:
-            self.logger.debug("    getXY: focused window=", fw, "sb=", (sbw, sbh))
+            self.logger.debug("    getXY: focused window=%s sb=(%d, %d)" % (fw, sbw, sbh))
             if fw.wvy <= sbh:  # it's very unlikely that fw.wvy < sbh, that is a window over the statusbar
-                self.logger.debug("        getXY: yes, considering offset=", sbh)
+                self.logger.debug("        getXY: yes, considering offset=%d" % sbh)
                 statusBarOffset = sbh
             else:
-                self.logger.debug("        getXY: no, ignoring statusbar offset fw.wvy=", fw.wvy, ">", sbh)
+                self.logger.debug("        getXY: no, ignoring statusbar offset fw.wvy=%d>%d" % (fw.wvy, sbh))
 
             if fw.py == fw.wvy:
-                self.logger.debug("        getXY: but wait, fw.py == fw.wvy so we are adjusting by ", (fw.px, fw.py))
+                self.logger.debug("        getXY: but wait, fw.py == fw.wvy"
+                                  " so we are adjusting by (%d, %d)" % (fw.px, fw.py))
                 pwx = fw.px
                 pwy = fw.py
             else:
@@ -443,10 +445,10 @@ class View:
         sbh = 0
         for winId in self.windows:
             w = self.windows[winId]
-            self.logger.debug("      __obtainStatusBarDimensionsIfVisible: w=", w, "   w.activity=", w.activity, "%%%")
+            self.logger.debug("      __obtainStatusBarDimensionsIfVisible: w=%s   w.activity=%s" % (w, w.activity))
             if w.activity == 'StatusBar':
                 if w.wvy == 0 and w.visibility == 0:
-                    self.logger.debug("      __obtainStatusBarDimensionsIfVisible: statusBar=", (w.wvw, w.wvh))
+                    self.logger.debug("      __obtainStatusBarDimensionsIfVisible: statusBar=(%d, %d)" % (w.wvw, w.wvh))
                     sbw = w.wvw
                     sbh = w.wvh
                 break
@@ -499,7 +501,7 @@ class View:
                     m = viewVisibilityRE.search(lines[l2])
                     if m:
                         visibility = int(m.group('visibility'))
-                        self.logger.debug("__dumpWindowsInformation: visibility=", visibility)
+                        self.logger.debug("__dumpWindowsInformation: visibility=%d" % visibility)
                     if self.version >= 17:
                         m = framesRE.search(lines[l2])
                         if m:
@@ -555,7 +557,7 @@ class View:
             w = self.windows[self.windowId]
             return w.wvx, w.wvy
         elif self.currentFocus in self.windows and self.windows[self.currentFocus].visibility == 0:
-            self.logger.debug("__dumpWindowsInformation: focus=%s" % self.currentFocus +
+            self.logger.debug("__dumpWindowsInformation: focus=%s\n" % self.currentFocus +
                               "__dumpWindowsInformation: %s" % self.windows[self.currentFocus])
             w = self.windows[self.currentFocus]
             return w.wvx, w.wvy
@@ -1188,7 +1190,10 @@ You should force ViewServer back-end.""")
                     if ord(c) > 127:
                         received = unicode(received, encoding='utf-8', errors='replace')
                         break
-            self.setViews(received, hex(window)[2:])
+            if window == -1:
+                self.setViews(received)
+            else:
+                self.setViews(received, hex(window)[2:])
 
         return self.views
 

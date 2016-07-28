@@ -292,8 +292,8 @@ class TouchEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         return TouchEvent(x, y)
 
     def send(self, device):
@@ -317,8 +317,8 @@ class LongTouchEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         return LongTouchEvent(x, y)
 
     def send(self, device):
@@ -343,10 +343,10 @@ class DragEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        start_x = random.uniform(0, device.get_display_info()['width'])
-        start_y = random.uniform(0, device.get_display_info()['height'])
-        end_x = random.uniform(0, device.get_display_info()['width'])
-        end_y = random.uniform(0, device.get_display_info()['height'])
+        start_x = random.uniform(0, device.get_width())
+        start_y = random.uniform(0, device.get_height())
+        end_x = random.uniform(0, device.get_width())
+        end_y = random.uniform(0, device.get_height())
         return DragEvent(start_x, start_y, end_x, end_y)
 
     def send(self, device):
@@ -371,8 +371,8 @@ class SwipeEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         direction = random.choice(["UP", "DOWN", "LEFT", "RIGHT"])
         return SwipeEvent(x, y, direction)
 
@@ -384,11 +384,11 @@ class SwipeEvent(UIEvent):
         if self.direction == "UP":
             end_y = 0
         elif self.direction == "DOWN":
-            end_y = device.get_display_info()['height']
+            end_y = device.get_height()
         elif self.direction == "LEFT":
             end_x = 0
         elif self.direction == "RIGHT":
-            end_x = device.get_display_info()['width']
+            end_x = device.get_width()
 
         device.view_drag((self.x, self.y), (end_x, end_y), duration)
         return True
@@ -427,7 +427,7 @@ class IntentEvent(AppEvent):
             self.__dict__ = event_dict
             return
         self.event_type = KEY_IntentEvent
-        self.intent = intent.get_cmd()
+        self.intent = intent.get_cmd() if isinstance(intent, Intent) else ""
 
     @staticmethod
     def get_random_instance(device, app):
@@ -820,13 +820,13 @@ class EventFactory(object):
             except KeyboardInterrupt:
                 break
             except StopSendingEventException as e:
-                self.device.logger.warning("EventFactory stop sending event: ", e)
+                self.device.logger.warning("EventFactory stop sending event: %s" % e)
                 break
             # except RuntimeError as e:
             #     self.device.logger.warning(e.message)
             #     break
             except Exception as e:
-                self.device.logger.warning("exception in EventFactory: ", e)
+                self.device.logger.warning("exception in EventFactory: %s" % e)
                 import traceback
                 traceback.print_exc()
                 continue

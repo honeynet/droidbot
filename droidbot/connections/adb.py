@@ -165,28 +165,70 @@ class ADB(object):
         logicalDisplayRE = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
                                       " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
         dumpsys_display_result = self.shell("dumpsys display")
-        if dumpsys_display_result is None:
-            self.logger.warning("dumpsys display returns None")
-            return displayInfo
-        for line in dumpsys_display_result.splitlines():
-            m = logicalDisplayRE.search(line, 0)
+        if dumpsys_display_result is not None:
+            for line in dumpsys_display_result.splitlines():
+                m = logicalDisplayRE.search(line, 0)
+                if m:
+                    for prop in ['width', 'height', 'orientation']:
+                        displayInfo[prop] = int(m.group(prop))
+
+        if 'width' not in displayInfo or 'height' not in displayInfo:
+            physicalDisplayRE = re.compile('Physical size: (?P<width>\d+)x(?P<height>\d+)')
+            m = physicalDisplayRE.search(self.shell('wm size'))
             if m:
-                for prop in ["width", "height", "orientation"]:
+                for prop in ['width', 'height']:
                     displayInfo[prop] = int(m.group(prop))
 
-        physicalDisplayRE = re.compile('Physical size: (?P<physical_width>\d+)x(?P<physical_height>\d+)')
-        m = physicalDisplayRE.search(self.shell('wm size'))
-        if m:
-            for prop in ['physical_width', 'physical_height']:
-                displayInfo[prop] = int(m.group(prop))
+        if 'width' not in displayInfo or 'height' not in displayInfo:
+            # This could also be mSystem or mOverscanScreen
+            phyDispRE = re.compile('\s*mUnrestrictedScreen=\((?P<x>\d+),(?P<y>\d+)\) (?P<width>\d+)x(?P<height>\d+)')
+            # This is known to work on older versions (i.e. API 10) where mrestrictedScreen is not available
+            dispWHRE = re.compile('\s*DisplayWidth=(?P<width>\d+) *DisplayHeight=(?P<height>\d+)')
+            for line in self.shell('dumpsys window').splitlines():
+                m = phyDispRE.search(line, 0)
+                if not m:
+                    m = dispWHRE.search(line, 0)
+                if m:
+                    for prop in ['width', 'height']:
+                        displayInfo[prop] = int(m.group(prop))
 
-        physicalDensityRE = re.compile('Physical density: (?P<density>\d+)', re.MULTILINE)
-        m = physicalDensityRE.search(self.shell('wm density'))
-        if m:
-            for prop in ['density']:
-                displayInfo[prop] = float(m.group(prop))
+        if 'orientation' not in displayInfo:
+            surfaceOrientationRE = re.compile("SurfaceOrientation:\s+(\d+)")
+            output = self.shell("dumpsys input")
+            m = surfaceOrientationRE.search(output)
+            if m:
+                displayInfo['orientation'] = int(m.group(1))
+
+        BASE_DPI = 160.0
+        density = None
+        floatRE = re.compile(r"[-+]?\d*\.\d+|\d+")
+        d = self.get_property('ro.sf.lcd_density')
+        if floatRE.match(d):
+            density = float(d)
+        else:
+            d = self.get_property('qemu.sf.lcd_density')
+            if floatRE.match(d):
+                density = float(d)
+            else:
+                physicalDensityRE = re.compile('Physical density: (?P<density>[\d.]+)', re.MULTILINE)
+                m = physicalDensityRE.search(self.shell('wm density'))
+                if m:
+                    density = float(m.group('density'))
+        if density is not None:
+            displayInfo['density'] = density
+
+        displayInfoKeys = {'width', 'height', 'orientation', 'density'}
+        if not displayInfoKeys.issuperset(displayInfo):
+            self.logger.warning("getDisplayInfo failed to get: %s" % displayInfoKeys)
 
         return displayInfo
+
+    def getDisplayDensity(self):
+        displayInfo = self.getDisplayInfo()
+        if 'density' in displayInfo:
+            return displayInfo['density']
+        else:
+            return -1.0
 
     def getFocusedWindow(self):
         """
@@ -309,26 +351,20 @@ class ADB(object):
         if orientationOrig != orientationDest:
             if orientationDest == 1:
                 _x = x
-                x = self.getDisplayInfo()["width"] - y
+                x = self.getDisplayInfo()['width'] - y
                 y = _x
             elif orientationDest == 3:
                 _x = x
                 x = y
-                y = self.getDisplayInfo()["height"] - _x
-        return (x, y)
+                y = self.getDisplayInfo()['height'] - _x
+        return x, y
 
     def getOrientation(self):
         displayInfo = self.getDisplayInfo()
-
-        if "orientation" in displayInfo:
-            return displayInfo["orientation"]
-
-        surfaceOrientationRE = re.compile("SurfaceOrientation:\s+(\d+)")
-        output = self.shell("dumpsys input")
-        m = surfaceOrientationRE.search(output)
-        if m:
-            return int(m.group(1))
-        return -1
+        if 'orientation' in displayInfo:
+            return displayInfo['orientation']
+        else:
+            return -1
 
     def unlock(self):
         """
@@ -349,7 +385,7 @@ class ADB(object):
         self.shell("input tap %d %d" %
                    self.__transformPointByOrientation((x, y),
                                                       orientation,
-                                                      self.device.get_display_info()["orientation"]))
+                                                      self.getOrientation()))
 
     def longTouch(self, x, y, duration=2000, orientation=-1):
         """

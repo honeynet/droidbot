@@ -977,12 +977,11 @@ class UiScrollable(UiCollection):
     def setViewClient(self, vc):
         self.vc = vc
 
-
+from com.dtmilano.android import viewclient
 class ViewClient:
     def __init__(self, device, forceviewserveruse=False,
                  localport=VIEW_SERVER_PORT, remoteport=VIEW_SERVER_PORT,
-                 startviewserver=True, ignoreuiautomatorkilled=False,
-                 compresseddump=True, useuiautomatorhelper=False):
+                 ignoreuiautomatorkilled=False, compresseddump=True):
         """
         Constructor
 
@@ -998,8 +997,6 @@ class ViewClient:
                            emulator
         @type startviewserver: boolean
         @param startviewserver: Whether to start the B{global} ViewServer
-        @type ignoreuiautomatorkilled: boolean
-        @param ignoreuiautomatorkilled: Ignores received B{Killed} message from C{uiautomator}
         @type compresseddump: boolean
         @param compresseddump: turns --compressed flag for uiautomator dump on/off
         @:type useuiautomatorhelper: boolean
@@ -1016,8 +1013,8 @@ class ViewClient:
         self.viewsById = {}
         """ The map containing all the L{View}s indexed by their L{View.getUniqueId()} """
         self.display = {}
-        """ The map containing the device's display properties: width, height and density """
-
+        # """ The map containing the device's display properties: width, height and density """
+        #
         for prop in ['width', 'height', 'density', 'orientation']:
             self.display[prop] = self.device.get_display_info()[prop]
 
@@ -1058,16 +1055,19 @@ class ViewClient:
                           % (self.device.get_ro_secure(), self.device.get_ro_debuggable())
                     raise Exception(msg)
 
-            self.localPort = localport
-            self.remotePort = remoteport
             self.adb.run_cmd(['forward', 'tcp:%d' % self.localPort, 'tcp:%d' % self.remotePort])
 
+        self.localPort = localport
+        self.remotePort = remoteport
         self.windows = None
         """ The list of windows as obtained by L{ViewClient.list()} """
 
         # The output of compressed dump is different than output of uncompressed one.
         # If one requires uncompressed output, this option should be set to False
         self.compressedDump = compresseddump
+
+    def startViewServer(self):
+        pass
 
     def validServerResponse(self, response):
         """

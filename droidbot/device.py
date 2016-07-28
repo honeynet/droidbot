@@ -23,7 +23,7 @@ class Device(object):
         :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
-        self.logger = logging.getLogger('Device')
+        self.logger = logging.getLogger("Device")
 
         self.serial = device_serial
         # is_emulator 0 for real device, 1 for emulator
@@ -261,14 +261,37 @@ class Device(object):
             self.ro_debuggable = self.get_adb().get_release_version()
         return self.ro_debuggable
 
-    def get_display_info(self):
+    def get_display_info(self, refresh=True):
         """
         get device display infomation, including width, height, and density
         :return: dict, display_info
+        @param refresh: if set to True, refresh the display info instead of using the old values
         """
-        if self.display_info is None:
+        if self.display_info is None or refresh:
             self.display_info = self.get_adb().getDisplayInfo()
         return self.display_info
+
+    def get_width(self, refresh=False):
+        display_info = self.get_display_info(refresh=refresh)
+        width = 0
+        if "width" in display_info:
+            width = display_info["width"]
+        elif not refresh:
+            width = self.get_width(refresh=True)
+        else:
+            self.logger.warning("get_width: width not in display_info")
+        return width
+
+    def get_height(self, refresh=False):
+        display_info = self.get_display_info(refresh=refresh)
+        height = 0
+        if "height" in display_info:
+            height = display_info["height"]
+        elif not refresh:
+            height = self.get_width(refresh=True)
+        else:
+            self.logger.warning("get_height: height not in display_info")
+        return height
 
     def device_prepare(self):
         """

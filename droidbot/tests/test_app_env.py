@@ -2,9 +2,10 @@
 __author__ = 'yuanchun'
 import json
 import unittest
-from droidbot.droidbot_types import Device
+
 from droidbot.app_env import CallLogEnv, ContactAppEnv, \
     GPSAppEnv, SettingsAppEnv, SMSLogEnv
+from types.device import Device
 
 
 class TestEnv(unittest.TestCase):

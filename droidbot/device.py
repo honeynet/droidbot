@@ -1,12 +1,11 @@
-# utils for setting up Android environment and sending events
-import hashlib
 import logging
 import os
 import re
 import subprocess
 import time
-from com.dtmilano.android.viewclient import ViewClient
-import connection
+
+from app import App
+from intent import Intent
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -24,7 +23,7 @@ class Device(object):
         :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
-        self.logger = logging.getLogger('Device')
+        self.logger = logging.getLogger("Device")
 
         self.serial = device_serial
         # is_emulator 0 for real device, 1 for emulator
@@ -35,6 +34,10 @@ class Device(object):
         self.view_client = None
         self.settings = {}
         self.display_info = None
+        self.sdk_version = None
+        self.release_version = None
+        self.ro_debuggable = None
+        self.ro_secure = None
 
         self.output_dir = output_dir
         if self.output_dir is None:
@@ -55,11 +58,16 @@ class Device(object):
 
         self.is_connected = False
         self.connect()
+        self.get_sdk_version()
+        self.get_release_version()
+        self.get_ro_secure()
+        self.get_ro_debuggable()
         self.get_display_info()
         self.logcat = self.redirect_logcat()
         from state_monitor import StateMonitor
         self.state_monitor = StateMonitor(device=self)
         self.state_monitor.start()
+        self.unlock()
         # assert self.display_info is not None
         # self.check_connectivity()
         # print self.is_emulator, self.host, self.port
@@ -85,7 +93,7 @@ class Device(object):
             self.logger.info("checking connectivity...")
             result = True
 
-            if self.adb_enabled and self.adb and self.adb.checkConnected():
+            if self.adb_enabled and self.adb and self.adb.check_connectivity():
                 self.logger.info("ADB is connected")
             else:
                 self.logger.warning("ADB is not connected")
@@ -134,26 +142,22 @@ class Device(object):
         connect this device via adb, telnet and monkeyrunner
         :return:
         """
-        try:
-            # wait for emulator to start
-            self.wait_for_device()
-            if self.adb_enabled:
-                self.get_adb()
+        # wait for emulator to start
+        self.wait_for_device()
+        if self.adb_enabled:
+            self.get_adb()
 
-            if self.telnet_enabled:
-                self.get_telnet()
+        if self.telnet_enabled:
+            self.get_telnet()
 
-            if self.monkeyrunner_enabled:
-                self.get_monkeyrunner()
+        if self.monkeyrunner_enabled:
+            self.get_monkeyrunner()
 
-            if self.view_client_enabled:
-                self.get_view_client()
+        if self.view_client_enabled:
+            self.get_view_client()
 
-            time.sleep(3)
-            self.is_connected = True
-
-        except connection.TelnetException:
-            self.logger.warning("Cannot connect to telnet.")
+        time.sleep(3)
+        self.is_connected = True
 
     def disconnect(self):
         """
@@ -162,13 +166,13 @@ class Device(object):
         """
         self.is_connected = False
         if self.adb:
-            self.adb.close()
+            self.adb.disconnect()
         if self.telnet:
             self.telnet.disconnect()
         if self.monkeyrunner:
             self.monkeyrunner.disconnect()
         if self.view_client:
-            self.view_client = None
+            self.view_client.disconnect()
         self.logcat.terminate()
         self.state_monitor.stop()
 
@@ -178,7 +182,11 @@ class Device(object):
         note that only emulator have telnet connection
         """
         if self.telnet_enabled and self.telnet is None:
-            self.telnet = connection.TelnetConsole(self)
+            from connections.telnet import TelnetConsole, TelnetException
+            try:
+                self.telnet = TelnetConsole(self)
+            except TelnetException:
+                self.logger.warning("Cannot connect to telnet.")
         return self.telnet
 
     def get_adb(self):
@@ -186,8 +194,8 @@ class Device(object):
         get adb connection of the device
         """
         if self.adb_enabled and self.adb is None:
-            # use adbclient class in com.dtmilano.adb.adbclient
-            self.adb, self.serial = ViewClient.connectToDeviceOrExit(verbose=True, serialno=self.serial)
+            from connections.adb import ADB
+            self.adb = ADB(self)
         return self.adb
 
     def get_monkeyrunner(self):
@@ -196,7 +204,8 @@ class Device(object):
         :return:
         """
         if self.monkeyrunner_enabled and self.monkeyrunner is None:
-            self.monkeyrunner = connection.MonkeyRunner(self)
+            from connections.monkey_runner import MonkeyRunner
+            self.monkeyrunner = MonkeyRunner(self)
         return self.monkeyrunner
 
     def get_view_client(self):
@@ -205,11 +214,8 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and self.view_client is None:
-            kwargs = {'startviewserver': True,
-                      'autodump': False,
-                      # 'forceviewserveruse': True,
-                      'ignoreuiautomatorkilled': True}
-            self.view_client = ViewClient(self.adb, self.serial, **kwargs)
+            from connections.viewclient import ViewClient
+            self.view_client = ViewClient(self, forceviewserveruse=False)
         return self.view_client
 
     def is_foreground(self, app):
@@ -225,21 +231,70 @@ class Device(object):
         else:
             return False
 
-        focused_window_name = self.get_adb().getTopActivityName()
-        if focused_window_name is None:
+        top_activity_name = self.get_top_activity_name()
+        if top_activity_name is None:
             return False
-        return focused_window_name.startswith(package_name)
+        return top_activity_name.startswith(package_name)
 
-    def get_display_info(self):
+    def get_sdk_version(self):
+        """
+        Get version of current SDK
+        """
+        if self.sdk_version is None:
+            self.sdk_version = self.get_adb().get_sdk_version()
+        return self.sdk_version
+
+    def get_release_version(self):
+        """
+        Get version of current SDK
+        """
+        if self.release_version is None:
+            self.release_version = self.get_adb().get_release_version()
+        return self.release_version
+
+    def get_ro_secure(self):
+        if self.ro_secure is None:
+            self.ro_secure = self.get_adb().get_ro_secure()
+        return self.ro_secure
+
+    def get_ro_debuggable(self):
+        if self.ro_debuggable is None:
+            self.ro_debuggable = self.get_adb().get_release_version()
+        return self.ro_debuggable
+
+    def get_display_info(self, refresh=True):
         """
         get device display infomation, including width, height, and density
         :return: dict, display_info
+        @param refresh: if set to True, refresh the display info instead of using the old values
         """
-        if self.display_info is None:
+        if self.display_info is None or refresh:
             self.display_info = self.get_adb().getDisplayInfo()
         return self.display_info
 
-    def device_prepare(self):
+    def get_width(self, refresh=False):
+        display_info = self.get_display_info(refresh=refresh)
+        width = 0
+        if "width" in display_info:
+            width = display_info["width"]
+        elif not refresh:
+            width = self.get_width(refresh=True)
+        else:
+            self.logger.warning("get_width: width not in display_info")
+        return width
+
+    def get_height(self, refresh=False):
+        display_info = self.get_display_info(refresh=refresh)
+        height = 0
+        if "height" in display_info:
+            height = display_info["height"]
+        elif not refresh:
+            height = self.get_width(refresh=True)
+        else:
+            self.logger.warning("get_height: height not in display_info")
+        return height
+
+    def unlock(self):
         """
         unlock screen
         skip first-use tutorials
@@ -247,12 +302,11 @@ class Device(object):
         :return:
         """
         assert self.get_adb() is not None
-        assert self.get_view_client() is not None
 
         # unlock screen
         self.get_adb().unlock()
 
-        # DOWN skip first-use turorials, we don't have to
+        # DONE skip first-use turorials, we don't have to
 
     def add_env(self, env):
         """
@@ -429,7 +483,10 @@ class Device(object):
         """
         assert self.get_adb() is not None
         assert intent is not None
-        cmd = intent.get_cmd()
+        if isinstance(intent, Intent):
+            cmd = intent.get_cmd()
+        else:
+            cmd = intent
         return self.get_adb().shell(cmd)
 
     def send_event(self, event):
@@ -459,6 +516,17 @@ class Device(object):
         intent = Intent(suffix=package_name)
         self.send_intent(intent)
 
+    def get_top_activity_name(self):
+        """
+        Get current activity
+        """
+        data = self.get_adb().shell("dumpsys activity top").splitlines()
+        regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
+        m = regex.search(data[1])
+        if m:
+            return m.group(1) + "/" + m.group(2)
+        return None
+
     def get_service_names(self):
         """
         get current running services
@@ -476,6 +544,9 @@ class Device(object):
                 service = m.group(2)
                 services.append("%s/%s" % (package, service))
         return services
+
+    def get_focused_window_name(self):
+        return self.get_adb().getFocusedWindowName()
 
     def get_package_path(self, package_name):
         """
@@ -526,22 +597,68 @@ class Device(object):
         subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def take_snapshot(self):
+        image = None
+
+        received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
+        import StringIO
+        stream = StringIO.StringIO(received)
+
+        try:
+            from PIL import Image
+            image = Image.open(stream)
+        except IOError as e:
+            self.logger.warning("exception in take_snapshot: %s" % e)
+        return image
+
     def get_current_state(self):
         self.logger.info("getting current device state...")
+        current_state = None
         try:
-            view_client_views = self.get_view_client().dump()
-            foreground_activity = self.get_adb().getTopActivityName()
+            view_client_views = self.dump_views()
+            foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
-            snapshot = self.get_adb().takeSnapshot(reconnect=True)
+            snapshot = self.take_snapshot()
             self.logger.info("finish getting current device state...")
-            return DeviceState(self,
-                               view_client_views=view_client_views,
-                               foreground_activity=foreground_activity,
-                               background_services=background_services,
-                               snapshot=snapshot)
+            current_state = DeviceState(self,
+                                        view_client_views=view_client_views,
+                                        foreground_activity=foreground_activity,
+                                        background_services=background_services,
+                                        snapshot=snapshot)
         except Exception as e:
-            self.logger.warning(e)
-            return None
+            self.logger.warning("exception in get_current_state: %s" % e)
+            import traceback
+            traceback.print_exc()
+        return current_state
+
+    def view_touch(self, x, y):
+        self.get_adb().touch(x, y)
+
+    def view_long_touch(self, x, y, duration=2000):
+        """
+        Long touches at (x, y)
+        @param duration: duration in ms
+        This workaround was suggested by U{HaMi<http://stackoverflow.com/users/2571957/hami>}
+        """
+        self.get_adb().longTouch(x, y, duration)
+
+    def view_drag(self, (x0, y0), (x1, y1), duration):
+        """
+        Sends drag event n PX (actually it's using C{input swipe} command.
+        @param (x0, y0): starting point in PX
+        @param (x1, y1): ending point in PX
+        @param duration: duration of the event in ms
+        """
+        self.get_adb().drag((x0, y0), (x1, y1), duration)
+
+    def view_input_text(self, text):
+        self.get_adb().type(text)
+
+    def key_press(self, key_code):
+        self.get_adb().press(key_code)
+
+    def dump_views(self, focused_window=True):
+        return self.get_view_client().dump()
 
 
 class DeviceState(object):
@@ -583,14 +700,20 @@ class DeviceState(object):
             id2view_map[temp_id] = view
             temp_id += 1
 
-        from com.dtmilano.android.viewclient import View
+        from connections.viewclient import View
         for view in view_client_views:
             if isinstance(view, View):
-                view_dict = view.map
+                view_dict = {}
+                view_dict['class'] = view.getClass()
+                view_dict['text'] = view.getText()
+                view_dict['resource_id'] = view.getId()
                 view_dict['temp_id'] = view2id_map.get(view)
                 view_dict['parent'] = view2id_map.get(view.getParent())
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
                 view_dict['view_str'] = DeviceState.get_view_str(view_dict)
+                view_dict['enabled'] = view.isEnabled()
+                view_dict['focused'] = view.isFocused()
+                view_dict['bounds'] = view.getBounds()
                 views.append(view_dict)
         return views
 
@@ -662,249 +785,3 @@ class DeviceState(object):
         bounds = view_dict['bounds']
         import math
         return int(math.fabs((bounds[0][0] - bounds[1][0]) * (bounds[0][1] - bounds[1][1])))
-
-
-class App(object):
-    """
-    this class describes an app
-    """
-
-    def __init__(self, app_path, output_dir=None):
-        """
-        create a App instance
-        :param app_path: local file path of app
-        :return:
-        """
-        assert app_path is not None
-        self.logger = logging.getLogger('App')
-
-        self.app_path = app_path
-        self.output_dir = output_dir
-        self.androguard = AndroguardAnalysis(self.app_path)
-        self.package_name = self.androguard.a.get_package()
-        self.main_activity = self.androguard.a.get_main_activity()
-        self.possible_broadcasts = self.get_possible_broadcasts()
-
-    def get_androguard_analysis(self):
-        """
-        run static analysis of app
-        :return:get_adb().takeSnapshot(reconnect=True)
-        """
-        if self.androguard is None:
-            self.androguard = AndroguardAnalysis(self.app_path)
-        return self.androguard
-
-    def pull_app_from_device(self, device):
-        """
-        get app file path of current app
-        :param device: Device
-        :return:
-        """
-        if self.app_path is not None:
-            return self.app_path
-        if self.package_name is None:
-            self.logger.warning("Trying to get app path without package name")
-            return None
-        # if we only have package name, use `adb pull` to get the package from device
-        try:
-            self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
-            app_path_in_device = device.get_package_path(self.package_name)
-            app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
-            subprocess.check_call(["adb", "-s", device.serial, "pull", app_path_in_device, app_path])
-            self.app_path = app_path
-            return self.app_path
-        except Exception as e:
-            self.logger.warning(e.message)
-            return None
-
-    def get_package_name(self):
-        """
-        get package name of current app
-        :return:
-        """
-        if self.package_name is None:
-            self.package_name = self.get_androguard_analysis().a.get_package()
-        return self.package_name
-
-    def get_main_activity(self):
-        """
-        get package name of current app
-        :return:
-        """
-        if self.main_activity is None:
-            self.main_activity = self.get_androguard_analysis().a.get_main_activity()
-        return self.main_activity
-
-    def get_start_intent(self):
-        """
-        get an intent to start the app
-        :return: Intent
-        """
-        package_name = self.get_package_name()
-        if self.get_main_activity():
-            package_name += "/%s" % self.get_main_activity()
-        return Intent(suffix=package_name)
-
-    def get_possible_broadcasts(self):
-        possible_broadcasts = set()
-        androguard = self.get_androguard_analysis()
-        if androguard is None:
-            return androguard
-
-        androguard_a = self.get_androguard_analysis().a
-        receivers = androguard_a.get_receivers()
-
-        for receiver in receivers:
-            intent_filters = androguard_a.get_intent_filters('receiver', receiver)
-            if 'action' in intent_filters:
-                actions = intent_filters['action']
-            else:
-                actions = []
-            if 'category' in intent_filters:
-                categories = intent_filters['category']
-            else:
-                categories = []
-            categories.append(None)
-            for action in actions:
-                for category in categories:
-                    intent = Intent(prefix='broadcast', action=action, category=category)
-                    possible_broadcasts.add(intent)
-        return possible_broadcasts
-
-    def get_hashes(self, block_size=2 ** 8):
-        """
-        Calculate MD5,SHA-1, SHA-256
-        hashes of APK input file
-        @param block_size:
-        """
-        md5 = hashlib.md5()
-        sha1 = hashlib.sha1()
-        sha256 = hashlib.sha256()
-        f = open(self.app_path, 'rb')
-        while True:
-            data = f.read(block_size)
-            if not data:
-                break
-
-            md5.update(data)
-            sha1.update(data)
-            sha256.update(data)
-        return [md5.hexdigest(), sha1.hexdigest(), sha256.hexdigest()]
-
-
-class AndroguardAnalysis(object):
-    """
-    analysis result of androguard
-    """
-
-    def __init__(self, app_path):
-        """
-        :param app_path: local file path of app, should not be None
-        analyse app specified by app_path
-        """
-        self.app_path = app_path
-        from androguard.core.bytecodes.apk import APK
-        self.a = APK(app_path)
-        self.d = None
-        self.dx = None
-
-    def get_detailed_analysis(self):
-        from androguard.misc import AnalyzeDex
-        self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
-
-
-class Intent(object):
-    """
-    this class describes a intent event
-    """
-
-    def __init__(self, prefix="start", action=None, data_uri=None, mime_type=None, category=None,
-                 component=None, flag=None, extra_keys=None, extra_string=None, extra_boolean=None,
-                 extra_int=None, extra_long=None, extra_float=None, extra_uri=None, extra_component=None,
-                 extra_array_int=None, extra_array_long=None, extra_array_float=None, flags=None, suffix=""):
-        self.event_type = 'intent'
-        self.prefix = prefix
-        self.action = action
-        self.data_uri = data_uri
-        self.mime_type = mime_type
-        self.category = category
-        self.component = component
-        self.flag = flag
-        self.extra_keys = extra_keys
-        self.extra_string = extra_string
-        self.extra_boolean = extra_boolean
-        self.extra_int = extra_int
-        self.extra_long = extra_long
-        self.extra_float = extra_float
-        self.extra_uri = extra_uri
-        self.extra_component = extra_component
-        self.extra_array_int = extra_array_int
-        self.extra_array_long = extra_array_long
-        self.extra_array_float = extra_array_float
-        self.flags = flags
-        self.suffix = suffix
-        self.cmd = None
-        self.get_cmd()
-
-    def get_cmd(self):
-        """
-        convert this intent to cmd string
-        :rtype : object
-        :return: str, cmd string
-        """
-        if self.cmd is not None:
-            return self.cmd
-        cmd = "am "
-        if self.prefix:
-            cmd += self.prefix
-        if self.action is not None:
-            cmd += " -a " + self.action
-        if self.data_uri is not None:
-            cmd += " -d " + self.data_uri
-        if self.mime_type is not None:
-            cmd += " -t " + self.mime_type
-        if self.category is not None:
-            cmd += " -c " + self.category
-        if self.component is not None:
-            cmd += " -n " + self.component
-        if self.flag is not None:
-            cmd += " -f " + self.flag
-        if self.extra_keys:
-            for key in self.extra_keys:
-                cmd += " --esn '%s'" % key
-        if self.extra_string:
-            for key in self.extra_string.keys():
-                cmd += " -e '%s' '%s'" % (key, self.extra_string[key])
-        if self.extra_boolean:
-            for key in self.extra_boolean.keys():
-                cmd += " -ez '%s' %s" % (key, self.extra_boolean[key])
-        if self.extra_int:
-            for key in self.extra_int.keys():
-                cmd += " -ei '%s' %s" % (key, self.extra_int[key])
-        if self.extra_long:
-            for key in self.extra_long.keys():
-                cmd += " -el '%s' %s" % (key, self.extra_long[key])
-        if self.extra_float:
-            for key in self.extra_float.keys():
-                cmd += " -ef '%s' %s" % (key, self.extra_float[key])
-        if self.extra_uri:
-            for key in self.extra_uri.keys():
-                cmd += " -eu '%s' '%s'" % (key, self.extra_uri[key])
-        if self.extra_component:
-            for key in self.extra_component.keys():
-                cmd += " -ecn '%s' %s" % (key, self.extra_component[key])
-        if self.extra_array_int:
-            for key in self.extra_array_int.keys():
-                cmd += " -eia '%s' %s" % (key, ",".join(self.extra_array_int[key]))
-        if self.extra_array_long:
-            for key in self.extra_array_long.keys():
-                cmd += " -ela '%s' %s" % (key, ",".join(self.extra_array_long[key]))
-        if self.extra_array_float:
-            for key in self.extra_array_float.keys():
-                cmd += " -efa '%s' %s" % (key, ",".join(self.extra_array_float[key]))
-        if self.flags:
-            cmd += " " + " ".join(self.flags)
-        if self.suffix:
-            cmd += " " + self.suffix
-        self.cmd = cmd
-        return self.cmd

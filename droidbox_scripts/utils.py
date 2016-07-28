@@ -16,13 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Androguard.  If not, see <http://www.gnu.org/licenses/>.
 
-import bytecode
+from struct import pack, unpack
 
+import bytecode
 from bytecode import SV
 
-import zipfile, StringIO
-from struct import pack, unpack
-from xml.dom import minidom
 
 ######################################################## AXML FORMAT ########################################################
 # Translated from http://code.google.com/p/android4me/source/browse/src/android/content/res/AXmlResourceParser.java
@@ -490,8 +488,8 @@ def long2str(l):
 
 def str2long(s):
     """Convert a string to a long integer."""
-    import droidbot_types
-    if type(s) not in (droidbot_types.StringType, droidbot_types.UnicodeType):
+    from types import device
+    if type(s) not in (device.StringType, device.UnicodeType):
         raise ValueError, 'the input must be a string'
 
     l = 0L

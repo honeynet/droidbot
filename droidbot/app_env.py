@@ -5,8 +5,6 @@
 # The environment should be determined before app start running.
 # We don't need to set up all environment aspects for one app,
 # instead we select a subset according to static analysis result of app.
-__author__ = 'liyc'
-
 import logging
 import json
 import time
@@ -324,10 +322,7 @@ class StaticEnvFactory(AppEnvFactory):
         generate app-specific envs
         """
         envs = []
-        androguard = self.app.get_androguard_analysis()
-        if androguard is None:
-            return [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv()]
-        permissions = androguard.a.get_permissions()
+        permissions = self.app.get_permissions()
         if 'android.permission.READ_CONTACTS' in permissions:
             envs.append(ContactAppEnv())
         if 'android.permission.READ_CALL_LOG' in permissions:

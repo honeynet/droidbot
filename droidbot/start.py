@@ -1,10 +1,8 @@
 # helper file of droidbot
 # it parses command arguments and send the options to droidbot
-
-__author__ = 'liyc'
 import argparse
-from droidbot import DroidBot
 import app_event
+from droidbot import DroidBot
 
 
 def parse_args():

@@ -3,15 +3,15 @@
 #     1. UI events. click, touch, etc
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
-__author__ = 'liyc'
-import logging
 import json
-import time
+import logging
 import os
 import random
 import subprocess
+import time
 from threading import Timer
-from droidbot_types import Intent
+from intent import Intent
+from device import DeviceState
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -246,8 +246,7 @@ class KeyEvent(AppEvent):
         return KeyEvent(key_name)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().press(self.name)
+        device.key_press(self.name)
         return True
 
 
@@ -293,13 +292,12 @@ class TouchEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         return TouchEvent(x, y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().longTouch(self.x, self.y, duration=300)
+        device.view_long_touch(self.x, self.y, duration=300)
         return True
 
 
@@ -319,13 +317,12 @@ class LongTouchEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         return LongTouchEvent(x, y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().longTouch(self.x, self.y, self.duration)
+        device.view_long_touch(self.x, self.y, self.duration)
         return True
 
 
@@ -346,17 +343,16 @@ class DragEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        start_x = random.uniform(0, device.get_display_info()['width'])
-        start_y = random.uniform(0, device.get_display_info()['height'])
-        end_x = random.uniform(0, device.get_display_info()['width'])
-        end_y = random.uniform(0, device.get_display_info()['height'])
+        start_x = random.uniform(0, device.get_width())
+        start_y = random.uniform(0, device.get_height())
+        end_x = random.uniform(0, device.get_width())
+        end_y = random.uniform(0, device.get_height())
         return DragEvent(start_x, start_y, end_x, end_y)
 
     def send(self, device):
-        assert device.get_adb() is not None
-        device.get_adb().drag((self.start_x, self.start_y),
-                              (self.end_x, self.end_y),
-                              self.duration)
+        device.view_drag((self.start_x, self.start_y),
+                         (self.end_x, self.end_y),
+                         self.duration)
         return True
 
 
@@ -375,13 +371,12 @@ class SwipeEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_width())
+        y = random.uniform(0, device.get_height())
         direction = random.choice(["UP", "DOWN", "LEFT", "RIGHT"])
         return SwipeEvent(x, y, direction)
 
     def send(self, device):
-        assert device.get_adb() is not None
         end_x = self.x
         end_y = self.y
         duration = 200
@@ -389,13 +384,13 @@ class SwipeEvent(UIEvent):
         if self.direction == "UP":
             end_y = 0
         elif self.direction == "DOWN":
-            end_y = device.get_display_info()['height']
+            end_y = device.get_height()
         elif self.direction == "LEFT":
             end_x = 0
         elif self.direction == "RIGHT":
-            end_x = device.get_display_info()['width']
+            end_x = device.get_width()
 
-        device.get_adb().drag((self.x, self.y), (end_x, end_y), duration)
+        device.view_drag((self.x, self.y), (end_x, end_y), duration)
         return True
 
 
@@ -416,7 +411,6 @@ class TypeEvent(UIEvent):
         self.text = text
 
     def send(self, device):
-        assert device.get_adb() is not None
         escaped = self.text.replace('%s', '\\%s')
         encoded = escaped.replace(' ', '%s')
         device.adb.type(encoded)
@@ -433,16 +427,17 @@ class IntentEvent(AppEvent):
             self.__dict__ = event_dict
             return
         self.event_type = KEY_IntentEvent
-        self.intent = intent.get_cmd()
+        self.intent = intent.get_cmd() if isinstance(intent, Intent) else ""
 
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
+        from intent import Intent
         intent = Intent(prefix='broadcast', action=action)
         return IntentEvent(intent)
 
     def send(self, device):
-        device.get_adb().shell(self.intent)
+        device.send_intent(intent=self.intent)
         return True
 
 
@@ -588,7 +583,7 @@ class ActivityNameContext(Context):
         return self.activity_name
 
     def assert_in_device(self, device):
-        current_top_activity = device.get_adb().getTopActivityName()
+        current_top_activity = device.get_top_activity_name()
         return self.activity_name == current_top_activity
 
 
@@ -611,7 +606,7 @@ class WindowNameContext(Context):
         return self.window_name
 
     def assert_in_device(self, device):
-        current_focused_window = device.get_adb().getFocusedWindowName()
+        current_focused_window = device.get_focused_window_name()
         return self.window_name == current_focused_window
 
 
@@ -824,15 +819,17 @@ class EventFactory(object):
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
-            # except StopSendingEventException as e:
-            #     self.device.logger.warning(e.message)
-            #     break
+            except StopSendingEventException as e:
+                self.device.logger.warning("EventFactory stop sending event: %s" % e)
+                break
             # except RuntimeError as e:
             #     self.device.logger.warning(e.message)
             #     break
-            # except Exception as e:
-            #     self.device.logger.warning(e.message)
-            #     continue
+            except Exception as e:
+                self.device.logger.warning("exception in EventFactory: %s" % e)
+                import traceback
+                traceback.print_exc()
+                continue
             count += 1
 
     def generate_event(self, state=None):
@@ -930,8 +927,6 @@ class DynamicEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(DynamicEventFactory, self).__init__(device, app)
-        assert device.get_adb() is not None
-        assert device.get_view_client() is not None
 
         self.exploited_contexts = set()
         self.exploited_services = set()
@@ -1000,19 +995,14 @@ class DynamicEventFactory(EventFactory):
         find some event, return the first, and add the rest to event stack
         """
         # get current running Activity
-        top_activity_name = self.device.get_adb().getTopActivityName()
+        top_activity_name = self.device.get_top_activity_name()
         # if the activity switches, wait a few seconds
         if top_activity_name != self.previous_activity:
             time.sleep(3)
         self.previous_activity = top_activity_name
 
         # get focused window
-        focused_window = self.device.get_adb().getFocusedWindow()
-        focused_window_id = -1
-        focused_window_name = None
-        if focused_window is not None:
-            focused_window_id = focused_window.winId
-            focused_window_name = focused_window.activity
+        focused_window_name = self.device.get_focused_window_name()
 
         current_context = WindowNameContext(window_name=focused_window_name)
         current_context_str = current_context.__str__()
@@ -1092,7 +1082,7 @@ class DynamicEventFactory(EventFactory):
 
         # if no views were saved, dump view via AndroidViewClient
         if current_context_str not in self.saved_views.keys():
-            views = self.device.get_view_client().dump(window=focused_window_id)
+            views = self.device.dump_views()
             self.saved_views[current_context_str] = views
             self.window_passes[current_context_str] = 0
         else:
@@ -1137,9 +1127,7 @@ class DynamicEventFactory(EventFactory):
             v_cls_name = v.getClass().lower()
 
             # if it is an EditText, try input something
-            from com.dtmilano.android.viewclient import EditText
-            if isinstance(v, EditText) or 'edit' in v_cls_name \
-                    or 'text' in v_cls_name or 'input' in v_cls_name:
+            if 'edit' in v_cls_name or 'text' in v_cls_name or 'input' in v_cls_name:
                 for key in self.possible_inputs.keys():
                     if key in v.getId().lower() or key in v_cls_name:
                         next_event = TypeEvent(text=self.possible_inputs[key])
@@ -1210,7 +1198,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from droidbot_types import DeviceState
+        from device import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None
@@ -1438,7 +1426,6 @@ class UtgDynamicFactory(StateBasedEventFactory):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            from droidbot_types import DeviceState
             x, y = DeviceState.get_view_center(view_to_touch)
             result = TouchEvent(x, y)
 
@@ -1454,8 +1441,6 @@ class UtgDynamicFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return:
         """
-        from droidbot_types import DeviceState
-
         views = []
         for view in state.views:
             if view['enabled'] == "true" and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
@@ -1537,7 +1522,7 @@ class ScriptEventFactory(EventFactory):
     def __init__(self, device, app, script_dict):
         """
         create a FileEventFactory from a json file
-        :param in_file path string
+        :param script_dict script path string
         """
         super(ScriptEventFactory, self).__init__(device, app)
         self.script_dict = script_dict

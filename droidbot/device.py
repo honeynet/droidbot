@@ -214,7 +214,7 @@ class Device(object):
         """
         if self.view_client_enabled and self.view_client is None:
             from connections.viewclient import ViewClient
-            self.view_client = ViewClient(self, startviewserver=True, forceviewserveruse=False)
+            self.view_client = ViewClient(self, forceviewserveruse=False)
         return self.view_client
 
     def is_foreground(self, app):
@@ -293,7 +293,7 @@ class Device(object):
             self.logger.warning("get_height: height not in display_info")
         return height
 
-    def device_prepare(self):
+    def unlock(self):
         """
         unlock screen
         skip first-use tutorials
@@ -301,7 +301,6 @@ class Device(object):
         :return:
         """
         assert self.get_adb() is not None
-        assert self.get_view_client() is not None
 
         # unlock screen
         self.get_adb().unlock()

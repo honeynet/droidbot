@@ -513,31 +513,31 @@ class View:
                     elif self.version >= 16:
                         m = framesRE.search(lines[l2])
                         if m:
-                            px, py = self.__obtainPxPy(m)
+                            px, py = obtainPxPy(m)
                             m = contentRE.search(lines[l2 + 1])
                             if m:
                                 # FIXME: the information provided by 'dumpsys window windows' in 4.2.1 (API 16)
                                 # when there's a system dialog may not be correct and causes the View coordinates
                                 # be offset by this amount, see
                                 # https://github.com/dtmilano/AndroidViewClient/issues/29
-                                wvx, wvy = self.__obtainVxVy(m)
-                                wvw, wvh = self.__obtainVwVh(m)
+                                wvx, wvy = obtainVxVy(m)
+                                wvw, wvh = obtainVwVh(m)
                     elif self.version == 15:
                         m = containingFrameRE.search(lines[l2])
                         if m:
-                            px, py = self.__obtainPxPy(m)
+                            px, py = obtainPxPy(m)
                             m = contentFrameRE.search(lines[l2 + 1])
                             if m:
-                                wvx, wvy = self.__obtainVxVy(m)
-                                wvw, wvh = self.__obtainVwVh(m)
+                                wvx, wvy = obtainVxVy(m)
+                                wvw, wvh = obtainVwVh(m)
                     elif self.version == 10:
                         m = containingFrameRE.search(lines[l2])
                         if m:
-                            px, py = self.__obtainPxPy(m)
+                            px, py = obtainPxPy(m)
                             m = contentFrameRE.search(lines[l2 + 1])
                             if m:
-                                wvx, wvy = self.__obtainVxVy(m)
-                                wvw, wvh = self.__obtainVwVh(m)
+                                wvx, wvy = obtainVxVy(m)
+                                wvw, wvh = obtainVwVh(m)
                     else:
                         self.logger.warning("Unsupported Android version %d" % self.version)
 
@@ -1034,29 +1034,6 @@ class ViewClient:
         Changes in v2.3.21 that uses C{/dev/tty} instead of a file may have turned this variable
         unnecessary, however it has been kept for backward compatibility.
         """
-
-        if self.useUiAutomator:
-            self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
-        else:
-            if self.device.get_sdk_version() <= 10:
-                self.textProperty = TEXT_PROPERTY_API_10
-            else:
-                self.textProperty = TEXT_PROPERTY
-            if startviewserver:
-                if not self.validServerResponse(self.adb.shell('service call window 3')) \
-                        and not self.validServerResponse(self.adb.shell('service call window 1 i32 %d' % remoteport)):
-                    msg = 'Cannot start View server.\n' \
-                          'This only works on emulator and devices running developer versions.\n' \
-                          'Does hierarchyviewer work on your device?\n' \
-                          'See https://github.com/dtmilano/AndroidViewClient/wiki/Secure-mode\n\n' \
-                          'Device properties:\n' \
-                          '    ro.secure=%s\n' \
-                          '    ro.debuggable=%s\n' \
-                          % (self.device.get_ro_secure(), self.device.get_ro_debuggable())
-                    raise Exception(msg)
-
-            self.adb.run_cmd(['forward', 'tcp:%d' % self.localPort, 'tcp:%d' % self.remotePort])
-
         self.localPort = localport
         self.remotePort = remoteport
         self.windows = None
@@ -1065,9 +1042,30 @@ class ViewClient:
         # The output of compressed dump is different than output of uncompressed one.
         # If one requires uncompressed output, this option should be set to False
         self.compressedDump = compresseddump
+        if self.useUiAutomator:
+            self.textProperty = TEXT_PROPERTY_UI_AUTOMATOR
+        else:
+            self.useViewServer()
 
-    def startViewServer(self):
-        pass
+    def useViewServer(self):
+        self.useUiAutomator = False
+        if self.device.get_sdk_version() <= 10:
+            self.textProperty = TEXT_PROPERTY_API_10
+        else:
+            self.textProperty = TEXT_PROPERTY
+        if not self.validServerResponse(self.adb.shell('service call window 3')) \
+                and not self.validServerResponse(self.adb.shell('service call window 1 i32 %d' % self.remotePort)):
+            msg = 'Cannot start View server.\n' \
+                  'This only works on emulator and devices running developer versions.\n' \
+                  'Does hierarchyviewer work on your device?\n' \
+                  'See https://github.com/dtmilano/AndroidViewClient/wiki/Secure-mode\n\n' \
+                  'Device properties:\n' \
+                  '    ro.secure=%s\n' \
+                  '    ro.debuggable=%s\n' \
+                  % (self.device.get_ro_secure(), self.device.get_ro_debuggable())
+            raise Exception(msg)
+
+        self.adb.run_cmd(['forward', 'tcp:%d' % self.localPort, 'tcp:%d' % self.remotePort])
 
     def validServerResponse(self, response):
         """
@@ -1128,9 +1126,12 @@ class ViewClient:
                 'WARNING: linker: libdvm.so has text relocations. This is wasting memory and is a security risk. Please fix.\r\n',
                 '')
             if re.search('\[: not found', received):
-                raise RuntimeError("""ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
+                self.logger.warning("""ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
 While UiAutomator back-end might be supported 'uiautomator' command fails.
 You should force ViewServer back-end.""")
+                self.logger.info("switching to viewserver")
+                self.useViewServer()
+                return self.dump(window=window, sleep=sleep)
 
             if received.startswith('ERROR: could not get idle state.'):
                 # See https://android.googlesource.com/platform/frameworks/testing/+/jb-mr2-release/uiautomator/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java

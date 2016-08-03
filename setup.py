@@ -14,14 +14,14 @@ setup(
     license='MIT',
     author_email='pkulyc@gmail.com',
     url='https://github.com/ylimit/droidbot',  # use the URL to the github repo
-    download_url='https://github.com/ylimit/droidbot/tarball/1.0.0a2',
+    download_url='https://github.com/ylimit/droidbot/tarball/1.0.1b1',
     keywords=['testing', 'monkey', 'exerciser'],  # arbitrary keywords
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',

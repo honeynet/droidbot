@@ -597,6 +597,17 @@ class Device(object):
         subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def push_file(self, source_file, target_dir="/sdcard/"):
+        """
+        push file/directory to target_dir
+        :param source_file: path to file/directory in host machine
+        :param target_dir: path to target directory in device
+        :return:
+        """
+        if not os.path.exists(source_file):
+            self.logger.warning("push_file file does not exist: %s" % source_file)
+        self.get_adb().run_cmd(["push", source_file, target_dir])
+
     def take_snapshot(self):
         image = None
 

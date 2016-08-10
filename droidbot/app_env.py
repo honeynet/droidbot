@@ -147,6 +147,24 @@ class CallLogEnv(StaticAppEnv):
         return device.cancel_call(self.phone)
 
 
+class DummyFilesEnv(StaticAppEnv):
+    """
+    push dummy files to device
+    """
+    def __init__(self, dummy_files_dir=None):
+        """
+        :param: dummy_files_dir: directory to dummy files
+        """
+        if dummy_files_dir is None:
+            import pkg_resources
+            dummy_files_dir = pkg_resources.resource_filename("droidbot", "resources/dummy_documents")
+
+        self.dummy_files_dir = dummy_files_dir
+
+    def deploy(self, device):
+        device.push_file(self.dummy_files_dir)
+
+
 class SMSLogEnv(StaticAppEnv):
     """
     SMS log

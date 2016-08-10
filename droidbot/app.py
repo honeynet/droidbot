@@ -96,6 +96,14 @@ class App(object):
             package_name += "/%s" % self.get_main_activity()
         return Intent(suffix=package_name)
 
+    def get_stop_intent(self):
+        """
+        get an intent to stop the app
+        :return: Intent
+        """
+        package_name = self.get_package_name()
+        return Intent(prefix="force-stop", suffix=package_name)
+
     def get_possible_broadcasts(self):
         possible_broadcasts = set()
 

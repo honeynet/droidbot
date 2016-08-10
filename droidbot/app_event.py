@@ -1212,6 +1212,7 @@ class StateBasedEventFactory(EventFactory):
 
 EVENT_FLAG_STARTED = "+started"
 EVENT_FLAG_START_APP = "+start_app"
+EVENT_FLAG_STOP_APP = "+stop_app"
 EVENT_FLAG_TOUCH = "+touch"
 
 
@@ -1422,6 +1423,14 @@ class UtgDynamicFactory(StateBasedEventFactory):
         # select a view to click
         view_to_touch = self.select_a_view(state)
 
+        # if no view can be selected, restart the app
+        if view_to_touch is None:
+            stop_app_intent = self.app.get_stop_intent()
+            self.last_event_flag += EVENT_FLAG_STOP_APP
+            self.last_touched_view_str = None
+            self.last_state = state
+            return IntentEvent(stop_app_intent)
+
         view_to_touch_str = view_to_touch['view_str']
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
@@ -1449,8 +1458,8 @@ class UtgDynamicFactory(StateBasedEventFactory):
         random.shuffle(views)
 
         # add a "BACK" view, consider go back first
-        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
-        views.insert(0, mock_view_back)
+        # mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
+        # views.insert(0, mock_view_back)
 
         # first try to find a un-clicked view
         for view in views:
@@ -1467,9 +1476,12 @@ class UtgDynamicFactory(StateBasedEventFactory):
                 return view
 
         # no window transition found, just return a random view
-        view = views[0]
-        self.device.logger.info("selected a random view: %s" % view['view_str'])
-        return view
+        # view = views[0]
+        # self.device.logger.info("selected a random view: %s" % view['view_str'])
+        # return view
+
+        # DroidBot stuck on current state, return None
+        return None
 
     def save_state_transition(self, event_str, old_state, new_state):
         """

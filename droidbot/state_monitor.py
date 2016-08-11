@@ -70,12 +70,17 @@ class StateMonitor(object):
                 ps_cmd = ["adb", "-s", self.device.serial, "shell", "ps", "-t"]
             else:
                 ps_cmd = ["adb", "shell", "ps", "-t"]
-            ps_out = subprocess.check_output(ps_cmd)
+
+            try:
+                ps_out = subprocess.check_output(ps_cmd)
+            except subprocess.CalledProcessError:
+                continue
+
             # parse ps_out to update self.pid2uid mapping and self.pid2name mapping
             ps_out_lines = ps_out.splitlines()
             ps_out_head = ps_out_lines[0].split()
-            if ps_out_head[0] != "USER" or ps_out_head[1] != "PID" or \
-                ps_out_head[2] != "PPID" or ps_out_head[-1] != "NAME":
+            if ps_out_head[0] != "USER" or ps_out_head[1] != "PID" \
+                    or ps_out_head[2] != "PPID" or ps_out_head[-1] != "NAME":
                 self.device.logger.warning("ps command output format error: %s" % ps_out_head)
             for ps_out_line in ps_out_lines[1:]:
                 segs = ps_out_line.split()

@@ -319,7 +319,7 @@ class DummyEnvFactory(AppEnvFactory):
         """
         produce a list of dummy environment
         """
-        envs = [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv()]
+        envs = [ContactAppEnv(), SettingsAppEnv(), CallLogEnv(), SMSLogEnv(), GPSAppEnv(), DummyFilesEnv()]
         return envs
 
 
@@ -352,6 +352,11 @@ class StaticEnvFactory(AppEnvFactory):
         if 'android.permission.READ_SMS' in permissions:
             envs.append(SMSLogEnv())
             envs.append(SMSLogEnv(sms_in=False))
+        if 'android.permission.READ_EXTERNAL_STORAGE' in permissions or \
+            'android.permission.WRITE_EXTERNAL_STORAGE' in permissions or \
+            'android.permission.MOUNT_UNMOUNT_FILESYSTEMS' in permissions:
+            envs.append(DummyFilesEnv())
+
         # TODO add more app-specific app environment
         return envs
 

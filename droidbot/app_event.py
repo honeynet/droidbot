@@ -1388,6 +1388,9 @@ class UtgDynamicFactory(StateBasedEventFactory):
         self.last_touched_view_str = None
         self.last_state = None
 
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+                                  "check", "agree", "try", "go", "next"]
+
     def gen_event_based_on_state(self, state):
         """
         generate an event based on current device state
@@ -1461,7 +1464,14 @@ class UtgDynamicFactory(StateBasedEventFactory):
         # mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
         # views.insert(0, mock_view_back)
 
-        # first try to find a un-clicked view
+        # first try to find a preferable view
+        for view in views:
+            if view['text'] in self.preferred_buttons and \
+                            (state.foreground_activity, view['view_str']) not in self.explored_views:
+                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                return view
+
+        # try to find a un-clicked view
         for view in views:
             if (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])

@@ -1455,7 +1455,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         """
         views = []
         for view in state.views:
-            if view['enabled'] == "true" and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
+            if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
                 views.append(view)
 
         random.shuffle(views)

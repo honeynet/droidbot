@@ -1466,7 +1466,8 @@ class UtgDynamicFactory(StateBasedEventFactory):
 
         # first try to find a preferable view
         for view in views:
-            if view['text'] in self.preferred_buttons and \
+            view_text = view['text'].lower().strip()
+            if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
                 return view
@@ -1491,6 +1492,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         # return view
 
         # DroidBot stuck on current state, return None
+        self.device.logger.info("no view could be selected in state: %s" % state.tag)
         return None
 
     def save_state_transition(self, event_str, old_state, new_state):

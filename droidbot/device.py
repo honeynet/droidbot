@@ -608,7 +608,7 @@ class Device(object):
             self.logger.warning("push_file file does not exist: %s" % source_file)
         self.get_adb().run_cmd(["push", source_file, target_dir])
 
-    def take_snapshot(self):
+    def take_screenshot(self):
         image = None
 
         received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
@@ -619,7 +619,7 @@ class Device(object):
             from PIL import Image
             image = Image.open(stream)
         except IOError as e:
-            self.logger.warning("exception in take_snapshot: %s" % e)
+            self.logger.warning("exception in take_screenshot: %s" % e)
         return image
 
     def get_current_state(self):
@@ -629,13 +629,13 @@ class Device(object):
             view_client_views = self.dump_views()
             foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
-            snapshot = self.take_snapshot()
+            screenshot = self.take_screenshot()
             self.logger.info("finish getting current device state...")
             current_state = DeviceState(self,
                                         view_client_views=view_client_views,
                                         foreground_activity=foreground_activity,
                                         background_services=background_services,
-                                        snapshot=snapshot)
+                                        screenshot=screenshot)
         except Exception as e:
             self.logger.warning("exception in get_current_state: %s" % e)
             import traceback
@@ -677,7 +677,7 @@ class DeviceState(object):
     the state of the current device
     """
 
-    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, snapshot=None):
+    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, screenshot=None):
         self.device = device
         self.view_client_views = view_client_views
         self.foreground_activity = foreground_activity
@@ -686,7 +686,7 @@ class DeviceState(object):
             from datetime import datetime
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
-        self.snapshot = snapshot
+        self.screenshot = screenshot
         self.views = self.views2list(view_client_views)
 
     def to_dict(self):
@@ -735,13 +735,13 @@ class DeviceState(object):
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             state_json_file_path = "%s/device_state_%s.json" % (output_dir, self.tag)
-            snapshot_file_path = "%s/snapshot_%s.png" % (output_dir, self.tag)
+            screenshot_file_path = "%s/screenshot_%s.png" % (output_dir, self.tag)
             state_json_file = open(state_json_file_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
             from PIL.Image import Image
-            if isinstance(self.snapshot, Image):
-                self.snapshot.save(snapshot_file_path)
+            if isinstance(self.screenshot, Image):
+                self.screenshot.save(screenshot_file_path)
         except Exception as e:
             self.device.logger.warning("saving state to dir failed: " + e.message)
 

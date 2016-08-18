@@ -151,7 +151,6 @@ An example of the DroidBot script is as follows:
     },
     "states": {
         "login_state": {
-            "activity": ".*AccountSetupBasics",
             "views": ["login_email", "login_password", "login_button"]
         }
     },

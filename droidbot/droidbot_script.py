@@ -251,7 +251,6 @@ class ViewSelector(object):
         'text': REGEX_VAL,
         'resource_id': REGEX_VAL,
         'class': REGEX_VAL,
-        'package': REGEX_VAL,
         'out_coordinates': [(INTEGER_VAL, INTEGER_VAL)],
         'in_coordinates': [(INTEGER_VAL, INTEGER_VAL)]
     }
@@ -263,7 +262,6 @@ class ViewSelector(object):
         self.text_re = None
         self.resource_id_re = None
         self.class_re = None
-        self.package_re = None
         self.script = script
         self.out_coordinates = []
         self.in_coordinates = []
@@ -283,8 +281,6 @@ class ViewSelector(object):
                 self.resource_id_re = re.compile(selector_value)
             elif selector_key == 'class':
                 self.class_re = re.compile(selector_value)
-            elif selector_key == 'package':
-                self.package_re = re.compile(selector_value)
             elif selector_key == 'out_coordinates':
                 for out_coordinate in grammar_value:
                     DroidBotScript.check_grammar_is_coordinate(out_coordinate)
@@ -300,19 +296,16 @@ class ViewSelector(object):
         @param view_dict: a view in dict, element of DeviceState.views
         @return:
         """
-        if 'text' in view_dict and 'resource-id' in view_dict \
-            and 'class' in view_dict and 'package' in view_dict \
-            and 'bounds' in view_dict:
+        if 'text' in view_dict and 'resource_id' in view_dict \
+            and 'class' in view_dict and 'bounds' in view_dict:
             pass
         else:
             return False
         if self.text_re and not self.text_re.match(view_dict['text']):
             return False
-        if self.resource_id_re and not self.resource_id_re.match(view_dict['resource-id']):
+        if self.resource_id_re and not self.resource_id_re.match(view_dict['resource_id']):
             return False
         if self.class_re and not self.class_re.match(view_dict['class']):
-            return False
-        if self.package_re and not self.package_re.match(view_dict['package']):
             return False
         bounds = view_dict['bounds']
         bound_x_min = bounds[0][0]
@@ -502,7 +495,7 @@ class ScriptEvent(AppEvent):
             if matched_view is None:
                 device.logger.warning("target_view no match: %s" % target_view)
             else:
-                from types.device import DeviceState
+                from device import DeviceState
                 (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
         return AppEvent.get_event(event_dict)
 

@@ -152,6 +152,7 @@ KEY_LongTouchEvent = "long_touch"
 KEY_DragEvent = "drag"
 KEY_SwipeEvent = "swipe"
 KEY_TypeEvent = "type"
+KEY_TextInputEvent = "text_input"
 KEY_IntentEvent = "intent"
 KEY_EmulatorEvent = "emulator"
 KEY_ContextEvent = "context"
@@ -221,6 +222,8 @@ class AppEvent(object):
             return SwipeEvent(None, None, event_dict=event_dict)
         elif event_type == KEY_TypeEvent:
             return TypeEvent(None, event_dict=event_dict)
+        elif event_type == KEY_TextInputEvent:
+            return TextInputEvent(None, None, None, event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
             return IntentEvent(None, event_dict=event_dict)
         elif event_type == KEY_EmulatorEvent:
@@ -415,6 +418,30 @@ class TypeEvent(UIEvent):
         encoded = escaped.replace(' ', '%s')
         device.adb.type(encoded)
         return True
+
+
+class TextInputEvent(UIEvent):
+    """
+    input text to target UI
+    """
+
+    @staticmethod
+    def get_random_instance(device, app):
+        pass
+
+    def __init__(self, x, y, text, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
+        self.event_type = KEY_TextInputEvent
+        self.x = x
+        self.y = y
+        self.text = text
+
+    def send(self, device):
+        touch_event = TouchEvent(x=self.x, y=self.y)
+        type_event = TypeEvent(text=self.text)
+        return touch_event.send(device) and type_event.send(device)
 
 
 class IntentEvent(AppEvent):

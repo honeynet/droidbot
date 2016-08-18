@@ -26,12 +26,12 @@
                 {
                     "event_type": "text_input",
                     "target_view": "login_email",
-                    "text_content": "ylimit@honeynet.org"
+                    "text": "ylimit@honeynet.org"
                 },
                 {
                     "event_type": "text_input",
                     "target_view": "login_password",
-                    "text_content": "ylimitpassword"
+                    "text": "ylimitpassword"
                 },
                 {
                     "event_type": "touch",

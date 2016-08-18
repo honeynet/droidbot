@@ -771,11 +771,11 @@ class DeviceState(object):
         @param view_dict: dict, element of list device.get_current_state().views
         @return:
         """
-        view_str = "class:%s,resource_id:%s,text:%s,size:%s" % \
+        view_str = "class:%s,resource_id:%s,size:%s,text:%s" % \
                    (view_dict['class'] if 'class' in view_dict else 'null',
                     view_dict['resource_id'] if 'resource_id' in view_dict else 'null',
-                    view_dict['text'] if 'text' in view_dict else 'null',
-                    view_dict['size'] if 'size' in view_dict else 'null')
+                    view_dict['size'] if 'size' in view_dict else 'null',
+                    view_dict['text'] if 'text' in view_dict else 'null')
         return view_str
 
     @staticmethod

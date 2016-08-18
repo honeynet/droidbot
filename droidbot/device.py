@@ -721,10 +721,12 @@ class DeviceState(object):
                 view_dict['temp_id'] = view2id_map.get(view)
                 view_dict['parent'] = view2id_map.get(view.getParent())
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
-                view_dict['view_str'] = DeviceState.get_view_str(view_dict)
                 view_dict['enabled'] = view.isEnabled()
                 view_dict['focused'] = view.isFocused()
                 view_dict['bounds'] = view.getBounds()
+                view_dict['size'] = "%d*%d" % (view.getWidth(), view.getHeight())
+                view_dict['view_str'] = DeviceState.get_view_str(view_dict)
+
                 views.append(view_dict)
         return views
 
@@ -769,11 +771,11 @@ class DeviceState(object):
         @param view_dict: dict, element of list device.get_current_state().views
         @return:
         """
-        view_str = "package:%s,class:%s,resource-id:%s,text:%s" % \
-                   (view_dict['package'] if 'package' in view_dict else 'nopackage',
-                    view_dict['class'] if 'class' in view_dict else 'noclass',
-                    view_dict['resource-id'] if 'resource-id' in view_dict else 'noresource-id',
-                    view_dict['text'] if 'text' in view_dict else 'notext')
+        view_str = "class:%s,resource_id:%s,size:%s,text:%s" % \
+                   (view_dict['class'] if 'class' in view_dict else 'null',
+                    view_dict['resource_id'] if 'resource_id' in view_dict else 'null',
+                    view_dict['size'] if 'size' in view_dict else 'null',
+                    view_dict['text'] if 'text' in view_dict else 'null')
         return view_str
 
     @staticmethod

@@ -120,7 +120,7 @@ docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/sampl
 ls ~/mobileSamples/out
 ```
 
-## Script
+## Scripting
 
 DroidBot supports semi-automatic testing.
 Users can write scripts to affect the process of testing.
@@ -137,21 +137,21 @@ An example of the DroidBot script is as follows:
 {
     "views": {
         "login_email": {
-            "resource_id": ".*email.*",
+            "resource_id": ".*email",
             "class": ".*EditText"
         },
         "login_password": {
-            "resource_id": ".*password.*",
+            "resource_id": ".*password",
             "class": ".*EditText"
         },
         "login_button": {
-            "resource_id": ".*login.*",
+            "resource_id": ".*next",
             "class": ".*Button"
         }
     },
     "states": {
         "login_state": {
-            "activity": "LoginActivity",
+            "activity": ".*AccountSetupBasics",
             "views": ["login_email", "login_password", "login_button"]
         }
     },
@@ -162,12 +162,12 @@ An example of the DroidBot script is as follows:
                 {
                     "event_type": "text_input",
                     "target_view": "login_email",
-                    "text_content": "ylimit@honeynet.org"
+                    "text": "ylimit@honeynet.org"
                 },
                 {
                     "event_type": "text_input",
                     "target_view": "login_password",
-                    "text_content": "ylimitpassword"
+                    "text": "ylimitpassword"
                 },
                 {
                     "event_type": "touch",
@@ -179,7 +179,7 @@ An example of the DroidBot script is as follows:
     "main": {
         "login_state": ["login_operation"]
     },
-    "default_policy": "dynamic"
+    "default_policy": "utg_dynamic"
 }
 ```
 Explanation of the example:

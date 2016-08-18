@@ -1,21 +1,21 @@
 {
     "views": {
         "login_email": {
-            "resource_id": ".*email.*",
+            "resource_id": ".*email",
             "class": ".*EditText"
         },
         "login_password": {
-            "resource_id": ".*password.*",
+            "resource_id": ".*password",
             "class": ".*EditText"
         },
         "login_button": {
-            "resource_id": ".*login.*",
+            "resource_id": ".*next",
             "class": ".*Button"
         }
     },
     "states": {
         "login_state": {
-            "activity": "LoginActivity",
+            "activity": ".*AccountSetupBasics",
             "views": ["login_email", "login_password", "login_button"]
         }
     },
@@ -43,5 +43,5 @@
     "main": {
         "login_state": ["login_operation"]
     },
-    "default_policy": "dynamic"
+    "default_policy": "utg_dynamic"
 }

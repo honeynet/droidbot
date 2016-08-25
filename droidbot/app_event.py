@@ -1534,6 +1534,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
+        # TODO implement this
 
     def save_explored_view(self, state, view_str):
         """

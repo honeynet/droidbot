@@ -730,6 +730,17 @@ class DeviceState(object):
                 views.append(view_dict)
         return views
 
+    def get_state_str(self):
+        state_str = "activity:%s," % self.foreground_activity
+        view_ids = set()
+        for view in self.views:
+            view_id = view['resource_id']
+            if view_id is None or len(view_id) == 0:
+                continue
+            view_ids.add(view_id)
+        state_str += ",".join(sorted(view_ids))
+        return state_str
+
     def save2dir(self, output_dir=None):
         try:
             if output_dir is None:

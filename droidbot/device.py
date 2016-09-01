@@ -688,9 +688,11 @@ class DeviceState(object):
         self.tag = tag
         self.screenshot = screenshot
         self.views = self.views2list(view_client_views)
+        self.view_str = self.get_state_str()
 
     def to_dict(self):
         state = {'tag': self.tag,
+                 'view_str': self.view_str,
                  'foreground_activity': self.foreground_activity,
                  'background_services': self.background_services,
                  'views': self.views}

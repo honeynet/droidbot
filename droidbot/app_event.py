@@ -1410,6 +1410,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         super(UtgDynamicFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
+        self.unexplored_states = {}
 
         self.last_event_flag = ""
         self.last_touched_view_str = None
@@ -1488,8 +1489,9 @@ class UtgDynamicFactory(StateBasedEventFactory):
         random.shuffle(views)
 
         # add a "BACK" view, consider go back first
-        # mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
-        # views.insert(0, mock_view_back)
+        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
+                          'text': 'BACK_%s' % state.foreground_activity}
+        views.insert(0, mock_view_back)
 
         # first try to find a preferable view
         for view in views:
@@ -1535,6 +1537,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
         # TODO implement this
+
 
     def save_explored_view(self, state, view_str):
         """

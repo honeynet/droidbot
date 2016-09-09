@@ -7,18 +7,18 @@ class TransitionGraph(object):
     The UI state transition graph (UTG) of an app
     in a UTG, each node n is a UI state, and each edge e is a UI event.
     """
-    def __init__(self, input_path=None, similarity_threshold=None, compare_keys=None, device_state_offset=None):
+    def __init__(self, input_path=None, similarity_threshold=None, compare_keys=None, state_offset=None):
         self.unique_states = {}
         self.state_name_map = {}
         self.input_path = input_path
-        self.device_state_path = self.input_path + "/device_states/" if self.input_path is not None else None
+        self.state_path = self.input_path + "/states/" if self.input_path is not None else None
         self.event_file_path = self.input_path + "/droidbot_event.json" if self.input_path is not None else None
 
         self.similarity_threshold = 0.8 if similarity_threshold is None else similarity_threshold
         self.compare_keys = ["class", "package", "view_str", "content-desc", "resource-id"] \
             if compare_keys is None else compare_keys
 
-        self.device_state_offset = 0 if device_state_offset is None else device_state_offset
+        self.state_offset = 0 if state_offset is None else state_offset
 
         if self.input_path is not None:
             self.data = self.build()
@@ -44,17 +44,17 @@ class TransitionGraph(object):
             self.events.append(self.get_event(event_data[i], i + 1))
         event_file.close()
 
-        if self.device_state_offset < 0:
-            self.events = self.events[-self.device_state_offset:]
+        if self.state_offset < 0:
+            self.events = self.events[-self.state_offset:]
 
         # read device state data
         self.state_files = ["start"]
         self.state_json = [{}]
-        for root, _, device_states in os.walk(self.device_state_path):
-            for state in device_states:
+        for root, _, states in os.walk(self.state_path):
+            for state in states:
                 if state[-4:] == "json":
-                    if self.device_state_offset > 0:
-                        self.device_state_offset -= 1
+                    if self.state_offset > 0:
+                        self.state_offset -= 1
                         continue
                     self.state_files.append(state[-22: -5])
                     self.state_json.append(json.loads(open(root + "/" + state).read()))

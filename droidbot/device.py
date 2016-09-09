@@ -597,16 +597,48 @@ class Device(object):
         subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    def push_file(self, source_file, target_dir="/sdcard/"):
+    def get_app_pid(self, app):
+        package = app.get_package_name()
+
+        name2pid = {}
+        ps_out = self.get_adb().shell(["ps", "-t"])
+        ps_out_lines = ps_out.splitlines()
+        ps_out_head = ps_out_lines[0].split()
+        if ps_out_head[1] != "PID" or ps_out_head[-1] != "NAME":
+            self.logger.warning("ps command output format error: %s" % ps_out_head)
+        for ps_out_line in ps_out_lines[1:]:
+            segs = ps_out_line.split()
+            if len(segs) < 4:
+                continue
+            pid = int(segs[1])
+            name = segs[-1]
+            name2pid[name] = pid
+
+        if package in name2pid:
+            return name2pid[package]
+
+        possible_pids = []
+        for name in name2pid:
+            if name.startswith(package):
+                possible_pids.append(name2pid[name])
+        if len(possible_pids) > 0:
+            return min(possible_pids)
+
+        return None
+
+    def push_file(self, local_file, remote_dir="/sdcard/"):
         """
         push file/directory to target_dir
-        :param source_file: path to file/directory in host machine
-        :param target_dir: path to target directory in device
+        :param local_file: path to file/directory in host machine
+        :param remote_dir: path to target directory in device
         :return:
         """
-        if not os.path.exists(source_file):
-            self.logger.warning("push_file file does not exist: %s" % source_file)
-        self.get_adb().run_cmd(["push", source_file, target_dir])
+        if not os.path.exists(local_file):
+            self.logger.warning("push_file file does not exist: %s" % local_file)
+        self.get_adb().run_cmd(["push", local_file, remote_dir])
+
+    def pull_file(self, remote_file, local_file):
+        self.get_adb().run_cmd(["pull", remote_file, local_file])
 
     def take_screenshot(self):
         image = None
@@ -746,10 +778,10 @@ class DeviceState(object):
     def save2dir(self, output_dir=None):
         try:
             if output_dir is None:
-                output_dir = os.path.join(self.device.output_dir, "device_states")
+                output_dir = os.path.join(self.device.output_dir, "states")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            state_json_file_path = "%s/device_state_%s.json" % (output_dir, self.tag)
+            state_json_file_path = "%s/state_%s.json" % (output_dir, self.tag)
             screenshot_file_path = "%s/screenshot_%s.png" % (output_dir, self.tag)
             state_json_file = open(state_json_file_path, "w")
             state_json_file.write(self.to_json())

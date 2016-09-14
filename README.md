@@ -40,7 +40,8 @@ keyevents, and simulated broadcasts, etc.
     window and sends events according to these information.
     It avoids going to same state too many times by comparing the window hierarchies, and 
     it sends activity-specific intents based on static analysis of app.
-    + `file` policy which generates events from a json file.
+    + `utg_dynamic` policy. In addtional to `dynamic`, this policy will record the runtime UI states, events, and methods. (Note: it is a resource-hungry policy, please use it with high-performance device (smartphone, x86-based avd, genymotion, etc.).)
+    + `<script>` policy which generates events from a json script, see [scripting](#scripting) for details.
 
 ## Prerequisite
 

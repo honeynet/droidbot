@@ -1507,7 +1507,6 @@ class UtgDynamicFactory(StateBasedEventFactory):
         super(UtgDynamicFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
-        self.unexplored_states = {}
 
         self.last_event_flag = ""
         self.last_touched_view_str = None

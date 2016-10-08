@@ -48,10 +48,10 @@ class TransitionGraph(object):
             self.events = self.events[-self.state_offset:]
 
         # read device state data
-        self.state_files = ["start"]
-        self.state_json = [{}]
+        self.state_files = ["start", "homescreen"]
+        self.state_json = [{}, {}]
         for root, _, states in os.walk(self.state_path):
-            for state in states:
+            for state in sorted(states):
                 if state[-4:] == "json":
                     if self.state_offset > 0:
                         self.state_offset -= 1

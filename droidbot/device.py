@@ -749,11 +749,11 @@ class DeviceState(object):
         for view in view_client_views:
             if isinstance(view, View):
                 view_dict = {}
-                view_dict['class'] = view.getClass()
-                view_dict['text'] = view.getText()
-                view_dict['resource_id'] = view.getId()
+                view_dict['class'] = view.getClass() #None is possible value
+                view_dict['text'] = view.getText() #None is possible value
+                view_dict['resource_id'] = view.getId() #None is possible value
                 view_dict['temp_id'] = view2id_map.get(view)
-                view_dict['parent'] = view2id_map.get(view.getParent())
+                view_dict['parent'] = view2id_map.get(view.getParent()) #None is possible value
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
                 view_dict['enabled'] = view.isEnabled()
                 view_dict['focused'] = view.isFocused()

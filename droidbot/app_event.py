@@ -1591,7 +1591,8 @@ class UtgDynamicFactory(StateBasedEventFactory):
 
         # first try to find a preferable view
         for view in views:
-            view_text = view['text'].lower().strip()
+            view_text = view['text'] if view['text'] is not None else ''
+            view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])

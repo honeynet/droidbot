@@ -248,6 +248,10 @@ class EventLog(object):
         self.trace_remote_file = "/data/local/tmp/event.trace"
         self.is_profiling = False
         self.profiling_pid = -1
+        self.sampling = None
+        if self.device.get_sdk_version() >= 21: #sampling feature was added in Android 5.0 (API level 21)
+            self.sampling = 1000
+
 
     def to_dict(self):
         return {
@@ -285,11 +289,14 @@ class EventLog(object):
         pid = self.device.get_app_pid(self.app)
         if pid is None:
             if self.is_start_event():
-                start_intent = self.app.get_start_with_profiling_intent(self.trace_remote_file)
+                start_intent = self.app.get_start_with_profiling_intent(self.trace_remote_file, self.sampling)
                 self.event.intent = start_intent.get_cmd()
                 self.is_profiling = True
             return
-        self.device.get_adb().shell(["am", "profile", "start", "--sampling", "1000", str(pid), self.trace_remote_file])
+        if self.sampling is not None:
+            self.device.get_adb().shell(["am", "profile", "start", "--sampling", self.sampling, str(pid), self.trace_remote_file])
+        else:
+            self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
         self.is_profiling = True
         self.profiling_pid = pid
 
@@ -304,6 +311,9 @@ class EventLog(object):
                 self.profiling_pid = pid
 
             self.device.get_adb().shell(["am", "profile", "stop", str(self.profiling_pid)])
+            if self.sampling is None:
+                time.sleep(3) #guess this time can vary between machines
+
             if output_dir is None:
                 output_dir = os.path.join(self.device.output_dir, "events")
             if not os.path.exists(output_dir):
@@ -1591,7 +1601,8 @@ class UtgDynamicFactory(StateBasedEventFactory):
 
         # first try to find a preferable view
         for view in views:
-            view_text = view['text'].lower().strip()
+            view_text = view['text'] if view['text'] is not None else ''
+            view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])

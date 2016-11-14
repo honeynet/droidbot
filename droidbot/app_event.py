@@ -294,7 +294,7 @@ class EventLog(object):
                 self.is_profiling = True
             return
         if self.sampling is not None:
-            self.device.get_adb().shell(["am", "profile", "start", "--sampling", self.sampling, str(pid), self.trace_remote_file])
+            self.device.get_adb().shell(["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
         else:
             self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
         self.is_profiling = True

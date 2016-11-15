@@ -8,8 +8,44 @@ in order to exploit more app states automatically.
 DroidBot decides which actions to take based on static analysis result of app
 and dynamic device information (view hierarchy).
 
-For more details, refer to my [blog posts](http://honeynet.github.io/droidbot/).
+For more details, please contact the author [Yuanchun Li](http://sei.pku.edu.cn/~liyc14/) or refer to the [DroidBot blog](http://honeynet.github.io/droidbot/).
 
+<<<<<<< HEAD
+=======
+## Introduction
+DroidBot mainly does following two things:
+
+1. Setting up device environments, include the contacts, SMS logs, 
+call logs, GPS mocking, etc. The target app may have access to these resources, thus we 
+prepare them before starting the app.
+
+    Multiple env policies can be used for setting up environments. We support:
+
+    + `none` policy which does not set up any environment;
+    + `dummy` policy which just mocks same basic environment for all apps;
+    + `static` policy which set up environment according to static information of app,
+    for example permissions and files which the app have access to;
+    + `file` policy which read environment configurations from a json file.
+
+2. Sending events during the app is running. Events includes touch, drag gestures on screen, 
+keyevents, and simulated broadcasts, etc.
+
+    Similarly, we have several policies to produce events:
+    
+    + `none` policy which does not send any event;
+    + `monkey` policy which make use of adb `monkey` tool, to produce randomized events;
+    + `random` policy which sends randomized events to device
+    + `static` policy produces a list of events based on static information of app. Eg. 
+    the intent-filters of each app.
+    + `dynamic` policy. It is actually the real human-like policy. It monitors the device 
+    states, including the running activities, the foreground window, and the hierarchy of current 
+    window and sends events according to these information.
+    It avoids going to same state too many times by comparing the window hierarchies, and 
+    it sends activity-specific intents based on static analysis of app.
+    + `utg_dynamic` policy. In addtional to `dynamic`, this policy will record the runtime UI states, events, and methods. (Note: it is a resource-hungry policy, please use it with high-performance device (smartphone, x86-based avd, genymotion, etc.).)
+    + `<script>` policy which generates events from a json script, see [scripting](#scripting) for details.
+
+>>>>>>> 29a096f03bc7c1410e241c272a424e41f0588a3e
 ## Prerequisite
 
 1. `Python` version `2.7`

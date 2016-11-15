@@ -232,6 +232,99 @@ class AppEvent(object):
             return ContextEvent(None, None, event_dict=event_dict)
 
 
+class EventLog(object):
+    """
+    save an event to local file system
+    """
+    def __init__(self, device, app, event, tag=None):
+        self.device = device
+        self.app = app
+        self.event = event
+        if tag is None:
+            from datetime import datetime
+            tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        self.tag = tag
+
+        self.trace_remote_file = "/data/local/tmp/event.trace"
+        self.is_profiling = False
+        self.profiling_pid = -1
+        self.sampling = None
+        if self.device.get_sdk_version() >= 21: #sampling feature was added in Android 5.0 (API level 21)
+            self.sampling = 1000
+
+
+    def to_dict(self):
+        return {
+            "tag": self.tag,
+            "event": self.event.to_dict()
+        }
+
+    def save2dir(self, output_dir=None):
+        try:
+            if output_dir is None:
+                output_dir = os.path.join(self.device.output_dir, "events")
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            event_json_file_path = "%s/event_%s.json" % (output_dir, self.tag)
+            event_json_file = open(event_json_file_path, "w")
+            json.dump(self.to_dict(), event_json_file, indent=2)
+            event_json_file.close()
+        except Exception as e:
+            self.device.logger.warning("saving event to dir failed: " + e.message)
+
+    def is_start_event(self):
+        if isinstance(self.event, IntentEvent):
+            intent_cmd = self.event.intent
+            if "start" in intent_cmd and self.app.get_package_name() in intent_cmd:
+                return True
+        return False
+
+    def start_profiling(self):
+        """
+        start profiling the current event
+        @return:
+        """
+        if self.is_profiling:
+            return
+        pid = self.device.get_app_pid(self.app)
+        if pid is None:
+            if self.is_start_event():
+                start_intent = self.app.get_start_with_profiling_intent(self.trace_remote_file, self.sampling)
+                self.event.intent = start_intent.get_cmd()
+                self.is_profiling = True
+            return
+        if self.sampling is not None:
+            self.device.get_adb().shell(["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
+        else:
+            self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
+        self.is_profiling = True
+        self.profiling_pid = pid
+
+    def stop_profiling(self, output_dir=None):
+        if not self.is_profiling:
+            return
+        try:
+            if self.profiling_pid == -1:
+                pid = self.device.get_app_pid(self.app)
+                if pid is None:
+                    return
+                self.profiling_pid = pid
+
+            self.device.get_adb().shell(["am", "profile", "stop", str(self.profiling_pid)])
+            if self.sampling is None:
+                time.sleep(3) #guess this time can vary between machines
+
+            if output_dir is None:
+                output_dir = os.path.join(self.device.output_dir, "events")
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            event_trace_local_path = "%s/event_trace_%s.trace" % (output_dir, self.tag)
+            self.device.pull_file(self.trace_remote_file, event_trace_local_path)
+
+        except Exception as e:
+            self.device.logger.warning("profiling event failed: " + e.message)
+
+
 class KeyEvent(AppEvent):
     """
     a key pressing event
@@ -696,6 +789,11 @@ class AppEventManager(object):
             self.event_interval = 2
 
         self.event_factory = self.get_event_factory(self.policy, device, app)
+        self.profile_events = False
+        if self.event_factory is not None and \
+                (isinstance(self.event_factory, UtgDynamicFactory) or
+                     isinstance(self.event_factory, ScriptEventFactory)):
+            self.profile_events = True
 
     @staticmethod
     def get_event_factory(policy, device, app):
@@ -731,7 +829,17 @@ class AppEventManager(object):
         if event is None:
             return
         self.events.append(event)
-        self.device.send_event(event)
+
+        if self.profile_events:
+            event_log = EventLog(self.device, self.app, event)
+            event_log.start_profiling()
+            self.device.send_event(event)
+            time.sleep(self.event_interval)
+            event_log.stop_profiling()
+            event_log.save2dir()
+        else:
+            self.device.send_event(event)
+            time.sleep(self.event_interval)
 
     def dump(self):
         """
@@ -843,7 +951,6 @@ class EventFactory(object):
                 else:
                     event = self.generate_event()
                 event_manager.add_event(event)
-                time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
             except StopSendingEventException as e:
@@ -1488,12 +1595,14 @@ class UtgDynamicFactory(StateBasedEventFactory):
         random.shuffle(views)
 
         # add a "BACK" view, consider go back first
-        # mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity}
-        # views.insert(0, mock_view_back)
+        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
+                          'text': 'BACK_%s' % state.foreground_activity}
+        views.insert(0, mock_view_back)
 
         # first try to find a preferable view
         for view in views:
-            view_text = view['text'].lower().strip()
+            view_text = view['text'] if view['text'] is not None else ''
+            view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
@@ -1534,6 +1643,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
+        # TODO implement this
 
     def save_explored_view(self, state, view_str):
         """

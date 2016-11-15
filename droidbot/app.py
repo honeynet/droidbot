@@ -96,6 +96,19 @@ class App(object):
             package_name += "/%s" % self.get_main_activity()
         return Intent(suffix=package_name)
 
+    def get_start_with_profiling_intent(self, trace_file, sampling=None):
+        """
+        get an intent to start the app with profiling
+        :return: Intent
+        """
+        package_name = self.get_package_name()
+        if self.get_main_activity():
+            package_name += "/%s" % self.get_main_activity()
+        if sampling is not None:
+            return Intent(prefix="start --start-profiler %s --sampling %d" % (trace_file, sampling), suffix=package_name)
+        else:
+            return Intent(prefix="start --start-profiler %s" % trace_file, suffix=package_name)
+
     def get_stop_intent(self):
         """
         get an intent to stop the app

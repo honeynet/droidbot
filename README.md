@@ -10,7 +10,38 @@ and dynamic device information (view hierarchy).
 
 For more details, refer to my [blog posts](http://honeynet.github.io/droidbot/).
 
-## Introduction
+## Prerequisite
+
+1. `Python` version `2.7`
+2. `Java` version `1.7`
+3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
+4. (Optional) `DroidBox` version `4.1.1`,
+download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
+
+## Installation
+
+Clone this repo and use pip install:
+
+```shell
+git clone https://github.com/honeynet/droidbot.git
+pip install -e droidbot
+```
+
+If successfully installed, you should be able to execute `droidbot -h`.
+
+## Simple Usage
+
+1. Make sure you have:
+    a. `.apk` file path of the app you want to analyze.
+    b. A device or an emulator connected to your host machine via `adb`.
+    c. Get the serial number of your device/emulator using `adb devices`. For example, the serial number of an emulator is usually `emulator-5554`.
+
+2. Start analyzing:
+```
+droidbot -d <serial> -a <path_to_apk> -env none -event utg_dynamic
+```
+
+## env \& event
 DroidBot mainly does following two things:
 
 1. Setting up device environments, include the contacts, SMS logs, 
@@ -30,95 +61,18 @@ keyevents, and simulated broadcasts, etc.
 
     Similarly, we have several policies to produce events:
     
-    + `none` policy which does not send any event;
+    + `none` policy does not send any event;
     + `monkey` policy which make use of adb `monkey` tool, to produce randomized events;
     + `random` policy which sends randomized events to device
     + `static` policy produces a list of events based on static information of app. Eg. 
     the intent-filters of each app.
-    + `dynamic` policy. It is actually the real human-like policy. It monitors the device 
+    + `utg_dynamic` policy. It is actually the real human-like policy. It monitors the device 
     states, including the running activities, the foreground window, and the hierarchy of current 
     window and sends events according to these information.
     It avoids going to same state too many times by comparing the window hierarchies, and 
     it sends activity-specific intents based on static analysis of app.
+    In older versions of Android where dumping UI hierarchy is slow, try `dynamic` policy.
     + `file` policy which generates events from a json file.
-
-## Prerequisite
-
-1. `Python` version `2.7`
-2. `Java` version `1.7`
-3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
-4. (Optional) `DroidBox` version `4.1.1`,
-download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
-
-## Installation
-
-Clone this repo and use pip install:
-
-```shell
-git clone https://github.com/honeynet/droidbot.git
-pip install -e droidbot
-```
-
-## Usage
-
-### Basic Usage
-
-1. Start an emulator or connect to a device using adb.
-2. Start DroidBot:
-`droidbot -h`
-
-### Usage with DroidBox (without docker)
-
-DroidBox print sensitive behaviours at runtime, which is useful in malware analysis.
-DroidBot can be used with DroidBox and is able to capture DroidBox logs.
-
-Step 1. Start droidbox emulator:
-
-1.1 Download DroidBox image
-```
-wget https://droidbox.googlecode.com/files/DroidBox411RC.tar.gz
-tar xfz DroidBox411RC.tar.gz
-```
-
-1.2 Create an avd named droidbox
-
-You can either use android avd manager or use `android create avd` command.
-
-1.3 Start the avd with droidbox image
-```
-cd DroidBox411RC
-sh startemu.sh droidbox
-```
-
-Step 2. Start DroidBot:
-```
-droidbot -a <sample.apk> -event dynamic -duration 100 -o droidbot_out
-```
-
-### Usage with Docker
-
-Prepare the environment on your host by creating a folder to be shared with the **DroidBot** Docker container. The folder will be used to load samples to be analyzed in **DroidBot**, and also to store output results from **DroidBot** analysis.
-```
-mkdir -p ~/mobileSamples/out
-```
-
-Now pull the ready-made Docker container (about 1.8 GB after extraction) from Honeynet Project's hub:
-```
-docker pull honeynet/droidbot
-```
-
-or, if you prefer, build your own from the GitHub repo:
-```
-git clone https://github.com/honeynet/droidbot.git
-docker build -t honeynet/droidbot droidbot
-```
-
-To run the analysis, copy your sample to the folder you created above, then start the container; you will find results in the "out" subfolder.
-```
-cp mySample.apk ~/mobileSamples/
-docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot /samples/mySample.apk
-ls ~/mobileSamples/out
-```
 
 ## Scripting
 
@@ -192,6 +146,49 @@ The `login_state` can be recognized by checking the foreground activity name and
 In this example, we define a `login_operation` which is simply typing email, typing password and press login button.
 + In `main`, we connect the states to corresponding operations.
 In this example, we let DroidBot to take `login_operation` in Login state, and use dynamic event policy in other states.
+
+## Use cases
+
+### Usage with DroidBox
+
+Some of you may be interested in using DroidBot with a sandbox in order to do automated taint analysis or malware analysis.
+
+Here is how:
+
+Step 1. Start your sandbox, such as [TaintDroid](http://www.appanalysis.org/) or [DroidBox](https://github.com/pjlantz/droidbox).
+Usually setting up a sandbox is not easy, so follow their instructions and be patient.
+
+Step 2. Start DroidBot:
+```
+droidbot -d <sandbox serial> -a <path to .apk> -event dynamic -o droidbot_out
+```
+
+### Usage with Docker
+
+We have a docker image with DroidBot and DroidBox integrated. To use the docker image, follow the steps below:
+
+Prepare the environment on your host by creating a folder to be shared with the **DroidBot** Docker container. The folder will be used to load samples to be analyzed in **DroidBot**, and also to store output results from **DroidBot** analysis.
+```
+mkdir -p ~/mobileSamples/out
+```
+
+Now pull the ready-made Docker container (about 1.8 GB after extraction) from Honeynet Project's hub:
+```
+docker pull honeynet/droidbot
+```
+
+or, if you prefer, build your own from the GitHub repo:
+```
+git clone https://github.com/honeynet/droidbot.git
+docker build -t honeynet/droidbot droidbot
+```
+
+To run the analysis, copy your sample to the folder you created above, then start the container; you will find results in the "out" subfolder.
+```
+cp mySample.apk ~/mobileSamples/
+docker run -it --rm -v ~/mobileSamples:/samples:ro -v ~/mobileSamples/out:/samples/out honeynet/droidbot /samples/mySample.apk
+ls ~/mobileSamples/out
+```
 
 ## Evaluation
 

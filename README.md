@@ -33,9 +33,9 @@ If successfully installed, you should be able to execute `droidbot -h`.
 
 1. Make sure you have:
 
-    a. `.apk` file path of the app you want to analyze.
-    b. A device or an emulator connected to your host machine via `adb`.
-    c. Get the serial number of your device/emulator using `adb devices`. For example, the serial number of an emulator is usually `emulator-5554`.
+    + `.apk` file path of the app you want to analyze.
+    + A device or an emulator connected to your host machine via `adb`.
+    + Get the serial number of your device/emulator using `adb devices`. For example, the serial number of an emulator is usually `emulator-5554`.
 
 2. Start analyzing:
 

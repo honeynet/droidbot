@@ -10,8 +10,6 @@ and dynamic device information (view hierarchy).
 
 For more details, please contact the author [Yuanchun Li](http://sei.pku.edu.cn/~liyc14/) or refer to the [DroidBot blog](http://honeynet.github.io/droidbot/).
 
-<<<<<<< HEAD
-=======
 ## Introduction
 DroidBot mainly does following two things:
 

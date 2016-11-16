@@ -15,8 +15,6 @@ For more details, please contact the author [Yuanchun Li](http://sei.pku.edu.cn/
 1. `Python` version `2.7`
 2. `Java` version `1.7`
 3. `Android SDK`, make sure that `platform_tools` and `tools` added to `PATH`
-4. (Optional) `DroidBox` version `4.1.1`,
-download from [here](http://droidbox.googlecode.com/files/DroidBox411RC.tar.gz)
 
 ## Installation
 

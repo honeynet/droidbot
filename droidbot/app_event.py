@@ -1508,6 +1508,42 @@ class ManualEventFactory(StateBasedEventFactory):
         state_transitions_file.close()
 
 
+class AppModel(object):
+    """
+    the app model constructed on the fly
+    """
+
+    def __init__(self, device, app):
+        self.device = device
+        self.app = app
+
+        self.node2states = {}
+        self.edge2events = {}
+
+    def add_transition(self, event_str, old_state, new_state):
+        old_node = self.state_to_node(old_state)
+        new_node = self.state_to_node(new_state)
+        self.add_edge(event_str, old_node, new_node)
+
+    def state_to_node(self, state):
+        if state is None:
+            state_str = "none"
+            state_tag = "none"
+        else:
+            state_str = state.get_state_str()
+            state_tag = state.tag
+        if state_str not in self.node2states:
+            self.node2states[state_str] = {}
+        self.node2states[state_str].add(state_tag)
+        return state_str
+
+    def add_edge(self, event_str, old_node, new_node):
+        edge_str = "<%s> --> <%s>" % (old_node, new_node)
+        if edge_str not in self.edge2events:
+            self.edge2events[edge_str] = {}
+        self.edge2events[edge_str].add(event_str)
+
+
 class UtgDynamicFactory(StateBasedEventFactory):
     """
     record device state during execution
@@ -1517,9 +1553,10 @@ class UtgDynamicFactory(StateBasedEventFactory):
         super(UtgDynamicFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
+        self.app_model = AppModel(device, app)
 
         self.last_event_flag = ""
-        self.last_touched_view_str = None
+        self.last_event_str = None
         self.last_state = None
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
@@ -1534,7 +1571,8 @@ class UtgDynamicFactory(StateBasedEventFactory):
         @return: AppEvent
         """
         state.save2dir()
-        self.save_state_transition(self.last_touched_view_str, self.last_state, state)
+        self.save_state_transition(self.last_event_str, self.last_state, state)
+        self.app_model.add_transition(self.last_event_str, self.last_state, state)
 
         if self.device.is_foreground(self.app):
             # the app is in foreground, clear last_event_flag
@@ -1553,7 +1591,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
                 start_app_intent = self.app.get_start_intent()
 
                 self.last_event_flag += EVENT_FLAG_START_APP
-                self.last_touched_view_str = None
+                self.last_event_str = EVENT_FLAG_START_APP
                 self.last_state = state
                 return IntentEvent(start_app_intent)
 
@@ -1564,7 +1602,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         if view_to_touch is None:
             stop_app_intent = self.app.get_stop_intent()
             self.last_event_flag += EVENT_FLAG_STOP_APP
-            self.last_touched_view_str = None
+            self.last_event_str = EVENT_FLAG_STOP_APP
             self.last_state = state
             return IntentEvent(stop_app_intent)
 
@@ -1576,9 +1614,9 @@ class UtgDynamicFactory(StateBasedEventFactory):
             result = TouchEvent(x, y)
 
         self.last_event_flag += EVENT_FLAG_TOUCH
-        self.last_touched_view_str = view_to_touch_str
+        self.last_event_str = view_to_touch_str
         self.last_state = state
-        self.save_explored_view(self.last_state, self.last_touched_view_str)
+        self.save_explored_view(self.last_state, self.last_event_str)
         return result
 
     def select_a_view(self, state):

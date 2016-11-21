@@ -1,7 +1,7 @@
 __author__ = 'yuanchun'
 import unittest
 
-from connections.adb import ADB, TelnetConsole
+from adapter.adb import ADB, TelnetConsole
 from types.device import Device
 
 

@@ -182,7 +182,7 @@ class Device(object):
         note that only emulator have telnet connection
         """
         if self.telnet_enabled and self.telnet is None:
-            from connections.telnet import TelnetConsole, TelnetException
+            from adapter.telnet import TelnetConsole, TelnetException
             try:
                 self.telnet = TelnetConsole(self)
             except TelnetException:
@@ -194,7 +194,7 @@ class Device(object):
         get adb connection of the device
         """
         if self.adb_enabled and self.adb is None:
-            from connections.adb import ADB
+            from adapter.adb import ADB
             self.adb = ADB(self)
         return self.adb
 
@@ -204,7 +204,7 @@ class Device(object):
         :return:
         """
         if self.monkeyrunner_enabled and self.monkeyrunner is None:
-            from connections.monkey_runner import MonkeyRunner
+            from adapter.monkey_runner import MonkeyRunner
             self.monkeyrunner = MonkeyRunner(self)
         return self.monkeyrunner
 
@@ -214,7 +214,7 @@ class Device(object):
         :return:
         """
         if self.view_client_enabled and self.view_client is None:
-            from connections.viewclient import ViewClient
+            from adapter.viewclient import ViewClient
             self.view_client = ViewClient(self, forceviewserveruse=False)
         return self.view_client
 
@@ -745,7 +745,7 @@ class DeviceState(object):
             id2view_map[temp_id] = view
             temp_id += 1
 
-        from connections.viewclient import View
+        from adapter.viewclient import View
         for view in view_client_views:
             if isinstance(view, View):
                 view_dict = {}

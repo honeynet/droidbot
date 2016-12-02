@@ -1533,15 +1533,15 @@ class AppModel(object):
             state_str = state.get_state_str()
             state_tag = state.tag
         if state_str not in self.node2states:
-            self.node2states[state_str] = {}
-        self.node2states[state_str].add(state_tag)
+            self.node2states[state_str] = []
+        self.node2states[state_str].append(state_tag)
         return state_str
 
     def add_edge(self, event_str, old_node, new_node):
         edge_str = "<%s> --> <%s>" % (old_node, new_node)
         if edge_str not in self.edge2events:
-            self.edge2events[edge_str] = {}
-        self.edge2events[edge_str].add(event_str)
+            self.edge2events[edge_str] = []
+        self.edge2events[edge_str].append(event_str)
 
 
 class UtgDynamicFactory(StateBasedEventFactory):

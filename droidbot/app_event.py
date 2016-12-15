@@ -320,6 +320,12 @@ class EventLog(object):
                 os.mkdir(output_dir)
             event_trace_local_path = "%s/event_trace_%s.trace" % (output_dir, self.tag)
             self.device.pull_file(self.trace_remote_file, event_trace_local_path)
+            count = 10 #this number is heuristic, it influences the time we are ready to wait
+            #in total we wait for maximum 58 seconds until the trace file is downloaded
+            while (count > 0 and  os.stat(event_trace_local_path).st_size == 0):
+                time.sleep(5)
+                self.device.pull_file(self.trace_remote_file, event_trace_local_path)
+                count -= 1
 
         except Exception as e:
             self.device.logger.warning("profiling event failed: " + e.message)

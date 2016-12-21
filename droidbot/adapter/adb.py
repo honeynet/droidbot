@@ -47,7 +47,7 @@ class ADB(object):
             segments = line.split("\t")
             if len(segments) != 2:
                 continue
-            if segments[1] == "device":
+            if segments[1].strip() == "device":
                 online_devices.append(segments[0])
 
         if not online_devices:

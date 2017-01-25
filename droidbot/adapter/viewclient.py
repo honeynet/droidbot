@@ -977,7 +977,7 @@ class UiScrollable(UiCollection):
     def setViewClient(self, vc):
         self.vc = vc
 
-from com.dtmilano.android import viewclient
+# from com.dtmilano.android import viewclient
 class ViewClient:
     def __init__(self, device, forceviewserveruse=False,
                  localport=VIEW_SERVER_PORT, remoteport=VIEW_SERVER_PORT,

@@ -7,6 +7,7 @@ DroidBot sends keyevent, gestures and simulates system events
 in order to exploit more app states automatically.
 DroidBot decides which actions to take based on static analysis result of app
 and dynamic device information (view hierarchy).
+A 5-min demo can be found [here](https://www.youtube.com/watch?v=3-aHG_SazMY).
 
 For more details, please contact the author [Yuanchun Li](http://sei.pku.edu.cn/~liyc14/) or refer to the [DroidBot blog](http://honeynet.github.io/droidbot/).
 

@@ -26,7 +26,6 @@ class Device(object):
         self.logger = logging.getLogger("Device")
 
         self.serial = device_serial
-        # is_emulator 0 for real device, 1 for emulator
         self.is_emulator = is_emulator
         self.adb = None
         self.telnet = None
@@ -191,8 +190,8 @@ class Device(object):
             from adapter.telnet import TelnetConsole, TelnetException
             try:
                 self.telnet = TelnetConsole(self)
-            except TelnetException:
-                self.logger.warning("Cannot connect to telnet.")
+            except Exception:
+                self.logger.warning("Cannot connect to telnet. You may not be able to simulate phonecalls and locations.")
         return self.telnet
 
     def get_adb(self):

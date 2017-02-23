@@ -290,7 +290,7 @@ class View:
     def getUniqueId(self):
         """
         Gets the unique Id of this View.
-        @see: L{ViewClient.__splitAttrs()} for a discussion on B{Unique Ids}
+        @see: L{ViewClient.__parseAttrs()} for a discussion on B{Unique Ids}
         """
         try:
             return self.attributes['uniqueId']
@@ -1297,7 +1297,7 @@ You should force ViewServer back-end.""")
         for v in receivedLines:
             if v == '' or v == 'DONE' or v == 'DONE.':
                 break
-            attrs = self.__splitAttrs(v)
+            attrs = self.__parseAttrs(v)
             if not self.root:
                 if v[0] == ' ':
                     raise Exception("Unexpected root element starting with ' '.")
@@ -1334,7 +1334,7 @@ You should force ViewServer back-end.""")
             self.views.append(lastView)
             self.viewsById[lastView.getUniqueId()] = lastView
 
-    def __splitAttrs(self, strArgs):
+    def __parseAttrs(self, strArgs):
         """
         Splits the C{View} attributes in C{strArgs} and optionally adds the view id to the C{viewsById} list.
 
@@ -1354,17 +1354,8 @@ You should force ViewServer back-end.""")
 
         if self.useUiAutomator:
             raise RuntimeError("This method is not compatible with UIAutomator")
-        # replace the spaces in text:mText to preserve them in later split
-        # they are translated back after the attribute matches
-        textRE = re.compile('%s=%s,' % (self.textProperty, _nd('len')))
-        m = textRE.search(strArgs)
-        if m:
-            __textStart = m.end()
-            __textLen = int(m.group('len'))
-            __textEnd = m.end() + __textLen
-            s1 = strArgs[__textStart:__textEnd]
-            s2 = s1.replace(' ', WS)
-            strArgs = strArgs.replace(s1, s2, 1)
+
+        strArgs = strArgs.strip()
 
         idRE = re.compile("(?P<viewId>id/\S+)")
         attrRE = re.compile('%s(?P<parens>\(\))?=%s,(?P<val>[^ ]*)' % (_ns('attr'), _nd('len')), flags=re.DOTALL)
@@ -1376,24 +1367,37 @@ You should force ViewServer back-end.""")
         if m:
             viewId = m.group('viewId')
 
-        for attr in strArgs.split():
-            m = attrRE.match(attr)
+        str_start = 0
+        str_len = len(strArgs)
+
+        while True:
+            m = attrRE.match(strArgs, str_start)
             if m:
                 __attr = m.group('attr')
                 __parens = '()' if m.group('parens') else ''
                 __len = int(m.group('len'))
-                __val = m.group('val')
-                if __attr == self.textProperty:
-                    # restore spaces that have been replaced
-                    __val = __val.replace(WS, ' ')
+                __val_start = m.start('val')
+                __val_end = __val_start + __len
+                __val = strArgs[__val_start:__val_end]
                 attrs[__attr + __parens] = __val
+                str_start = __val_end
             else:
-                m = hashRE.match(attr)
+                m = hashRE.match(strArgs, str_start)
                 if m:
                     attrs['class'] = m.group('class')
                     attrs['oid'] = m.group('oid')
+                    str_start = m.end(0)
                 else:
-                    self.logger.warning("doesn't match: %s" % attrs)
+                    self.logger.warning("__parseAttrs doesn't match: %s" % strArgs[str_start:])
+
+            if str_start >= str_len or strArgs[str_start:] == " " or strArgs[str_start:] == "DONE":
+                break
+
+            if strArgs[str_start] == " ":
+                str_start += 1
+            else:
+                self.logger.warning("__parseAttrs unexpected token: %s" % strArgs[str_start:])
+                break
 
         if True:  # was assignViewById
             if not viewId:

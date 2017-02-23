@@ -16,7 +16,7 @@ class Device(object):
     this class describes a connected device
     """
 
-    def __init__(self, device_serial, is_emulator=True, output_dir=None):
+    def __init__(self, device_serial, is_emulator=True, output_dir=None, use_hierarchy_viewer=False):
         """
         create a device
         :param device_serial: serial number of target device
@@ -44,6 +44,8 @@ class Device(object):
             self.output_dir = os.path.abspath("droidbot_out")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
+
+        self.use_hierarchy_viewer = use_hierarchy_viewer
 
         if self.is_emulator:
             self.adb_enabled = True
@@ -215,7 +217,7 @@ class Device(object):
         """
         if self.view_client_enabled and self.view_client is None:
             from adapter.viewclient import ViewClient
-            self.view_client = ViewClient(self, forceviewserveruse=False)
+            self.view_client = ViewClient(self, forceviewserveruse=self.use_hierarchy_viewer)
         return self.view_client
 
     def is_foreground(self, app):

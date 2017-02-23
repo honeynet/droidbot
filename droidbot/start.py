@@ -48,6 +48,8 @@ def parse_args():
                         help="start with droidbox")
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="run in quiet mode (dump warning messages only).")
+    parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
+                        help="force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     options = parser.parse_args()
     # print options
     return options
@@ -73,7 +75,8 @@ def main():
                         event_interval=opts.event_interval,
                         event_duration=opts.event_duration,
                         event_count=opts.event_count,
-                        quiet=opts.quiet)
+                        quiet=opts.quiet,
+                        use_hierarchy_viewer=opts.use_hierarchy_viewer)
     droidbot.start()
     return
 

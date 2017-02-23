@@ -1073,9 +1073,9 @@ class ViewClient:
 
         @return: C{True} if the response received matches L{PARCEL_TRUE}, C{False} otherwise
         """
-        PARCEL_TRUE = "Result: Parcel(00000000 00000001   '........')\r\n"
+        PARCEL_TRUE = "Result: Parcel(00000000 00000001   '........')"
         ''' The TRUE response parcel '''
-        return response == PARCEL_TRUE
+        return response.strip() == PARCEL_TRUE
 
     def dump(self, window=-1, sleep=1):
         """

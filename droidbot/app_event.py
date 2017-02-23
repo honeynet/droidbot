@@ -236,6 +236,7 @@ class EventLog(object):
     """
     save an event to local file system
     """
+
     def __init__(self, device, app, event, tag=None):
         self.device = device
         self.app = app
@@ -249,9 +250,8 @@ class EventLog(object):
         self.is_profiling = False
         self.profiling_pid = -1
         self.sampling = None
-        if self.device.get_sdk_version() >= 21: #sampling feature was added in Android 5.0 (API level 21)
+        if self.device.get_sdk_version() >= 21:  # sampling feature was added in Android 5.0 (API level 21)
             self.sampling = 1000
-
 
     def to_dict(self):
         return {
@@ -294,7 +294,8 @@ class EventLog(object):
                 self.is_profiling = True
             return
         if self.sampling is not None:
-            self.device.get_adb().shell(["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
+            self.device.get_adb().shell(
+                ["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
         else:
             self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
         self.is_profiling = True
@@ -312,7 +313,7 @@ class EventLog(object):
 
             self.device.get_adb().shell(["am", "profile", "stop", str(self.profiling_pid)])
             if self.sampling is None:
-                time.sleep(3) #guess this time can vary between machines
+                time.sleep(3)  # guess this time can vary between machines
 
             if output_dir is None:
                 output_dir = os.path.join(self.device.output_dir, "events")
@@ -329,6 +330,7 @@ class KeyEvent(AppEvent):
     """
     a key pressing event
     """
+
     def __init__(self, name, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -426,6 +428,7 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
+
     def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -456,6 +459,7 @@ class SwipeEvent(UIEvent):
     """
     swipe gesture
     """
+
     def __init__(self, x, y, direction="UP", event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -757,7 +761,8 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration):
+    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration,
+                 enable_method_profiling=False):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -789,11 +794,11 @@ class AppEventManager(object):
             self.event_interval = 2
 
         self.event_factory = self.get_event_factory(self.policy, device, app)
-        self.profile_events = False
-        if self.event_factory is not None and \
-                (isinstance(self.event_factory, UtgDynamicFactory) or
-                     isinstance(self.event_factory, ScriptEventFactory)):
-            self.profile_events = True
+        self.enable_method_profiling = enable_method_profiling
+        # if self.event_factory is not None and \
+        #         (isinstance(self.event_factory, UtgDynamicFactory) or
+        #              isinstance(self.event_factory, ScriptEventFactory)):
+        #     self.enable_method_profiling = True
 
     @staticmethod
     def get_event_factory(policy, device, app):
@@ -830,7 +835,7 @@ class AppEventManager(object):
             return
         self.events.append(event)
 
-        if self.profile_events:
+        if self.enable_method_profiling:
             event_log = EventLog(self.device, self.app, event)
             event_log.start_profiling()
             self.device.send_event(event)
@@ -1681,7 +1686,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-        # TODO implement this
+            # TODO implement this
 
     def save_explored_view(self, state, view_str):
         """
@@ -1763,7 +1768,7 @@ class ScriptEventFactory(EventFactory):
 
     def gen_event_with_policy(self, policy, state):
         if policy not in self.policy_event_factories:
-            self.policy_event_factories[policy] =\
+            self.policy_event_factories[policy] = \
                 AppEventManager.get_event_factory(policy, self.device, self.app)
         event_factory = self.policy_event_factories[policy]
         return event_factory.generate_event(state)

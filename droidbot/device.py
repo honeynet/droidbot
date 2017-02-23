@@ -179,7 +179,8 @@ class Device(object):
         self.state_monitor.stop()
         temp_dir = os.path.join(self.output_dir, "temp")
         if os.path.exists(temp_dir):
-            os.rmdir(temp_dir)
+            import shutil
+            shutil.rmtree(temp_dir)
 
     def get_telnet(self):
         """

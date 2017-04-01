@@ -50,8 +50,8 @@ def parse_args():
                         help="run in quiet mode (dump warning messages only).")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
                         help="force use Hierarchy Viewer to dump UI states instead of UI Automator.")
-    parser.add_argument("-enable_method_profiling", action="store_true", dest="enable_method_profiling",
-                        help="enable method profiling to get the method trace of each event.")
+    parser.add_argument("-enable_method_profiling", action="store", dest="profiling_method",
+                        help="enable method profiling to get the method trace of each event. can be \"full\" or sampling rate.")
     options = parser.parse_args()
     # print options
     return options
@@ -79,7 +79,7 @@ def main():
                         event_count=opts.event_count,
                         quiet=opts.quiet,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
-                        enable_method_profiling=opts.enable_method_profiling)
+                        profiling_method=opts.profiling_method)
     droidbot.start()
     return
 

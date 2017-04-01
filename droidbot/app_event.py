@@ -237,7 +237,7 @@ class EventLog(object):
     save an event to local file system
     """
 
-    def __init__(self, device, app, event, tag=None):
+    def __init__(self, device, app, event, profiling_method, tag=None):
         self.device = device
         self.app = app
         self.event = event
@@ -250,8 +250,9 @@ class EventLog(object):
         self.is_profiling = False
         self.profiling_pid = -1
         self.sampling = None
-        if self.device.get_sdk_version() >= 21:  # sampling feature was added in Android 5.0 (API level 21)
-            self.sampling = 1000
+        # sampling feature was added in Android 5.0 (API level 21)
+        if str(profiling_method) != "full" and self.device.get_sdk_version() >= 21:
+            self.sampling = int(profiling_method)
 
     def to_dict(self):
         return {
@@ -762,7 +763,7 @@ class AppEventManager(object):
     """
 
     def __init__(self, device, app, event_policy, event_count, event_interval, event_duration,
-                 enable_method_profiling=False):
+                 profiling_method=None):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -794,11 +795,7 @@ class AppEventManager(object):
             self.event_interval = 2
 
         self.event_factory = self.get_event_factory(self.policy, device, app)
-        self.enable_method_profiling = enable_method_profiling
-        # if self.event_factory is not None and \
-        #         (isinstance(self.event_factory, UtgDynamicFactory) or
-        #              isinstance(self.event_factory, ScriptEventFactory)):
-        #     self.enable_method_profiling = True
+        self.profiling_method = profiling_method
 
     @staticmethod
     def get_event_factory(policy, device, app):
@@ -835,8 +832,8 @@ class AppEventManager(object):
             return
         self.events.append(event)
 
-        if self.enable_method_profiling:
-            event_log = EventLog(self.device, self.app, event)
+        if self.profiling_method is not None:
+            event_log = EventLog(self.device, self.app, event, self.profiling_method)
             event_log.start_profiling()
             self.device.send_event(event)
             time.sleep(self.event_interval)

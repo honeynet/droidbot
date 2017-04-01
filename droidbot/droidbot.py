@@ -25,7 +25,7 @@ class DroidBot(object):
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None,
                  quiet=False,
-                 use_hierarchy_viewer=False, enable_method_profiling=False):
+                 use_hierarchy_viewer=False, profiling_method=None):
         """
         initiate droidbot with configurations
         :return:
@@ -63,7 +63,7 @@ class DroidBot(object):
             self.env_manager = AppEnvManager(self.device, self.app, env_policy)
             self.event_manager = AppEventManager(self.device, self.app, event_policy,
                                                  event_count, event_interval, event_duration,
-                                                 enable_method_profiling=enable_method_profiling)
+                                                 profiling_method=profiling_method)
         except Exception as e:
             import traceback
             traceback.print_exc()

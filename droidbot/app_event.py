@@ -19,7 +19,7 @@ POLICY_MONKEY = "monkey"
 POLICY_RANDOM = "random"
 POLICY_STATIC = "static"
 POLICY_DYNAMIC = "dynamic"
-POLICY_UTG_DYNAMIC = "utg_dynamic"
+POLICY_UTG_DYNAMIC = "dfs"
 POLICY_MANUAL = "manual"
 POLICY_FILE = "file"
 

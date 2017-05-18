@@ -1,6 +1,6 @@
 ---
 layout: default
-title: DroidBot by yli
+title: DroidBot by ylimit
 ---
 
 {% for post in site.posts %}

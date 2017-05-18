@@ -48,7 +48,7 @@ Currently, DroidBot support following three strategies:
 
 1. **random** -- Generate input events randomly;
 2. **dfs** -- Explore the UI states using a depth-first strategy;
-3. **script** -- Use a script to custome input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
+3. **script** -- Use a script to customize input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
 
 ## Evaluation
 

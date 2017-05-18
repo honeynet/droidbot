@@ -38,30 +38,17 @@ If successfully installed, you should be able to execute `droidbot -h`.
 2. Start DroidBot:
 
     ```
-    droidbot -d <serial> -a <path_to_apk> -event model
+    droidbot -d <serial> -a <path_to_apk> -event dfs
     ```
 
 ## Test strategy
 
 DroidBot uses an app model to generate test input.
+Currently, DroidBot support following three strategies:
 
-There are "random" strategy and "dfs" strategy.
-
-## Script
-
-You can use a script to customize input for certain states.
-Please refer to [How to run DroidBot with a script](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
-
-## Special Usage Scenarios
-
-### Use DroidBot with a sandbox for malware analysis
-
-Step 1. Start a sandbox, such as [TaintDroid](http://www.appanalysis.org/) or [DroidBox](https://github.com/pjlantz/droidbox).
-
-Step 2. Start DroidBot:
-```
-droidbot -d <sandbox serial> -a <path to .apk> -event dynamic -o droidbot_out [-use_with_droidbox]
-```
+1. **random** -- Generate input events randomly;
+2. **dfs** -- Explore the UI states using a depth-first strategy;
+3. **script** -- Use a script to custome input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
 
 ## Evaluation
 

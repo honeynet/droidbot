@@ -47,7 +47,7 @@ DroidBot uses an app model to generate test input.
 Currently, DroidBot support following three strategies:
 
 1. **random** -- Generate random input events;
-2. **dfs** -- Explore the UI states using a depth-first strategy;
+2. **dfs**/**bfs** -- Explore the UI states using a depth-first/breadth-first strategy;
 3. **script** -- Use a script to customize input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
 
 ## Evaluation

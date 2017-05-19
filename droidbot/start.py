@@ -28,11 +28,11 @@ def parse_args():
                         help='Policy to use for test input generation. Supported policies:\n'
                              # '%s\tno event will be sent, user should interact manually with device; \n'
                              # '%s\tuse "adb shell monkey" to send events; \n'
-                             '\"%s\"\tPseudo-random input.\n'
+                             '\"%s\"\tGenerate random input events.\n'
                              # '%s\tsend events based on static analysis result; \n'
                              # '%s\tbased on dynamic app state, this policy requires framework instrumented\n'
-                             '\"%s\"\tModel-based input.\n'
-                             '<%s>\tUse a script.\n'
+                             '\"%s\"\tExplore the UI states using a depth-first strategy.\n'
+                             '<%s>\tUse a script to customize input for certain states.\n'
                              # '%s\tmanually interact with your app, and we will record the events.\n'
                              %
                              (

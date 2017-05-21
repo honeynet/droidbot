@@ -22,6 +22,9 @@ POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
 POLICY_FILE = "file"
 
+DEFAULT_EVENT_INTERVAL = 1
+DEFAULT_EVENT_COUNT = 100000
+
 POSSIBLE_KEYS = [
     "BACK",
     "MENU",
@@ -785,13 +788,13 @@ class AppEventManager(object):
         self.timer = None
 
         if not self.event_count or self.event_count is None:
-            self.event_count = 100
+            self.event_count = DEFAULT_EVENT_COUNT
 
         if not self.policy or self.policy is None:
             self.policy = POLICY_NONE
 
         if not self.event_interval or self.event_interval is None:
-            self.event_interval = 2
+            self.event_interval = DEFAULT_EVENT_INTERVAL
 
         self.event_factory = self.get_event_factory(self.policy, device, app)
         self.profiling_method = profiling_method

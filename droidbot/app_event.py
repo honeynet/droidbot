@@ -1286,7 +1286,7 @@ class UtgBfsFactory(StateBasedEventFactory):
         self.last_event_str = None
         self.last_state = None
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
@@ -1370,7 +1370,7 @@ class UtgBfsFactory(StateBasedEventFactory):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 
         # try to find a un-clicked view
@@ -1455,7 +1455,7 @@ class UtgDfsFactory(StateBasedEventFactory):
         self.last_event_str = None
         self.last_state = None
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
                                   "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
@@ -1528,10 +1528,10 @@ class UtgDfsFactory(StateBasedEventFactory):
 
         random.shuffle(views)
 
-        # add a "BACK" view, consider go back first
+        # add a "BACK" view, consider go back last
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
                           'text': 'BACK_%s' % state.foreground_activity}
-        views.insert(0, mock_view_back)
+        views.append(mock_view_back)
 
         # first try to find a preferable view
         for view in views:
@@ -1539,7 +1539,7 @@ class UtgDfsFactory(StateBasedEventFactory):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 
         # try to find a un-clicked view

@@ -33,7 +33,7 @@ def parse_args():
                              # '%s\tbased on dynamic app state, this policy requires framework instrumented\n'
                              '\"%s\"\tExplore the UI using a breadth-first strategy.\n'
                              '\"%s\"\tExplore the UI using a depth-first strategy.\n'
-                             '<%s>\tUse a script to customize input for certain states.\n'
+                             # '<%s>\tUse a script to customize input for certain states.\n'
                              # '%s\tmanually interact with your app, and we will record the events.\n'
                              %
                              (
@@ -44,9 +44,11 @@ def parse_args():
                                  # app_event.POLICY_DYNAMIC,
                                  app_event.POLICY_BFS,
                                  app_event.POLICY_DFS,
-                                 app_event.POLICY_FILE,
+                                 # app_event.POLICY_FILE,
                                  # app_event.POLICY_MANUAL
                              ))
+    parser.add_argument("-script", action="store", dest="script_path",
+                        help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="event_count",
                         type=int, help="Number of events to generate in total")
     parser.add_argument("-interval", action="store", dest="event_interval",
@@ -54,9 +56,9 @@ def parse_args():
     parser.add_argument("-timeout", action="store", dest="timeout",
                         type=int, help="Timeout in seconds")
     parser.add_argument("-q", action="store_true", dest="quiet",
-                        help="run in quiet mode (dump warning messages only).")
+                        help="Run in quiet mode (dump warning messages only).")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
-                        help="force use Hierarchy Viewer to dump UI states instead of UI Automator.")
+                        help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
     parser.add_argument("-use_with_droidbox", action="store_true", dest="with_droidbox",
@@ -83,11 +85,12 @@ def main():
                         # env_policy=opts.env_policy,
                         env_policy="none",
                         event_policy=opts.event_policy,
-                        with_droidbox=opts.with_droidbox,
+                        script_path=opts.script_path,
                         event_interval=opts.event_interval,
                         event_duration=opts.timeout,
                         event_count=opts.event_count,
                         quiet=opts.quiet,
+                        with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method)
     droidbot.start()

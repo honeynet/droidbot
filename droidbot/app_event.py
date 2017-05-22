@@ -20,7 +20,7 @@ POLICY_RANDOM = "random"
 POLICY_BFS = "bfs"
 POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
-POLICY_FILE = "file"
+# POLICY_FILE = "file"
 
 DEFAULT_EVENT_INTERVAL = 1
 DEFAULT_EVENT_COUNT = 100000
@@ -764,7 +764,8 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration,
+    def __init__(self, device, app, event_policy, script_path,
+                 event_count, event_interval, event_duration,
                  profiling_method=None):
         """
         construct a new AppEventManager instance
@@ -779,6 +780,7 @@ class AppEventManager(object):
         self.device = device
         self.app = app
         self.policy = event_policy
+        self.script_path = script_path
         self.events = []
         self.event_factory = None
         self.event_count = event_count

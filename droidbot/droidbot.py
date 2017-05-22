@@ -24,7 +24,8 @@ class DroidBot(object):
     def __init__(self, app_path, device_serial, output_dir=None,
                  env_policy=None, event_policy=None, with_droidbox=False,
                  event_count=None, event_interval=None, event_duration=None,
-                 quiet=False):
+                 quiet=False,
+                 use_hierarchy_viewer=False, profiling_method=None):
         """
         initiate droidbot with configurations
         :return:
@@ -46,7 +47,7 @@ class DroidBot(object):
         #     # FIXED by requiring device_serial in cmd
         #     device_serial = '.*'
 
-        self.device = Device(device_serial, output_dir=self.output_dir)
+        self.device = Device(device_serial, output_dir=self.output_dir, use_hierarchy_viewer=use_hierarchy_viewer)
         self.app = App(app_path, output_dir=self.output_dir)
 
         self.droidbox = None
@@ -61,8 +62,8 @@ class DroidBot(object):
 
             self.env_manager = AppEnvManager(self.device, self.app, env_policy)
             self.event_manager = AppEventManager(self.device, self.app, event_policy,
-                                                 event_count, event_interval,
-                                                 event_duration)
+                                                 event_count, event_interval, event_duration,
+                                                 profiling_method=profiling_method)
         except Exception as e:
             import traceback
             traceback.print_exc()

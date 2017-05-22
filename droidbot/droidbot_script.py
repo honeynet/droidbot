@@ -44,7 +44,7 @@ class DroidBotScript(object):
     }
     import app_event
     valid_event_policies = [app_event.POLICY_RANDOM, app_event.POLICY_STATIC,
-                            app_event.POLICY_DYNAMIC, app_event.POLICY_UTG_DYNAMIC]
+                            app_event.POLICY_DYNAMIC, app_event.POLICY_BFS]
 
     def __init__(self, script_dict):
         self.tag = self.__class__.__name__

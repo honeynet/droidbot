@@ -16,7 +16,7 @@ class Device(object):
     this class describes a connected device
     """
 
-    def __init__(self, device_serial, is_emulator=True, output_dir=None):
+    def __init__(self, device_serial, is_emulator=True, output_dir=None, use_hierarchy_viewer=False):
         """
         create a device
         :param device_serial: serial number of target device
@@ -26,7 +26,6 @@ class Device(object):
         self.logger = logging.getLogger("Device")
 
         self.serial = device_serial
-        # is_emulator 0 for real device, 1 for emulator
         self.is_emulator = is_emulator
         self.adb = None
         self.telnet = None
@@ -44,6 +43,8 @@ class Device(object):
             self.output_dir = os.path.abspath("droidbot_out")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
+
+        self.use_hierarchy_viewer = use_hierarchy_viewer
 
         if self.is_emulator:
             self.adb_enabled = True
@@ -175,6 +176,10 @@ class Device(object):
             self.view_client.disconnect()
         self.logcat.terminate()
         self.state_monitor.stop()
+        temp_dir = os.path.join(self.output_dir, "temp")
+        if os.path.exists(temp_dir):
+            import shutil
+            shutil.rmtree(temp_dir)
 
     def get_telnet(self):
         """
@@ -185,8 +190,8 @@ class Device(object):
             from adapter.telnet import TelnetConsole, TelnetException
             try:
                 self.telnet = TelnetConsole(self)
-            except TelnetException:
-                self.logger.warning("Cannot connect to telnet.")
+            except Exception:
+                self.logger.warning("Cannot connect to telnet. You may not be able to simulate phonecalls and locations.")
         return self.telnet
 
     def get_adb(self):
@@ -215,7 +220,7 @@ class Device(object):
         """
         if self.view_client_enabled and self.view_client is None:
             from adapter.viewclient import ViewClient
-            self.view_client = ViewClient(self, forceviewserveruse=False)
+            self.view_client = ViewClient(self, forceviewserveruse=self.use_hierarchy_viewer)
         return self.view_client
 
     def is_foreground(self, app):
@@ -645,18 +650,32 @@ class Device(object):
         self.get_adb().run_cmd(["pull", remote_file, local_file])
 
     def take_screenshot(self):
-        image = None
+        # image = None
+        #
+        # received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
+        # import StringIO
+        # stream = StringIO.StringIO(received)
+        #
+        # try:
+        #     from PIL import Image
+        #     image = Image.open(stream)
+        # except IOError as e:
+        #     self.logger.warning("exception in take_screenshot: %s" % e)
+        # return image
+        from datetime import datetime
+        tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
 
-        received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
-        import StringIO
-        stream = StringIO.StringIO(received)
+        remote_image_path = "/sdcard/screen_%s.png" % tag
+        local_image_dir = os.path.join(self.output_dir, "temp")
+        if not os.path.exists(local_image_dir):
+            os.mkdir(local_image_dir)
+        local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
 
-        try:
-            from PIL import Image
-            image = Image.open(stream)
-        except IOError as e:
-            self.logger.warning("exception in take_screenshot: %s" % e)
-        return image
+        self.get_adb().shell("screencap -p %s" % remote_image_path)
+        self.pull_file(remote_image_path, local_image_path)
+        self.get_adb().shell("rm %s" % remote_image_path)
+
+        return local_image_path
 
     def get_current_state(self):
         self.logger.info("getting current device state...")
@@ -665,13 +684,13 @@ class Device(object):
             view_client_views = self.dump_views()
             foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
-            screenshot = self.take_screenshot()
+            screenshot_path = self.take_screenshot()
             self.logger.info("finish getting current device state...")
             current_state = DeviceState(self,
                                         view_client_views=view_client_views,
                                         foreground_activity=foreground_activity,
                                         background_services=background_services,
-                                        screenshot=screenshot)
+                                        screenshot_path=screenshot_path)
         except Exception as e:
             self.logger.warning("exception in get_current_state: %s" % e)
             import traceback
@@ -713,7 +732,7 @@ class DeviceState(object):
     the state of the current device
     """
 
-    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, screenshot=None):
+    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, screenshot_path=None):
         self.device = device
         self.view_client_views = view_client_views
         self.foreground_activity = foreground_activity
@@ -722,7 +741,7 @@ class DeviceState(object):
             from datetime import datetime
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
-        self.screenshot = screenshot
+        self.screenshot_path = screenshot_path
         self.views = self.views2list(view_client_views)
         self.view_str = self.get_state_str()
 
@@ -786,13 +805,14 @@ class DeviceState(object):
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             state_json_file_path = "%s/state_%s.json" % (output_dir, self.tag)
-            screenshot_file_path = "%s/screenshot_%s.png" % (output_dir, self.tag)
+            screenshot_output_path = "%s/screenshot_%s.png" % (output_dir, self.tag)
             state_json_file = open(state_json_file_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
-            from PIL.Image import Image
-            if isinstance(self.screenshot, Image):
-                self.screenshot.save(screenshot_file_path)
+            subprocess.check_call(["cp", self.screenshot_path, screenshot_output_path])
+            # from PIL.Image import Image
+            # if isinstance(self.screenshot_path, Image):
+            #     self.screenshot_path.save(screenshot_output_path)
         except Exception as e:
             self.device.logger.warning("saving state to dir failed: " + e.message)
 

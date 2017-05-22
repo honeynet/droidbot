@@ -17,11 +17,13 @@ POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
 POLICY_MONKEY = "monkey"
 POLICY_RANDOM = "random"
-POLICY_STATIC = "static"
-POLICY_DYNAMIC = "dynamic"
-POLICY_UTG_DYNAMIC = "utg_dynamic"
+POLICY_BFS = "bfs"
+POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
 POLICY_FILE = "file"
+
+DEFAULT_EVENT_INTERVAL = 1
+DEFAULT_EVENT_COUNT = 100000
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -236,7 +238,8 @@ class EventLog(object):
     """
     save an event to local file system
     """
-    def __init__(self, device, app, event, tag=None):
+
+    def __init__(self, device, app, event, profiling_method, tag=None):
         self.device = device
         self.app = app
         self.event = event
@@ -249,9 +252,9 @@ class EventLog(object):
         self.is_profiling = False
         self.profiling_pid = -1
         self.sampling = None
-        if self.device.get_sdk_version() >= 21: #sampling feature was added in Android 5.0 (API level 21)
-            self.sampling = 1000
-
+        # sampling feature was added in Android 5.0 (API level 21)
+        if str(profiling_method) != "full" and self.device.get_sdk_version() >= 21:
+            self.sampling = int(profiling_method)
 
     def to_dict(self):
         return {
@@ -294,7 +297,8 @@ class EventLog(object):
                 self.is_profiling = True
             return
         if self.sampling is not None:
-            self.device.get_adb().shell(["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
+            self.device.get_adb().shell(
+                ["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
         else:
             self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
         self.is_profiling = True
@@ -312,7 +316,7 @@ class EventLog(object):
 
             self.device.get_adb().shell(["am", "profile", "stop", str(self.profiling_pid)])
             if self.sampling is None:
-                time.sleep(3) #guess this time can vary between machines
+                time.sleep(3)  # guess this time can vary between machines
 
             if output_dir is None:
                 output_dir = os.path.join(self.device.output_dir, "events")
@@ -335,6 +339,7 @@ class KeyEvent(AppEvent):
     """
     a key pressing event
     """
+
     def __init__(self, name, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -432,6 +437,7 @@ class DragEvent(UIEvent):
     """
     a drag gesture on screen
     """
+
     def __init__(self, start_x, start_y, end_x, end_y, duration=1000, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -462,6 +468,7 @@ class SwipeEvent(UIEvent):
     """
     swipe gesture
     """
+
     def __init__(self, x, y, direction="UP", event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
@@ -763,7 +770,8 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration):
+    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration,
+                 profiling_method=None):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -786,20 +794,16 @@ class AppEventManager(object):
         self.timer = None
 
         if not self.event_count or self.event_count is None:
-            self.event_count = 100
+            self.event_count = DEFAULT_EVENT_COUNT
 
         if not self.policy or self.policy is None:
             self.policy = POLICY_NONE
 
         if not self.event_interval or self.event_interval is None:
-            self.event_interval = 2
+            self.event_interval = DEFAULT_EVENT_INTERVAL
 
         self.event_factory = self.get_event_factory(self.policy, device, app)
-        self.profile_events = False
-        if self.event_factory is not None and \
-                (isinstance(self.event_factory, UtgDynamicFactory) or
-                     isinstance(self.event_factory, ScriptEventFactory)):
-            self.profile_events = True
+        self.profiling_method = profiling_method
 
     @staticmethod
     def get_event_factory(policy, device, app):
@@ -811,12 +815,10 @@ class AppEventManager(object):
             event_factory = None
         elif policy == POLICY_RANDOM:
             event_factory = RandomEventFactory(device, app)
-        elif policy == POLICY_STATIC:
-            event_factory = StaticEventFactory(device, app)
-        elif policy == POLICY_DYNAMIC:
-            event_factory = DynamicEventFactory(device, app)
-        elif policy == POLICY_UTG_DYNAMIC:
-            event_factory = UtgDynamicFactory(device, app)
+        elif policy == POLICY_BFS:
+            event_factory = UtgBfsFactory(device, app)
+        elif policy == POLICY_DFS:
+            event_factory = UtgDfsFactory(device, app)
         elif policy == POLICY_MANUAL:
             event_factory = ManualEventFactory(device, app)
         else:
@@ -836,8 +838,8 @@ class AppEventManager(object):
             return
         self.events.append(event)
 
-        if self.profile_events:
-            event_log = EventLog(self.device, self.app, event)
+        if self.profiling_method is not None:
+            event_log = EventLog(self.device, self.app, event, self.profiling_method)
             event_log.start_profiling()
             self.device.send_event(event)
             time.sleep(self.event_interval)
@@ -1007,7 +1009,7 @@ class NoneEventFactory(EventFactory):
 
 class RandomEventFactory(EventFactory):
     """
-    A dummy factory which produces AppEventManager.send_event method in a random manner
+    A dummy factory which produces events randomly
     """
 
     def __init__(self, device, app):
@@ -1026,278 +1028,6 @@ class RandomEventFactory(EventFactory):
         """
         event_type = weighted_choice(self.choices)
         event = event_type.get_random_instance(self.device, self.app)
-        return event
-
-
-class StaticEventFactory(EventFactory):
-    """
-    A factory which produces events based on static analysis result
-    for example, manifest file and sensitive API it used
-    """
-
-    def __init__(self, device, app):
-        super(StaticEventFactory, self).__init__(device, app)
-        self.choices = {
-            UIEvent: 5,
-            IntentEvent: 4,
-            KeyEvent: 1
-        }
-        self.possible_broadcasts = app.get_possible_broadcasts()
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        event_type = weighted_choice(self.choices)
-        if event_type == IntentEvent and self.possible_broadcasts:
-            event = IntentEvent(random.choice(list(self.possible_broadcasts)))
-        else:
-            event = event_type.get_random_instance(self.device, self.app)
-        return event
-
-
-class DynamicEventFactory(EventFactory):
-    """
-    A much wiser factory which produces events based on the current app state
-    for each service, try sending all broadcasts
-    for each activity, try touching each view, and scrolling in four directions
-    """
-
-    def __init__(self, device, app):
-        super(DynamicEventFactory, self).__init__(device, app)
-
-        self.exploited_contexts = set()
-        self.exploited_services = set()
-        self.exploited_broadcasts = set()
-
-        # a map of Context to UniqueViews,
-        # which means the views are exploited in the context
-        self.exploited_views = {}
-        self.saved_views = {}
-        self.window_passes = {}
-        self.window_pass_limit = 3
-
-        self.previous_event = None
-        self.previous_activity = None
-        self.event_stack = []
-
-        self.possible_broadcasts = app.get_possible_broadcasts()
-
-        self.possible_inputs = {
-            'account': 'droidbot',
-            'name': 'droidbot',
-            'email': 'droidbot@honeynet.com',
-            'password': 'droidbot',
-            'pwd': 'droidbot',
-            'text': 'hello world',
-            'number': '1234567890'
-        }
-
-        # randomized touch events for each webview
-        self.webview_touches = 5
-
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
-                                  "check", "agree", "try", "go", "next"]
-
-        if self.device.is_emulator:
-            self.choices = {
-                UIEvent: 40,
-                IntentEvent: 8,
-                KeyEvent: 1,
-                EmulatorEvent: 1
-            }
-        else:
-            self.choices = {
-                UIEvent: 40,
-                IntentEvent: 9,
-                KeyEvent: 1
-            }
-
-        # use this flag to indicate the last sent event
-        self.last_event_flag = ""
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        if self.event_stack:
-            event = self.event_stack.pop()
-            return event
-        else:
-            return self.find_events()
-
-    def find_events(self):
-        """
-        find some event, return the first, and add the rest to event stack
-        """
-        # get current running Activity
-        top_activity_name = self.device.get_top_activity_name()
-        # if the activity switches, wait a few seconds
-        if top_activity_name != self.previous_activity:
-            time.sleep(3)
-        self.previous_activity = top_activity_name
-
-        # get focused window
-        focused_window_name = self.device.get_focused_window_name()
-
-        current_context = WindowNameContext(window_name=focused_window_name)
-        current_context_str = current_context.__str__()
-
-        # get running services
-        running_services = set(self.device.get_service_names())
-        new_services = running_services - self.exploited_services
-        # if new service is started, set exploited broadcasts to empty
-        if new_services:
-            self.exploited_services = self.exploited_services.union(running_services)
-            self.exploited_broadcasts = set()
-
-        event_type = weighted_choice(self.choices)
-
-        if event_type == IntentEvent and self.possible_broadcasts:
-            possible_intents = self.possible_broadcasts - self.exploited_broadcasts
-            if not possible_intents:
-                possible_intents = self.possible_broadcasts
-                self.exploited_broadcasts = set()
-            intent = random.choice(list(possible_intents))
-            self.exploited_broadcasts.add(intent)
-            intent_event = IntentEvent(intent=intent)
-
-            return ContextEvent(context=current_context, event=intent_event)
-
-        if event_type == KeyEvent or event_type == EmulatorEvent:
-            event = KeyEvent.get_random_instance(self.device, self.app)
-
-            return ContextEvent(context=current_context, event=event)
-
-        # if the current context is exploited, try go back
-        if current_context_str in self.exploited_contexts:
-            if self.last_event_flag.endswith("start_app+back+start_app") or \
-                    self.last_event_flag.endswith("start_app+back+back+home+start_app"):
-                # It seems the views in app is all explored
-                # Then give it another pass
-                self.exploited_contexts.clear()
-                self.exploited_services.clear()
-                self.exploited_broadcasts.clear()
-                self.saved_views.clear()
-                self.window_passes.clear()
-                self.exploited_views.clear()
-            elif self.last_event_flag.endswith("back+back"):
-                # It seems the app can not be back, try use HOME key
-                self.last_event_flag += "+home"
-                event = ContextEvent(context=current_context, event=KeyEvent('HOME'))
-                return event
-            elif self.last_event_flag.endswith("back+back+home"):
-                # HOME key also does not work
-                self.device.logger.warning("This app might have hijacked the device!")
-                # we have to continue interacting with this app
-                self.exploited_contexts.clear()
-                self.exploited_services.clear()
-                self.exploited_broadcasts.clear()
-                self.saved_views.clear()
-                self.window_passes.clear()
-                self.exploited_views.clear()
-            else:
-                self.last_event_flag += "+back"
-                event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
-                return event
-
-        if not self.device.is_foreground(self.app):
-            if self.last_event_flag.endswith("+start_app"):
-                # It seems the app stuck at some state, and cannot be started
-                # just pass to let viewclient deal with this case
-                pass
-            else:
-                self.last_event_flag += "+start_app"
-                component = self.app.get_package_name()
-                if self.app.get_main_activity():
-                    component += "/%s" % self.app.get_main_activity()
-                return IntentEvent(Intent(suffix=component))
-
-        if current_context_str not in self.exploited_views.keys():
-            self.exploited_views[current_context_str] = set()
-
-        # if no views were saved, dump view via AndroidViewClient
-        if current_context_str not in self.saved_views.keys():
-            views = self.device.dump_views()
-            self.saved_views[current_context_str] = views
-            self.window_passes[current_context_str] = 0
-        else:
-            views = self.saved_views[current_context_str]
-
-        # then find a view to send UI event
-        random.shuffle(views)
-
-        # find preferred view
-        for v in views:
-            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
-                continue
-
-            unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
-            if unique_view_str in self.exploited_views[current_context_str]:
-                continue
-
-            v_text = v.getText()
-            if v_text is None:
-                continue
-            v_text = v_text.lower()
-            if v_text in self.preferred_buttons:
-                self.exploited_views[current_context_str].add(unique_view_str)
-                (x, y) = v.getCenter()
-                event = TouchEvent(x, y)
-                self.event_stack.append(event)
-                self.last_event_flag = "touch"
-                return event
-
-        # no preferred view, find another
-        for v in views:
-            if v.getChildren() or v.getWidth() == 0 or v.getHeight() == 0:
-                continue
-
-            unique_view_str = UniqueView(unique_id=v.getUniqueId(), text=v.getText()).__str__()
-            if unique_view_str in self.exploited_views[current_context_str]:
-                continue
-
-            self.exploited_views[current_context_str].add(unique_view_str)
-            (x, y) = v.getCenter()
-            event = ContextEvent(context=current_context, event=TouchEvent(x, y))
-            v_cls_name = v.getClass().lower()
-
-            # if it is an EditText, try input something
-            if 'edit' in v_cls_name or 'text' in v_cls_name or 'input' in v_cls_name:
-                for key in self.possible_inputs.keys():
-                    if key in v.getId().lower() or key in v_cls_name:
-                        next_event = TypeEvent(text=self.possible_inputs[key])
-                        self.event_stack.append(next_event)
-                        break
-
-            # if it is a WebView, try touch randomly
-            if 'webview' in v_cls_name:
-                webview_event_count = 0
-                bounds = v.getBounds()
-                while webview_event_count < self.webview_touches:
-                    webview_x = random.uniform(bounds[0][0], bounds[1][0])
-                    webview_y = random.uniform(bounds[1][1], bounds[0][1])
-                    self.event_stack.append(TouchEvent(webview_x, webview_y))
-                    webview_event_count += 1
-
-            self.last_event_flag = "touch"
-            return event
-        # if reach here, it means droidbot has traverse current window once more
-        self.window_passes[current_context_str] += 1
-        if self.window_passes[current_context_str] < self.window_pass_limit:
-            self.exploited_views[current_context_str] = set()
-        else:
-            # Then mark this context as exploited
-            self.exploited_contexts.add(current_context_str)
-
-        # if all views were exploited, TODO try scroll current view
-
-        self.last_event_flag += "back"
-        event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
         return event
 
 
@@ -1550,13 +1280,13 @@ class AppModel(object):
         self.edge2events[edge_str].append(event_str)
 
 
-class UtgDynamicFactory(StateBasedEventFactory):
+class UtgBfsFactory(StateBasedEventFactory):
     """
     record device state during execution
     """
 
     def __init__(self, device, app):
-        super(UtgDynamicFactory, self).__init__(device, app)
+        super(UtgBfsFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
         self.app_model = AppModel(device, app)
@@ -1565,7 +1295,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
         self.last_event_str = None
         self.last_state = None
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
@@ -1649,7 +1379,7 @@ class UtgDynamicFactory(StateBasedEventFactory):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 
         # try to find a un-clicked view
@@ -1687,7 +1417,176 @@ class UtgDynamicFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-        # TODO implement this
+            # TODO implement this
+
+    def save_explored_view(self, state, view_str):
+        """
+        save the explored view
+        @param state: DeviceState, where the view located
+        @param view_str: str, representing a view
+        @return:
+        """
+        state_activity = state.foreground_activity
+        self.explored_views.add((state_activity, view_str))
+
+    def dump(self):
+        """
+        dump the explored_views and state_transitions to file
+        @return:
+        """
+        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
+        json.dump(list(self.explored_views), explored_views_file, indent=2)
+        explored_views_file.close()
+
+        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
+        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
+        state_transitions_file.close()
+
+        from state_transition_graph import TransitionGraph
+        utg = TransitionGraph(input_path=self.device.output_dir)
+        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
+        json.dump(utg.data, utg_file, indent=2)
+        utg_file.close()
+
+
+class UtgDfsFactory(StateBasedEventFactory):
+    """
+    record device state during execution
+    """
+
+    def __init__(self, device, app):
+        super(UtgDfsFactory, self).__init__(device, app)
+        self.explored_views = set()
+        self.state_transitions = set()
+        self.app_model = AppModel(device, app)
+
+        self.last_event_flag = ""
+        self.last_event_str = None
+        self.last_state = None
+
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
+                                  "check", "agree", "try", "go", "next"]
+
+    def gen_event_based_on_state(self, state):
+        """
+        generate an event based on current device state
+        note: ensure these fields are properly maintained in each transaction:
+          last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
+        @param state: DeviceState
+        @return: AppEvent
+        """
+        state.save2dir()
+        self.save_state_transition(self.last_event_str, self.last_state, state)
+        self.app_model.add_transition(self.last_event_str, self.last_state, state)
+
+        if self.device.is_foreground(self.app):
+            # the app is in foreground, clear last_event_flag
+            self.last_event_flag = EVENT_FLAG_STARTED
+        else:
+            number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
+            # if we have tried too many times but still not started, stop droidbot
+            if number_of_starts > 5:
+                raise StopSendingEventException("The app cannot be started.")
+            # if app is not started, try start it
+            if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
+                # It seems the app stuck at some state, and cannot be started
+                # just pass to let viewclient deal with this case
+                pass
+            else:
+                start_app_intent = self.app.get_start_intent()
+
+                self.last_event_flag += EVENT_FLAG_START_APP
+                self.last_event_str = EVENT_FLAG_START_APP
+                self.last_state = state
+                return IntentEvent(start_app_intent)
+
+        # select a view to click
+        view_to_touch = self.select_a_view(state)
+
+        # if no view can be selected, restart the app
+        if view_to_touch is None:
+            stop_app_intent = self.app.get_stop_intent()
+            self.last_event_flag += EVENT_FLAG_STOP_APP
+            self.last_event_str = EVENT_FLAG_STOP_APP
+            self.last_state = state
+            return IntentEvent(stop_app_intent)
+
+        view_to_touch_str = view_to_touch['view_str']
+        if view_to_touch_str.startswith('BACK'):
+            result = KeyEvent('BACK')
+        else:
+            x, y = DeviceState.get_view_center(view_to_touch)
+            result = TouchEvent(x, y)
+
+        self.last_event_flag += EVENT_FLAG_TOUCH
+        self.last_event_str = view_to_touch_str
+        self.last_state = state
+        self.save_explored_view(self.last_state, self.last_event_str)
+        return result
+
+    def select_a_view(self, state):
+        """
+        select a view in the view list of given state, let droidbot touch it
+        @param state: DeviceState
+        @return:
+        """
+        views = []
+        for view in state.views:
+            if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
+                views.append(view)
+
+        random.shuffle(views)
+
+        # add a "BACK" view, consider go back last
+        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
+                          'text': 'BACK_%s' % state.foreground_activity}
+        views.append(mock_view_back)
+
+        # first try to find a preferable view
+        for view in views:
+            view_text = view['text'] if view['text'] is not None else ''
+            view_text = view_text.lower().strip()
+            if view_text in self.preferred_buttons and \
+                            (state.foreground_activity, view['view_str']) not in self.explored_views:
+                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
+                return view
+
+        # try to find a un-clicked view
+        for view in views:
+            if (state.foreground_activity, view['view_str']) not in self.explored_views:
+                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                return view
+
+        # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
+        random.shuffle(views)
+        transition_views = {transition[0] for transition in self.state_transitions}
+        for view in views:
+            if view['view_str'] in transition_views:
+                self.device.logger.info("selected a transition view: %s" % view['view_str'])
+                return view
+
+        # no window transition found, just return a random view
+        # view = views[0]
+        # self.device.logger.info("selected a random view: %s" % view['view_str'])
+        # return view
+
+        # DroidBot stuck on current state, return None
+        self.device.logger.info("no view could be selected in state: %s" % state.tag)
+        return None
+
+    def save_state_transition(self, event_str, old_state, new_state):
+        """
+        save the state transition
+        @param event_str: str, representing the event cause the transition
+        @param old_state: DeviceState
+        @param new_state: DeviceState
+        @return:
+        """
+        if event_str is None or old_state is None or new_state is None:
+            return
+        if new_state.is_different_from(old_state):
+            self.state_transitions.add((event_str, old_state.tag, new_state.tag))
+            # TODO implement this
 
     def save_explored_view(self, state, view_str):
         """
@@ -1769,7 +1668,7 @@ class ScriptEventFactory(EventFactory):
 
     def gen_event_with_policy(self, policy, state):
         if policy not in self.policy_event_factories:
-            self.policy_event_factories[policy] =\
+            self.policy_event_factories[policy] = \
                 AppEventManager.get_event_factory(policy, self.device, self.app)
         event_factory = self.policy_event_factories[policy]
         return event_factory.generate_event(state)

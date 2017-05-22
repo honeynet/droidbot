@@ -1290,7 +1290,7 @@ class UtgBfsFactory(StateBasedEventFactory):
         self.last_state = None
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
-                                  "check", "agree", "try", "go", "next"]
+                                  "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
         """
@@ -1411,7 +1411,7 @@ class UtgBfsFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-            # TODO implement this
+            self.app_model.add_transition(event_str=event_str, old_state=old_state, new_state=new_state)
 
     def save_explored_view(self, state, view_str):
         """
@@ -1459,7 +1459,7 @@ class UtgDfsFactory(StateBasedEventFactory):
         self.last_state = None
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
-                                  "check", "agree", "try", "go", "next"]
+                                  "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
         """
@@ -1580,7 +1580,7 @@ class UtgDfsFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-            # TODO implement this
+            self.app_model.add_transition(event_str=event_str, old_state=old_state, new_state=new_state)
 
     def save_explored_view(self, state, view_str):
         """

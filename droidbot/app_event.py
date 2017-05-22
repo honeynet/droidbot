@@ -780,7 +780,6 @@ class AppEventManager(object):
         self.device = device
         self.app = app
         self.policy = event_policy
-        self.script_path = script_path
         self.events = []
         self.event_factory = None
         self.event_count = event_count
@@ -788,6 +787,12 @@ class AppEventManager(object):
         self.event_duration = event_duration
         self.monkey = None
         self.timer = None
+
+        if script_path is not None:
+            f = open(script_path, 'r')
+            script_dict = json.load(f)
+            from droidbot_script import DroidBotScript
+            self.script = DroidBotScript(script_dict)
 
         if not self.event_count or self.event_count is None:
             self.event_count = DEFAULT_EVENT_COUNT
@@ -798,11 +803,11 @@ class AppEventManager(object):
         if not self.event_interval or self.event_interval is None:
             self.event_interval = DEFAULT_EVENT_INTERVAL
 
-        self.event_factory = self.get_event_factory(self.policy, device, app)
+        self.event_factory = self.get_event_factory(device, app)
         self.profiling_method = profiling_method
 
-    @staticmethod
-    def get_event_factory(policy, device, app):
+    def get_event_factory(self, device, app):
+        policy = self.policy
         if policy == POLICY_NONE:
             event_factory = None
         elif policy == POLICY_STATE_RECORDER:
@@ -818,10 +823,7 @@ class AppEventManager(object):
         elif policy == POLICY_MANUAL:
             event_factory = ManualEventFactory(device, app)
         else:
-            script_file_path = policy
-            f = open(script_file_path, 'r')
-            script_dict = json.load(f)
-            event_factory = ScriptEventFactory(device, app, script_dict)
+            event_factory = None
         return event_factory
 
     def add_event(self, event):
@@ -1003,30 +1005,6 @@ class NoneEventFactory(EventFactory):
         return None
 
 
-class RandomEventFactory(EventFactory):
-    """
-    A dummy factory which produces events randomly
-    """
-
-    def __init__(self, device, app):
-        super(RandomEventFactory, self).__init__(device, app)
-        self.choices = {
-            UIEvent: 7,
-            IntentEvent: 2,
-            KeyEvent: 1
-        }
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        event_type = weighted_choice(self.choices)
-        event = event_type.get_random_instance(self.device, self.app)
-        return event
-
-
 EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
@@ -1074,6 +1052,30 @@ class StateBasedEventFactory(EventFactory):
 
     def gen_event_based_on_state(self, state):
         return UIEvent.get_random_instance(self.device, self.app)
+
+
+class RandomEventFactory(StateBasedEventFactory):
+    """
+    A dummy factory which produces events randomly
+    """
+
+    def __init__(self, device, app):
+        super(RandomEventFactory, self).__init__(device, app)
+        self.choices = {
+            UIEvent: 7,
+            IntentEvent: 2,
+            KeyEvent: 1
+        }
+
+    def gen_event_based_on_state(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        event_type = weighted_choice(self.choices)
+        event = event_type.get_random_instance(self.device, self.app)
+        return event
 
 
 EVENT_FLAG_STARTED = "+started"

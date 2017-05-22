@@ -25,7 +25,7 @@ ScriptEvent_VAL = 'ScriptEvent'
 
 class DroidBotScript(object):
     """
-    DroidBotScript is a DSL which defines how DroidBot interacts with target app
+    DroidBotScript is a DSL for customizing input for certain states
     """
     script_grammar = {
         'views': {
@@ -39,12 +39,8 @@ class DroidBotScript(object):
         },
         'main': {
             STATE_ID: [OPERATION_ID]
-        },
-        'default_policy': EVENT_POLICY_VAL
+        }
     }
-    import app_event
-    valid_event_policies = [app_event.POLICY_RANDOM, app_event.POLICY_STATIC,
-                            app_event.POLICY_DYNAMIC, app_event.POLICY_BFS]
 
     def __init__(self, script_dict):
         self.tag = self.__class__.__name__
@@ -54,12 +50,10 @@ class DroidBotScript(object):
         self.states = {}
         self.operations = {}
         self.main = {}
-        self.default_policy = None
         self.parse()
 
     def parse(self):
         self.check_grammar_type(self.script_dict, self.script_grammar, self.tag)
-        self.parse_default_policy()
         self.parse_views()
         self.parse_states()
         self.parse_operations()
@@ -109,12 +103,6 @@ class DroidBotScript(object):
                 self.check_grammar_key_is_valid(operation_id, self.operations, key_tag)
                 operation = self.operations[operation_id]
                 self.main[state_selector].append(operation)
-
-    def parse_default_policy(self):
-        script_key = 'default_policy'
-        script_value = self.check_and_get_script_value(script_key)
-        self.check_grammar_key_is_valid(script_value, self.valid_event_policies, self.tag)
-        self.default_policy = script_value
 
     def get_operation_based_on_state(self, state):
         """
@@ -405,12 +393,11 @@ class DroidBotOperation(object):
         'operation_type': 'custom',
         'events': [ScriptEvent_VAL]
     }
-    policy_operation_grammar = {
-        'operation_type': 'policy',
-        'event_count': INTEGER_VAL,
-        'event_policy': EVENT_POLICY_VAL
+    random_operation_grammar = {
+        'operation_type': 'random',
+        'event_count': INTEGER_VAL
     }
-    possible_operation_types = ['custom', 'policy']
+    possible_operation_types = ['custom', 'random']
 
     def __init__(self, operation_id, operation_dict, script):
         self.tag = self.__class__.__name__
@@ -434,7 +421,7 @@ class DroidBotOperation(object):
         self.tag = "%s (%s)" % (self.tag, operation_type)
         if operation_type == 'custom':
             self.parse_custom_operation()
-        elif operation_type == 'policy':
+        elif operation_type == 'random':
             self.parse_policy_operation()
 
     def parse_custom_operation(self):
@@ -452,10 +439,7 @@ class DroidBotOperation(object):
             self.events.append(script_event)
 
     def parse_policy_operation(self):
-        operation_grammar = self.custom_operation_grammar
-        DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_policy', self.tag)
-        self.event_policy = self.operation_dict['event_policy']
-        DroidBotScript.check_grammar_key_is_valid(self.event_policy, DroidBotScript.valid_event_policies, self.tag)
+        operation_grammar = self.random_operation_grammar
         DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_count', self.tag)
         self.event_count = self.operation_dict['event_count']
         for operation_key in self.operation_dict:

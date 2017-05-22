@@ -764,9 +764,9 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, script_path,
+    def __init__(self, device, app, event_policy,
                  event_count, event_interval, event_duration,
-                 profiling_method=None):
+                 script_path=None, profiling_method=None):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -824,6 +824,8 @@ class AppEventManager(object):
             event_factory = ManualEventFactory(device, app)
         else:
             event_factory = None
+        if isinstance(event_factory, StateBasedEventFactory):
+            event_factory.script = self.script
         return event_factory
 
     def add_event(self, event):
@@ -1025,6 +1027,8 @@ class StateBasedEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(StateBasedEventFactory, self).__init__(device, app)
+        self.script = None
+        self.script_events = []
 
     def generate_event(self, state=None):
         """
@@ -1032,8 +1036,23 @@ class StateBasedEventFactory(EventFactory):
         @param state: DeviceState
         @return:
         """
+
+        # Get current device state
         if state is None:
             state = self.device.get_current_state()
+
+        # if the previous operation is not finished, continue
+        if len(self.script_events) != 0:
+            script_event = self.script_events.pop(0)
+            return script_event
+
+        # First try matching a state defined in the script
+        if self.script is not None:
+            operation = self.script.get_operation_based_on_state(state)
+            if operation is not None:
+                self.script_events = list(operation.events)
+                return self.generate_event()
+
         return self.gen_event_based_on_state_wrapper(state)
 
     def gen_event_based_on_state_wrapper(self, state):
@@ -1052,6 +1071,25 @@ class StateBasedEventFactory(EventFactory):
 
     def gen_event_based_on_state(self, state):
         return UIEvent.get_random_instance(self.device, self.app)
+
+    def dump(self):
+        """
+        dump the result to a file
+        @return:
+        """
+        # explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
+        # json.dump(list(self.explored_views), explored_views_file, indent=2)
+        # explored_views_file.close()
+        #
+        # state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
+        # json.dump(list(self.state_transitions), state_transitions_file, indent=2)
+        # state_transitions_file.close()
+
+        from state_transition_graph import TransitionGraph
+        utg = TransitionGraph(input_path=self.device.output_dir)
+        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
+        json.dump(utg.data, utg_file, indent=2)
+        utg_file.close()
 
 
 class RandomEventFactory(StateBasedEventFactory):
@@ -1614,59 +1652,3 @@ class UtgDfsFactory(StateBasedEventFactory):
         utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
         json.dump(utg.data, utg_file, indent=2)
         utg_file.close()
-
-
-class ScriptEventFactory(EventFactory):
-    """
-    factory which produces events from file
-    """
-
-    def __init__(self, device, app, script_dict):
-        """
-        create a FileEventFactory from a json file
-        :param script_dict script path string
-        """
-        super(ScriptEventFactory, self).__init__(device, app)
-        self.script_dict = script_dict
-        from droidbot_script import DroidBotScript
-        self.script = DroidBotScript(self.script_dict)
-        self.script_event_queue = []
-
-        self.default_policy = self.script.default_policy
-        self.policy_event_factories = {}
-        self.current_policy = None
-        self.current_policy_count = 0
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        # if the previous operation is not finished, continue
-        if len(self.script_event_queue) != 0:
-            script_event = self.script_event_queue.pop(0)
-            return script_event
-        if self.current_policy_count > 0:
-            self.current_policy_count -= 1
-            return self.gen_event_with_policy(self.current_policy, state)
-
-        # if the previous operation is finished, try to get a new operation based on current state
-        if state is None:
-            state = self.device.get_current_state()
-        operation = self.script.get_operation_based_on_state(state)
-        if operation is not None:
-            self.script_event_queue = list(operation.events)
-            self.current_policy = operation.event_policy
-            self.current_policy_count = operation.event_count
-            return self.generate_event()
-
-        # if current state is not defined in script, use the default policy
-        return self.gen_event_with_policy(self.default_policy, state)
-
-    def gen_event_with_policy(self, policy, state):
-        if policy not in self.policy_event_factories:
-            self.policy_event_factories[policy] = \
-                AppEventManager.get_event_factory(policy, self.device, self.app)
-        event_factory = self.policy_event_factories[policy]
-        return event_factory.generate_event(state)

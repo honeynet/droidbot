@@ -19,25 +19,22 @@
         }
     },
     "operations": {
-        "login_operation": {
-            "operation_type": "custom",
-            "events": [
-                {
-                    "event_type": "text_input",
-                    "target_view": "login_email",
-                    "text": "ylimit@honeynet.org"
-                },
-                {
-                    "event_type": "text_input",
-                    "target_view": "login_password",
-                    "text": "ylimitpassword"
-                },
-                {
-                    "event_type": "touch",
-                    "target_view": "login_button"
-                }
-            ]
-        }
+        "login_operation": [
+            {
+                "event_type": "text_input",
+                "target_view": "login_email",
+                "text": "ylimit@honeynet.org"
+            },
+            {
+                "event_type": "text_input",
+                "target_view": "login_password",
+                "text": "ylimitpassword"
+            },
+            {
+                "event_type": "touch",
+                "target_view": "login_button"
+            }
+        ]
     },
     "main": {
         "login_state": ["login_operation"]

@@ -84,8 +84,8 @@ class DroidBotScript(object):
         script_value = self.check_and_get_script_value(script_key)
         for operation_id in script_value:
             self.check_grammar_identifier_is_valid(operation_id)
-            operation_dict = script_value[operation_id]
-            operation = DroidBotOperation(operation_id, operation_dict, self)
+            event_list = script_value[operation_id]
+            operation = DroidBotOperation(operation_id, event_list, self)
             self.operations[operation_id] = operation
 
     def parse_main(self):
@@ -170,6 +170,12 @@ class DroidBotScript(object):
             raise ScriptSyntaxError(msg)
         if not isinstance(value[0], int) or not isinstance(value[1], int):
             msg = "illegal coordinate value: %s, should be integer" % value
+            raise ScriptSyntaxError(msg)
+
+    @staticmethod
+    def check_grammar_is_list(value):
+        if not isinstance(value, list):
+            msg = "illegal list: %s" % value
             raise ScriptSyntaxError(msg)
 
     def check_and_get_script_value(self, script_key):
@@ -389,47 +395,19 @@ class DroidBotOperation(object):
     an operation is what DroidBot do to target device
     It might be a set of events, or an event policy
     """
-    custom_operation_grammar = {
-        'operation_type': 'custom',
-        'events': [ScriptEvent_VAL]
-    }
-    random_operation_grammar = {
-        'operation_type': 'random',
-        'event_count': INTEGER_VAL
-    }
-    possible_operation_types = ['custom', 'random']
+    custom_operation_grammar = [ScriptEvent_VAL]
 
-    def __init__(self, operation_id, operation_dict, script):
+    def __init__(self, operation_id, event_list, script):
         self.tag = self.__class__.__name__
         self.id = operation_id
-        self.operation_dict = operation_dict
-        self.operation_type = None
         self.script = script
+        self.event_list = event_list
         self.events = []
-        self.event_policy = None
-        self.event_count = 0
         self.parse()
 
     def parse(self):
-        operation_dict = self.operation_dict
-        DroidBotScript.check_grammar_has_key(operation_dict, 'operation_type', self.tag)
-        operation_type = self.operation_dict['operation_type']
-        if operation_type not in self.possible_operation_types:
-            msg = "invalid operation type: %s" % operation_type
-            raise ScriptSyntaxError(msg)
-        self.operation_type = operation_type
-        self.tag = "%s (%s)" % (self.tag, operation_type)
-        if operation_type == 'custom':
-            self.parse_custom_operation()
-        elif operation_type == 'random':
-            self.parse_policy_operation()
-
-    def parse_custom_operation(self):
-        operation_grammar = self.custom_operation_grammar
-        DroidBotScript.check_grammar_has_key(self.operation_dict, 'events', self.tag)
-        for operation_key in self.operation_dict:
-            DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
-        for event_dict in self.operation_dict['events']:
+        DroidBotScript.check_grammar_is_list(self.event_list)
+        for event_dict in self.event_list:
             if 'target_view' in event_dict:
                 target_view_id = event_dict['target_view']
                 DroidBotScript.check_grammar_key_is_valid(target_view_id, self.script.views, self.tag)
@@ -437,13 +415,6 @@ class DroidBotOperation(object):
                 event_dict['target_view_selector'] = target_view_selector
             script_event = ScriptEvent(event_dict)
             self.events.append(script_event)
-
-    def parse_policy_operation(self):
-        operation_grammar = self.random_operation_grammar
-        DroidBotScript.check_grammar_has_key(self.operation_dict, 'event_count', self.tag)
-        self.event_count = self.operation_dict['event_count']
-        for operation_key in self.operation_dict:
-            DroidBotScript.check_grammar_key_is_valid(operation_key, operation_grammar, self.tag)
 
 
 class ScriptEvent(AppEvent):

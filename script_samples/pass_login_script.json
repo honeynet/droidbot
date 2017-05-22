@@ -41,6 +41,5 @@
     },
     "main": {
         "login_state": ["login_operation"]
-    },
-    "default_policy": "utg_dynamic"
+    }
 }

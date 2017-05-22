@@ -29,6 +29,5 @@
     },
     "main": {
         "welcome_state": ["swipe_operation"]
-    },
-    "default_policy": "utg_dynamic"
+    }
 }

@@ -63,25 +63,22 @@ For the email input field, the resource-id is `com.fsck.k9:id/account_email` and
 Here we are able to identify `login_state`. We know that the operation to take in `login_state` is "input email, input password and click Next", which can be represented as three gesture events in DroidBot:
 
 {% highlight json %}
-"login_operation": {
-    "operation_type": "custom",
-    "events": [
-        {
-            "event_type": "text_input",
-            "target_view": "login_email",
-            "text": "ylimit@honeynet.org"
-        },
-        {
-            "event_type": "text_input",
-            "target_view": "login_password",
-            "text": "ylimit_password"
-        },
-        {
-            "event_type": "touch",
-            "target_view": "login_button"
-        }
-    ]
-}
+"login_operation": [
+    {
+        "event_type": "text_input",
+        "target_view": "login_email",
+        "text": "sample@email.com"
+    },
+    {
+        "event_type": "text_input",
+        "target_view": "login_password",
+        "text": "sample_password"
+    },
+    {
+        "event_type": "touch",
+        "target_view": "login_button"
+    }
+]
 {% endhighlight %}
 
 Finally, we tell DroidBot to take `login_operation` in `login_state`:

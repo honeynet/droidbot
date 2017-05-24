@@ -23,12 +23,12 @@
             {
                 "event_type": "text_input",
                 "target_view": "login_email",
-                "text": "ylimit@honeynet.org"
+                "text": "sample@email.com"
             },
             {
                 "event_type": "text_input",
                 "target_view": "login_password",
-                "text": "ylimitpassword"
+                "text": "sample_password"
             },
             {
                 "event_type": "touch",

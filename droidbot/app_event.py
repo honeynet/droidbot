@@ -22,7 +22,7 @@ POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
 # POLICY_FILE = "file"
 
-DEFAULT_EVENT_INTERVAL = 1
+DEFAULT_EVENT_INTERVAL = 0
 DEFAULT_EVENT_COUNT = 100000
 
 POSSIBLE_KEYS = [
@@ -782,6 +782,7 @@ class AppEventManager(object):
         self.policy = event_policy
         self.events = []
         self.event_factory = None
+        self.script = None
         self.event_count = event_count
         self.event_interval = event_interval
         self.event_duration = event_duration
@@ -877,7 +878,7 @@ class AppEventManager(object):
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
 
-        if self.event_duration:
+        if self.event_duration is not None:
             self.timer = Timer(self.event_duration, self.stop)
             self.timer.start()
 
@@ -890,10 +891,11 @@ class AppEventManager(object):
                     time.sleep(1)
             elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
-                monkey_cmd = "adb -s %s shell monkey %s --throttle %d -v %d" % (
+                monkey_cmd = "adb -s %s shell monkey %s --ignore-crashes --ignore-security-exceptions --throttle %d %d" % (
                     self.device.serial,
                     "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
-                    throttle, self.event_count)
+                    throttle,
+                    self.event_count)
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 while self.enabled:
@@ -1029,6 +1031,8 @@ class StateBasedEventFactory(EventFactory):
         super(StateBasedEventFactory, self).__init__(device, app)
         self.script = None
         self.script_events = []
+        self.last_event = None
+        self.last_state = None
 
     def generate_event(self, state=None):
         """
@@ -1041,19 +1045,24 @@ class StateBasedEventFactory(EventFactory):
         if state is None:
             state = self.device.get_current_state()
 
+        event = None
+
         # if the previous operation is not finished, continue
         if len(self.script_events) != 0:
-            script_event = self.script_events.pop(0)
-            return script_event
+            event = self.script_events.pop(0)
 
         # First try matching a state defined in the script
-        if self.script is not None:
+        if event is None and self.script is not None:
             operation = self.script.get_operation_based_on_state(state)
             if operation is not None:
-                self.script_events = list(operation.events)
-                return self.generate_event()
+                event = self.script_events.pop(0)
 
-        return self.gen_event_based_on_state_wrapper(state)
+        if event is None:
+            event = self.gen_event_based_on_state_wrapper(state)
+
+        self.last_state = state
+        self.last_event = event
+        return event
 
     def gen_event_based_on_state_wrapper(self, state):
         """
@@ -1310,6 +1319,8 @@ class AppModel(object):
         return state_str
 
     def add_edge(self, event_str, old_node, new_node):
+        if old_node == new_node:
+            return
         edge_str = "<%s> --> <%s>" % (old_node, new_node)
         if edge_str not in self.edge2events:
             self.edge2events[edge_str] = []
@@ -1465,25 +1476,6 @@ class UtgBfsFactory(StateBasedEventFactory):
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
 
-    def dump(self):
-        """
-        dump the explored_views and state_transitions to file
-        @return:
-        """
-        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
-        json.dump(list(self.explored_views), explored_views_file, indent=2)
-        explored_views_file.close()
-
-        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
-        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
-        state_transitions_file.close()
-
-        from state_transition_graph import TransitionGraph
-        utg = TransitionGraph(input_path=self.device.output_dir)
-        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(utg.data, utg_file, indent=2)
-        utg_file.close()
-
 
 class UtgDfsFactory(StateBasedEventFactory):
     """
@@ -1633,22 +1625,3 @@ class UtgDfsFactory(StateBasedEventFactory):
         """
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
-
-    def dump(self):
-        """
-        dump the explored_views and state_transitions to file
-        @return:
-        """
-        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
-        json.dump(list(self.explored_views), explored_views_file, indent=2)
-        explored_views_file.close()
-
-        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
-        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
-        state_transitions_file.close()
-
-        from state_transition_graph import TransitionGraph
-        utg = TransitionGraph(input_path=self.device.output_dir)
-        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(utg.data, utg_file, indent=2)
-        utg_file.close()

@@ -1055,6 +1055,7 @@ class StateBasedEventFactory(EventFactory):
         if event is None and self.script is not None:
             operation = self.script.get_operation_based_on_state(state)
             if operation is not None:
+                self.script_events = operation.events
                 event = self.script_events.pop(0)
 
         if event is None:

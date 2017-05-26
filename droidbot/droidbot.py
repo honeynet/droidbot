@@ -22,7 +22,7 @@ class DroidBot(object):
     instance = None
 
     def __init__(self, app_path, device_serial, output_dir=None,
-                 env_policy=None, event_policy=None, script_path=None,
+                 env_policy=None, event_policy=None, no_shuffle=False, script_path=None,
                  event_count=None, event_interval=None, event_duration=None,
                  quiet=False, with_droidbox=False,
                  use_hierarchy_viewer=False, profiling_method=None):
@@ -61,7 +61,7 @@ class DroidBot(object):
                 self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
 
             self.env_manager = AppEnvManager(self.device, self.app, env_policy)
-            self.event_manager = AppEventManager(self.device, self.app, event_policy,
+            self.event_manager = AppEventManager(self.device, self.app, event_policy, no_shuffle,
                                                  event_count, event_interval, event_duration,
                                                  script_path=script_path,
                                                  profiling_method=profiling_method)

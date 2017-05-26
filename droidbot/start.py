@@ -32,9 +32,7 @@ def parse_args():
                              # '%s\tsend events based on static analysis result; \n'
                              # '%s\tbased on dynamic app state, this policy requires framework instrumented\n'
                              '\"%s\"\tExplore the UI using a breadth-first strategy.\n'
-                             '\"%s\"\tExplore the UI using a breadth-first strategy, but without view shuffling\n'
                              '\"%s\"\tExplore the UI using a depth-first strategy.\n'
-                             '\"%s\"\tExplore the UI using a depth-first strategy, but without view shuffling\n'
                              # '<%s>\tUse a script to customize input for certain states.\n'
                              # '%s\tmanually interact with your app, and we will record the events.\n'
                              %
@@ -45,12 +43,12 @@ def parse_args():
                                  # app_event.POLICY_STATIC,
                                  # app_event.POLICY_DYNAMIC,
                                  app_event.POLICY_BFS,
-                                 app_event.POLICY_BFS_NO_SHUFFLE,
                                  app_event.POLICY_DFS,
-                                 app_event.POLICY_DFS_NO_SHUFFLE,
                                  # app_event.POLICY_FILE,
                                  # app_event.POLICY_MANUAL
                              ))
+    parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
+                        help="Explore the UI without view shuffling")
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="event_count",
@@ -89,6 +87,7 @@ def main():
                         # env_policy=opts.env_policy,
                         env_policy="none",
                         event_policy=opts.event_policy,
+                        no_shuffle=opts.no_shuffle,
                         script_path=opts.script_path,
                         event_interval=opts.event_interval,
                         event_duration=opts.timeout,

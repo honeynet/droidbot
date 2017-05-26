@@ -47,6 +47,8 @@ def parse_args():
                                  # app_event.POLICY_FILE,
                                  # app_event.POLICY_MANUAL
                              ))
+    parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
+                        help="Explore the UI without view shuffling")
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="event_count",
@@ -85,6 +87,7 @@ def main():
                         # env_policy=opts.env_policy,
                         env_policy="none",
                         event_policy=opts.event_policy,
+                        no_shuffle=opts.no_shuffle,
                         script_path=opts.script_path,
                         event_interval=opts.event_interval,
                         event_duration=opts.timeout,

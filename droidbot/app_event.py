@@ -20,9 +20,9 @@ POLICY_RANDOM = "random"
 POLICY_BFS = "bfs"
 POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
-POLICY_FILE = "file"
+# POLICY_FILE = "file"
 
-DEFAULT_EVENT_INTERVAL = 1
+DEFAULT_EVENT_INTERVAL = 0
 DEFAULT_EVENT_COUNT = 100000
 
 POSSIBLE_KEYS = [
@@ -770,8 +770,9 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy, event_count, event_interval, event_duration,
-                 profiling_method=None):
+    def __init__(self, device, app, event_policy, no_shuffle,
+                 event_count, event_interval, event_duration,
+                 script_path=None, profiling_method=None):
         """
         construct a new AppEventManager instance
         :param device: instance of Device
@@ -785,13 +786,21 @@ class AppEventManager(object):
         self.device = device
         self.app = app
         self.policy = event_policy
+        self.no_shuffle = no_shuffle
         self.events = []
         self.event_factory = None
+        self.script = None
         self.event_count = event_count
         self.event_interval = event_interval
         self.event_duration = event_duration
         self.monkey = None
         self.timer = None
+
+        if script_path is not None:
+            f = open(script_path, 'r')
+            script_dict = json.load(f)
+            from droidbot_script import DroidBotScript
+            self.script = DroidBotScript(script_dict)
 
         if not self.event_count or self.event_count is None:
             self.event_count = DEFAULT_EVENT_COUNT
@@ -802,11 +811,11 @@ class AppEventManager(object):
         if not self.event_interval or self.event_interval is None:
             self.event_interval = DEFAULT_EVENT_INTERVAL
 
-        self.event_factory = self.get_event_factory(self.policy, device, app)
+        self.event_factory = self.get_event_factory(device, app)
         self.profiling_method = profiling_method
 
-    @staticmethod
-    def get_event_factory(policy, device, app):
+    def get_event_factory(self, device, app):
+        policy = self.policy
         if policy == POLICY_NONE:
             event_factory = None
         elif policy == POLICY_STATE_RECORDER:
@@ -816,16 +825,15 @@ class AppEventManager(object):
         elif policy == POLICY_RANDOM:
             event_factory = RandomEventFactory(device, app)
         elif policy == POLICY_BFS:
-            event_factory = UtgBfsFactory(device, app)
+            event_factory = UtgBfsFactory(device, app, self.no_shuffle)
         elif policy == POLICY_DFS:
-            event_factory = UtgDfsFactory(device, app)
+            event_factory = UtgDfsFactory(device, app, self.no_shuffle)
         elif policy == POLICY_MANUAL:
             event_factory = ManualEventFactory(device, app)
         else:
-            script_file_path = policy
-            f = open(script_file_path, 'r')
-            script_dict = json.load(f)
-            event_factory = ScriptEventFactory(device, app, script_dict)
+            event_factory = None
+        if isinstance(event_factory, StateBasedEventFactory):
+            event_factory.script = self.script
         return event_factory
 
     def add_event(self, event):
@@ -877,7 +885,7 @@ class AppEventManager(object):
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
 
-        if self.event_duration:
+        if self.event_duration is not None:
             self.timer = Timer(self.event_duration, self.stop)
             self.timer.start()
 
@@ -890,10 +898,11 @@ class AppEventManager(object):
                     time.sleep(1)
             elif self.policy == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
-                monkey_cmd = "adb -s %s shell monkey %s --throttle %d -v %d" % (
+                monkey_cmd = "adb -s %s shell monkey %s --ignore-crashes --ignore-security-exceptions --throttle %d %d" % (
                     self.device.serial,
                     "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
-                    throttle, self.event_count)
+                    throttle,
+                    self.event_count)
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 while self.enabled:
@@ -1007,30 +1016,6 @@ class NoneEventFactory(EventFactory):
         return None
 
 
-class RandomEventFactory(EventFactory):
-    """
-    A dummy factory which produces events randomly
-    """
-
-    def __init__(self, device, app):
-        super(RandomEventFactory, self).__init__(device, app)
-        self.choices = {
-            UIEvent: 7,
-            IntentEvent: 2,
-            KeyEvent: 1
-        }
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        event_type = weighted_choice(self.choices)
-        event = event_type.get_random_instance(self.device, self.app)
-        return event
-
-
 EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
@@ -1051,6 +1036,10 @@ class StateBasedEventFactory(EventFactory):
 
     def __init__(self, device, app):
         super(StateBasedEventFactory, self).__init__(device, app)
+        self.script = None
+        self.script_events = []
+        self.last_event = None
+        self.last_state = None
 
     def generate_event(self, state=None):
         """
@@ -1058,9 +1047,30 @@ class StateBasedEventFactory(EventFactory):
         @param state: DeviceState
         @return:
         """
+
+        # Get current device state
         if state is None:
             state = self.device.get_current_state()
-        return self.gen_event_based_on_state_wrapper(state)
+
+        event = None
+
+        # if the previous operation is not finished, continue
+        if len(self.script_events) != 0:
+            event = self.script_events.pop(0)
+
+        # First try matching a state defined in the script
+        if event is None and self.script is not None:
+            operation = self.script.get_operation_based_on_state(state)
+            if operation is not None:
+                self.script_events = operation.events
+                event = self.script_events.pop(0)
+
+        if event is None:
+            event = self.gen_event_based_on_state_wrapper(state)
+
+        self.last_state = state
+        self.last_event = event
+        return event
 
     def gen_event_based_on_state_wrapper(self, state):
         """
@@ -1078,6 +1088,49 @@ class StateBasedEventFactory(EventFactory):
 
     def gen_event_based_on_state(self, state):
         return UIEvent.get_random_instance(self.device, self.app)
+
+    def dump(self):
+        """
+        dump the result to a file
+        @return:
+        """
+        # explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
+        # json.dump(list(self.explored_views), explored_views_file, indent=2)
+        # explored_views_file.close()
+        #
+        # state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
+        # json.dump(list(self.state_transitions), state_transitions_file, indent=2)
+        # state_transitions_file.close()
+
+        from state_transition_graph import TransitionGraph
+        utg = TransitionGraph(input_path=self.device.output_dir)
+        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
+        json.dump(utg.data, utg_file, indent=2)
+        utg_file.close()
+
+
+class RandomEventFactory(StateBasedEventFactory):
+    """
+    A dummy factory which produces events randomly
+    """
+
+    def __init__(self, device, app):
+        super(RandomEventFactory, self).__init__(device, app)
+        self.choices = {
+            UIEvent: 7,
+            IntentEvent: 2,
+            KeyEvent: 1
+        }
+
+    def gen_event_based_on_state(self, state=None):
+        """
+        generate an event
+        @param state: DeviceState
+        @return:
+        """
+        event_type = weighted_choice(self.choices)
+        event = event_type.get_random_instance(self.device, self.app)
+        return event
 
 
 EVENT_FLAG_STARTED = "+started"
@@ -1274,6 +1327,8 @@ class AppModel(object):
         return state_str
 
     def add_edge(self, event_str, old_node, new_node):
+        if old_node == new_node:
+            return
         edge_str = "<%s> --> <%s>" % (old_node, new_node)
         if edge_str not in self.edge2events:
             self.edge2events[edge_str] = []
@@ -1285,18 +1340,19 @@ class UtgBfsFactory(StateBasedEventFactory):
     record device state during execution
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, no_shuffle):
         super(UtgBfsFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
         self.app_model = AppModel(device, app)
+        self.no_shuffle = no_shuffle
 
         self.last_event_flag = ""
         self.last_event_str = None
         self.last_state = None
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
-                                  "check", "agree", "try", "go", "next"]
+                                  "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
         """
@@ -1366,7 +1422,8 @@ class UtgBfsFactory(StateBasedEventFactory):
             if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
                 views.append(view)
 
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
 
         # add a "BACK" view, consider go back first
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
@@ -1389,7 +1446,8 @@ class UtgBfsFactory(StateBasedEventFactory):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
@@ -1417,7 +1475,7 @@ class UtgBfsFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-            # TODO implement this
+            self.app_model.add_transition(event_str=event_str, old_state=old_state, new_state=new_state)
 
     def save_explored_view(self, state, view_str):
         """
@@ -1429,43 +1487,25 @@ class UtgBfsFactory(StateBasedEventFactory):
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
 
-    def dump(self):
-        """
-        dump the explored_views and state_transitions to file
-        @return:
-        """
-        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
-        json.dump(list(self.explored_views), explored_views_file, indent=2)
-        explored_views_file.close()
-
-        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
-        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
-        state_transitions_file.close()
-
-        from state_transition_graph import TransitionGraph
-        utg = TransitionGraph(input_path=self.device.output_dir)
-        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(utg.data, utg_file, indent=2)
-        utg_file.close()
-
 
 class UtgDfsFactory(StateBasedEventFactory):
     """
     record device state during execution
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, no_shuffle):
         super(UtgDfsFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
         self.app_model = AppModel(device, app)
+        self.no_shuffle = no_shuffle
 
         self.last_event_flag = ""
         self.last_event_str = None
         self.last_state = None
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
-                                  "check", "agree", "try", "go", "next"]
+                                  "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
         """
@@ -1535,7 +1575,8 @@ class UtgDfsFactory(StateBasedEventFactory):
             if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
                 views.append(view)
 
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
 
         # add a "BACK" view, consider go back last
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
@@ -1558,7 +1599,8 @@ class UtgDfsFactory(StateBasedEventFactory):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
@@ -1586,7 +1628,7 @@ class UtgDfsFactory(StateBasedEventFactory):
             return
         if new_state.is_different_from(old_state):
             self.state_transitions.add((event_str, old_state.tag, new_state.tag))
-            # TODO implement this
+            self.app_model.add_transition(event_str=event_str, old_state=old_state, new_state=new_state)
 
     def save_explored_view(self, state, view_str):
         """
@@ -1597,78 +1639,3 @@ class UtgDfsFactory(StateBasedEventFactory):
         """
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
-
-    def dump(self):
-        """
-        dump the explored_views and state_transitions to file
-        @return:
-        """
-        explored_views_file = open(os.path.join(self.device.output_dir, "explored_views.json"), "w")
-        json.dump(list(self.explored_views), explored_views_file, indent=2)
-        explored_views_file.close()
-
-        state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
-        json.dump(list(self.state_transitions), state_transitions_file, indent=2)
-        state_transitions_file.close()
-
-        from state_transition_graph import TransitionGraph
-        utg = TransitionGraph(input_path=self.device.output_dir)
-        utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
-        json.dump(utg.data, utg_file, indent=2)
-        utg_file.close()
-
-
-class ScriptEventFactory(EventFactory):
-    """
-    factory which produces events from file
-    """
-
-    def __init__(self, device, app, script_dict):
-        """
-        create a FileEventFactory from a json file
-        :param script_dict script path string
-        """
-        super(ScriptEventFactory, self).__init__(device, app)
-        self.script_dict = script_dict
-        from droidbot_script import DroidBotScript
-        self.script = DroidBotScript(self.script_dict)
-        self.script_event_queue = []
-
-        self.default_policy = self.script.default_policy
-        self.policy_event_factories = {}
-        self.current_policy = None
-        self.current_policy_count = 0
-
-    def generate_event(self, state=None):
-        """
-        generate an event
-        @param state: DeviceState
-        @return:
-        """
-        # if the previous operation is not finished, continue
-        if len(self.script_event_queue) != 0:
-            script_event = self.script_event_queue.pop(0)
-            return script_event
-        if self.current_policy_count > 0:
-            self.current_policy_count -= 1
-            return self.gen_event_with_policy(self.current_policy, state)
-
-        # if the previous operation is finished, try to get a new operation based on current state
-        if state is None:
-            state = self.device.get_current_state()
-        operation = self.script.get_operation_based_on_state(state)
-        if operation is not None:
-            self.script_event_queue = list(operation.events)
-            self.current_policy = operation.event_policy
-            self.current_policy_count = operation.event_count
-            return self.generate_event()
-
-        # if current state is not defined in script, use the default policy
-        return self.gen_event_with_policy(self.default_policy, state)
-
-    def gen_event_with_policy(self, policy, state):
-        if policy not in self.policy_event_factories:
-            self.policy_event_factories[policy] = \
-                AppEventManager.get_event_factory(policy, self.device, self.app)
-        event_factory = self.policy_event_factories[policy]
-        return event_factory.generate_event(state)

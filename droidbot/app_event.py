@@ -1504,7 +1504,7 @@ class UtgDfsFactory(StateBasedEventFactory):
         self.last_event_str = None
         self.last_state = None
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):

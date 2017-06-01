@@ -586,10 +586,14 @@ class Device(object):
         @return:
         """
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
+        try:
+            subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.check_call(["adb", "-s", self.serial, "install", app.app_path],
+            subprocess.check_call(["adb", "-s", self.serial, "install", app.app_path],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            self.logger.error('Failed to install app')
+            os._exit(0)
 
         package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
         package_info_file = open(package_info_file_name, "w")

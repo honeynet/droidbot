@@ -63,6 +63,9 @@ def parse_args():
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
+    parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",
+                        help="Grant all runtime permissions while installing an app. "
+                             "May be necessary for Android versions after Marshmallow.")
     parser.add_argument("-use_with_droidbox", action="store_true", dest="with_droidbox",
                         help="Use DroidBot with DroidBox. Need to run on a DroidBox emulator.")
     options = parser.parse_args()
@@ -95,7 +98,8 @@ def main():
                         quiet=opts.quiet,
                         with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
-                        profiling_method=opts.profiling_method)
+                        profiling_method=opts.profiling_method,
+                        grant_perm=opts.grant_perm)
     droidbot.start()
     return
 

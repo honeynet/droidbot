@@ -1045,6 +1045,7 @@ class StateBasedEventFactory(EventFactory):
         if state is None:
             state = self.device.get_current_state()
 
+        state.save2dir()
         event = None
 
         # if the previous operation is not finished, continue
@@ -1154,7 +1155,6 @@ class ManualEventFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return: AppEvent
         """
-        state.save2dir()
         self.save_state_transition(self.last_touched_view_str, self.last_state, state)
         view_to_touch = self.wait_for_manual_event(state)
         self.last_touched_view_str = view_to_touch['view_str']
@@ -1354,7 +1354,6 @@ class UtgBfsFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return: AppEvent
         """
-        state.save2dir()
         self.save_state_transition(self.last_event_str, self.last_state, state)
         self.app_model.add_transition(self.last_event_str, self.last_state, state)
 
@@ -1504,7 +1503,6 @@ class UtgDfsFactory(StateBasedEventFactory):
         @param state: DeviceState
         @return: AppEvent
         """
-        state.save2dir()
         self.save_state_transition(self.last_event_str, self.last_state, state)
         self.app_model.add_transition(self.last_event_str, self.last_state, state)
 

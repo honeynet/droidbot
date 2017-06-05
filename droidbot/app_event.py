@@ -764,7 +764,7 @@ class AppEventManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, event_policy,
+    def __init__(self, device, app, event_policy, no_shuffle,
                  event_count, event_interval, event_duration,
                  script_path=None, profiling_method=None):
         """
@@ -780,6 +780,7 @@ class AppEventManager(object):
         self.device = device
         self.app = app
         self.policy = event_policy
+        self.no_shuffle = no_shuffle
         self.events = []
         self.event_factory = None
         self.script = None
@@ -818,9 +819,9 @@ class AppEventManager(object):
         elif policy == POLICY_RANDOM:
             event_factory = RandomEventFactory(device, app)
         elif policy == POLICY_BFS:
-            event_factory = UtgBfsFactory(device, app)
+            event_factory = UtgBfsFactory(device, app, self.no_shuffle)
         elif policy == POLICY_DFS:
-            event_factory = UtgDfsFactory(device, app)
+            event_factory = UtgDfsFactory(device, app, self.no_shuffle)
         elif policy == POLICY_MANUAL:
             event_factory = ManualEventFactory(device, app)
         else:
@@ -1333,11 +1334,12 @@ class UtgBfsFactory(StateBasedEventFactory):
     record device state during execution
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, no_shuffle):
         super(UtgBfsFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
         self.app_model = AppModel(device, app)
+        self.no_shuffle = no_shuffle
 
         self.last_event_flag = ""
         self.last_event_str = None
@@ -1413,7 +1415,8 @@ class UtgBfsFactory(StateBasedEventFactory):
             if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
                 views.append(view)
 
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
 
         # add a "BACK" view, consider go back first
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
@@ -1436,7 +1439,8 @@ class UtgBfsFactory(StateBasedEventFactory):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
@@ -1482,17 +1486,18 @@ class UtgDfsFactory(StateBasedEventFactory):
     record device state during execution
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, no_shuffle):
         super(UtgDfsFactory, self).__init__(device, app)
         self.explored_views = set()
         self.state_transitions = set()
         self.app_model = AppModel(device, app)
+        self.no_shuffle = no_shuffle
 
         self.last_event_flag = ""
         self.last_event_str = None
         self.last_state = None
 
-        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access"
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
 
     def gen_event_based_on_state(self, state):
@@ -1562,7 +1567,8 @@ class UtgDfsFactory(StateBasedEventFactory):
             if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
                 views.append(view)
 
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
 
         # add a "BACK" view, consider go back last
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
@@ -1585,7 +1591,8 @@ class UtgDfsFactory(StateBasedEventFactory):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        random.shuffle(views)
+        if not self.no_shuffle:
+            random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:

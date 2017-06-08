@@ -28,9 +28,13 @@ class JDB(object):
         self.logger = logging.getLogger('JDB')
         self.device = device
         self.app_pid = app_pid
-        self.host = "localhost"
         self.host_port = host_port
+
         # TODO connect to jdb
+        device.get_adb().run_cmd("forward tcp:%d jdwp:%d" % (app_pid, host_port))
+        self.console = subprocess.Popen(["jdb", "-attach", "localhost:%d" % host_port],
+                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
         if self.check_connectivity():
             self.logger.info("jdb successfully initiated, the device is %s" % device.serial)
         else:
@@ -45,7 +49,8 @@ class JDB(object):
         self.logger.debug('command:')
         self.logger.debug(command)
         # TODO send command and get result
-        r = ""
+        self.console.stdin.write(command + "\n")
+        r = self.console.stdout.readall()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
@@ -55,6 +60,7 @@ class JDB(object):
         check if jdb is connected
         :return: True for connected
         """
+        r = self.run_cmd("help")
         return False
 
     def disconnect(self):

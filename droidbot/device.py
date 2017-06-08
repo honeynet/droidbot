@@ -266,7 +266,7 @@ class Device(object):
 
     def get_ro_debuggable(self):
         if self.ro_debuggable is None:
-            self.ro_debuggable = self.get_adb().get_release_version()
+            self.ro_debuggable = self.get_adb().get_ro_debuggable()
         return self.ro_debuggable
 
     def get_display_info(self, refresh=True):

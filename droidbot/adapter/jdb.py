@@ -30,8 +30,10 @@ class JDB(object):
         self.app_pid = app_pid
         self.host_port = host_port
 
+        self.logger.info("Attaching %s tcp:%d jdwp:%d" % (device.serial, host_port, app_pid))
+
         # TODO connect to jdb
-        device.get_adb().run_cmd("forward tcp:%d jdwp:%d" % (app_pid, host_port))
+        device.get_adb().run_cmd("forward tcp:%d jdwp:%d" % (host_port, app_pid))
         self.console = subprocess.Popen(["jdb", "-attach", "localhost:%d" % host_port],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 

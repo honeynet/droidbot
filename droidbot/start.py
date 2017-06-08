@@ -63,7 +63,7 @@ def parse_args():
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
-    parser.add_argument("-enable_jdb", action="store", dest="enable_jdb",
+    parser.add_argument("-enable_jdb", action="store_true", dest="enable_jdb",
                         help="Enable debugging the target app through jdb. "
                              "This option requires the device or the app debuggable.")
     parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",

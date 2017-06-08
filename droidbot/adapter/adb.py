@@ -424,6 +424,6 @@ class ADB(object):
             encoded = escaped.replace(" ", "%s")
         else:
             encoded = str(text)
-        #FIXME find out which characters can be dangerous,
+        # FIXME find out which characters can be dangerous,
         # for exmaple not worst idea to escape "
         self.shell("input text %s" % encoded)

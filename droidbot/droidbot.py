@@ -53,7 +53,9 @@ class DroidBot(object):
                              use_hierarchy_viewer=use_hierarchy_viewer,
                              grant_perm=grant_perm,
                              enable_jdb=enable_jdb)
-        self.app = App(app_path, output_dir=self.output_dir)
+        self.app = App(app_path,
+                       output_dir=self.output_dir,
+                       enable_jdb=enable_jdb)
 
         self.droidbox = None
         self.env_manager = None

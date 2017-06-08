@@ -508,29 +508,29 @@ class Device(object):
     def start_app(self, app):
         """
         start an app on the device
-        :param app: instance of App, or str of package name
+        :param app: an instance of App, or a package name
         :return:
         """
         if isinstance(app, str):
-            package_name = app
+            intent = Intent(suffix=app)
+            if self.enable_jdb:
+                intent.prefix += " -D"
         elif isinstance(app, App):
-            package_name = app.get_package_name()
-            if app.get_main_activity():
-                package_name += "/%s" % app.get_main_activity()
+            intent = app.get_start_intent()
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
-        if self.enable_jdb and self.get_ro_debuggable() == 1:
-            intent = Intent(suffix="-D -n " + package_name)
-            self.send_intent(intent)
+
+        # send intent to start app
+        self.send_intent(intent)
+
+        # if jdb is enabled, attach jdb to app process
+        if self.enable_jdb:
             time.sleep(1)
             pid = self.get_app_pid(app)
             if pid is not None:
                 from adapter.jdb import JDB
                 self.jdb = JDB(device=self, app_pid=pid)
-        else:
-            intent = Intent(suffix=package_name)
-            self.send_intent(intent)
 
     def get_top_activity_name(self):
         """
@@ -618,7 +618,15 @@ class Device(object):
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_app_pid(self, app):
-        package = app.get_package_name()
+        """
+        get the pid of an app
+        :param app: an instance of App or a package name
+        :return:
+        """
+        if isinstance(app, App):
+            package = app.get_package_name()
+        else:
+            package = app
 
         name2pid = {}
         ps_out = self.get_adb().shell(["ps", "-t"])

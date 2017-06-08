@@ -10,7 +10,7 @@ class App(object):
     this class describes an app
     """
 
-    def __init__(self, app_path, output_dir=None):
+    def __init__(self, app_path, output_dir=None, enable_jdb=False):
         """
         create a App instance
         :param app_path: local file path of app
@@ -21,6 +21,8 @@ class App(object):
 
         self.app_path = app_path
         self.output_dir = output_dir
+        self.enable_jdb = enable_jdb
+
         self.androguard = AndroguardAnalysis(self.app_path)
         self.package_name = self.androguard.a.get_package()
         self.main_activity = self.androguard.a.get_main_activity()
@@ -94,20 +96,20 @@ class App(object):
         package_name = self.get_package_name()
         if self.get_main_activity():
             package_name += "/%s" % self.get_main_activity()
-        return Intent(suffix=package_name)
+        prefix = "start -D" if self.enable_jdb else "start"
+        return Intent(prefix=prefix, suffix=package_name)
 
     def get_start_with_profiling_intent(self, trace_file, sampling=None):
         """
         get an intent to start the app with profiling
         :return: Intent
         """
-        package_name = self.get_package_name()
-        if self.get_main_activity():
-            package_name += "/%s" % self.get_main_activity()
+        intent = self.get_start_intent()
         if sampling is not None:
-            return Intent(prefix="start --start-profiler %s --sampling %d" % (trace_file, sampling), suffix=package_name)
+            intent.prefix += " --start-profiler %s --sampling %d" % (trace_file, sampling)
         else:
-            return Intent(prefix="start --start-profiler %s" % trace_file, suffix=package_name)
+            intent.prefix += " --start-profiler %s" % trace_file
+        return intent
 
     def get_stop_intent(self):
         """

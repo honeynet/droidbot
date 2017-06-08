@@ -25,7 +25,8 @@ class DroidBot(object):
                  env_policy=None, event_policy=None, no_shuffle=False, script_path=None,
                  event_count=None, event_interval=None, event_duration=None,
                  quiet=False, with_droidbox=False,
-                 use_hierarchy_viewer=False, profiling_method=None, grant_perm=False):
+                 use_hierarchy_viewer=False, profiling_method=None, enable_jdb=False,
+                 grant_perm=False):
         """
         initiate droidbot with configurations
         :return:
@@ -47,9 +48,14 @@ class DroidBot(object):
         #     # FIXED by requiring device_serial in cmd
         #     device_serial = '.*'
 
-        self.device = Device(device_serial, output_dir=self.output_dir,
-                             use_hierarchy_viewer=use_hierarchy_viewer, grant_perm=grant_perm)
-        self.app = App(app_path, output_dir=self.output_dir)
+        self.device = Device(device_serial,
+                             output_dir=self.output_dir,
+                             use_hierarchy_viewer=use_hierarchy_viewer,
+                             grant_perm=grant_perm,
+                             enable_jdb=enable_jdb)
+        self.app = App(app_path,
+                       output_dir=self.output_dir,
+                       enable_jdb=enable_jdb)
 
         self.droidbox = None
         self.env_manager = None

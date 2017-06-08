@@ -17,7 +17,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False):
+                 use_hierarchy_viewer=False, grant_perm=False, enable_jdb=False):
         """
         create a device
         :param device_serial: serial number of target device
@@ -32,12 +32,14 @@ class Device(object):
         self.telnet = None
         self.monkeyrunner = None
         self.view_client = None
+        self.jdb = None
         self.settings = {}
         self.display_info = None
         self.sdk_version = None
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
+        self.enable_jdb = enable_jdb
 
         self.output_dir = output_dir
         if self.output_dir is None:
@@ -48,16 +50,13 @@ class Device(object):
         self.use_hierarchy_viewer = use_hierarchy_viewer
         self.grant_perm = grant_perm
 
+        self.adb_enabled = True
+        self.telnet_enabled = False
+        self.monkeyrunner_enabled = False
+        self.view_client_enabled = True
+
         if self.is_emulator:
-            self.adb_enabled = True
             self.telnet_enabled = True
-            self.monkeyrunner_enabled = False
-            self.view_client_enabled = True
-        else:
-            self.adb_enabled = True
-            self.telnet_enabled = False
-            self.monkeyrunner_enabled = False
-            self.view_client_enabled = True
 
         self.is_connected = False
         self.connect()
@@ -67,6 +66,7 @@ class Device(object):
         self.get_ro_debuggable()
         self.get_display_info()
         self.logcat = self.redirect_logcat()
+
         from state_monitor import StateMonitor
         self.state_monitor = StateMonitor(device=self)
         self.state_monitor.start()
@@ -266,7 +266,7 @@ class Device(object):
 
     def get_ro_debuggable(self):
         if self.ro_debuggable is None:
-            self.ro_debuggable = self.get_adb().get_release_version()
+            self.ro_debuggable = self.get_adb().get_ro_debuggable()
         return self.ro_debuggable
 
     def get_display_info(self, refresh=True):
@@ -508,20 +508,29 @@ class Device(object):
     def start_app(self, app):
         """
         start an app on the device
-        :param app: instance of App, or str of package name
+        :param app: an instance of App, or a package name
         :return:
         """
         if isinstance(app, str):
-            package_name = app
+            intent = Intent(suffix=app)
+            if self.enable_jdb:
+                intent.prefix += " -D"
         elif isinstance(app, App):
-            package_name = app.get_package_name()
-            if app.get_main_activity():
-                package_name += "/%s" % app.get_main_activity()
+            intent = app.get_start_intent()
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
-        intent = Intent(suffix=package_name)
+
+        # send intent to start app
         self.send_intent(intent)
+
+        # if jdb is enabled, attach jdb to app process
+        if self.enable_jdb:
+            time.sleep(1)
+            pid = self.get_app_pid(app)
+            if pid is not None:
+                from adapter.jdb import JDB
+                self.jdb = JDB(device=self, app_pid=pid)
 
     def get_top_activity_name(self):
         """
@@ -609,7 +618,15 @@ class Device(object):
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_app_pid(self, app):
-        package = app.get_package_name()
+        """
+        get the pid of an app
+        :param app: an instance of App or a package name
+        :return:
+        """
+        if isinstance(app, App):
+            package = app.get_package_name()
+        else:
+            package = app
 
         name2pid = {}
         ps_out = self.get_adb().shell(["ps", "-t"])

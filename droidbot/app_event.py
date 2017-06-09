@@ -22,8 +22,10 @@ POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
 # POLICY_FILE = "file"
 
-DEFAULT_EVENT_INTERVAL = 0
-DEFAULT_EVENT_COUNT = 100000
+DEFAULT_POLICY = POLICY_DFS
+DEFAULT_EVENT_INTERVAL = 1
+DEFAULT_EVENT_COUNT = 1000
+DEFAULT_TIMEOUT = -1
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -802,15 +804,6 @@ class AppEventManager(object):
             from droidbot_script import DroidBotScript
             self.script = DroidBotScript(script_dict)
 
-        if not self.event_count or self.event_count is None:
-            self.event_count = DEFAULT_EVENT_COUNT
-
-        if not self.policy or self.policy is None:
-            self.policy = POLICY_NONE
-
-        if not self.event_interval or self.event_interval is None:
-            self.event_interval = DEFAULT_EVENT_INTERVAL
-
         self.event_factory = self.get_event_factory(device, app)
         self.profiling_method = profiling_method
 
@@ -888,7 +881,7 @@ class AppEventManager(object):
         """
         self.logger.info("start sending events, policy is %s" % self.policy)
 
-        if self.event_duration is not None:
+        if self.event_duration > 0:
             self.timer = Timer(self.event_duration, self.stop)
             self.timer.start()
 
@@ -897,6 +890,8 @@ class AppEventManager(object):
                 self.event_factory.start(self)
             elif self.policy == POLICY_NONE:
                 self.device.start_app(self.app)
+                if self.event_count == 0:
+                    return
                 while self.enabled:
                     time.sleep(1)
             elif self.policy == POLICY_MONKEY:

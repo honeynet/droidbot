@@ -24,15 +24,16 @@ def parse_args():
     #                          "dummy\tadd some fake contacts, SMS log, call log; \n"
     #                          "static\tset environment based on static analysis result; \n"
     #                          "<file>\tget environment policy from a json file.\n")
-    parser.add_argument("-policy", action="store", dest="event_policy",
-                        help='Policy to use for test input generation. Supported policies:\n'
+    parser.add_argument("-policy", action="store", dest="input_policy", default=app_event.DEFAULT_POLICY,
+                        help='Policy to use for test input generation. '
+                             'Default: %s.\nSupported policies:\n' % app_event.DEFAULT_POLICY +
                              # '%s\tno event will be sent, user should interact manually with device; \n'
                              # '%s\tuse "adb shell monkey" to send events; \n'
-                             '\"%s\"\tGenerate random input events.\n'
+                             '  \"%s\" -- Generate random input events.\n'
                              # '%s\tsend events based on static analysis result; \n'
                              # '%s\tbased on dynamic app state, this policy requires framework instrumented\n'
-                             '\"%s\"\tExplore the UI using a breadth-first strategy.\n'
-                             '\"%s\"\tExplore the UI using a depth-first strategy.\n'
+                             '  \"%s\" -- Explore UI using a breadth-first strategy.\n'
+                             '  \"%s\" -- Explore UI using a depth-first strategy.\n'
                              # '<%s>\tUse a script to customize input for certain states.\n'
                              # '%s\tmanually interact with your app, and we will record the events.\n'
                              %
@@ -48,15 +49,18 @@ def parse_args():
                                  # app_event.POLICY_MANUAL
                              ))
     parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
-                        help="Explore the UI without view shuffling")
+                        help="Explore the UI without view shuffling.")
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
-    parser.add_argument("-count", action="store", dest="event_count",
-                        type=int, help="Number of events to generate in total")
-    parser.add_argument("-interval", action="store", dest="event_interval",
-                        type=int, help="Interval in seconds between each two events")
-    parser.add_argument("-timeout", action="store", dest="timeout",
-                        type=int, help="Timeout in seconds")
+    parser.add_argument("-count", action="store", dest="count", default=app_event.DEFAULT_EVENT_COUNT,
+                        type=int, help="Number of events to generate in total. "
+                                       "Default: %d" % app_event.DEFAULT_EVENT_COUNT)
+    parser.add_argument("-interval", action="store", dest="interval", default=app_event.DEFAULT_EVENT_INTERVAL,
+                        type=int, help="Interval in seconds between each two events. "
+                                       "Default: %d" % app_event.DEFAULT_EVENT_INTERVAL)
+    parser.add_argument("-timeout", action="store", dest="timeout", default=app_event.DEFAULT_TIMEOUT,
+                        type=int, help="Timeout in seconds, -1 means unlimited. "
+                                       "Default: %d" % app_event.DEFAULT_TIMEOUT)
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="Run in quiet mode (dump warning messages only).")
     parser.add_argument("-install_app", action="store_true", dest="install_app",
@@ -66,8 +70,7 @@ def parse_args():
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
     parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",
-                        help="Grant all runtime permissions while installing an app. "
-                             "May be necessary for Android versions after Marshmallow.")
+                        help="Grant all permissions while installing. Useful for Android 6.0+.")
     parser.add_argument("-use_with_droidbox", action="store_true", dest="with_droidbox",
                         help="Use DroidBot with DroidBox. Need to run on a DroidBox emulator.")
     options = parser.parse_args()
@@ -91,12 +94,12 @@ def main():
                         output_dir=opts.output_dir,
                         # env_policy=opts.env_policy,
                         env_policy="none",
-                        event_policy=opts.event_policy,
+                        event_policy=opts.input_policy,
                         no_shuffle=opts.no_shuffle,
                         script_path=opts.script_path,
-                        event_interval=opts.event_interval,
+                        event_interval=opts.interval,
                         event_duration=opts.timeout,
-                        event_count=opts.event_count,
+                        event_count=opts.count,
                         quiet=opts.quiet,
                         install_app=opts.install_app,
                         with_droidbox=opts.with_droidbox,

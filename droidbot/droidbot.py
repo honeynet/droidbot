@@ -24,7 +24,7 @@ class DroidBot(object):
     def __init__(self, app_path, device_serial, output_dir=None,
                  env_policy=None, event_policy=None, no_shuffle=False, script_path=None,
                  event_count=None, event_interval=None, event_duration=None,
-                 quiet=False, with_droidbox=False,
+                 install_app=False, quiet=False, with_droidbox=False,
                  use_hierarchy_viewer=False, profiling_method=None, grant_perm=False):
         """
         initiate droidbot with configurations
@@ -40,6 +40,7 @@ class DroidBot(object):
             self.output_dir = os.path.abspath("droidbot_out")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
+        self.install_app = install_app
 
         # if device_serial is None:
         #     # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
@@ -112,7 +113,8 @@ class DroidBot(object):
             self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
-        self.device.uninstall_app(self.app)
+        if not self.install_app:
+            self.device.uninstall_app(self.app)
         self.device.disconnect()
         self.enabled = False
 

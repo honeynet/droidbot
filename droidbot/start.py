@@ -59,6 +59,8 @@ def parse_args():
                         type=int, help="Timeout in seconds")
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="Run in quiet mode (dump warning messages only).")
+    parser.add_argument("-install_app", action="store_true", dest="install_app",
+                        help="Don't uninstall the app after testing.")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
@@ -96,6 +98,7 @@ def main():
                         event_duration=opts.timeout,
                         event_count=opts.event_count,
                         quiet=opts.quiet,
+                        install_app=opts.install_app,
                         with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method,

@@ -265,7 +265,7 @@ class AppEnvManager(object):
         deploy the environments to device (Emulator)
         :return:
         """
-        self.logger.info("start deploying environment, policy is %s" % self.policy)
+        self.logger.info("Start deploying environment, policy is %s" % self.policy)
         if self.env_factory is not None:
             self.envs = self.generate_from_factory(self.env_factory)
         if self.envs is None:

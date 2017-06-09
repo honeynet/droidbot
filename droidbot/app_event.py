@@ -27,6 +27,8 @@ DEFAULT_EVENT_INTERVAL = 1
 DEFAULT_EVENT_COUNT = 1000
 DEFAULT_TIMEOUT = -1
 
+START_RETRY_THRESHOLD = 20
+
 POSSIBLE_KEYS = [
     "BACK",
     "MENU",
@@ -1374,7 +1376,7 @@ class UtgBfsFactory(StateBasedEventFactory):
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
             # If we have tried too many times but the app is still not started, stop DroidBot
-            if number_of_starts > 10:
+            if number_of_starts > START_RETRY_THRESHOLD:
                 raise StopSendingEventException("The app cannot be started.")
 
             # if app is not started, try start it
@@ -1527,7 +1529,7 @@ class UtgDfsFactory(StateBasedEventFactory):
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
             # If we have tried too many times but the app is still not started, stop DroidBot
-            if number_of_starts > 10:
+            if number_of_starts > START_RETRY_THRESHOLD:
                 raise StopSendingEventException("The app cannot be started.")
 
             # if app is not started, try start it

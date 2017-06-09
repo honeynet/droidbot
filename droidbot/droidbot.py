@@ -36,10 +36,10 @@ class DroidBot(object):
         DroidBot.instance = self
 
         self.output_dir = output_dir
-        if self.output_dir is None:
-            self.output_dir = os.path.abspath("droidbot_out")
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
+        if output_dir is not None:
+            if not os.path.isdir(output_dir):
+                os.mkdir(output_dir)
+
         self.install_app = install_app
 
         # if device_serial is None:

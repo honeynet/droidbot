@@ -263,9 +263,12 @@ class EventLog(object):
         }
 
     def save2dir(self, output_dir=None):
-        try:
-            if output_dir is None:
+        if output_dir is None:
+            if self.device.output_dir is None:
+                return
+            else:
                 output_dir = os.path.join(self.device.output_dir, "events")
+        try:
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             event_json_file_path = "%s/event_%s.json" % (output_dir, self.tag)
@@ -273,7 +276,7 @@ class EventLog(object):
             json.dump(self.to_dict(), event_json_file, indent=2)
             event_json_file.close()
         except Exception as e:
-            self.device.logger.warning("saving event to dir failed: " + e.message)
+            self.device.logger.warning("Saving event to dir failed: " + e.message)
 
     def is_start_event(self):
         if isinstance(self.event, IntentEvent):
@@ -319,7 +322,10 @@ class EventLog(object):
                 time.sleep(3)  # guess this time can vary between machines
 
             if output_dir is None:
-                output_dir = os.path.join(self.device.output_dir, "events")
+                if self.device.output_dir is None:
+                    return
+                else:
+                    output_dir = os.path.join(self.device.output_dir, "events")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             event_trace_local_path = "%s/event_trace_%s.trace" % (output_dir, self.tag)
@@ -856,12 +862,15 @@ class AppEventManager(object):
         dump the event information to files
         :return:
         """
+        if self.device.output_dir is None:
+            return
         event_log_file = open(os.path.join(self.device.output_dir, "droidbot_event.json"), "w")
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
         json.dump(event_array, event_log_file)
         event_log_file.close()
+        self.logger.debug("Event log saved to droidbot_event.json")
         if self.event_factory is not None:
             self.event_factory.dump()
 
@@ -914,8 +923,8 @@ class AppEventManager(object):
             pass
 
         self.stop()
+        self.logger.info("Finish sending events")
         self.dump()
-        self.logger.info("finish sending events, saved to droidbot_event.json")
 
     def stop(self):
         """
@@ -1096,6 +1105,8 @@ class StateBasedEventFactory(EventFactory):
         # state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
         # json.dump(list(self.state_transitions), state_transitions_file, indent=2)
         # state_transitions_file.close()
+        if self.device.output_dir is None:
+            return
 
         from state_transition_graph import TransitionGraph
         utg = TransitionGraph(input_path=self.device.output_dir)
@@ -1286,6 +1297,9 @@ class ManualEventFactory(StateBasedEventFactory):
         dump the explored_views and state_transitions to file
         @return:
         """
+        if self.device.output_dir is None:
+            return
+
         state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
         json.dump(list(self.state_transitions), state_transitions_file, indent=2)
         state_transitions_file.close()

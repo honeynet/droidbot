@@ -20,7 +20,12 @@ class App(object):
         self.logger = logging.getLogger('App')
 
         self.app_path = app_path
+
         self.output_dir = output_dir
+        if output_dir is not None:
+            if not os.path.isdir(output_dir):
+                os.mkdir(output_dir)
+
         self.androguard = AndroguardAnalysis(self.app_path)
         self.package_name = self.androguard.a.get_package()
         self.main_activity = self.androguard.a.get_main_activity()
@@ -35,29 +40,6 @@ class App(object):
         if self.androguard is None:
             self.androguard = AndroguardAnalysis(self.app_path)
         return self.androguard
-
-    def pull_app_from_device(self, device):
-        """
-        get app file path of current app
-        :param device: Device
-        :return:
-        """
-        if self.app_path is not None:
-            return self.app_path
-        if self.package_name is None:
-            self.logger.warning("Trying to get app path without package name")
-            return None
-        # if we only have package name, use `adb pull` to get the package from device
-        try:
-            self.logger.info("Trying to pull app(%s) from device to local" % self.package_name)
-            app_path_in_device = device.get_package_path(self.package_name)
-            app_path = os.path.join(self.output_dir, 'temp', "%s.apk" % self.package_name)
-            subprocess.check_call(["adb", "-s", device.serial, "pull", app_path_in_device, app_path])
-            self.app_path = app_path
-            return self.app_path
-        except Exception as e:
-            self.logger.warning(e.message)
-            return None
 
     def get_package_name(self):
         """

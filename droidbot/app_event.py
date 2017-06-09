@@ -1378,9 +1378,10 @@ class UtgBfsFactory(StateBasedEventFactory):
             self.last_event_flag = EVENT_FLAG_STARTED
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
-            # if we have tried too many times but still not started, stop droidbot
-            if number_of_starts > 5:
+            # If we have tried too many times but the app is still not started, stop DroidBot
+            if number_of_starts > 10:
                 raise StopSendingEventException("The app cannot be started.")
+
             # if app is not started, try start it
             if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
                 # It seems the app stuck at some state, and cannot be started
@@ -1530,9 +1531,10 @@ class UtgDfsFactory(StateBasedEventFactory):
             self.last_event_flag = EVENT_FLAG_STARTED
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
-            # if we have tried too many times but still not started, stop droidbot
-            if number_of_starts > 5:
+            # If we have tried too many times but the app is still not started, stop DroidBot
+            if number_of_starts > 10:
                 raise StopSendingEventException("The app cannot be started.")
+
             # if app is not started, try start it
             if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
                 # It seems the app stuck at some state, and cannot be started

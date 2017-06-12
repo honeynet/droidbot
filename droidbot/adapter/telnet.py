@@ -36,6 +36,8 @@ class TelnetConsole(object):
         self.__lock__ = threading.Lock()
         from telnetlib import Telnet
         self.console = Telnet(self.host, self.port)
+        if device.telnet_auth_token is not None:
+            self.run_cmd("auth %s" % device.telnet_auth_token)
         if self.check_connectivity():
             self.logger.debug("telnet successfully initiated, the addr is (%s:%d)" % (self.host, self.port))
         else:

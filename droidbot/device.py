@@ -17,7 +17,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False):
+                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
         """
         create a device
         :param device_serial: serial number of target device
@@ -38,6 +38,7 @@ class Device(object):
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
+        self.telnet_auth_token = telnet_auth_token
 
         self.output_dir = output_dir
         if output_dir is not None:
@@ -316,6 +317,21 @@ class Device(object):
         self.get_adb().unlock()
 
         # DONE skip first-use turorials, we don't have to
+
+    def shake(self):
+        """
+        shake the device
+        :return: 
+        """
+        telnet = self.get_telnet()
+        if telnet is None:
+            self.logger.warning("Telnet not connected, so can't shake the device.")
+        l2h = range(0, 11)
+        h2l = range(0, 11)
+        h2l.reverse()
+        sensor_xyz = [(-float(v * 10) + 1, float(v) + 9.8, float(v * 2) + 0.5) for v in [1, -1, 1, -1, 1, -1, 0]]
+        for (x,y,z) in sensor_xyz:
+            telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x,y,z))
 
     def add_env(self, env):
         """

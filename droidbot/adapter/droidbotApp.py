@@ -3,7 +3,7 @@ import socket
 import subprocess
 import json
 
-DROIDBOT_APP_REMOTE_PORT = 7336
+DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 
 
 class DroidBotAppConnException(Exception):
@@ -34,7 +34,7 @@ class DroidBotAppConn(object):
         try:
             # forward host port to remote port
             serial_cmd = "" if device is None else "-s " + device.serial
-            forward_cmd = "adb %s forward tcp:%d tcp:%d" % (serial_cmd, self.port, DROIDBOT_APP_REMOTE_PORT)
+            forward_cmd = "adb %s forward tcp:%d %s" % (serial_cmd, self.port, DROIDBOT_APP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
             self.sock.connect((self.host, self.port))
             import threading
@@ -56,7 +56,8 @@ class DroidBotAppConn(object):
             if not chunk:
                 continue
             chunk_len = len(chunk)
-            for cursor in range(0, chunk_len):
+            cursor = 0
+            while cursor < chunk_len:
                 b = ord(chunk[cursor])
                 if read_message_bytes == 0:
                     if b != 0xff:
@@ -85,13 +86,14 @@ class DroidBotAppConn(object):
                         read_message_bytes += (chunk_len - cursor)
                         break
                 read_message_bytes += 1
+                cursor += 1
 
     def handle_message(self, message):
         tag_index = message.find(" >>> ")
         if tag_index != -1:
             tag = message[:tag_index]
-            body = json.loads(message[(tag_index + 5):])
             print "received a message with a tag: " + tag
+            body = json.loads(message[(tag_index + 5):])
             print body.keys()
 
     def run_cmd(self, args):
@@ -134,6 +136,4 @@ class DroidBotAppConn(object):
         self.logger.debug("disconnected")
 
 if __name__ == "__main__":
-    app_conn = DroidBotAppConn()
-    import time
-    time.sleep(100)
+    droidbot_app_conn = DroidBotAppConn()

@@ -28,6 +28,17 @@ class DroidBotAppConn(object):
         self.port = 7336
         self.device = device
 
+        if device is not None:
+            # install and start droidbot app
+            import pkg_resources
+            from droidbot.app import App
+            droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
+            droidbot_app = App(app_path=droidbot_app_path)
+            device.install_app(droidbot_app)
+            device.start_app(droidbot_app)
+            # TODO enable accessibility
+            self.logger.warning("Please enable accessibility for DroidBot app on the device.")
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = True
 

@@ -30,7 +30,6 @@ class Minicap(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = True
         self.banner = None
-        self.show_image = True
 
         try:
             # forward host port to remote port
@@ -44,6 +43,28 @@ class Minicap(object):
         except socket.error, ex:
             self.connected = False
             raise MinicapException()
+
+    def start(self):
+        device = self.device
+        if device is not None:
+            # install minicap
+            import pkg_resources
+            local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
+            remote_minicap_path = "/data/local/tmp/minicap-devel"
+            device.get_adb().shell("mkdir %s" % remote_minicap_path)
+            abi = device.get_adb().get_property('ro.product.cpu.abi')
+            sdk = device.get_sdk_version()
+            if sdk >= 16:
+                minicap_bin = "minicap"
+            else:
+                minicap_bin = "minicap-nopie"
+            device.push_file(local_file="%s/libs/%s/%s" % (local_minicap_path, abi, minicap_bin),
+                             remote_dir=remote_minicap_path)
+            device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
+                             remote_dir=remote_minicap_path)
+            display = device.get_display_info(refresh=True)
+
+            device.get_adb().shell("LD_LIBRARY_PATH=%s %s/minicap -h" % (remote_minicap_path, remote_minicap_path))
 
     def listen_messages(self):
         self.logger.debug("start listening messages")
@@ -121,8 +142,6 @@ class Minicap(object):
         # Sanity check for JPG header, only here for debugging purposes.
         if frameBody[0] != 0xFF or frameBody[1] != 0xD8:
             self.logger.warning("Frame body does not start with JPG header")
-        if self.show_image:
-            self.show_image = False
         print "received a jpg."
 
     def check_connectivity(self):

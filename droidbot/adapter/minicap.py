@@ -31,7 +31,7 @@ class Minicap(object):
         self.remote_minicap_path = "/data/local/tmp/minicap-devel"
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connected = True
+        self.connected = False
         self.banner = None
         self.last_screen = None
         self.last_screen_time = None

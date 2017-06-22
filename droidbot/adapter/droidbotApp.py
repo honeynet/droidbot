@@ -27,32 +27,37 @@ class DroidBotAppConn(object):
         self.host = "localhost"
         self.port = 7336
         self.device = device
+        self.connected = False
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        if device is not None:
+        self.install_droidbot_app()
+        self.connect()
+
+    def install_droidbot_app(self):
+        if self.device is not None:
             # install and start droidbot app
             import pkg_resources
             from droidbot.app import App
             droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
             droidbot_app = App(app_path=droidbot_app_path)
-            device.install_app(droidbot_app)
-            device.start_app(droidbot_app)
+            self.device.install_app(droidbot_app)
+            self.device.start_app(droidbot_app)
             # TODO enable accessibility
             self.logger.warning("Please enable accessibility for DroidBot app on the device.")
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connected = True
-
+    def connect(self):
         try:
             # forward host port to remote port
-            serial_cmd = "" if device is None else "-s " + device.serial
+            serial_cmd = "" if self.device is None else "-s " + self.device.serial
             forward_cmd = "adb %s forward tcp:%d %s" % (serial_cmd, self.port, DROIDBOT_APP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
             self.sock.connect((self.host, self.port))
             import threading
             listen_thread = threading.Thread(target=self.listen_messages)
             listen_thread.start()
-        except socket.error, ex:
+        except socket.error as ex:
             self.connected = False
+            self.logger.warning(ex.message)
             raise DroidBotAppConnException()
 
     def listen_messages(self):
@@ -61,6 +66,7 @@ class DroidBotAppConn(object):
         read_message_bytes = 0
         message_len = 0
         message = ""
+        self.connected = True
         while self.connected:
             chunk = self.sock.recv(CHUNK_SIZE)
             # print chunk

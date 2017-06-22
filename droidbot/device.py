@@ -67,6 +67,7 @@ class Device(object):
         self.get_ro_debuggable()
         self.get_display_info()
         self.logcat = self.redirect_logcat(self.output_dir)
+        self.getevent = self.redirect_input_events(self.output_dir)
         from state_monitor import StateMonitor
         self.state_monitor = StateMonitor(device=self)
         self.state_monitor.start()
@@ -78,13 +79,23 @@ class Device(object):
     def redirect_logcat(self, output_dir=None):
         if output_dir is None:
             return None
-        logcat_file = open("%s/logcat.log" % output_dir, "w")
+        logcat_file = open("%s/logcat.txt" % output_dir, "w")
         import subprocess
         subprocess.check_call(["adb", "-s", self.serial, "logcat", "-c"])
         logcat = subprocess.Popen(["adb", "-s", self.serial, "logcat", "-v", "threadtime"],
                                   stdin=subprocess.PIPE,
                                   stdout=logcat_file)
         return logcat
+
+    def redirect_input_events(self, output_dir=None):
+        if output_dir is None:
+            return None
+        getevent_file = open("%s/getevent.txt" % output_dir, "w")
+        import subprocess
+        getevent = subprocess.Popen(["adb", "-s", self.serial, "shell", "getevent", "-lt"],
+                                  stdin=subprocess.PIPE,
+                                  stdout=getevent_file)
+        return getevent
 
     def check_connectivity(self):
         """
@@ -178,6 +189,8 @@ class Device(object):
             self.view_client.disconnect()
         if self.logcat:
             self.logcat.terminate()
+        if self.getevent:
+            self.getevent.terminate()
         self.state_monitor.stop()
 
         if self.output_dir is not None:

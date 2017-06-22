@@ -2,6 +2,8 @@ import logging
 import socket
 import subprocess
 
+from datetime import datetime
+
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
 
 
@@ -26,10 +28,54 @@ class Minicap(object):
         self.host = "localhost"
         self.port = 7335
         self.device = device
+        self.remote_minicap_path = "/data/local/tmp/minicap-devel"
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = True
         self.banner = None
+        self.last_screen = None
+        self.last_screen_time = None
+
+        self.install_minicap()
+        self.connect()
+
+    def install_minicap(self):
+        device = self.device
+        if device is not None:
+            # install minicap
+            import pkg_resources
+            local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
+            device.get_adb().shell("mkdir %s" % self.remote_minicap_path)
+            abi = device.get_adb().get_property('ro.product.cpu.abi')
+            sdk = device.get_sdk_version()
+            if sdk >= 16:
+                minicap_bin = "minicap"
+            else:
+                minicap_bin = "minicap-nopie"
+            device.push_file(local_file="%s/libs/%s/%s" % (local_minicap_path, abi, minicap_bin),
+                             remote_dir=self.remote_minicap_path)
+            device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
+                             remote_dir=self.remote_minicap_path)
+
+    def connect(self):
+        device = self.device
+        if device is not None:
+            display = device.get_display_info(refresh=True)
+            if 'width' not in display or 'height' not in display or 'orientation' not in display:
+                self.logger.warning("Cannot get the size of current device.")
+                return
+            w = display['width']
+            h = display['height']
+            if w > h:
+                temp = w
+                w = h
+                h = temp
+            o = display['orientation'] * 90
+
+            size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
+            device.get_adb().shell("LD_LIBRARY_PATH=%s %s/minicap -P %s" %
+                                   (self.remote_minicap_path, self.remote_minicap_path, size_opt))
+            self.logger.info("Minicap started.")
 
         try:
             # forward host port to remote port
@@ -40,31 +86,10 @@ class Minicap(object):
             import threading
             listen_thread = threading.Thread(target=self.listen_messages)
             listen_thread.start()
-        except socket.error, ex:
+        except socket.error as ex:
             self.connected = False
+            self.logger.warning(ex.message)
             raise MinicapException()
-
-    def start(self):
-        device = self.device
-        if device is not None:
-            # install minicap
-            import pkg_resources
-            local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
-            remote_minicap_path = "/data/local/tmp/minicap-devel"
-            device.get_adb().shell("mkdir %s" % remote_minicap_path)
-            abi = device.get_adb().get_property('ro.product.cpu.abi')
-            sdk = device.get_sdk_version()
-            if sdk >= 16:
-                minicap_bin = "minicap"
-            else:
-                minicap_bin = "minicap-nopie"
-            device.push_file(local_file="%s/libs/%s/%s" % (local_minicap_path, abi, minicap_bin),
-                             remote_dir=remote_minicap_path)
-            device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
-                             remote_dir=remote_minicap_path)
-            display = device.get_display_info(refresh=True)
-
-            device.get_adb().shell("LD_LIBRARY_PATH=%s %s/minicap -h" % (remote_minicap_path, remote_minicap_path))
 
     def listen_messages(self):
         self.logger.debug("start listening messages")
@@ -87,6 +112,7 @@ class Minicap(object):
             "quirks": 0,
         }
 
+        self.connected = True
         while self.connected:
             chunk = bytearray(self.sock.recv(CHUNK_SIZE))
             # print chunk
@@ -142,14 +168,19 @@ class Minicap(object):
         # Sanity check for JPG header, only here for debugging purposes.
         if frameBody[0] != 0xFF or frameBody[1] != 0xD8:
             self.logger.warning("Frame body does not start with JPG header")
-        print "received a jpg."
+        self.last_screen = frameBody
+        self.last_screen_time = datetime.now()
 
     def check_connectivity(self):
         """
         check if droidbot app is connected
         :return: True for connected
         """
-        return self.connected
+        if not self.connected:
+            return False
+        if self.last_screen_time is None:
+            return False
+        return True
 
     def disconnect(self):
         """

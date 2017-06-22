@@ -35,9 +35,13 @@ class DroidBotAppConn(object):
             droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
             droidbot_app = App(app_path=droidbot_app_path)
             device.install_app(droidbot_app)
+            accessibility_service = "io.github.ylimit.droidbotapp/" \
+                                    "com.github.privacystreams.accessibility.PSAccessibilityService"
+            device.get_adb().enable_accessibility_service(accessibility_service)
+            if accessibility_service not in device.get_adb().get_enabled_accessibility_services():
+                # accessibility not enabled, need to enable manually
+                self.logger.warning("Please enable accessibility for DroidBot app manually.")
             device.start_app(droidbot_app)
-            # TODO enable accessibility
-            self.logger.warning("Please enable accessibility for DroidBot app on the device.")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = True

@@ -1102,6 +1102,10 @@ class StateBasedEventFactory(EventFactory):
         # state_transitions_file = open(os.path.join(self.device.output_dir, "state_transitions.json"), "w")
         # json.dump(list(self.state_transitions), state_transitions_file, indent=2)
         # state_transitions_file.close()
+
+        return
+        # TODO: refactor TransitionGraph module
+        """
         if self.device.output_dir is None:
             return
 
@@ -1110,6 +1114,7 @@ class StateBasedEventFactory(EventFactory):
         utg_file = open(os.path.join(self.device.output_dir, "droidbot_UTG.json"), "w")
         json.dump(utg.data, utg_file, indent=2)
         utg_file.close()
+        """
 
 
 class RandomEventFactory(StateBasedEventFactory):

@@ -1040,6 +1040,7 @@ class StateBasedEventFactory(EventFactory):
         self.script_events = []
         self.last_event = None
         self.last_state = None
+        self.script_event_idx = 0
 
     def generate_event(self, state=None):
         """
@@ -1056,15 +1057,18 @@ class StateBasedEventFactory(EventFactory):
         event = None
 
         # if the previous operation is not finished, continue
-        if len(self.script_events) != 0:
-            event = self.script_events.pop(0)
+        if len(self.script_events) > self.script_event_idx:
+            event = self.script_events[self.script_event_idx]
+            self.script_event_idx += 1
 
         # First try matching a state defined in the script
         if event is None and self.script is not None:
             operation = self.script.get_operation_based_on_state(state)
             if operation is not None:
                 self.script_events = operation.events
-                event = self.script_events.pop(0)
+                # restart script
+                event = self.script_events[0]
+                self.script_event_idx = 1
 
         if event is None:
             event = self.gen_event_based_on_state_wrapper(state)

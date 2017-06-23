@@ -243,7 +243,7 @@ class EventLog(object):
     save an event to local file system
     """
 
-    def __init__(self, device, app, event, profiling_method, tag=None):
+    def __init__(self, device, app, event, profiling_method=None, tag=None):
         self.device = device
         self.app = app
         self.event = event
@@ -257,7 +257,9 @@ class EventLog(object):
         self.profiling_pid = -1
         self.sampling = None
         # sampling feature was added in Android 5.0 (API level 21)
-        if str(profiling_method) != "full" and self.device.get_sdk_version() >= 21:
+        if profiling_method is not None and \
+           str(profiling_method) != "full" and \
+           self.device.get_sdk_version() >= 21:
             self.sampling = int(profiling_method)
 
     def to_dict(self):
@@ -841,16 +843,14 @@ class AppEventManager(object):
             return
         self.events.append(event)
 
+        event_log = EventLog(self.device, self.app, event, self.profiling_method)
         if self.profiling_method is not None:
-            event_log = EventLog(self.device, self.app, event, self.profiling_method)
             event_log.start_profiling()
-            self.device.send_event(event)
-            time.sleep(self.event_interval)
+        self.device.send_event(event)
+        time.sleep(self.event_interval)
+        if self.profiling_method is not None:
             event_log.stop_profiling()
-            event_log.save2dir()
-        else:
-            self.device.send_event(event)
-            time.sleep(self.event_interval)
+        event_log.save2dir()
 
     def dump(self):
         """

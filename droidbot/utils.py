@@ -31,6 +31,21 @@ def parse_log(log_msg):
     return log_dict
 
 
+def get_available_devices():
+    """
+    Get a list of device serials connected via adb
+    :return: 
+    """
+    import subprocess
+    lines = subprocess.check_output(["adb", "devices"]).splitlines()
+    devices = []
+    for line in lines:
+        segs = line.strip().split()
+        if len(segs) == 2 and segs[1] == "device":
+            devices.append(segs[0])
+    return devices
+
+
 class Timeout:
     def __init__(self, seconds=0, error_message='Timeout'):
         self.seconds = seconds

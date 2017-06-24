@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import re
 import subprocess
 import time
@@ -16,15 +17,23 @@ class Device(object):
     this class describes a connected device
     """
 
-    def __init__(self, device_serial, is_emulator=True, output_dir=None,
+    def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
                  use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
         """
-        create a device
+        initialize a device connection
         :param device_serial: serial number of target device
         :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
         self.logger = logging.getLogger("Device")
+
+        if device_serial is None:
+            import utils
+            all_devices = utils.get_available_devices()
+            if len(all_devices) == 0:
+                self.logger.warning("ERROR: No device connected.")
+                sys.exit(-1)
+            device_serial = all_devices[0]
 
         self.serial = device_serial
         self.is_emulator = is_emulator

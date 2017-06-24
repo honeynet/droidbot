@@ -243,7 +243,7 @@ class EventLog(object):
     save an event to local file system
     """
 
-    def __init__(self, device, app, event, profiling_method, tag=None):
+    def __init__(self, device, app, event, profiling_method=None, tag=None):
         self.device = device
         self.app = app
         self.event = event
@@ -257,7 +257,9 @@ class EventLog(object):
         self.profiling_pid = -1
         self.sampling = None
         # sampling feature was added in Android 5.0 (API level 21)
-        if str(profiling_method) != "full" and self.device.get_sdk_version() >= 21:
+        if profiling_method is not None and \
+           str(profiling_method) != "full" and \
+           self.device.get_sdk_version() >= 21:
             self.sampling = int(profiling_method)
 
     def to_dict(self):
@@ -841,16 +843,14 @@ class AppEventManager(object):
             return
         self.events.append(event)
 
+        event_log = EventLog(self.device, self.app, event, self.profiling_method)
         if self.profiling_method is not None:
-            event_log = EventLog(self.device, self.app, event, self.profiling_method)
             event_log.start_profiling()
-            self.device.send_event(event)
-            time.sleep(self.event_interval)
+        self.device.send_event(event)
+        time.sleep(self.event_interval)
+        if self.profiling_method is not None:
             event_log.stop_profiling()
-            event_log.save2dir()
-        else:
-            self.device.send_event(event)
-            time.sleep(self.event_interval)
+        event_log.save2dir()
 
     def dump(self):
         """
@@ -1040,6 +1040,7 @@ class StateBasedEventFactory(EventFactory):
         self.script_events = []
         self.last_event = None
         self.last_state = None
+        self.script_event_idx = 0
 
     def generate_event(self, state=None):
         """
@@ -1056,15 +1057,18 @@ class StateBasedEventFactory(EventFactory):
         event = None
 
         # if the previous operation is not finished, continue
-        if len(self.script_events) != 0:
-            event = self.script_events.pop(0)
+        if len(self.script_events) > self.script_event_idx:
+            event = self.script_events[self.script_event_idx]
+            self.script_event_idx += 1
 
         # First try matching a state defined in the script
         if event is None and self.script is not None:
             operation = self.script.get_operation_based_on_state(state)
             if operation is not None:
                 self.script_events = operation.events
-                event = self.script_events.pop(0)
+                # restart script
+                event = self.script_events[0]
+                self.script_event_idx = 1
 
         if event is None:
             event = self.gen_event_based_on_state_wrapper(state)

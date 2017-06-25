@@ -39,7 +39,6 @@ class Device(object):
         self.is_emulator = is_emulator
         self.adb = None
         self.telnet = None
-        self.monkeyrunner = None
         self.view_client = None
         self.settings = {}
         self.display_info = None
@@ -60,12 +59,10 @@ class Device(object):
         if self.is_emulator:
             self.adb_enabled = True
             self.telnet_enabled = True
-            self.monkeyrunner_enabled = False
             self.view_client_enabled = True
         else:
             self.adb_enabled = True
             self.telnet_enabled = False
-            self.monkeyrunner_enabled = False
             self.view_client_enabled = True
 
         self.is_connected = False
@@ -128,12 +125,6 @@ class Device(object):
                 self.logger.warning("Telnet is not connected")
                 result = False
 
-            if self.monkeyrunner_enabled and self.monkeyrunner and self.monkeyrunner.check_connectivity():
-                self.logger.info("monkeyrunner is connected")
-            else:
-                self.logger.warning("monkeyrunner is not connected")
-                result = False
-
             if self.view_client_enabled and self.view_client:
                 self.logger.info("view_client is connected")
             else:
@@ -162,7 +153,7 @@ class Device(object):
 
     def connect(self):
         """
-        connect this device via adb, telnet and monkeyrunner
+        connect this device
         :return:
         """
         # wait for emulator to start
@@ -172,9 +163,6 @@ class Device(object):
 
         if self.telnet_enabled:
             self.get_telnet()
-
-        if self.monkeyrunner_enabled:
-            self.get_monkeyrunner()
 
         if self.view_client_enabled:
             self.get_view_client()
@@ -192,8 +180,6 @@ class Device(object):
             self.adb.disconnect()
         if self.telnet:
             self.telnet.disconnect()
-        if self.monkeyrunner:
-            self.monkeyrunner.disconnect()
         if self.view_client:
             self.view_client.disconnect()
         if self.logcat:
@@ -229,16 +215,6 @@ class Device(object):
             from adapter.adb import ADB
             self.adb = ADB(self)
         return self.adb
-
-    def get_monkeyrunner(self):
-        """
-        get monkeyrunner connection of the device
-        :return:
-        """
-        if self.monkeyrunner_enabled and self.monkeyrunner is None:
-            from adapter.monkey_runner import MonkeyRunner
-            self.monkeyrunner = MonkeyRunner(self)
-        return self.monkeyrunner
 
     def get_view_client(self):
         """

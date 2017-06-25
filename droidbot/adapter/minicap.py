@@ -1,10 +1,12 @@
 import logging
 import socket
 import subprocess
+import time
 
 from datetime import datetime
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
+logging.basicConfig(level=logging.INFO)
 
 
 class MinicapException(Exception):
@@ -32,20 +34,22 @@ class Minicap(object):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = False
+        self.minicap_process = None
         self.banner = None
         self.last_screen = None
         self.last_screen_time = None
 
-        self.install_minicap()
-        self.connect()
+        if self.device is None:
+            from droidbot.device import Device
+            self.device = Device()
 
-    def install_minicap(self):
+    def setup(self):
         device = self.device
         if device is not None:
             # install minicap
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
-            device.get_adb().shell("mkdir %s" % self.remote_minicap_path)
+            device.get_adb().shell("mkdir %s 2> /dev/null || true" % self.remote_minicap_path)
             abi = device.get_adb().get_property('ro.product.cpu.abi')
             sdk = device.get_sdk_version()
             if sdk >= 16:
@@ -56,31 +60,37 @@ class Minicap(object):
                              remote_dir=self.remote_minicap_path)
             device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
                              remote_dir=self.remote_minicap_path)
+            self.logger.info("Minicap installed.")
 
     def connect(self):
         device = self.device
-        if device is not None:
-            display = device.get_display_info(refresh=True)
-            if 'width' not in display or 'height' not in display or 'orientation' not in display:
-                self.logger.warning("Cannot get the size of current device.")
-                return
-            w = display['width']
-            h = display['height']
-            if w > h:
-                temp = w
-                w = h
-                h = temp
-            o = display['orientation'] * 90
+        display = device.get_display_info(refresh=True)
+        if 'width' not in display or 'height' not in display or 'orientation' not in display:
+            self.logger.warning("Cannot get the size of current device.")
+            return
+        w = display['width']
+        h = display['height']
+        if w > h:
+            temp = w
+            w = h
+            h = temp
+        o = display['orientation'] * 90
 
-            size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
-            device.get_adb().shell("LD_LIBRARY_PATH=%s %s/minicap -P %s" %
-                                   (self.remote_minicap_path, self.remote_minicap_path, size_opt))
-            self.logger.info("Minicap started.")
+        size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
+        start_minicap_cmd = "adb -s %s shell LD_LIBRARY_PATH=%s %s/minicap -P %s" % \
+                            (device.serial, self.remote_minicap_path, self.remote_minicap_path, size_opt)
+        self.logger.info("Starting minicap: " + start_minicap_cmd)
+        self.minicap_process = subprocess.Popen(start_minicap_cmd.split(),
+                                                stdin=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                stdout=subprocess.PIPE)
+        # Wait 3 seconds for minicap starting
+        time.sleep(3)
+        self.logger.info("Minicap started.")
 
         try:
             # forward host port to remote port
-            serial_cmd = "" if device is None else "-s " + device.serial
-            forward_cmd = "adb %s forward tcp:%d %s" % (serial_cmd, self.port, MINICAP_REMOTE_ADDR)
+            forward_cmd = "adb -s %s forward tcp:%d %s" % (device.serial, self.port, MINICAP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
             self.sock.connect((self.host, self.port))
             import threading
@@ -92,7 +102,7 @@ class Minicap(object):
             raise MinicapException()
 
     def listen_messages(self):
-        self.logger.debug("start listening messages")
+        self.logger.info("Start listening minicap images")
         CHUNK_SIZE = 4096
 
         readBannerBytes = 0
@@ -115,13 +125,12 @@ class Minicap(object):
         self.connected = True
         while self.connected:
             chunk = bytearray(self.sock.recv(CHUNK_SIZE))
-            # print chunk
             if not chunk:
                 continue
             chunk_len = len(chunk)
             cursor = 0
             while cursor < chunk_len:
-                if (readBannerBytes < bannerLength):
+                if readBannerBytes < bannerLength:
                     if readBannerBytes == 0:
                         banner['version'] = chunk[cursor]
                     elif readBannerBytes == 1:
@@ -170,6 +179,7 @@ class Minicap(object):
             self.logger.warning("Frame body does not start with JPG header")
         self.last_screen = frameBody
         self.last_screen_time = datetime.now()
+        print "Got an image at %s" % self.last_screen_time
 
     def check_connectivity(self):
         """
@@ -186,9 +196,28 @@ class Minicap(object):
         """
         disconnect telnet
         """
-        self.sock.close()
         self.connected = False
-        self.logger.debug("disconnected")
+        if self.sock is not None:
+            try:
+                self.sock.close()
+            except Exception as e:
+                print e.message
+        if self.minicap_process is not None:
+            try:
+                self.minicap_process.terminate()
+            except Exception as e:
+                print e.message
+        try:
+            forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
+            subprocess.check_call(forward_remove_cmd.split())
+        except Exception as e:
+            print e.message
 
 if __name__ == "__main__":
     minicap = Minicap()
+    try:
+        minicap.setup()
+        minicap.connect()
+    except:
+        minicap.disconnect()
+        minicap.device.disconnect()

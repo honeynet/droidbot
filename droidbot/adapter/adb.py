@@ -85,7 +85,7 @@ class ADB(object):
 
         self.logger.debug('command:')
         self.logger.debug(args)
-        r = subprocess.check_output(args)
+        r = subprocess.check_output(args).strip()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r

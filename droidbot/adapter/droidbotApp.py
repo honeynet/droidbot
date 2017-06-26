@@ -1,9 +1,12 @@
 import logging
 import socket
 import subprocess
+import time
 import json
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
+DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
+ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/com.github.privacystreams.accessibility.PSAccessibilityService"
 
 
 class DroidBotAppConnException(Exception):
@@ -26,29 +29,33 @@ class DroidBotAppConn(object):
         self.logger = logging.getLogger('DroidBotAppConn')
         self.host = "localhost"
         self.port = 7336
+        if device is None:
+            from droidbot.device import Device
+            device = Device()
         self.device = device
         self.connected = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.install_droidbot_app()
-        self.connect()
-
-    def install_droidbot_app(self):
+    def setup(self):
         device = self.device
-        if device is not None:
+        if ACCESSIBILITY_SERVICE in device.get_adb().get_enabled_accessibility_services():
+            self.logger.debug("This device is already set up.")
+        else:
             # install and start droidbot app
             import pkg_resources
             from droidbot.app import App
             droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
             droidbot_app = App(app_path=droidbot_app_path)
             device.install_app(droidbot_app)
-            accessibility_service = "io.github.ylimit.droidbotapp/" \
-                                    "com.github.privacystreams.accessibility.PSAccessibilityService"
-            device.get_adb().enable_accessibility_service(accessibility_service)
-            if accessibility_service not in device.get_adb().get_enabled_accessibility_services():
+            device.get_adb().enable_accessibility_service(ACCESSIBILITY_SERVICE)
+            if ACCESSIBILITY_SERVICE not in device.get_adb().get_enabled_accessibility_services():
                 # accessibility not enabled, need to enable manually
                 self.logger.warning("Please enable accessibility for DroidBot app manually.")
             device.start_app(droidbot_app)
+            time.sleep(2)
+
+    def teardown(self):
+        self.device.uninstall_app(DROIDBOT_APP_PACKAGE)
 
     def connect(self):
         try:
@@ -111,6 +118,7 @@ class DroidBotAppConn(object):
                 cursor += 1
 
     def handle_message(self, message):
+        # print message
         tag_index = message.find(" >>> ")
         if tag_index != -1:
             tag = message[:tag_index]
@@ -159,3 +167,5 @@ class DroidBotAppConn(object):
 
 if __name__ == "__main__":
     droidbot_app_conn = DroidBotAppConn()
+    droidbot_app_conn.setup()
+    droidbot_app_conn.connect()

@@ -6,7 +6,6 @@ import time
 from datetime import datetime
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
-logging.basicConfig(level=logging.INFO)
 
 
 class MinicapException(Exception):

@@ -66,7 +66,7 @@ class Device(object):
             self.view_client_enabled = True
 
         self.is_connected = False
-        self.connect()
+
         self.get_sdk_version()
         self.get_release_version()
         self.get_ro_secure()
@@ -273,8 +273,8 @@ class Device(object):
     def get_display_info(self, refresh=True):
         """
         get device display infomation, including width, height, and density
+        :param refresh: if set to True, refresh the display info instead of using the old values
         :return: dict, display_info
-        @param refresh: if set to True, refresh the display info instead of using the old values
         """
         if self.display_info is None or refresh:
             self.display_info = self.get_adb().getDisplayInfo()
@@ -626,8 +626,16 @@ class Device(object):
             package_info_file.close()
 
     def uninstall_app(self, app):
-        assert isinstance(app, App)
-        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
+        """
+        Uninstall an app from device.
+        :param app: an instance of App or a package name
+        :return: 
+        """
+        if isinstance(app, App):
+            package_name = app.get_package_name()
+        else:
+            package_name = app
+        subprocess.check_call(["adb", "-s", self.serial, "uninstall", package_name],
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def get_app_pid(self, app):

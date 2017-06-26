@@ -153,6 +153,7 @@ class DroidBotAppConn(object):
             subprocess.check_call(forward_remove_cmd.split())
         except Exception as e:
             print e.message
+        self.teardown()
 
     def __view_tree_to_list(self, view_tree, view_list):
         tree_id = len(view_list)

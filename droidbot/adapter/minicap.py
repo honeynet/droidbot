@@ -45,17 +45,20 @@ class Minicap(object):
     def setup(self):
         device = self.device
 
-        minicap_files = device.get_adb().shell("ls %s" % self.remote_minicap_path).split()
-        if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
-            self.logger.info("Minicap already installed")
-            return
+        try:
+            minicap_files = device.get_adb().shell("ls %s 2>/dev/null" % self.remote_minicap_path).split()
+            if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
+                self.logger.info("Minicap already installed")
+                return
+        except:
+            pass
 
         if device is not None:
             # install minicap
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
             try:
-                device.get_adb().shell("mkdir %s 2" % self.remote_minicap_path)
+                device.get_adb().shell("mkdir %s 2>/dev/null" % self.remote_minicap_path)
             except Exception:
                 pass
             abi = device.get_adb().get_property('ro.product.cpu.abi')
@@ -227,6 +230,7 @@ class Minicap(object):
             subprocess.check_call(forward_remove_cmd.split())
         except Exception as e:
             print e.message
+        self.teardown()
 
 if __name__ == "__main__":
     minicap = Minicap()

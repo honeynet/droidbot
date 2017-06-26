@@ -70,6 +70,7 @@ class Device(object):
 
         self.logcat = None
         self.getevent = None
+        self.state_monitor = None
 
         self.is_connected = False
 
@@ -184,6 +185,7 @@ class Device(object):
         self.get_ro_secure()
         self.get_ro_debuggable()
         self.get_display_info()
+
         self.logcat = self.redirect_logcat(self.output_dir)
         self.getevent = self.redirect_input_events(self.output_dir)
         from state_monitor import StateMonitor
@@ -213,7 +215,8 @@ class Device(object):
             self.droidbot_app.disconnect()
         if self.minicap:
             self.minicap.disconnect()
-        self.state_monitor.stop()
+        if self.state_monitor:
+            self.state_monitor.stop()
 
         if self.output_dir is not None:
             temp_dir = os.path.join(self.output_dir, "temp")

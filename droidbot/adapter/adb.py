@@ -25,7 +25,7 @@ class ADB(object):
     RO_SECURE_PROPERTY = 'ro.secure'
     RO_DEBUGGABLE_PROPERTY = 'ro.debuggable'
 
-    def __init__(self, device):
+    def __init__(self, device=None):
         """
         initiate a ADB connection from serial no
         the serial no should be in output of `adb devices`
@@ -33,39 +33,12 @@ class ADB(object):
         :return:
         """
         self.logger = logging.getLogger('ADB')
+        if device is None:
+            from droidbot.device import Device
+            device = Device()
         self.device = device
-        self.cmd_prefix = ['adb']
 
-        r = subprocess.check_output(['adb', 'devices']).split('\n')
-        if not r[0].startswith("List of devices attached"):
-            raise ADBException()
-
-        online_devices = []
-        for line in r[1:]:
-            if not line:
-                continue
-            segments = line.split("\t")
-            if len(segments) != 2:
-                continue
-            if segments[1].strip() == "device":
-                online_devices.append(segments[0])
-
-        if not online_devices:
-            raise ADBException()
-
-        if device.serial:
-            if device.serial not in online_devices:
-                raise ADBException()
-        else:
-            device.serial = online_devices[0]
-
-        self.cmd_prefix.append("-s")
-        self.cmd_prefix.append(device.serial)
-
-        if self.check_connectivity():
-            self.logger.info("adb successfully initiated, the device is %s" % device.serial)
-        else:
-            raise ADBException()
+        self.cmd_prefix = ['adb', "-s", device.serial]
 
     def run_cmd(self, extra_args):
         """
@@ -113,6 +86,13 @@ class ADB(object):
         """
         r = self.run_cmd("get-state")
         return r.startswith("device")
+
+    def connect(self):
+        """
+        connect adb
+        :return: 
+        """
+        self.logger.info("connected")
 
     def disconnect(self):
         """
@@ -442,6 +422,6 @@ class ADB(object):
             encoded = escaped.replace(" ", "%s")
         else:
             encoded = str(text)
-        #FIXME find out which characters can be dangerous,
+        # FIXME find out which characters can be dangerous,
         # for exmaple not worst idea to escape "
         self.shell("input text %s" % encoded)

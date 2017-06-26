@@ -233,6 +233,20 @@ class ADB(object):
             service_names.append(service_name)
             self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
 
+    def get_installed_apps(self):
+        """
+        Get the package names and apk paths of installed apps on the device
+        :return: a dict, each key is a package name of an app and each value is the file path to the apk
+        """
+        app_lines = self.shell("pm list packages -f").splitlines()
+        app_line_re = re.compile('package:(?P<apk_path>[^=]+)=(?P<package>[^=]+)')
+        package_to_path = {}
+        for app_line in app_lines:
+            m = app_line_re.match(app_line)
+            if m:
+                package_to_path[m.group('package')] = m.group('apk_path')
+        return package_to_path
+
     def getDisplayDensity(self):
         displayInfo = self.getDisplayInfo()
         if 'density' in displayInfo:

@@ -890,7 +890,7 @@ class DeviceState(object):
                 bounds[0][1] = view['bounds'][1]
                 bounds[1][0] = view['bounds'][2]
                 bounds[1][1] = view['bounds'][3]
-                width = bounds[0][0] - bounds[1][0]
+                width = bounds[1][0] - bounds[0][0]
                 height = bounds[1][1] - bounds[0][1]
                 view['bounds'] = bounds
                 view['size'] = "%d*%d" % (width, height)

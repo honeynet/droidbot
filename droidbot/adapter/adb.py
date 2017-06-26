@@ -211,6 +211,17 @@ class ADB(object):
         r = self.shell("settings get secure enabled_accessibility_services")
         return r.strip().split(":")
 
+    def disable_accessibility_service(self, service_name):
+        """
+        Disable an accessibility service
+        :param service_name: the service to disable, in <package_name>/<service_name> format
+        :return: 
+        """
+        service_names = self.get_enabled_accessibility_services()
+        if service_name in service_names:
+            service_names.remove(service_name)
+            self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+
     def enable_accessibility_service(self, service_name):
         """
         Enable an accessibility service
@@ -218,8 +229,9 @@ class ADB(object):
         :return: 
         """
         service_names = self.get_enabled_accessibility_services()
-        service_names.append(service_name)
-        self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+        if service_name not in service_names:
+            service_names.append(service_name)
+            self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
 
     def getDisplayDensity(self):
         displayInfo = self.getDisplayInfo()

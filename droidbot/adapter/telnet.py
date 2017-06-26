@@ -21,17 +21,17 @@ class TelnetConsole(object):
         :return:
         """
         self.logger = logging.getLogger('TelnetConsole')
+
+        self.device = device
         self.host = "localhost"
         self.port = 5554
 
         if device.serial and device.serial.startswith("emulator-"):
-            device.type = 1
             self.host = "localhost"
             self.port = int(device.serial[9:])
         else:
             raise TelnetException()
 
-        self.device = device
         self.console = None
         self.__lock__ = threading.Lock()
         from telnetlib import Telnet

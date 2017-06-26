@@ -44,11 +44,20 @@ class Minicap(object):
 
     def setup(self):
         device = self.device
+
+        minicap_files = device.get_adb().shell("ls %s" % self.remote_minicap_path).split()
+        if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
+            self.logger.info("Minicap already installed")
+            return
+
         if device is not None:
             # install minicap
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
-            device.get_adb().shell("mkdir %s 2> /dev/null || true" % self.remote_minicap_path)
+            try:
+                device.get_adb().shell("mkdir %s 2" % self.remote_minicap_path)
+            except Exception:
+                pass
             abi = device.get_adb().get_property('ro.product.cpu.abi')
             sdk = device.get_sdk_version()
             if sdk >= 16:
@@ -61,7 +70,14 @@ class Minicap(object):
                              remote_dir=self.remote_minicap_path)
             self.logger.info("Minicap installed.")
 
+    def teardown(self):
+        try:
+            self.device.get_adb().shell("rm -r %s" % self.remote_minicap_path)
+        except Exception:
+            pass
+
     def connect(self):
+        self.setup()
         device = self.device
         display = device.get_display_info(refresh=True)
         if 'width' not in display or 'height' not in display or 'orientation' not in display:
@@ -83,8 +99,8 @@ class Minicap(object):
                                                 stdin=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
                                                 stdout=subprocess.PIPE)
-        # Wait 3 seconds for minicap starting
-        time.sleep(3)
+        # Wait 2 seconds for minicap starting
+        time.sleep(2)
         self.logger.info("Minicap started.")
 
         try:
@@ -178,7 +194,7 @@ class Minicap(object):
             self.logger.warning("Frame body does not start with JPG header")
         self.last_screen = frameBody
         self.last_screen_time = datetime.now()
-        print "Got an image at %s" % self.last_screen_time
+        # print "Got an image at %s" % self.last_screen_time
 
     def check_connectivity(self):
         """
@@ -215,7 +231,6 @@ class Minicap(object):
 if __name__ == "__main__":
     minicap = Minicap()
     try:
-        minicap.setup()
         minicap.connect()
     except:
         minicap.disconnect()

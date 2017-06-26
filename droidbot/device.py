@@ -37,50 +37,41 @@ class Device(object):
 
         self.serial = device_serial
         self.is_emulator = is_emulator
+        self.output_dir = output_dir
+        if output_dir is not None:
+            if not os.path.isdir(output_dir):
+                os.mkdir(output_dir)
+        self.use_hierarchy_viewer = use_hierarchy_viewer
+        self.grant_perm = grant_perm
+        self.telnet_auth_token = telnet_auth_token
+
+        # Connections
         self.adb = None
         self.telnet = None
         self.view_client = None
+        self.droidbot_app = None
+        self.minicap = None
+
+        self.adb_enabled = True
+        self.telnet_enabled = False
+        self.view_client_enabled = False
+        self.droidbot_app_enabled = True
+        self.minicap_enabled = True
+
+        # if self.is_emulator:
+        #     self.telnet_enabled = True
+
         self.settings = {}
         self.display_info = None
         self.sdk_version = None
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
-        self.telnet_auth_token = telnet_auth_token
 
-        self.output_dir = output_dir
-        if output_dir is not None:
-            if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
-
-        self.use_hierarchy_viewer = use_hierarchy_viewer
-        self.grant_perm = grant_perm
-
-        if self.is_emulator:
-            self.adb_enabled = True
-            self.telnet_enabled = True
-            self.view_client_enabled = True
-        else:
-            self.adb_enabled = True
-            self.telnet_enabled = False
-            self.view_client_enabled = True
+        self.logcat = None
+        self.getevent = None
 
         self.is_connected = False
-
-        self.get_sdk_version()
-        self.get_release_version()
-        self.get_ro_secure()
-        self.get_ro_debuggable()
-        self.get_display_info()
-        self.logcat = self.redirect_logcat(self.output_dir)
-        self.getevent = self.redirect_input_events(self.output_dir)
-        from state_monitor import StateMonitor
-        self.state_monitor = StateMonitor(device=self)
-        self.state_monitor.start()
-        self.unlock()
-        # assert self.display_info is not None
-        # self.check_connectivity()
-        # print self.is_emulator, self.host, self.port
 
     def redirect_logcat(self, output_dir=None):
         if output_dir is None:
@@ -99,8 +90,8 @@ class Device(object):
         getevent_file = open("%s/getevent.txt" % output_dir, "w")
         import subprocess
         getevent = subprocess.Popen(["adb", "-s", self.serial, "shell", "getevent", "-lt"],
-                                  stdin=subprocess.PIPE,
-                                  stdout=getevent_file)
+                                    stdin=subprocess.PIPE,
+                                    stdout=getevent_file)
         return getevent
 
     def check_connectivity(self):
@@ -130,6 +121,19 @@ class Device(object):
             else:
                 self.logger.warning("view_client is not connected")
                 result = False
+
+            if self.minicap_enabled and self.minicap and self.minicap.check_connectivity():
+                self.logger.info("minicap is connected")
+            else:
+                self.logger.warning("minicap is not connected")
+                result = False
+
+            if self.droidbot_app_enabled and self.droidbot_app and self.droidbot_app.check_connectivity():
+                self.logger.info("droidbot_app is connected")
+            else:
+                self.logger.warning("droidbot_app is not connected")
+                result = False
+
             return result
         except:
             return False
@@ -167,7 +171,26 @@ class Device(object):
         if self.view_client_enabled:
             self.get_view_client()
 
+        if self.droidbot_app_enabled:
+            self.get_droidbot_app().connect()
+
+        if self.minicap_enabled:
+            self.get_minicap().connect()
+
         time.sleep(3)
+
+        self.get_sdk_version()
+        self.get_release_version()
+        self.get_ro_secure()
+        self.get_ro_debuggable()
+        self.get_display_info()
+        self.logcat = self.redirect_logcat(self.output_dir)
+        self.getevent = self.redirect_input_events(self.output_dir)
+        from state_monitor import StateMonitor
+        self.state_monitor = StateMonitor(device=self)
+        self.state_monitor.start()
+        self.unlock()
+
         self.is_connected = True
 
     def disconnect(self):
@@ -186,6 +209,10 @@ class Device(object):
             self.logcat.terminate()
         if self.getevent:
             self.getevent.terminate()
+        if self.droidbot_app:
+            self.droidbot_app.disconnect()
+        if self.minicap:
+            self.minicap.disconnect()
         self.state_monitor.stop()
 
         if self.output_dir is not None:
@@ -225,6 +252,26 @@ class Device(object):
             from adapter.viewclient import ViewClient
             self.view_client = ViewClient(self, forceviewserveruse=self.use_hierarchy_viewer)
         return self.view_client
+
+    def get_minicap(self):
+        """
+        get minicap connection
+        :return: 
+        """
+        if self.minicap_enabled and self.minicap is None:
+            from adapter.minicap import Minicap
+            self.minicap = Minicap(self)
+        return self.minicap
+
+    def get_droidbot_app(self):
+        """
+        get droidbot app connection
+        :return: 
+        """
+        if self.droidbot_app_enabled and self.droidbot_app is None:
+            from adapter.droidbotApp import DroidBotAppConn
+            self.droidbot_app = DroidBotAppConn(self)
+        return self.droidbot_app
 
     def is_foreground(self, app):
         """
@@ -267,7 +314,7 @@ class Device(object):
 
     def get_ro_debuggable(self):
         if self.ro_debuggable is None:
-            self.ro_debuggable = self.get_adb().get_release_version()
+            self.ro_debuggable = self.get_adb().get_ro_debuggable()
         return self.ro_debuggable
 
     def get_display_info(self, refresh=True):
@@ -328,8 +375,8 @@ class Device(object):
         h2l = range(0, 11)
         h2l.reverse()
         sensor_xyz = [(-float(v * 10) + 1, float(v) + 9.8, float(v * 2) + 0.5) for v in [1, -1, 1, -1, 1, -1, 0]]
-        for (x,y,z) in sensor_xyz:
-            telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x,y,z))
+        for (x, y, z) in sensor_xyz:
+            telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x, y, z))
 
     def add_env(self, env):
         """
@@ -699,13 +746,21 @@ class Device(object):
 
         from datetime import datetime
         tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-
-        remote_image_path = "/sdcard/screen_%s.png" % tag
         local_image_dir = os.path.join(self.output_dir, "temp")
         if not os.path.exists(local_image_dir):
             os.mkdir(local_image_dir)
-        local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
 
+        if self.get_minicap() is not None:
+            last_screen = self.get_minicap().last_screen
+            if last_screen is not None:
+                local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
+                f = open(local_image_path, 'w')
+                f.write(last_screen)
+                f.close()
+                return local_image_path
+
+        local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
+        remote_image_path = "/sdcard/screen_%s.png" % tag
         self.get_adb().shell("screencap -p %s" % remote_image_path)
         self.pull_file(remote_image_path, local_image_path)
         self.get_adb().shell("rm %s" % remote_image_path)
@@ -758,7 +813,12 @@ class Device(object):
     def key_press(self, key_code):
         self.get_adb().press(key_code)
 
-    def dump_views(self, focused_window=True):
+    def dump_views(self):
+        if self.get_droidbot_app() is not None:
+            views = self.get_droidbot_app().get_views()
+            if views is not None:
+                return views
+
         return self.get_view_client().dump()
 
 
@@ -767,7 +827,8 @@ class DeviceState(object):
     the state of the current device
     """
 
-    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None, screenshot_path=None):
+    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None,
+                 screenshot_path=None):
         self.device = device
         self.view_client_views = view_client_views
         self.foreground_activity = foreground_activity
@@ -795,31 +856,46 @@ class DeviceState(object):
     @staticmethod
     def views2list(view_client_views):
         views = []
-        view2id_map = {}
-        id2view_map = {}
-        temp_id = 0
-        for view in view_client_views:
-            view2id_map[view] = temp_id
-            id2view_map[temp_id] = view
-            temp_id += 1
+        if len(view_client_views) == 0:
+            return views
 
         from adapter.viewclient import View
-        for view in view_client_views:
-            if isinstance(view, View):
+        if isinstance(view_client_views[0], View):
+            view2id_map = {}
+            id2view_map = {}
+            temp_id = 0
+            for view in view_client_views:
+                view2id_map[view] = temp_id
+                id2view_map[temp_id] = view
+                temp_id += 1
+
+            for view in view_client_views:
                 view_dict = {}
-                view_dict['class'] = view.getClass() #None is possible value
-                view_dict['text'] = view.getText() #None is possible value
-                view_dict['resource_id'] = view.getId() #None is possible value
+                view_dict['class'] = view.getClass()  # None is possible value
+                view_dict['text'] = view.getText()  # None is possible value
+                view_dict['resource_id'] = view.getId()  # None is possible value
                 view_dict['temp_id'] = view2id_map.get(view)
-                view_dict['parent'] = view2id_map.get(view.getParent()) #None is possible value
+                view_dict['parent'] = view2id_map.get(view.getParent())  # None is possible value
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
                 view_dict['enabled'] = view.isEnabled()
                 view_dict['focused'] = view.isFocused()
                 view_dict['bounds'] = view.getBounds()
                 view_dict['size'] = "%d*%d" % (view.getWidth(), view.getHeight())
                 view_dict['view_str'] = DeviceState.get_view_str(view_dict)
-
                 views.append(view_dict)
+        elif isinstance(view_client_views[0], dict):
+            for view in view_client_views:
+                bounds = [[-1, -1], [-1, -1]]
+                bounds[0][0] = view['bounds'][0]
+                bounds[0][1] = view['bounds'][1]
+                bounds[1][0] = view['bounds'][2]
+                bounds[1][1] = view['bounds'][3]
+                width = bounds[0][0] - bounds[1][0]
+                height = bounds[1][1] - bounds[0][1]
+                view['bounds'] = bounds
+                view['size'] = "%d*%d" % (width, height)
+                view['view_str'] = DeviceState.get_view_str(view)
+                views.append(view)
         return views
 
     def get_state_str(self):

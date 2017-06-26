@@ -16,7 +16,6 @@ from droidbox_scripts.droidbox import DroidBox
 class DroidBot(object):
     """
     The main class of droidbot
-    A robot which interact with Android automatically
     """
     # this is a single instance class
     instance = None
@@ -73,6 +72,8 @@ class DroidBot(object):
         self.enabled = True
 
         try:
+            self.device.connect()
+
             if with_droidbox:
                 self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
 

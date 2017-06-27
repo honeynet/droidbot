@@ -1,6 +1,5 @@
 import logging
 import os
-import subprocess
 import hashlib
 from intent import Intent
 
@@ -31,6 +30,7 @@ class App(object):
         self.main_activity = self.androguard.a.get_main_activity()
         self.possible_broadcasts = self.get_possible_broadcasts()
         self.permissions = self.androguard.a.get_permissions()
+        self.activities = self.get_activities()
 
     def get_androguard_analysis(self):
         """
@@ -58,6 +58,25 @@ class App(object):
         if self.main_activity is None:
             self.main_activity = self.get_androguard_analysis().a.get_main_activity()
         return self.main_activity
+
+    def get_activities(self):
+        """
+        get all activities in the app, with the corresponding attributes
+        :return: a dict, each key is an activity name and the value is a dict of attributes
+        """
+        if self.activities is None:
+            self.activities = {}
+            manifest = self.get_androguard_analysis().a.get_AndroidManifest()
+            for activity_dom in manifest.getElementsByTagName("activity"):
+                activity_name = None
+                activity_attrs = {}
+                for key in activity_dom.attributes.keys():
+                    attr = activity_dom.attributes.get(key)
+                    activity_attrs[key] = attr.value
+                    if key == "android:name":
+                        activity_name = attr.value
+                self.activities[activity_name] = activity_attrs
+        return self.activities
 
     def get_permissions(self):
         """

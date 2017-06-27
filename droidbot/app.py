@@ -78,6 +78,24 @@ class App(object):
                 self.activities[activity_name] = activity_attrs
         return self.activities
 
+    def get_activity_launch_mode(self, activity):
+        """
+        get launch mode of an activity
+        :param activity: the name of the activity
+        :return: 
+        """
+        activities = self.get_activities()
+        if activities is None:
+            return None
+        if activity in activities:
+            attributes = activities[activity]
+            if 'android:launchMode' in attributes:
+                return attributes['android:launchMode']
+            else:
+                return "standard"
+        else:
+            return None
+
     def get_permissions(self):
         """
         get package name of current app

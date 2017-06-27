@@ -600,6 +600,46 @@ class Device(object):
             return m.group(1) + "/" + m.group(2)
         return None
 
+    def get_task_activities(self):
+        """
+        Get current tasks and corresponding activities.
+        :return: a dict with three attributes: task_to_activities, current_task, and top_activity.
+        task_to_activities is a dict mapping a task id to a list of activities, from top to down.
+        current_task is the id of the active task.
+        top_activity is the name of the top activity
+        """
+        lines = self.get_adb().shell("dumpsys activity activities").splitlines()
+
+        result = {}
+        task_to_activities = {}
+
+        activity_line_re = re.compile('\* Hist #\d+: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
+        focused_activity_line_re = re.compile('mFocusedActivity: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Task id #"):
+                task_id = line[9:]
+                task_to_activities[task_id] = []
+            elif line.startswith("* Hist #"):
+                m = activity_line_re.match(line)
+                if m:
+                    activity = m.group(1)
+                    task_id = m.group(2)
+                    if task_id not in task_to_activities:
+                        task_to_activities[task_id] = []
+                    task_to_activities[task_id].append(activity)
+            elif line.startswith("mFocusedActivity: "):
+                m = focused_activity_line_re.match(line)
+                if m:
+                    activity = m.group(1)
+                    task_id = m.group(2)
+                    result['current_task'] = task_id
+                    result['top_activity'] = activity
+
+        result['task_to_activities'] = task_to_activities
+        return result
+
     def get_service_names(self):
         """
         get current running services

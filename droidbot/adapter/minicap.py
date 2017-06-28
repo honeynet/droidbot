@@ -2,8 +2,8 @@ import logging
 import socket
 import subprocess
 import time
-
 from datetime import datetime
+from adapter import Adapter
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
 
@@ -15,7 +15,7 @@ class MinicapException(Exception):
     pass
 
 
-class Minicap(object):
+class Minicap(Adapter):
     """
     a connection with droidbot app.
     """
@@ -42,7 +42,7 @@ class Minicap(object):
             from droidbot.device import Device
             self.device = Device()
 
-    def setup(self):
+    def set_up(self):
         device = self.device
 
         try:
@@ -73,14 +73,14 @@ class Minicap(object):
                              remote_dir=self.remote_minicap_path)
             self.logger.info("Minicap installed.")
 
-    def teardown(self):
+    def tear_down(self):
         try:
             self.device.get_adb().shell("rm -r %s" % self.remote_minicap_path)
         except Exception:
             pass
 
     def connect(self):
-        self.setup()
+        self.set_up()
         device = self.device
         display = device.get_display_info(refresh=True)
         if 'width' not in display or 'height' not in display or 'orientation' not in display:
@@ -232,7 +232,7 @@ class Minicap(object):
             print e.message
 
         if not self.device.dont_tear_down:
-            self.teardown()
+            self.tear_down()
 
 if __name__ == "__main__":
     minicap = Minicap()

@@ -53,12 +53,18 @@ class Device(object):
         self.view_client = None
         self.droidbot_app = None
         self.minicap = None
+        self.logcat = None
+        self.getevent = None
+        self.process_monitor = None
 
         self.adb_enabled = True
         self.telnet_enabled = False
         self.view_client_enabled = False
         self.droidbot_app_enabled = True
         self.minicap_enabled = True
+        self.logcat_enabled = True
+        self.getevent = True
+        self.process_monitor = True
 
         # if self.is_emulator:
         #     self.telnet_enabled = True
@@ -69,10 +75,6 @@ class Device(object):
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
-
-        self.logcat = None
-        self.getevent = None
-        self.process_monitor = None
 
         self.is_connected = False
 
@@ -192,7 +194,7 @@ class Device(object):
         self.getevent = self.redirect_input_events(self.output_dir)
         from adapter.process_monitor import ProcessMonitor
         self.process_monitor = ProcessMonitor(device=self)
-        self.process_monitor.start()
+        self.process_monitor.connect()
         self.unlock()
 
         self.is_connected = True
@@ -218,7 +220,7 @@ class Device(object):
         if self.minicap:
             self.minicap.disconnect()
         if self.process_monitor:
-            self.process_monitor.stop()
+            self.process_monitor.disconnect()
 
         if self.output_dir is not None:
             temp_dir = os.path.join(self.output_dir, "temp")

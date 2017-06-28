@@ -2,6 +2,7 @@
 import subprocess
 import logging
 import re
+from adapter import Adapter
 
 
 class ADBException(Exception):
@@ -11,7 +12,7 @@ class ADBException(Exception):
     pass
 
 
-class ADB(object):
+class ADB(Adapter):
     """
     interface of ADB
     send adb commands via this, see:

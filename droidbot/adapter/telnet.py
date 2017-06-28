@@ -1,5 +1,6 @@
 import logging
 import threading
+from adapter import Adapter
 
 
 class TelnetException(Exception):
@@ -9,7 +10,7 @@ class TelnetException(Exception):
     pass
 
 
-class TelnetConsole(object):
+class TelnetConsole(Adapter):
     """
     interface of telnet console, see:
     http://developer.android.com/tools/devices/emulator.html

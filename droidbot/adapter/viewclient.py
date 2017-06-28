@@ -9,6 +9,7 @@ import time
 import types
 import xml.parsers.expat
 from adb import ADB
+from adapter import Adapter
 from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
 
 VIEW_SERVER_HOST = 'localhost'
@@ -977,8 +978,8 @@ class UiScrollable(UiCollection):
     def setViewClient(self, vc):
         self.vc = vc
 
-# from com.dtmilano.android import viewclient
-class ViewClient:
+
+class ViewClient(Adapter):
     def __init__(self, device, forceviewserveruse=False,
                  localport=VIEW_SERVER_PORT, remoteport=VIEW_SERVER_PORT,
                  ignoreuiautomatorkilled=False, compresseddump=True):

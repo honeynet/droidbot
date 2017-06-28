@@ -1,7 +1,8 @@
 import threading
+from adapter import Adapter
 
 
-class ProcessMonitor(object):
+class ProcessMonitor(Adapter):
     """
     This class is responsible for monitoring the state of process on the device
     """
@@ -38,7 +39,7 @@ class ProcessMonitor(object):
         """
         self.listeners.remove(state_listener)
 
-    def start(self):
+    def connect(self):
         """
         start the monitor in a another thread.
         From now on, the on_state_updated method in listeners will be continuously called
@@ -49,8 +50,11 @@ class ProcessMonitor(object):
         gps_thread.start()
         return True
 
-    def stop(self):
+    def disconnect(self):
         self.enabled = False
+
+    def check_connectivity(self):
+        return self.enabled
 
     def maintain_process_mapping(self):
         """

@@ -854,7 +854,7 @@ class AppEventManager(object):
         event_array = []
         for event in self.events:
             event_array.append(event.to_dict())
-        json.dump(event_array, event_log_file)
+        json.dump(event_array, event_log_file, indent=2)
         event_log_file.close()
         self.logger.debug("Event log saved to droidbot_event.json")
         if self.event_factory is not None:

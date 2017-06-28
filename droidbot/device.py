@@ -928,18 +928,22 @@ class DeviceState(object):
                 view_dict['view_str'] = DeviceState.get_view_str(view_dict)
                 views.append(view_dict)
         elif isinstance(view_client_views[0], dict):
-            for view in view_client_views:
+            for view_dict in view_client_views:
                 bounds = [[-1, -1], [-1, -1]]
-                bounds[0][0] = view['bounds'][0]
-                bounds[0][1] = view['bounds'][1]
-                bounds[1][0] = view['bounds'][2]
-                bounds[1][1] = view['bounds'][3]
+                bounds[0][0] = view_dict['bounds'][0]
+                bounds[0][1] = view_dict['bounds'][1]
+                bounds[1][0] = view_dict['bounds'][2]
+                bounds[1][1] = view_dict['bounds'][3]
                 width = bounds[1][0] - bounds[0][0]
                 height = bounds[1][1] - bounds[0][1]
-                view['size'] = "%d*%d" % (width, height)
-                view['bounds'] = bounds
-                view['view_str'] = DeviceState.get_view_str(view)
-                views.append(view)
+                view_dict['size'] = "%d*%d" % (width, height)
+                view_dict['bounds'] = bounds
+                resource_id = view_dict['resource_id']
+                if resource_id is not None and ":" in resource_id:
+                    resource_id = resource_id[(resource_id.find(":") + 1):]
+                    view_dict['resource_id'] = resource_id
+                view_dict['view_str'] = DeviceState.get_view_str(view_dict)
+                views.append(view_dict)
         return views
 
     def get_state_str(self):

@@ -17,7 +17,7 @@ class MinicapException(Exception):
 
 class Minicap(Adapter):
     """
-    a connection with droidbot app.
+    a connection with target device through minicap.
     """
     def __init__(self, device=None):
         """

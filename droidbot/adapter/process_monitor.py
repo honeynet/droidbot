@@ -1,16 +1,9 @@
-# This file consists of the classes for monitoring states of app running on device
-# App state can be:
-#     1. UI state, i.e. the layout of current view
-#     2. intent state, i.e. a list of intents the app can receive
-#     3. process state, i.e. pid-uid-package_name mapping
-__author__ = 'liyc'
 import threading
 
 
-class StateMonitor(object):
+class ProcessMonitor(object):
     """
-    This class is responsible for monitoring the states of device and app
-    Once there is a state change, notify the state listeners
+    This class is responsible for monitoring the state of process on the device
     """
 
     def __init__(self, device=None, app=None):
@@ -52,8 +45,7 @@ class StateMonitor(object):
         :return:
         """
         self.enabled = True
-        gps_thread = threading.Thread(
-            target=self.maintain_process_mapping)
+        gps_thread = threading.Thread(target=self.maintain_process_mapping)
         gps_thread.start()
         return True
 

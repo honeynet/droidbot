@@ -31,16 +31,20 @@ Please keep in mind that all data received/sent,
 read/written are shown in hexadecimal since the handled data can contain binary data.
 """
 
-import json, time, signal, os, sys
-import zipfile
+import hashlib
+import json
+import os
+import signal
 import subprocess
+import sys
 import threading
-
+import time
+import zipfile
+from subprocess import call, PIPE, Popen
 from threading import Thread
 from xml.dom import minidom
-from subprocess import call, PIPE, Popen
+
 from utils import AXMLPrinter
-import hashlib
 
 tags = {0x1: "TAINT_LOCATION", 0x2: "TAINT_CONTACTS", 0x4: "TAINT_MIC", 0x8: "TAINT_PHONE_NUMBER",
         0x10: "TAINT_LOCATION_GPS", 0x20: "TAINT_LOCATION_NET", 0x40: "TAINT_LOCATION_LAST", 0x80: "TAINT_CAMERA",
@@ -211,8 +215,8 @@ class DroidBox(object):
         self.lastScreenshot = 0
         first_log_time = None
 
-        from droidbot.state_monitor import StateMonitor
-        state_monitor = StateMonitor()
+        from droidbot.adapter.process_monitor import ProcessMonitor
+        state_monitor = ProcessMonitor()
         state_monitor.start()
 
         while self.enabled:

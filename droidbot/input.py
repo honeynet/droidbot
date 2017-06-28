@@ -1,8 +1,3 @@
-# This file is responsible for generating events to interact with app at runtime
-# The events includes:
-#     1. UI events. click, touch, etc
-#     2, intent events. broadcast events of App installed, new SMS, etc.
-# The intention of these events is to exploit more mal-behaviours of app as soon as possible
 import json
 import logging
 import os
@@ -12,7 +7,7 @@ import time
 import utils
 from threading import Timer
 from intent import Intent
-from state import DeviceState
+from device import DeviceState
 
 POLICY_NONE = "none"
 POLICY_STATE_RECORDER = "state_recorder"
@@ -21,7 +16,6 @@ POLICY_RANDOM = "random"
 POLICY_BFS = "bfs"
 POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
-# POLICY_FILE = "file"
 
 DEFAULT_POLICY = POLICY_DFS
 DEFAULT_EVENT_INTERVAL = 1
@@ -33,124 +27,7 @@ START_RETRY_THRESHOLD = 20
 POSSIBLE_KEYS = [
     "BACK",
     "MENU",
-    "HOME",
-    "VOLUME_UP"
-    "VOLUME_DOWN"
-]
-
-POSSIBLE_ACTIONS = [
-    "android.intent.action.AIRPLANE_MODE_CHANGED",
-    "android.intent.action.ALL_APPS",
-    "android.intent.action.ANSWER",
-    "android.intent.action.APPLICATION_RESTRICTIONS_CHANGED",
-    "android.intent.action.APP_ERROR",
-    "android.intent.action.ASSIST",
-    "android.intent.action.ATTACH_DATA",
-    "android.intent.action.BATTERY_CHANGED",
-    "android.intent.action.BATTERY_LOW",
-    "android.intent.action.BATTERY_OKAY",
-    "android.intent.action.BOOT_COMPLETED",
-    "android.intent.action.BUG_REPORT",
-    "android.intent.action.CALL",
-    "android.intent.action.CALL_BUTTON",
-    "android.intent.action.CAMERA_BUTTON",
-    "android.intent.action.CHOOSER",
-    "android.intent.action.CLOSE_SYSTEM_DIALOGS",
-    "android.intent.action.CONFIGURATION_CHANGED",
-    "android.intent.action.CREATE_DOCUMENT",
-    "android.intent.action.CREATE_SHORTCUT",
-    "android.intent.action.DATE_CHANGED",
-    "android.intent.action.DEFAULT",
-    "android.intent.action.DELETE",
-    "android.intent.action.DEVICE_STORAGE_LOW",
-    "android.intent.action.DEVICE_STORAGE_OK",
-    "android.intent.action.DIAL",
-    "android.intent.action.DOCK_EVENT",
-    "android.intent.action.DREAMING_STARTED",
-    "android.intent.action.DREAMING_STOPPED",
-    "android.intent.action.EDIT",
-    "android.intent.action.EXTERNAL_APPLICATIONS_AVAILABLE",
-    "android.intent.action.EXTERNAL_APPLICATIONS_UNAVAILABLE",
-    "android.intent.action.FACTORY_TEST",
-    "android.intent.action.GET_CONTENT",
-    "android.intent.action.GET_RESTRICTION_ENTRIES",
-    "android.intent.action.GTALK_SERVICE_CONNECTED",
-    "android.intent.action.GTALK_SERVICE_DISCONNECTED",
-    "android.intent.action.HEADSET_PLUG",
-    "android.intent.action.INPUT_METHOD_CHANGED",
-    "android.intent.action.INSERT",
-    "android.intent.action.INSERT_OR_EDIT",
-    "android.intent.action.INSTALL_PACKAGE",
-    "android.intent.action.LOCALE_CHANGED",
-    "android.intent.action.MAIN",
-    "android.intent.action.MANAGED_PROFILE_ADDED",
-    "android.intent.action.MANAGED_PROFILE_REMOVED",
-    "android.intent.action.MANAGE_NETWORK_USAGE",
-    "android.intent.action.MANAGE_PACKAGE_STORAGE",
-    "android.intent.action.MEDIA_BAD_REMOVAL",
-    "android.intent.action.MEDIA_BUTTON",
-    "android.intent.action.MEDIA_CHECKING",
-    "android.intent.action.MEDIA_EJECT",
-    "android.intent.action.MEDIA_MOUNTED",
-    "android.intent.action.MEDIA_NOFS",
-    "android.intent.action.MEDIA_REMOVED",
-    "android.intent.action.MEDIA_SCANNER_FINISHED",
-    "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
-    "android.intent.action.MEDIA_SCANNER_STARTED",
-    "android.intent.action.MEDIA_SHARED",
-    "android.intent.action.MEDIA_UNMOUNTABLE",
-    "android.intent.action.MEDIA_UNMOUNTED",
-    "android.intent.action.MY_PACKAGE_REPLACED",
-    "android.intent.action.NEW_OUTGOING_CALL",
-    "android.intent.action.OPEN_DOCUMENT",
-    "android.intent.action.OPEN_DOCUMENT_TREE",
-    "android.intent.action.PACKAGE_ADDED",
-    "android.intent.action.PACKAGE_CHANGED",
-    "android.intent.action.PACKAGE_DATA_CLEARED",
-    "android.intent.action.PACKAGE_FIRST_LAUNCH",
-    "android.intent.action.PACKAGE_FULLY_REMOVED",
-    "android.intent.action.PACKAGE_INSTALL",
-    "android.intent.action.PACKAGE_NEEDS_VERIFICATION",
-    "android.intent.action.PACKAGE_REMOVED",
-    "android.intent.action.PACKAGE_REPLACED",
-    "android.intent.action.PACKAGE_RESTARTED",
-    "android.intent.action.PACKAGE_VERIFIED",
-    "android.intent.action.PASTE",
-    "android.intent.action.PICK",
-    "android.intent.action.PICK_ACTIVITY",
-    "android.intent.action.POWER_CONNECTED",
-    "android.intent.action.POWER_DISCONNECTED",
-    "android.intent.action.POWER_USAGE_SUMMARY",
-    "android.intent.action.PROVIDER_CHANGED",
-    "android.intent.action.QUICK_CLOCK",
-    "android.intent.action.REBOOT",
-    "android.intent.action.RUN",
-    "android.intent.action.SCREEN_OFF",
-    "android.intent.action.SCREEN_ON",
-    "android.intent.action.SEARCH",
-    "android.intent.action.SEARCH_LONG_PRESS",
-    "android.intent.action.SEND",
-    "android.intent.action.SENDTO",
-    "android.intent.action.SEND_MULTIPLE",
-    "android.intent.action.SET_WALLPAPER",
-    "android.intent.action.SHUTDOWN",
-    "android.intent.action.SYNC",
-    "android.intent.action.SYSTEM_TUTORIAL",
-    "android.intent.action.TIMEZONE_CHANGED",
-    "android.intent.action.TIME_CHANGED",
-    "android.intent.action.TIME_TICK",
-    "android.intent.action.UID_REMOVED",
-    "android.intent.action.UMS_CONNECTED",
-    "android.intent.action.UMS_DISCONNECTED",
-    "android.intent.action.UNINSTALL_PACKAGE",
-    "android.intent.action.USER_BACKGROUND",
-    "android.intent.action.USER_FOREGROUND",
-    "android.intent.action.USER_INITIALIZE",
-    "android.intent.action.USER_PRESENT",
-    "android.intent.action.VIEW",
-    "android.intent.action.VOICE_COMMAND",
-    "android.intent.action.WALLPAPER_CHANGED",
-    "android.intent.action.WEB_SEARCH"
+    "HOME"
 ]
 
 KEY_KeyEvent = "key"
@@ -165,7 +42,7 @@ KEY_EmulatorEvent = "emulator"
 KEY_ContextEvent = "context"
 
 
-class UnknownEventException(Exception):
+class UnknownInputException(Exception):
     pass
 
 
@@ -386,13 +263,14 @@ class TouchEvent(UIEvent):
     a touch on screen
     """
 
-    def __init__(self, x, y, event_dict=None):
+    def __init__(self, x=None, y=None, view=None, event_dict=None):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
         self.event_type = KEY_TouchEvent
         self.x = x
         self.y = y
+        self.view = view
 
     @staticmethod
     def get_random_instance(device, app):
@@ -619,7 +497,7 @@ class EmulatorEvent(AppEvent):
                 device.receive_sms()
 
         else:
-            raise UnknownEventException
+            raise UnknownInputException
         return True
 
     @staticmethod
@@ -1074,7 +952,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from state import DeviceState
+        from device import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None

@@ -79,8 +79,8 @@ class DroidBox(object):
         if self.droidbot:
             self.state_monitor = self.droidbot.device.state_monitor
         else:
-            from droidbot.state_monitor import StateMonitor
-            self.state_monitor = StateMonitor()
+            from droidbot.adapter.process_monitor import ProcessMonitor
+            self.state_monitor = ProcessMonitor()
 
         if output_dir:
             self.output_dir = output_dir

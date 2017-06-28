@@ -272,7 +272,7 @@ class Device(object):
         :return: 
         """
         if self.droidbot_app_enabled and self.droidbot_app is None:
-            from adapter.droidbotApp import DroidBotAppConn
+            from adapter.droidbot_app import DroidBotAppConn
             self.droidbot_app = DroidBotAppConn(self)
         return self.droidbot_app
 
@@ -646,7 +646,7 @@ class Device(object):
         services = []
         dat = self.get_adb().shell('dumpsys activity services')
         lines = dat.splitlines()
-        service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}')
+        service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)}')
 
         for line in lines:
             m = service_re.search(line)

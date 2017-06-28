@@ -57,7 +57,8 @@ class DroidBotAppConn(object):
             # accessibility not enabled, need to enable manually
             self.logger.warning("Please enable accessibility for DroidBot app manually.")
         # device.start_app(droidbot_app)
-        time.sleep(1)
+        while ACCESSIBILITY_SERVICE not in device.get_service_names():
+            time.sleep(1)
 
     def teardown(self):
         self.device.uninstall_app(DROIDBOT_APP_PACKAGE)

@@ -30,7 +30,8 @@ class App(object):
         self.main_activity = self.androguard.a.get_main_activity()
         self.possible_broadcasts = self.get_possible_broadcasts()
         self.permissions = self.androguard.a.get_permissions()
-        self.activities = self.get_activities()
+        self.activities = None
+        self.get_activities()
 
     def get_androguard_analysis(self):
         """

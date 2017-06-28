@@ -882,11 +882,11 @@ class DeviceState(object):
         self.tag = tag
         self.screenshot_path = screenshot_path
         self.views = self.views2list(view_client_views)
-        self.view_str = self.get_state_str()
+        self.state_str = self.get_state_str()
 
     def to_dict(self):
         state = {'tag': self.tag,
-                 'view_str': self.view_str,
+                 'state_str': self.state_str,
                  'foreground_activity': self.foreground_activity,
                  'background_services': self.background_services,
                  'views': self.views}
@@ -922,6 +922,7 @@ class DeviceState(object):
                 view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
                 view_dict['enabled'] = view.isEnabled()
                 view_dict['focused'] = view.isFocused()
+                view_dict['clickable'] = view.isClickable()
                 view_dict['bounds'] = view.getBounds()
                 view_dict['size'] = "%d*%d" % (view.getWidth(), view.getHeight())
                 view_dict['view_str'] = DeviceState.get_view_str(view_dict)
@@ -935,21 +936,20 @@ class DeviceState(object):
                 bounds[1][1] = view['bounds'][3]
                 width = bounds[1][0] - bounds[0][0]
                 height = bounds[1][1] - bounds[0][1]
-                view['bounds'] = bounds
                 view['size'] = "%d*%d" % (width, height)
+                view['bounds'] = bounds
                 view['view_str'] = DeviceState.get_view_str(view)
                 views.append(view)
         return views
 
     def get_state_str(self):
-        state_str = "activity:%s," % self.foreground_activity
-        view_ids = set()
+        view_strs = set()
         for view in self.views:
-            view_id = view['resource_id']
-            if view_id is None or len(view_id) == 0:
-                continue
-            view_ids.add(view_id)
-        state_str += ",".join(sorted(view_ids))
+            if 'view_str' in view:
+                view_str = view['view_str']
+                if view_str is not None and len(view_str) > 0:
+                    view_strs.add(view_str)
+        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_strs)))
         return state_str
 
     def save2dir(self, output_dir=None):
@@ -962,7 +962,7 @@ class DeviceState(object):
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             state_json_file_path = "%s/state_%s.json" % (output_dir, self.tag)
-            screenshot_output_path = "%s/screenshot_%s.png" % (output_dir, self.tag)
+            screenshot_output_path = "%s/screen_%s.png" % (output_dir, self.tag)
             state_json_file = open(state_json_file_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
@@ -973,22 +973,13 @@ class DeviceState(object):
         except Exception as e:
             self.device.logger.warning("saving state to dir failed: " + e.message)
 
-    def is_different_from(self, other_state):
+    def is_different_from(self, another_state):
         """
         compare this state with another
-        @param other_state: DeviceState
+        @param another_state: DeviceState
         @return: boolean, true if this state is different from other_state
         """
-        if self.foreground_activity != other_state.foreground_activity:
-            return True
-        # ignore background service differences
-        # if self.background_services != other_state.background_services:
-        #     return True
-        this_views = {view['view_str'] for view in self.views}
-        other_views = {view['view_str'] for view in other_state.views}
-        if this_views != other_views:
-            return True
-        return False
+        return self.state_str != another_state.state_str
 
     @staticmethod
     def get_view_str(view_dict):
@@ -997,12 +988,19 @@ class DeviceState(object):
         @param view_dict: dict, element of list device.get_current_state().views
         @return:
         """
-        view_str = "class:%s,resource_id:%s,size:%s,text:%s" % \
-                   (view_dict['class'] if 'class' in view_dict else 'null',
-                    view_dict['resource_id'] if 'resource_id' in view_dict else 'null',
-                    view_dict['size'] if 'size' in view_dict else 'null',
-                    view_dict['text'] if 'text' in view_dict else 'null')
+        view_str = "[class]%s[resource_id]%s[text]%s[%s,%s,%s,%s]" % \
+                   (view_dict['class'] if 'class' in view_dict else 'None',
+                    view_dict['resource_id'] if 'resource_id' in view_dict else 'None',
+                    view_dict['text'] if 'text' in view_dict else 'None',
+                    DeviceState.__key_if_true(view_dict, 'enabled'),
+                    DeviceState.__key_if_true(view_dict, 'checked'),
+                    DeviceState.__key_if_true(view_dict, 'selected'),
+                    DeviceState.__key_if_true(view_dict, 'focused'))
         return view_str
+
+    @staticmethod
+    def __key_if_true(view_dict, key):
+        return key if (key in view_dict and view_dict[key]) else ""
 
     @staticmethod
     def get_view_center(view_dict):

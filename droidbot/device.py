@@ -28,6 +28,7 @@ class Device(object):
         """
         self.logger = logging.getLogger("Device")
 
+        # options
         if device_serial is None:
             import utils
             all_devices = utils.get_available_devices()
@@ -35,7 +36,6 @@ class Device(object):
                 self.logger.warning("ERROR: No device connected.")
                 sys.exit(-1)
             device_serial = all_devices[0]
-
         self.serial = device_serial
         self.is_emulator = is_emulator
         self.output_dir = output_dir
@@ -47,7 +47,7 @@ class Device(object):
         self.telnet_auth_token = telnet_auth_token
         self.dont_tear_down = dont_tear_down
 
-        # Connections
+        # adapters
         self.adb = None
         self.telnet = None
         self.view_client = None
@@ -57,18 +57,20 @@ class Device(object):
         self.getevent = None
         self.process_monitor = None
 
+        # adapters enabled or not
         self.adb_enabled = True
         self.telnet_enabled = False
         self.view_client_enabled = False
         self.droidbot_app_enabled = True
         self.minicap_enabled = True
         self.logcat_enabled = True
-        self.getevent = True
-        self.process_monitor = True
+        self.getevent_enabled = True
+        self.process_monitor_enabled = True
 
         # if self.is_emulator:
         #     self.telnet_enabled = True
 
+        # basic device information
         self.settings = {}
         self.display_info = None
         self.sdk_version = None

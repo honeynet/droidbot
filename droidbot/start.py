@@ -48,8 +48,6 @@ def parse_args():
                                  # app_event.POLICY_FILE,
                                  # app_event.POLICY_MANUAL
                              ))
-    parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
-                        help="Explore the UI without view shuffling.")
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="count", default=app_event.DEFAULT_EVENT_COUNT,
@@ -63,8 +61,10 @@ def parse_args():
                                        "Default: %d" % app_event.DEFAULT_TIMEOUT)
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="Run in quiet mode (dump warning messages only).")
-    parser.add_argument("-install_app", action="store_true", dest="install_app",
-                        help="Don't uninstall the app after testing.")
+    parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
+                        help="Explore the UI without view shuffling.")
+    parser.add_argument("-dont_tear_down", action="store_true", dest="dont_tear_down",
+                        help="Don't tear down test environment (eg. uninstall apps).")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
@@ -101,7 +101,7 @@ def main():
                         event_duration=opts.timeout,
                         event_count=opts.count,
                         quiet=opts.quiet,
-                        install_app=opts.install_app,
+                        dont_tear_down=opts.dont_tear_down,
                         with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method,

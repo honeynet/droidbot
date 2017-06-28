@@ -18,7 +18,8 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
+                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None,
+                 dont_tear_down=False):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -44,6 +45,7 @@ class Device(object):
         self.use_hierarchy_viewer = use_hierarchy_viewer
         self.grant_perm = grant_perm
         self.telnet_auth_token = telnet_auth_token
+        self.dont_tear_down = dont_tear_down
 
         # Connections
         self.adb = None
@@ -188,7 +190,7 @@ class Device(object):
 
         self.logcat = self.redirect_logcat(self.output_dir)
         self.getevent = self.redirect_input_events(self.output_dir)
-        from droidbot.adapter.process_monitor import ProcessMonitor
+        from adapter.process_monitor import ProcessMonitor
         self.process_monitor = ProcessMonitor(device=self)
         self.process_monitor.start()
         self.unlock()

@@ -31,7 +31,7 @@ class DroidBot(object):
                  event_count=None,
                  event_interval=None,
                  event_duration=None,
-                 install_app=False,
+                 dont_tear_down=False,
                  quiet=False,
                  with_droidbox=False,
                  use_hierarchy_viewer=False,
@@ -51,7 +51,7 @@ class DroidBot(object):
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
 
-        self.install_app = install_app
+        self.dont_tear_down = dont_tear_down
 
         # if device_serial is None:
         #     # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
@@ -62,7 +62,8 @@ class DroidBot(object):
         self.device = Device(device_serial=device_serial,
                              output_dir=self.output_dir,
                              use_hierarchy_viewer=use_hierarchy_viewer,
-                             grant_perm=grant_perm)
+                             grant_perm=grant_perm,
+                             dont_tear_down=dont_tear_down)
         self.app = App(app_path, output_dir=self.output_dir)
 
         self.droidbox = None
@@ -135,7 +136,7 @@ class DroidBot(object):
             self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
-        if not self.install_app:
+        if not self.dont_tear_down:
             self.device.uninstall_app(self.app)
         self.device.disconnect()
         self.enabled = False

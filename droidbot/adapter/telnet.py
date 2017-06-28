@@ -15,7 +15,7 @@ class TelnetConsole(Adapter):
     interface of telnet console, see:
     http://developer.android.com/tools/devices/emulator.html
     """
-    def __init__(self, device):
+    def __init__(self, device=None, auth_token=None):
         """
         initiate a emulator console via telnet
         :param device: instance of Device
@@ -23,26 +23,25 @@ class TelnetConsole(Adapter):
         """
         self.logger = logging.getLogger('TelnetConsole')
 
+        if device is None:
+            from droidbot.device import Device
+            device = Device()
         self.device = device
-        self.host = "localhost"
-        self.port = 5554
-
-        if device.serial and device.serial.startswith("emulator-"):
-            self.host = "localhost"
-            self.port = int(device.serial[9:])
-        else:
-            raise TelnetException()
-
         self.console = None
         self.__lock__ = threading.Lock()
-        from telnetlib import Telnet
-        self.console = Telnet(self.host, self.port)
-        if device.telnet_auth_token is not None:
-            self.run_cmd("auth %s" % device.telnet_auth_token)
-        if self.check_connectivity():
-            self.logger.debug("telnet successfully initiated, the addr is (%s:%d)" % (self.host, self.port))
-        else:
-            raise TelnetException()
+
+    def connect(self):
+        if self.device.serial and self.device.serial.startswith("emulator-"):
+            host = "localhost"
+            port = int(self.device.serial[9:])
+            from telnetlib import Telnet
+            self.console = Telnet(host, port)
+            if self.device.telnet_auth_token is not None:
+                self.run_cmd("auth %s" % self.device.telnet_auth_token)
+            if self.check_connectivity():
+                self.logger.info("telnet successfully initiated, the port is %d" % port)
+                return
+        raise TelnetException()
 
     def run_cmd(self, args):
         """
@@ -50,13 +49,16 @@ class TelnetConsole(Adapter):
         :param args: arguments to be executed in telnet console
         :return:
         """
+        if self.console is None:
+            self.logger.warning("telnet is not connected!")
+            return None
         if isinstance(args, list):
             cmd_line = " ".join(args)
         elif isinstance(args, str):
             cmd_line = args
         else:
             self.logger.warning("unsupported command format:" + args)
-            return
+            return None
 
         self.logger.debug('command:')
         self.logger.debug(cmd_line)
@@ -72,15 +74,17 @@ class TelnetConsole(Adapter):
 
         self.logger.debug('return:')
         self.logger.debug(r)
-        return r.endswith('OK')
+        return r
 
     def check_connectivity(self):
         """
         check if console is connected
         :return: True for connected
         """
+        if self.console is None:
+            return False
         try:
-            self.run_cmd("help")
+            r = self.run_cmd("help")
         except:
             return False
         return True

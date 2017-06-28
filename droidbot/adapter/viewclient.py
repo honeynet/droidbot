@@ -57,7 +57,6 @@ class View:
         """
         Copy constructor
         """
-
         return cls(view.map, view.version, view.windowId)
 
     def __init__(self, attributes, device, useUiAutomator, windowId=None):
@@ -197,7 +196,6 @@ class View:
         Gets the L{View} class
         @return:  the L{View} class or C{None} if not defined
         """
-
         try:
             return self.attributes['class']
         except:
@@ -209,7 +207,6 @@ class View:
         @return: the L{View} C{Id} or C{None} if not defined
         @see: L{getUniqueId()}
         """
-
         try:
             return self.attributes['resource-id']
         except:
@@ -224,7 +221,6 @@ class View:
         """
         Gets the content description.
         """
-
         try:
             return self.attributes['content-desc']
         except:
@@ -234,7 +230,6 @@ class View:
         """
         Gets the tag.
         """
-
         try:
             return self.attributes[self.tagProperty]
         except:
@@ -244,7 +239,6 @@ class View:
         """
         Gets the parent.
         """
-
         return self.parent
 
     def getChildren(self):
@@ -258,7 +252,6 @@ class View:
         Gets the text attribute.
         @return: the text attribute or C{None} if not defined
         """
-
         try:
             return self.attributes[self.textProperty]
         except Exception:
@@ -302,7 +295,6 @@ class View:
         """
         Gets the View visibility
         """
-
         try:
             if self.attributes[GET_VISIBILITY_PROPERTY] == 'VISIBLE':
                 return VISIBLE
@@ -319,7 +311,6 @@ class View:
         """
         Gets the View X coordinate
         """
-
         return self.getXY()[0]
 
     def __getX(self):
@@ -1048,6 +1039,19 @@ class ViewClient(Adapter):
         else:
             self.useViewServer()
 
+    def connect(self):
+        if not self.useUiAutomator:
+            self.useViewServer()
+
+    def disconnect(self):
+        if not self.useUiAutomator:
+            try:
+                import subprocess
+                forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.localPort)
+                subprocess.check_call(forward_remove_cmd.split())
+            except Exception as e:
+                print e.message
+
     def useViewServer(self):
         self.useUiAutomator = False
         if self.device.get_sdk_version() <= 10:
@@ -1198,9 +1202,6 @@ You should force ViewServer back-end.""")
                 self.setViews(received, hex(window)[2:])
 
         return self.views
-
-    def disconnect(self):
-        self.logger.info("disconnected")
 
     @staticmethod
     def setAlarm(timeout):

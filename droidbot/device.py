@@ -54,7 +54,7 @@ class Device(object):
         self.droidbot_app = None
         self.minicap = None
         self.logcat = None
-        self.getevent = None
+        self.user_input_monitor = None
         self.process_monitor = None
 
         # adapters enabled or not
@@ -64,7 +64,7 @@ class Device(object):
         self.droidbot_app_enabled = True
         self.minicap_enabled = True
         self.logcat_enabled = True
-        self.getevent_enabled = True
+        self.user_input_monitor_enabled = True
         self.process_monitor_enabled = True
 
         # if self.is_emulator:
@@ -104,7 +104,6 @@ class Device(object):
     def check_connectivity(self):
         """
         check if the device is available
-        :return: True for available, False for not
         """
         try:
             # try connecting to device
@@ -823,7 +822,7 @@ class Device(object):
             background_services = self.get_service_names()
             screenshot_path = self.take_screenshot()
             self.logger.info("finish getting current device state...")
-            from state import DeviceState
+            from device_state import DeviceState
             current_state = DeviceState(self,
                                         view_client_views=view_client_views,
                                         foreground_activity=foreground_activity,

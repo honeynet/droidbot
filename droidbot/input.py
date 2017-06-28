@@ -674,7 +674,7 @@ class AppEventManager(object):
         if script_path is not None:
             f = open(script_path, 'r')
             script_dict = json.load(f)
-            from droidbot_script import DroidBotScript
+            from input_script import DroidBotScript
             self.script = DroidBotScript(script_dict)
 
         self.event_factory = self.get_event_factory(device, app)
@@ -952,7 +952,7 @@ class StateBasedEventFactory(EventFactory):
         @param state: instance of DeviceState
         @return: event: instance of AppEvent
         """
-        from state import DeviceState
+        from device_state import DeviceState
         if isinstance(state, DeviceState):
             event = self.gen_event_based_on_state(state)
             assert isinstance(event, AppEvent) or event is None

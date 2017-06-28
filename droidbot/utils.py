@@ -63,6 +63,17 @@ class Timeout:
         signal.alarm(0)
 
 
+def weighted_choice(choices):
+    import random
+    total = sum(choices[c] for c in choices.keys())
+    r = random.uniform(0, total)
+    upto = 0
+    for c in choices.keys():
+        if upto + choices[c] > r:
+            return c
+        upto += choices[c]
+
+
 class TimeoutException(Exception):
     """
     Exception if connection has been waiting too long

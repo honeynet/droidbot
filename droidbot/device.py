@@ -327,7 +327,7 @@ class Device(object):
         :return: dict, display_info
         """
         if self.display_info is None or refresh:
-            self.display_info = self.get_adb().getDisplayInfo()
+            self.display_info = self.get_adb().get_display_info()
         return self.display_info
 
     def get_width(self, refresh=False):
@@ -657,7 +657,7 @@ class Device(object):
         return services
 
     def get_focused_window_name(self):
-        return self.get_adb().getFocusedWindowName()
+        return self.get_adb().get_focused_window_name()
 
     def get_package_path(self, package_name):
         """
@@ -838,7 +838,7 @@ class Device(object):
         @param duration: duration in ms
         This workaround was suggested by U{HaMi<http://stackoverflow.com/users/2571957/hami>}
         """
-        self.get_adb().longTouch(x, y, duration)
+        self.get_adb().long_touch(x, y, duration)
 
     def view_drag(self, (x0, y0), (x1, y1), duration):
         """

@@ -136,58 +136,57 @@ class ADB(object):
 
     # The following methods are originally from androidviewclient project.
     # https://github.com/dtmilano/AndroidViewClient.
-    def getDisplayInfo(self):
+    def get_display_info(self):
         """
         Gets C{mDefaultViewport} and then C{deviceWidth} and C{deviceHeight} values from dumpsys.
         This is a method to obtain display dimensions and density
         """
-        displayInfo = {}
-        logicalDisplayRE = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
-                                      " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
+        display_info = {}
+        logical_display_re = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
+                                        " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
         dumpsys_display_result = self.shell("dumpsys display")
         if dumpsys_display_result is not None:
             for line in dumpsys_display_result.splitlines():
-                m = logicalDisplayRE.search(line, 0)
+                m = logical_display_re.search(line, 0)
                 if m:
                     for prop in ['width', 'height', 'orientation']:
-                        displayInfo[prop] = int(m.group(prop))
+                        display_info[prop] = int(m.group(prop))
 
-        if 'width' not in displayInfo or 'height' not in displayInfo:
-            physicalDisplayRE = re.compile('Physical size: (?P<width>\d+)x(?P<height>\d+)')
-            m = physicalDisplayRE.search(self.shell('wm size'))
+        if 'width' not in display_info or 'height' not in display_info:
+            physical_display_re = re.compile('Physical size: (?P<width>\d+)x(?P<height>\d+)')
+            m = physical_display_re.search(self.shell('wm size'))
             if m:
                 for prop in ['width', 'height']:
-                    displayInfo[prop] = int(m.group(prop))
+                    display_info[prop] = int(m.group(prop))
 
-        if 'width' not in displayInfo or 'height' not in displayInfo:
+        if 'width' not in display_info or 'height' not in display_info:
             # This could also be mSystem or mOverscanScreen
-            phyDispRE = re.compile('\s*mUnrestrictedScreen=\((?P<x>\d+),(?P<y>\d+)\) (?P<width>\d+)x(?P<height>\d+)')
+            display_re = re.compile('\s*mUnrestrictedScreen=\((?P<x>\d+),(?P<y>\d+)\) (?P<width>\d+)x(?P<height>\d+)')
             # This is known to work on older versions (i.e. API 10) where mrestrictedScreen is not available
-            dispWHRE = re.compile('\s*DisplayWidth=(?P<width>\d+) *DisplayHeight=(?P<height>\d+)')
+            display_width_height_re = re.compile('\s*DisplayWidth=(?P<width>\d+) *DisplayHeight=(?P<height>\d+)')
             for line in self.shell('dumpsys window').splitlines():
-                m = phyDispRE.search(line, 0)
+                m = display_re.search(line, 0)
                 if not m:
-                    m = dispWHRE.search(line, 0)
+                    m = display_width_height_re.search(line, 0)
                 if m:
                     for prop in ['width', 'height']:
-                        displayInfo[prop] = int(m.group(prop))
+                        display_info[prop] = int(m.group(prop))
 
-        if 'orientation' not in displayInfo:
-            surfaceOrientationRE = re.compile("SurfaceOrientation:\s+(\d+)")
+        if 'orientation' not in display_info:
+            surface_orientation_re = re.compile("SurfaceOrientation:\s+(\d+)")
             output = self.shell("dumpsys input")
-            m = surfaceOrientationRE.search(output)
+            m = surface_orientation_re.search(output)
             if m:
-                displayInfo['orientation'] = int(m.group(1))
+                display_info['orientation'] = int(m.group(1))
 
-        BASE_DPI = 160.0
         density = None
-        floatRE = re.compile(r"[-+]?\d*\.\d+|\d+")
+        float_re = re.compile(r"[-+]?\d*\.\d+|\d+")
         d = self.get_property('ro.sf.lcd_density')
-        if floatRE.match(d):
+        if float_re.match(d):
             density = float(d)
         else:
             d = self.get_property('qemu.sf.lcd_density')
-            if floatRE.match(d):
+            if float_re.match(d):
                 density = float(d)
             else:
                 physicalDensityRE = re.compile('Physical density: (?P<density>[\d.]+)', re.MULTILINE)
@@ -195,13 +194,13 @@ class ADB(object):
                 if m:
                     density = float(m.group('density'))
         if density is not None:
-            displayInfo['density'] = density
+            display_info['density'] = density
 
-        displayInfoKeys = {'width', 'height', 'orientation', 'density'}
-        if not displayInfoKeys.issuperset(displayInfo):
-            self.logger.warning("getDisplayInfo failed to get: %s" % displayInfoKeys)
+        display_info_keys = {'width', 'height', 'orientation', 'density'}
+        if not display_info_keys.issuperset(display_info):
+            self.logger.warning("getDisplayInfo failed to get: %s" % display_info_keys)
 
-        return displayInfo
+        return display_info
 
     def get_enabled_accessibility_services(self):
         """
@@ -247,51 +246,51 @@ class ADB(object):
                 package_to_path[m.group('package')] = m.group('apk_path')
         return package_to_path
 
-    def getDisplayDensity(self):
-        displayInfo = self.getDisplayInfo()
-        if 'density' in displayInfo:
-            return displayInfo['density']
+    def get_display_density(self):
+        display_info = self.get_display_info()
+        if 'density' in display_info:
+            return display_info['density']
         else:
             return -1.0
 
-    def getFocusedWindow(self):
+    def get_focused_window(self):
         """
         Get the focused window
         """
-        for window in self.getWindows().values():
+        for window in self.get_windows().values():
             if window.focused:
                 return window
         return None
 
-    def getFocusedWindowName(self):
+    def get_focused_window_name(self):
         """
         Get the focused window name
         """
-        window = self.getFocusedWindow()
+        window = self.get_focused_window()
         if window:
             return window.activity
         return None
 
-    def getWindows(self):
+    def get_windows(self):
         from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
         windows = {}
         dww = self.shell("dumpsys window windows")
         lines = dww.splitlines()
         widRE = re.compile("^ *Window #%s Window\{%s (u\d+ )?%s?.*}:" %
                            (_nd("num"), _nh("winId"), _ns("activity", greedy=True)))
-        currentFocusRE = re.compile("^  mCurrentFocus=Window\{%s .*" % _nh("winId"))
+        currentFocusRE = re.compile("^ {2}mCurrentFocus=Window\{%s .*" % _nh("winId"))
         viewVisibilityRE = re.compile(" mViewVisibility=0x%s " % _nh("visibility"))
         # This is for 4.0.4 API-15
-        containingFrameRE = re.compile("^   *mContainingFrame=\[%s,%s\]\[%s,%s\] mParentFrame=\[%s,%s\]\[%s,%s\]" %
+        containingFrameRE = re.compile("^ {3}mContainingFrame=\[%s,%s\]\[%s,%s\] mParentFrame=\[%s,%s\]\[%s,%s\]" %
                                        (_nd("cx"), _nd("cy"), _nd("cw"), _nd("ch"), _nd("px"), _nd("py"), _nd("pw"),
                                         _nd("ph")))
-        contentFrameRE = re.compile("^   *mContentFrame=\[%s,%s\]\[%s,%s\] mVisibleFrame=\[%s,%s\]\[%s,%s\]" %
+        contentFrameRE = re.compile("^ {3}mContentFrame=\[%s,%s\]\[%s,%s\] mVisibleFrame=\[%s,%s\]\[%s,%s\]" %
                                     (_nd("x"), _nd("y"), _nd("w"), _nd("h"), _nd("vx"), _nd("vy"), _nd("vx1"),
                                      _nd("vy1")))
         # This is for 4.1 API-16
-        framesRE = re.compile("^   *Frames: containing=\[%s,%s\]\[%s,%s\] parent=\[%s,%s\]\[%s,%s\]" %
+        framesRE = re.compile("^ {3}Frames: containing=\[%s,%s\]\[%s,%s\] parent=\[%s,%s\]\[%s,%s\]" %
                               (_nd("cx"), _nd("cy"), _nd("cw"), _nd("ch"), _nd("px"), _nd("py"), _nd("pw"), _nd("ph")))
-        contentRE = re.compile("^     *content=\[%s,%s\]\[%s,%s\] visible=\[%s,%s\]\[%s,%s\]" %
+        contentRE = re.compile("^ {5}content=\[%s,%s\]\[%s,%s\] visible=\[%s,%s\]\[%s,%s\]" %
                                (_nd("x"), _nd("y"), _nd("w"), _nd("h"), _nd("vx"), _nd("vy"), _nd("vx1"), _nd("vy1")))
         policyVisibilityRE = re.compile("mPolicyVisibility=%s " % _ns("policyVisibility", greedy=True))
 
@@ -311,7 +310,7 @@ class ADB(object):
                 py = 0
                 visibility = -1
                 policyVisibility = 0x0
-                sdkVer = self.device.get_sdk_version()
+                sdkVer = self.get_sdk_version()
 
                 for l2 in range(l + 1, len(lines)):
                     m = widRE.search(lines[l2])
@@ -371,20 +370,20 @@ class ADB(object):
 
         return windows
 
-    def __transformPointByOrientation(self, (x, y), orientationOrig, orientationDest):
-        if orientationOrig != orientationDest:
-            if orientationDest == 1:
+    def __transform_point_by_orientation(self, (x, y), orientation_orig, orientation_dest):
+        if orientation_orig != orientation_dest:
+            if orientation_dest == 1:
                 _x = x
-                x = self.getDisplayInfo()['width'] - y
+                x = self.get_display_info()['width'] - y
                 y = _x
-            elif orientationDest == 3:
+            elif orientation_dest == 3:
                 _x = x
                 x = y
-                y = self.getDisplayInfo()['height'] - _x
+                y = self.get_display_info()['height'] - _x
         return x, y
 
-    def getOrientation(self):
-        displayInfo = self.getDisplayInfo()
+    def get_orientation(self):
+        displayInfo = self.get_display_info()
         if 'orientation' in displayInfo:
             return displayInfo['orientation']
         else:
@@ -405,13 +404,11 @@ class ADB(object):
 
     def touch(self, x, y, orientation=-1, eventType=DOWN_AND_UP):
         if orientation == -1:
-            orientation = self.getOrientation()
+            orientation = self.get_orientation()
         self.shell("input tap %d %d" %
-                   self.__transformPointByOrientation((x, y),
-                                                      orientation,
-                                                      self.getOrientation()))
+                   self.__transform_point_by_orientation((x, y), orientation, self.get_orientation()))
 
-    def longTouch(self, x, y, duration=2000, orientation=-1):
+    def long_touch(self, x, y, duration=2000, orientation=-1):
         """
         Long touches at (x, y)
         @param duration: duration in ms
@@ -420,21 +417,20 @@ class ADB(object):
         """
         self.drag((x, y), (x, y), duration, orientation)
 
-    def drag(self, (x0, y0), (x1, y1), duration, steps=1, orientation=-1):
+    def drag(self, (x0, y0), (x1, y1), duration, orientation=-1):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in PX
-        @param (x1, y1): ending point in PX
+        @param (x0, y0): starting point in pixel
+        @param (x1, y1): ending point in pixel
         @param duration: duration of the event in ms
-        @param steps: number of steps (currently ignored by @{input swipe})
         @param orientation: the orientation (-1: undefined)
         """
         if orientation == -1:
-            orientation = self.getOrientation()
-        (x0, y0) = self.__transformPointByOrientation((x0, y0), orientation, self.getOrientation())
-        (x1, y1) = self.__transformPointByOrientation((x1, y1), orientation, self.getOrientation())
+            orientation = self.get_orientation()
+        (x0, y0) = self.__transform_point_by_orientation((x0, y0), orientation, self.get_orientation())
+        (x1, y1) = self.__transform_point_by_orientation((x1, y1), orientation, self.get_orientation())
 
-        version = self.device.get_sdk_version()
+        version = self.get_sdk_version()
         if version <= 15:
             self.logger.error("drag: API <= 15 not supported (version=%d)" % version)
         elif version <= 17:
@@ -448,6 +444,5 @@ class ADB(object):
             encoded = escaped.replace(" ", "%s")
         else:
             encoded = str(text)
-        # FIXME find out which characters can be dangerous,
-        # for exmaple not worst idea to escape "
+        # TODO find out which characters can be dangerous, and handle non-English characters
         self.shell("input text %s" % encoded)

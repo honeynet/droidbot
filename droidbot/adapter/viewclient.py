@@ -650,7 +650,7 @@ class View:
         @param duration: duration in ms
         """
         (x, y) = self.getCenter()
-        self.adb.longTouch(x, y, duration)
+        self.adb.long_touch(x, y, duration)
 
     def allPossibleNamesWithColon(self, name):
         l = []
@@ -921,7 +921,7 @@ class UiScrollable(UiCollection):
         else:
             s = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h / 2)
             e = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h / 2)
-        self.adb.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
+        self.adb.drag(s, e, self.duration, self.steps, self.adb.get_orientation())
 
     def flingForward(self):
         if self.vertical:
@@ -930,7 +930,7 @@ class UiScrollable(UiCollection):
         else:
             s = (self.x + self.w * (1.0 - self.swipeDeadZonePercentage), self.y + self.h / 2)
             e = (self.x + self.w * self.swipeDeadZonePercentage, self.y + self.h / 2)
-        self.adb.drag(s, e, self.duration, self.steps, self.adb.getOrientation())
+        self.adb.drag(s, e, self.duration, self.steps, self.adb.get_orientation())
 
     def flingToBeginning(self, maxSwipes=10):
         if self.vertical:

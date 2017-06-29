@@ -595,7 +595,7 @@ class Device(object):
         if self.grant_perm:
             install_cmd.append("-g")
         install_cmd.append(app.app_path)
-        subprocess.check_call(install_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
 
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
@@ -619,8 +619,8 @@ class Device(object):
             package_name = app.get_package_name()
         else:
             package_name = app
-        subprocess.check_call(["adb", "-s", self.serial, "uninstall", package_name],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if package_name in self.adb.get_installed_apps():
+            subprocess.check_call(["adb", "-s", self.serial, "uninstall", package_name], stdout=subprocess.PIPE)
 
     def get_app_pid(self, app):
         package = app.get_package_name()

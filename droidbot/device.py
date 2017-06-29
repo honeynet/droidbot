@@ -92,12 +92,12 @@ class Device(object):
             adapter_name = adapter.__class__.__name__
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
-                print "Adapter %s is not enabled." % adapter_name
+                print "[CONNECTIVITY] %s is not enabled." % adapter_name
             else:
                 if adapter.check_connectivity():
-                    print "Adapter %s is enabled and connected." % adapter_name
+                    print "[CONNECTIVITY] %s is enabled and connected." % adapter_name
                 else:
-                    print "Adapter %s is enabled but not connected." % adapter_name
+                    print "[CONNECTIVITY] %s is enabled but not connected." % adapter_name
 
     def wait_for_device(self):
         """

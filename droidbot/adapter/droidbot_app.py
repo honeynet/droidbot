@@ -42,7 +42,7 @@ class DroidBotAppConn(Adapter):
     def set_up(self):
         device = self.device
         if DROIDBOT_APP_PACKAGE in device.adb.get_installed_apps():
-            self.logger.info("DroidBot app is already installed.")
+            self.logger.debug("DroidBot app was already installed.")
         else:
             # install droidbot app
             import pkg_resources
@@ -50,7 +50,7 @@ class DroidBotAppConn(Adapter):
             droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
             droidbot_app = App(app_path=droidbot_app_path)
             device.install_app(droidbot_app)
-            self.logger.info("DroidBot app installed.")
+            self.logger.debug("DroidBot app installed.")
 
         device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
@@ -65,7 +65,6 @@ class DroidBotAppConn(Adapter):
         self.device.uninstall_app(DROIDBOT_APP_PACKAGE)
 
     def connect(self):
-        self.set_up()
         try:
             # forward host port to remote port
             serial_cmd = "" if self.device is None else "-s " + self.device.serial

@@ -48,7 +48,7 @@ class Minicap(Adapter):
         try:
             minicap_files = device.adb.shell("ls %s 2>/dev/null" % self.remote_minicap_path).split()
             if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
-                self.logger.info("Minicap already installed")
+                self.logger.debug("minicap was already installed.")
                 return
         except:
             pass
@@ -71,7 +71,7 @@ class Minicap(Adapter):
                              remote_dir=self.remote_minicap_path)
             device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
                              remote_dir=self.remote_minicap_path)
-            self.logger.info("Minicap installed.")
+            self.logger.debug("minicap installed.")
 
     def tear_down(self):
         try:
@@ -80,7 +80,6 @@ class Minicap(Adapter):
             pass
 
     def connect(self):
-        self.set_up()
         device = self.device
         display = device.get_display_info(refresh=True)
         if 'width' not in display or 'height' not in display or 'orientation' not in display:
@@ -97,14 +96,14 @@ class Minicap(Adapter):
         size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
         start_minicap_cmd = "adb -s %s shell LD_LIBRARY_PATH=%s %s/minicap -P %s" % \
                             (device.serial, self.remote_minicap_path, self.remote_minicap_path, size_opt)
-        self.logger.info("Starting minicap: " + start_minicap_cmd)
+        self.logger.debug("starting minicap: " + start_minicap_cmd)
         self.minicap_process = subprocess.Popen(start_minicap_cmd.split(),
                                                 stdin=subprocess.PIPE,
                                                 stderr=subprocess.PIPE,
                                                 stdout=subprocess.PIPE)
         # Wait 2 seconds for minicap starting
         time.sleep(2)
-        self.logger.info("Minicap started.")
+        self.logger.debug("minicap started.")
 
         try:
             # forward host port to remote port
@@ -120,7 +119,7 @@ class Minicap(Adapter):
             raise MinicapException()
 
     def listen_messages(self):
-        self.logger.info("Start listening minicap images")
+        self.logger.debug("start listening minicap images ...")
         CHUNK_SIZE = 4096
 
         readBannerBytes = 0
@@ -172,7 +171,7 @@ class Minicap(Adapter):
                     readBannerBytes += 1
                     if readBannerBytes == bannerLength:
                         self.banner = banner
-                        self.logger.info("minicap initialized: %s" % banner)
+                        self.logger.debug("minicap initialized: %s" % banner)
 
                 elif readFrameBytes < 4:
                     frameBodyLength += (chunk[cursor] << (readFrameBytes * 8))

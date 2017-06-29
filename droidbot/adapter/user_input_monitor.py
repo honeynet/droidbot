@@ -27,6 +27,7 @@ class UserInputMonitor(Adapter):
     def connect(self):
         self.process = subprocess.Popen(["adb", "-s", self.device.serial, "shell", "getevent", "-lt"],
                                         stdin=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
                                         stdout=subprocess.PIPE)
         import threading
         listen_thread = threading.Thread(target=self.handle_output)

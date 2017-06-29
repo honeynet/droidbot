@@ -1133,7 +1133,7 @@ class ViewClient(Adapter):
                 self.logger.warning("""ERROR: Some emulator images (i.e. android 4.1.2 API 16 generic_x86) does not include the '[' command.
 While UiAutomator back-end might be supported 'uiautomator' command fails.
 You should force ViewServer back-end.""")
-                self.logger.info("switching to viewserver")
+                self.logger.debug("switching to viewserver")
                 self.useViewServer()
                 return self.dump(window=window, sleep=sleep)
 

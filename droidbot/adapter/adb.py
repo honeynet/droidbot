@@ -93,13 +93,13 @@ class ADB(Adapter):
         connect adb
         :return: 
         """
-        self.logger.info("connected")
+        self.logger.debug("connected")
 
     def disconnect(self):
         """
         disconnect adb
         """
-        self.logger.info("disconnected")
+        self.logger.debug("disconnected")
 
     def get_property(self, property):
         """

@@ -40,7 +40,7 @@ class TelnetConsole(Adapter):
             if self.auth_token is not None:
                 self.run_cmd("auth %s" % self.auth_token)
             if self.check_connectivity():
-                self.logger.info("telnet successfully initiated, the port is %d" % port)
+                self.logger.debug("telnet successfully initiated, the port is %d" % port)
                 return
         raise TelnetException()
 

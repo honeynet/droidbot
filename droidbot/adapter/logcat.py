@@ -27,6 +27,7 @@ class Logcat(Adapter):
         self.device.adb.run_cmd("logcat -c")
         self.process = subprocess.Popen(["adb", "-s", self.device.serial, "logcat", "-v", "threadtime"],
                                         stdin=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
                                         stdout=subprocess.PIPE)
         import threading
         listen_thread = threading.Thread(target=self.handle_output)

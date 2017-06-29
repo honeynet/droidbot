@@ -5,9 +5,6 @@ import subprocess
 import sys
 import time
 
-from app import App
-from intent import Intent
-from adapter.adapter import Adapter
 from adapter.adb import ADB
 from adapter.droidbot_app import DroidBotAppConn
 from adapter.logcat import Logcat
@@ -16,6 +13,8 @@ from adapter.process_monitor import ProcessMonitor
 from adapter.telnet import TelnetConsole
 from adapter.user_input_monitor import UserInputMonitor
 from adapter.viewclient import ViewClient
+from app import App
+from intent import Intent
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -27,8 +26,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None,
-                 dont_tear_down=False):
+                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -52,7 +50,6 @@ class Device(object):
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
         self.grant_perm = grant_perm
-        self.dont_tear_down = dont_tear_down
 
         # basic device information
         self.settings = {}
@@ -84,82 +81,23 @@ class Device(object):
             self.process_monitor: True
         }
 
-        # adapters enabled or not
-        self.adb_enabled = True
-        self.telnet_enabled = False
-        self.view_client_enabled = False
-        self.droidbot_app_enabled = True
-        self.minicap_enabled = True
-        self.logcat_enabled = True
-        self.user_input_monitor_enabled = True
-        self.process_monitor_enabled = True
-
         # if self.is_emulator:
         #     self.telnet_enabled = True
-
-    def redirect_logcat(self, output_dir=None):
-        if output_dir is None:
-            return None
-        logcat_file = open("%s/logcat.txt" % output_dir, "w")
-        import subprocess
-        subprocess.check_call(["adb", "-s", self.serial, "logcat", "-c"])
-        logcat = subprocess.Popen(["adb", "-s", self.serial, "logcat", "-v", "threadtime"],
-                                  stdin=subprocess.PIPE,
-                                  stdout=logcat_file)
-        return logcat
-
-    def redirect_input_events(self, output_dir=None):
-        if output_dir is None:
-            return None
-        getevent_file = open("%s/getevent.txt" % output_dir, "w")
-        import subprocess
-        getevent = subprocess.Popen(["adb", "-s", self.serial, "shell", "getevent", "-lt"],
-                                    stdin=subprocess.PIPE,
-                                    stdout=getevent_file)
-        return getevent
 
     def check_connectivity(self):
         """
         check if the device is available
         """
-        try:
-            # try connecting to device
-            self.logger.info("checking connectivity...")
-            result = True
-
-            if self.adb_enabled and self.adb and self.adb.check_connectivity():
-                self.logger.info("ADB is connected")
+        for adapter in self.adapters:
+            adapter_name = adapter.__class__.__name__
+            adapter_enabled = self.adapters[adapter]
+            if not adapter_enabled:
+                print "Adapter %s is not enabled." % adapter_name
             else:
-                self.logger.warning("ADB is not connected")
-                result = False
-
-            if self.telnet_enabled and self.telnet and self.telnet.check_connectivity():
-                self.logger.info("Telnet is connected")
-            else:
-                self.logger.warning("Telnet is not connected")
-                result = False
-
-            if self.view_client_enabled and self.view_client:
-                self.logger.info("view_client is connected")
-            else:
-                self.logger.warning("view_client is not connected")
-                result = False
-
-            if self.minicap_enabled and self.minicap and self.minicap.check_connectivity():
-                self.logger.info("minicap is connected")
-            else:
-                self.logger.warning("minicap is not connected")
-                result = False
-
-            if self.droidbot_app_enabled and self.droidbot_app and self.droidbot_app.check_connectivity():
-                self.logger.info("droidbot_app is connected")
-            else:
-                self.logger.warning("droidbot_app is not connected")
-                result = False
-
-            return result
-        except:
-            return False
+                if adapter.check_connectivity():
+                    print "Adapter %s is enabled and connected." % adapter_name
+                else:
+                    print "Adapter %s is enabled but not connected." % adapter_name
 
     def wait_for_device(self):
         """
@@ -178,29 +116,29 @@ class Device(object):
         except:
             self.logger.warning("error waiting for device")
 
-    def connect(self):
+    def set_up(self):
         """
-        connect this device
-        :return:
+        Set connections on this device
+        :return: 
         """
         # wait for emulator to start
         self.wait_for_device()
-        if self.adb_enabled:
-            self.adb
+        for adapter in self.adapters:
+            adapter_enabled = self.adapters[adapter]
+            if not adapter_enabled:
+                continue
+            adapter.set_up()
 
-        if self.telnet_enabled:
-            self.telnet
-
-        if self.view_client_enabled:
-            self.view_client
-
-        if self.droidbot_app_enabled:
-            self.droidbot_app.connect()
-
-        if self.minicap_enabled:
-            self.minicap.connect()
-
-        time.sleep(3)
+    def connect(self):
+        """
+        establish connections on this device
+        :return:
+        """
+        for adapter in self.adapters:
+            adapter_enabled = self.adapters[adapter]
+            if not adapter_enabled:
+                continue
+            adapter.connect()
 
         self.get_sdk_version()
         self.get_release_version()
@@ -208,13 +146,8 @@ class Device(object):
         self.get_ro_debuggable()
         self.get_display_info()
 
-        self.logcat = self.redirect_logcat(self.output_dir)
-        self.getevent = self.redirect_input_events(self.output_dir)
-        from adapter.process_monitor import ProcessMonitor
-        self.process_monitor = ProcessMonitor(device=self)
-        self.process_monitor.connect()
         self.unlock()
-
+        self.check_connectivity()
         self.is_connected = True
 
     def disconnect(self):
@@ -223,22 +156,11 @@ class Device(object):
         :return:
         """
         self.is_connected = False
-        if self.adb:
-            self.adb.disconnect()
-        if self.telnet:
-            self.telnet.disconnect()
-        if self.view_client:
-            self.view_client.disconnect()
-        if self.logcat:
-            self.logcat.terminate()
-        if self.getevent:
-            self.getevent.terminate()
-        if self.droidbot_app:
-            self.droidbot_app.disconnect()
-        if self.minicap:
-            self.minicap.disconnect()
-        if self.process_monitor:
-            self.process_monitor.disconnect()
+        for adapter in self.adapters:
+            adapter_enabled = self.adapters[adapter]
+            if not adapter_enabled:
+                continue
+            adapter.disconnect()
 
         if self.output_dir is not None:
             temp_dir = os.path.join(self.output_dir, "temp")
@@ -246,57 +168,12 @@ class Device(object):
                 import shutil
                 shutil.rmtree(temp_dir)
 
-    def get_telnet(self):
-        """
-        get telnet connection of the device
-        note that only emulator have telnet connection
-        """
-        if self.telnet_enabled and self.telnet is None:
-            from adapter.telnet import TelnetConsole
-            try:
-                self.telnet = TelnetConsole(self)
-            except Exception:
-                self.logger.info("Telnet not connected. If you want to enable telnet, please use an emulator.")
-        return self.telnet
-
-    def get_adb(self):
-        """
-        get adb connection of the device
-        """
-        if self.adb_enabled and self.adb is None:
-            from adapter.adb import ADB
-            self.adb = ADB(self)
-        return self.adb
-
-    def get_view_client(self):
-        """
-        get view_client connection of the device
-        :return:
-        """
-        if self.view_client_enabled and self.view_client is None:
-            from adapter.viewclient import ViewClient
-            self.view_client = ViewClient(self, forceviewserveruse=self.use_hierarchy_viewer)
-        return self.view_client
-
-    def get_minicap(self):
-        """
-        get minicap connection
-        :return: 
-        """
-        if self.minicap_enabled and self.minicap is None:
-            from adapter.minicap import Minicap
-            self.minicap = Minicap(self)
-        return self.minicap
-
-    def get_droidbot_app(self):
-        """
-        get droidbot app connection
-        :return: 
-        """
-        if self.droidbot_app_enabled and self.droidbot_app is None:
-            from adapter.droidbot_app import DroidBotAppConn
-            self.droidbot_app = DroidBotAppConn(self)
-        return self.droidbot_app
+    def tear_down(self):
+        for adapter in self.adapters:
+            adapter_enabled = self.adapters[adapter]
+            if not adapter_enabled:
+                continue
+            adapter.tear_down()
 
     def is_foreground(self, app):
         """

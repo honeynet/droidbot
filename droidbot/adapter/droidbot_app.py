@@ -39,7 +39,7 @@ class DroidBotAppConn(Adapter):
 
         self.last_acc_event = None
 
-    def setup(self):
+    def set_up(self):
         device = self.device
         if DROIDBOT_APP_PACKAGE in device.adb.get_installed_apps():
             self.logger.info("DroidBot app is already installed.")
@@ -61,11 +61,11 @@ class DroidBotAppConn(Adapter):
         while ACCESSIBILITY_SERVICE not in device.get_service_names():
             time.sleep(1)
 
-    def teardown(self):
+    def tear_down(self):
         self.device.uninstall_app(DROIDBOT_APP_PACKAGE)
 
     def connect(self):
-        self.setup()
+        self.set_up()
         try:
             # forward host port to remote port
             serial_cmd = "" if self.device is None else "-s " + self.device.serial
@@ -155,8 +155,6 @@ class DroidBotAppConn(Adapter):
             subprocess.check_call(forward_remove_cmd.split())
         except Exception as e:
             print e.message
-        if not self.device.dont_tear_down:
-            self.teardown()
 
     def __view_tree_to_list(self, view_tree, view_list):
         tree_id = len(view_list)

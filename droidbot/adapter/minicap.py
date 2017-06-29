@@ -231,9 +231,6 @@ class Minicap(Adapter):
         except Exception as e:
             print e.message
 
-        if not self.device.dont_tear_down:
-            self.tear_down()
-
 if __name__ == "__main__":
     minicap = Minicap()
     try:

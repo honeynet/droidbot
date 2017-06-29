@@ -27,6 +27,7 @@ class TelnetConsole(Adapter):
             from droidbot.device import Device
             device = Device()
         self.device = device
+        self.auth_token = auth_token
         self.console = None
         self.__lock__ = threading.Lock()
 
@@ -36,8 +37,8 @@ class TelnetConsole(Adapter):
             port = int(self.device.serial[9:])
             from telnetlib import Telnet
             self.console = Telnet(host, port)
-            if self.device.telnet_auth_token is not None:
-                self.run_cmd("auth %s" % self.device.telnet_auth_token)
+            if self.auth_token is not None:
+                self.run_cmd("auth %s" % self.auth_token)
             if self.check_connectivity():
                 self.logger.info("telnet successfully initiated, the port is %d" % port)
                 return

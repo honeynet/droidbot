@@ -62,8 +62,7 @@ class DroidBot(object):
         self.device = Device(device_serial=device_serial,
                              output_dir=self.output_dir,
                              use_hierarchy_viewer=use_hierarchy_viewer,
-                             grant_perm=grant_perm,
-                             dont_tear_down=dont_tear_down)
+                             grant_perm=grant_perm)
         self.app = App(app_path, output_dir=self.output_dir)
 
         self.droidbox = None
@@ -73,6 +72,7 @@ class DroidBot(object):
         self.enabled = True
 
         try:
+            self.device.set_up()
             self.device.connect()
 
             if with_droidbox:
@@ -136,9 +136,10 @@ class DroidBot(object):
             self.event_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
-        if not self.dont_tear_down:
-            self.device.uninstall_app(self.app)
         self.device.disconnect()
+        if not self.dont_tear_down:
+            self.device.tear_down()
+            self.device.uninstall_app(self.app)
         self.enabled = False
 
 

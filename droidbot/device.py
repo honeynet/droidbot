@@ -588,10 +588,10 @@ class Device(object):
         @return:
         """
         assert isinstance(app, App)
-        subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
+        #                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        install_cmd = ["adb", "-s", self.serial, "install"]
+        install_cmd = ["adb", "-s", self.serial, "install", "-r"]
         if self.grant_perm:
             install_cmd.append("-g")
         install_cmd.append(app.app_path)

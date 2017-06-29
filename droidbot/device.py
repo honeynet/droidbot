@@ -258,9 +258,6 @@ class Device(object):
         etc
         :return:
         """
-        assert self.adb is not None
-
-        # unlock screen
         self.adb.unlock()
 
     def shake(self):
@@ -442,7 +439,7 @@ class Device(object):
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
         self.adb.shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
-                             % (db_name, table_name, value, name))
+                       % (db_name, table_name, value, name))
         return True
 
     def send_intent(self, intent):

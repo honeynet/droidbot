@@ -124,6 +124,12 @@ class DroidBot(object):
             else:
                 self.event_manager.start()
         except KeyboardInterrupt:
+            self.logger.info("Keyboard interrupt.")
+            pass
+        except Exception as e:
+            self.logger.warning("Something went wrong: " + e.message)
+            import traceback
+            traceback.print_exc()
             pass
 
         self.stop()

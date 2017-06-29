@@ -46,7 +46,7 @@ class Minicap(Adapter):
         device = self.device
 
         try:
-            minicap_files = device.get_adb().shell("ls %s 2>/dev/null" % self.remote_minicap_path).split()
+            minicap_files = device.adb.shell("ls %s 2>/dev/null" % self.remote_minicap_path).split()
             if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
                 self.logger.info("Minicap already installed")
                 return
@@ -58,10 +58,10 @@ class Minicap(Adapter):
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
             try:
-                device.get_adb().shell("mkdir %s 2>/dev/null" % self.remote_minicap_path)
+                device.adb.shell("mkdir %s 2>/dev/null" % self.remote_minicap_path)
             except Exception:
                 pass
-            abi = device.get_adb().get_property('ro.product.cpu.abi')
+            abi = device.adb.get_property('ro.product.cpu.abi')
             sdk = device.get_sdk_version()
             if sdk >= 16:
                 minicap_bin = "minicap"
@@ -75,7 +75,7 @@ class Minicap(Adapter):
 
     def tear_down(self):
         try:
-            self.device.get_adb().shell("rm -r %s" % self.remote_minicap_path)
+            self.device.adb.shell("rm -r %s" % self.remote_minicap_path)
         except Exception:
             pass
 

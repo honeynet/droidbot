@@ -72,9 +72,8 @@ class View:
         self.logger = logging.getLogger("ViewClient.View")
         self.attributes = attributes
         """ The map that contains the C{attr},C{value} pairs """
-        self.adb = device.get_adb()
+        self.adb = device.adb
         """ adb connection to device """
-        # self.view_client = device.get_view_client()
         # """ viewclient connected to device """
         self.children = []
         """ The children of this View """
@@ -998,7 +997,7 @@ class ViewClient(Adapter):
         if not device:
             raise Exception('Device is not connected')
         self.device = device
-        self.adb = device.get_adb()
+        self.adb = device.adb
 
         self.root = None
         """ The root node """

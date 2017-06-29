@@ -24,7 +24,7 @@ class Logcat(Adapter):
             self.out_file = "%s/logcat.txt" % device.output_dir
 
     def connect(self):
-        self.device.get_adb().run_cmd("logcat -c")
+        self.device.adb.run_cmd("logcat -c")
         self.process = subprocess.Popen(["adb", "-s", self.device.serial, "logcat", "-v", "threadtime"],
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE)

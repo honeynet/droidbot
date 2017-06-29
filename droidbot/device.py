@@ -54,6 +54,15 @@ class Device(object):
         self.grant_perm = grant_perm
         self.dont_tear_down = dont_tear_down
 
+        # basic device information
+        self.settings = {}
+        self.display_info = None
+        self.sdk_version = None
+        self.release_version = None
+        self.ro_debuggable = None
+        self.ro_secure = None
+        self.is_connected = False
+
         # adapters
         self.adb = ADB(device=self)
         self.telnet = TelnetConsole(device=self, auth_token=telnet_auth_token)
@@ -87,16 +96,6 @@ class Device(object):
 
         # if self.is_emulator:
         #     self.telnet_enabled = True
-
-        # basic device information
-        self.settings = {}
-        self.display_info = None
-        self.sdk_version = None
-        self.release_version = None
-        self.ro_debuggable = None
-        self.ro_secure = None
-
-        self.is_connected = False
 
     def redirect_logcat(self, output_dir=None):
         if output_dir is None:
@@ -187,19 +186,19 @@ class Device(object):
         # wait for emulator to start
         self.wait_for_device()
         if self.adb_enabled:
-            self.get_adb()
+            self.adb
 
         if self.telnet_enabled:
-            self.get_telnet()
+            self.telnet
 
         if self.view_client_enabled:
-            self.get_view_client()
+            self.view_client
 
         if self.droidbot_app_enabled:
-            self.get_droidbot_app().connect()
+            self.droidbot_app.connect()
 
         if self.minicap_enabled:
-            self.get_minicap().connect()
+            self.minicap.connect()
 
         time.sleep(3)
 
@@ -322,7 +321,7 @@ class Device(object):
         Get version of current SDK
         """
         if self.sdk_version is None:
-            self.sdk_version = self.get_adb().get_sdk_version()
+            self.sdk_version = self.adb.get_sdk_version()
         return self.sdk_version
 
     def get_release_version(self):
@@ -330,17 +329,17 @@ class Device(object):
         Get version of current SDK
         """
         if self.release_version is None:
-            self.release_version = self.get_adb().get_release_version()
+            self.release_version = self.adb.get_release_version()
         return self.release_version
 
     def get_ro_secure(self):
         if self.ro_secure is None:
-            self.ro_secure = self.get_adb().get_ro_secure()
+            self.ro_secure = self.adb.get_ro_secure()
         return self.ro_secure
 
     def get_ro_debuggable(self):
         if self.ro_debuggable is None:
-            self.ro_debuggable = self.get_adb().get_ro_debuggable()
+            self.ro_debuggable = self.adb.get_ro_debuggable()
         return self.ro_debuggable
 
     def get_display_info(self, refresh=True):
@@ -350,7 +349,7 @@ class Device(object):
         :return: dict, display_info
         """
         if self.display_info is None or refresh:
-            self.display_info = self.get_adb().get_display_info()
+            self.display_info = self.adb.get_display_info()
         return self.display_info
 
     def get_width(self, refresh=False):
@@ -382,17 +381,17 @@ class Device(object):
         etc
         :return:
         """
-        assert self.get_adb() is not None
+        assert self.adb is not None
 
         # unlock screen
-        self.get_adb().unlock()
+        self.adb.unlock()
 
     def shake(self):
         """
         shake the device
         :return: 
         """
-        telnet = self.get_telnet()
+        telnet = self.telnet
         if telnet is None:
             self.logger.warning("Telnet not connected, so can't shake the device.")
         l2h = range(0, 11)
@@ -416,16 +415,16 @@ class Device(object):
         :param contact_data: dict of contact, should have keys like name, phone, email
         :return:
         """
-        assert self.get_adb() is not None
+        assert self.adb is not None
         contact_intent = Intent(prefix="start",
                                 action="android.intent.action.INSERT",
                                 mime_type="vnd.android.cursor.dir/contact",
                                 extra_string=contact_data)
         self.send_intent(intent=contact_intent)
         time.sleep(2)
-        self.get_adb().press("BACK")
+        self.adb.press("BACK")
         time.sleep(2)
-        self.get_adb().press("BACK")
+        self.adb.press("BACK")
         return True
 
     def receive_call(self, phone=DEFAULT_NUM):
@@ -434,8 +433,8 @@ class Device(object):
         :param phone: str, phonenum
         :return:
         """
-        assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("gsm call %s" % phone)
+        assert self.telnet is not None
+        return self.telnet.run_cmd("gsm call %s" % phone)
 
     def cancel_call(self, phone=DEFAULT_NUM):
         """
@@ -443,8 +442,8 @@ class Device(object):
         :param phone: str, phonenum
         :return:
         """
-        assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("gsm cancel %s" % phone)
+        assert self.telnet is not None
+        return self.telnet.run_cmd("gsm cancel %s" % phone)
 
     def accept_call(self, phone=DEFAULT_NUM):
         """
@@ -452,8 +451,8 @@ class Device(object):
         :param phone: str, phonenum
         :return:
         """
-        assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("gsm accept %s" % phone)
+        assert self.telnet is not None
+        return self.telnet.run_cmd("gsm accept %s" % phone)
 
     def call(self, phone=DEFAULT_NUM):
         """
@@ -480,7 +479,7 @@ class Device(object):
                                  extra_boolean={'exit_on_sent': 'true'})
         self.send_intent(intent=send_sms_intent)
         time.sleep(2)
-        self.get_adb().press('66')
+        self.adb.press('66')
         return True
 
     def receive_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
@@ -490,8 +489,8 @@ class Device(object):
         :param content: str, content of sms
         :return:
         """
-        assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("sms send %s '%s'" % (phone, content))
+        assert self.telnet is not None
+        return self.telnet.run_cmd("sms send %s '%s'" % (phone, content))
 
     def set_gps(self, x, y):
         """
@@ -500,8 +499,8 @@ class Device(object):
         :param y: float
         :return:
         """
-        assert self.get_telnet() is not None
-        return self.get_telnet().run_cmd("geo fix %s %s" % (x, y))
+        assert self.telnet is not None
+        return self.telnet.run_cmd("geo fix %s %s" % (x, y))
 
     def set_continuous_gps(self, center_x, center_y, delta_x, delta_y):
         import threading
@@ -534,7 +533,7 @@ class Device(object):
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
         system_settings = {}
-        out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "system"))
+        out = self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "system"))
         out_lines = out.splitlines()
         for line in out_lines:
             segs = line.split('|')
@@ -543,7 +542,7 @@ class Device(object):
             system_settings[segs[1]] = segs[2]
 
         secure_settings = {}
-        out = self.get_adb().shell("sqlite3 %s \"select * from %s\"" % (db_name, "secure"))
+        out = self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "secure"))
         out_lines = out.splitlines()
         for line in out_lines:
             segs = line.split('|')
@@ -565,7 +564,7 @@ class Device(object):
         """
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
-        self.get_adb().shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
+        self.adb.shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
                              % (db_name, table_name, value, name))
         return True
 
@@ -575,13 +574,13 @@ class Device(object):
         :param intent: instance of Intent
         :return:
         """
-        assert self.get_adb() is not None
+        assert self.adb is not None
         assert intent is not None
         if isinstance(intent, Intent):
             cmd = intent.get_cmd()
         else:
             cmd = intent
-        return self.get_adb().shell(cmd)
+        return self.adb.shell(cmd)
 
     def send_event(self, event):
         """
@@ -614,7 +613,7 @@ class Device(object):
         """
         Get current activity
         """
-        data = self.get_adb().shell("dumpsys activity top").splitlines()
+        data = self.adb.shell("dumpsys activity top").splitlines()
         regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
         m = regex.search(data[1])
         if m:
@@ -629,7 +628,7 @@ class Device(object):
         current_task is the id of the active task.
         top_activity is the name of the top activity
         """
-        lines = self.get_adb().shell("dumpsys activity activities").splitlines()
+        lines = self.adb.shell("dumpsys activity activities").splitlines()
 
         result = {}
         task_to_activities = {}
@@ -667,7 +666,7 @@ class Device(object):
         :return: list of services
         """
         services = []
-        dat = self.get_adb().shell('dumpsys activity services')
+        dat = self.adb.shell('dumpsys activity services')
         lines = dat.splitlines()
         service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)}')
 
@@ -680,7 +679,7 @@ class Device(object):
         return services
 
     def get_focused_window_name(self):
-        return self.get_adb().get_focused_window_name()
+        return self.adb.get_focused_window_name()
 
     def get_package_path(self, package_name):
         """
@@ -688,7 +687,7 @@ class Device(object):
         :param package_name:
         :return: package path of app in device
         """
-        dat = self.get_adb().shell('pm path %s' % package_name)
+        dat = self.adb.shell('pm path %s' % package_name)
         package_path_re = re.compile('^package:(.+)$')
         m = package_path_re.match(dat)
         if m:
@@ -704,7 +703,7 @@ class Device(object):
         cmd = 'monkey'
         if package:
             cmd += ' -p %s' % package
-        out = self.get_adb().shell(cmd)
+        out = self.adb.shell(cmd)
         if re.search(r"(Error)|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
             raise RuntimeError(out)
 
@@ -753,7 +752,7 @@ class Device(object):
         package = app.get_package_name()
 
         name2pid = {}
-        ps_out = self.get_adb().shell(["ps", "-t"])
+        ps_out = self.adb.shell(["ps", "-t"])
         ps_out_lines = ps_out.splitlines()
         ps_out_head = ps_out_lines[0].split()
         if ps_out_head[1] != "PID" or ps_out_head[-1] != "NAME":
@@ -787,15 +786,15 @@ class Device(object):
         """
         if not os.path.exists(local_file):
             self.logger.warning("push_file file does not exist: %s" % local_file)
-        self.get_adb().run_cmd(["push", local_file, remote_dir])
+        self.adb.run_cmd(["push", local_file, remote_dir])
 
     def pull_file(self, remote_file, local_file):
-        self.get_adb().run_cmd(["pull", remote_file, local_file])
+        self.adb.run_cmd(["pull", remote_file, local_file])
 
     def take_screenshot(self):
         # image = None
         #
-        # received = self.get_adb().shell("screencap -p").replace("\r\n", "\n")
+        # received = self.adb.shell("screencap -p").replace("\r\n", "\n")
         # import StringIO
         # stream = StringIO.StringIO(received)
         #
@@ -814,8 +813,8 @@ class Device(object):
         if not os.path.exists(local_image_dir):
             os.mkdir(local_image_dir)
 
-        if self.get_minicap() is not None:
-            last_screen = self.get_minicap().last_screen
+        if self.minicap is not None:
+            last_screen = self.minicap.last_screen
             if last_screen is not None:
                 local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
                 f = open(local_image_path, 'w')
@@ -825,9 +824,9 @@ class Device(object):
 
         local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
         remote_image_path = "/sdcard/screen_%s.png" % tag
-        self.get_adb().shell("screencap -p %s" % remote_image_path)
+        self.adb.shell("screencap -p %s" % remote_image_path)
         self.pull_file(remote_image_path, local_image_path)
-        self.get_adb().shell("rm %s" % remote_image_path)
+        self.adb.shell("rm %s" % remote_image_path)
 
         return local_image_path
 
@@ -853,7 +852,7 @@ class Device(object):
         return current_state
 
     def view_touch(self, x, y):
-        self.get_adb().touch(x, y)
+        self.adb.touch(x, y)
 
     def view_long_touch(self, x, y, duration=2000):
         """
@@ -861,7 +860,7 @@ class Device(object):
         @param duration: duration in ms
         This workaround was suggested by U{HaMi<http://stackoverflow.com/users/2571957/hami>}
         """
-        self.get_adb().long_touch(x, y, duration)
+        self.adb.long_touch(x, y, duration)
 
     def view_drag(self, (x0, y0), (x1, y1), duration):
         """
@@ -870,18 +869,18 @@ class Device(object):
         @param (x1, y1): ending point in PX
         @param duration: duration of the event in ms
         """
-        self.get_adb().drag((x0, y0), (x1, y1), duration)
+        self.adb.drag((x0, y0), (x1, y1), duration)
 
     def view_input_text(self, text):
-        self.get_adb().type(text)
+        self.adb.type(text)
 
     def key_press(self, key_code):
-        self.get_adb().press(key_code)
+        self.adb.press(key_code)
 
     def dump_views(self):
-        if self.get_droidbot_app() is not None:
-            views = self.get_droidbot_app().get_views()
+        if self.droidbot_app is not None:
+            views = self.droidbot_app.get_views()
             if views is not None:
                 return views
 
-        return self.get_view_client().dump()
+        return self.view_client.dump()

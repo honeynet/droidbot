@@ -27,12 +27,12 @@ class DeviceTest(unittest.TestCase):
 
     def test_connect(self):
         if self.device.is_emulator:
-            self.assertIsNotNone(self.device.get_adb())
-            self.assertIsNotNone(self.device.get_telnet())
-            self.assertIsNotNone(self.device.get_view_client())
+            self.assertIsNotNone(self.device.adb)
+            self.assertIsNotNone(self.device.telnet)
+            self.assertIsNotNone(self.device.view_client)
         else:
-            self.assertIsNotNone(self.device.get_adb())
-            self.assertIsNotNone(self.device.get_telnet())
+            self.assertIsNotNone(self.device.adb)
+            self.assertIsNotNone(self.device.telnet)
         self.device.check_connectivity()
         self.device.disconnect()
         self.device.connect()
@@ -41,7 +41,7 @@ class DeviceTest(unittest.TestCase):
     def test_is_foreground(self):
         settings_app = App(package_name="com.android.settings")
         no_app = App()
-        self.device.get_adb().press('HOME')
+        self.device.adb.press('HOME')
         time.sleep(2)
         self.assertTrue(self.device.is_foreground(no_app))
         self.assertFalse(self.device.is_foreground(settings_app))

@@ -93,5 +93,6 @@ class TelnetConsole(Adapter):
         """
         disconnect telnet
         """
-        self.console.close()
+        if self.console is not None:
+            self.console.close()
         self.logger.debug("disconnected")

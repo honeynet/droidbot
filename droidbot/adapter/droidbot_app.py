@@ -41,7 +41,7 @@ class DroidBotAppConn(Adapter):
 
     def setup(self):
         device = self.device
-        if DROIDBOT_APP_PACKAGE in device.get_adb().get_installed_apps():
+        if DROIDBOT_APP_PACKAGE in device.adb.get_installed_apps():
             self.logger.info("DroidBot app is already installed.")
         else:
             # install droidbot app
@@ -52,9 +52,9 @@ class DroidBotAppConn(Adapter):
             device.install_app(droidbot_app)
             self.logger.info("DroidBot app installed.")
 
-        device.get_adb().disable_accessibility_service(ACCESSIBILITY_SERVICE)
-        device.get_adb().enable_accessibility_service(ACCESSIBILITY_SERVICE)
-        if ACCESSIBILITY_SERVICE not in device.get_adb().get_enabled_accessibility_services():
+        device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
+        device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
+        if ACCESSIBILITY_SERVICE not in device.adb.get_enabled_accessibility_services():
             # accessibility not enabled, need to enable manually
             self.logger.warning("Please enable accessibility for DroidBot app manually.")
         # device.start_app(droidbot_app)

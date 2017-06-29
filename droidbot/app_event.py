@@ -297,10 +297,10 @@ class EventLog(object):
                 self.is_profiling = True
             return
         if self.sampling is not None:
-            self.device.get_adb().shell(
+            self.device.adb.shell(
                 ["am", "profile", "start", "--sampling", str(self.sampling), str(pid), self.trace_remote_file])
         else:
-            self.device.get_adb().shell(["am", "profile", "start", str(pid), self.trace_remote_file])
+            self.device.adb.shell(["am", "profile", "start", str(pid), self.trace_remote_file])
         self.is_profiling = True
         self.profiling_pid = pid
 
@@ -314,7 +314,7 @@ class EventLog(object):
                     return
                 self.profiling_pid = pid
 
-            self.device.get_adb().shell(["am", "profile", "stop", str(self.profiling_pid)])
+            self.device.adb.shell(["am", "profile", "stop", str(self.profiling_pid)])
             if self.sampling is None:
                 time.sleep(3)  # guess this time can vary between machines
 

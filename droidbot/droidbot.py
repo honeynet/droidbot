@@ -59,12 +59,8 @@ class DroidBot(object):
         #     # FIXED by requiring device_serial in cmd
         #     device_serial = '.*'
 
-        self.device = Device(device_serial=device_serial,
-                             output_dir=self.output_dir,
-                             use_hierarchy_viewer=use_hierarchy_viewer,
-                             grant_perm=grant_perm)
-        self.app = App(app_path, output_dir=self.output_dir)
-
+        self.device = None
+        self.app = None
         self.droidbox = None
         self.env_manager = None
         self.event_manager = None
@@ -72,8 +68,11 @@ class DroidBot(object):
         self.enabled = True
 
         try:
-            self.device.set_up()
-            self.device.connect()
+            self.device = Device(device_serial=device_serial,
+                                 output_dir=self.output_dir,
+                                 use_hierarchy_viewer=use_hierarchy_viewer,
+                                 grant_perm=grant_perm)
+            self.app = App(app_path, output_dir=self.output_dir)
 
             if with_droidbox:
                 self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
@@ -91,10 +90,11 @@ class DroidBot(object):
                                                  script_path=script_path,
                                                  profiling_method=profiling_method)
         except Exception as e:
+            self.logger.warning("Something went wrong: " + e.message)
             import traceback
             traceback.print_exc()
             self.stop()
-            print e
+            sys.exit(-1)
 
     @staticmethod
     def get_instance():
@@ -112,6 +112,9 @@ class DroidBot(object):
             return
         self.logger.info("Starting DroidBot")
         try:
+            self.device.set_up()
+            self.device.connect()
+
             self.device.install_app(self.app)
             self.env_manager.deploy()
 
@@ -130,7 +133,8 @@ class DroidBot(object):
             self.logger.warning("Something went wrong: " + e.message)
             import traceback
             traceback.print_exc()
-            pass
+            self.stop()
+            sys.exit(-1)
 
         self.stop()
         self.logger.info("DroidBot Stopped")

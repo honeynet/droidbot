@@ -7,6 +7,15 @@ import time
 
 from app import App
 from intent import Intent
+from adapter.adapter import Adapter
+from adapter.adb import ADB
+from adapter.droidbot_app import DroidBotAppConn
+from adapter.logcat import Logcat
+from adapter.minicap import Minicap
+from adapter.process_monitor import ProcessMonitor
+from adapter.telnet import TelnetConsole
+from adapter.user_input_monitor import UserInputMonitor
+from adapter.viewclient import ViewClient
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -42,20 +51,29 @@ class Device(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
-        self.use_hierarchy_viewer = use_hierarchy_viewer
         self.grant_perm = grant_perm
-        self.telnet_auth_token = telnet_auth_token
         self.dont_tear_down = dont_tear_down
 
         # adapters
-        self.adb = None
-        self.telnet = None
-        self.view_client = None
-        self.droidbot_app = None
-        self.minicap = None
-        self.logcat = None
-        self.user_input_monitor = None
-        self.process_monitor = None
+        self.adb = ADB(device=self)
+        self.telnet = TelnetConsole(device=self, auth_token=telnet_auth_token)
+        self.view_client = ViewClient(device=self, forceviewserveruse=use_hierarchy_viewer)
+        self.droidbot_app = DroidBotAppConn(device=self)
+        self.minicap = Minicap(device=self)
+        self.logcat = Logcat(device=self)
+        self.user_input_monitor = UserInputMonitor(device=self)
+        self.process_monitor = ProcessMonitor(device=self)
+
+        self.adapters = {
+            self.adb: True,
+            self.telnet: False,
+            self.view_client: False,
+            self.droidbot_app: True,
+            self.minicap: True,
+            self.logcat: True,
+            self.user_input_monitor: True,
+            self.process_monitor: True
+        }
 
         # adapters enabled or not
         self.adb_enabled = True

@@ -2,7 +2,7 @@ import subprocess
 from adapter import Adapter
 
 
-class UserInput(Adapter):
+class UserInputMonitor(Adapter):
     """
     A connection with the target device through `getevent`.
     `getevent` is able to get raw user input from device.

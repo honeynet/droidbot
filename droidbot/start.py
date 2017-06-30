@@ -63,8 +63,10 @@ def parse_args():
                         help="Run in quiet mode (dump warning messages only).")
     parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
                         help="Explore the UI without view shuffling.")
+    parser.add_argument("-keep_app", action="store_true", dest="keep_app",
+                        help="Keep the app on the device after testing.")
     parser.add_argument("-dont_tear_down", action="store_true", dest="dont_tear_down",
-                        help="Don't tear down test environment (eg. uninstall apps).")
+                        help="Don't tear down test environment (eg. minicap and accessibility service).")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
@@ -101,6 +103,7 @@ def main():
                         event_duration=opts.timeout,
                         event_count=opts.count,
                         quiet=opts.quiet,
+                        keep_app=opts.keep_app,
                         dont_tear_down=opts.dont_tear_down,
                         with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,

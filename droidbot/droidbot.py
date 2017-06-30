@@ -31,6 +31,7 @@ class DroidBot(object):
                  event_count=None,
                  event_interval=None,
                  event_duration=None,
+                 keep_app=None,
                  dont_tear_down=False,
                  quiet=False,
                  with_droidbox=False,
@@ -52,6 +53,7 @@ class DroidBot(object):
                 os.mkdir(output_dir)
 
         self.dont_tear_down = dont_tear_down
+        self.keep_app = keep_app
 
         # if device_serial is None:
         #     # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
@@ -149,6 +151,7 @@ class DroidBot(object):
         self.device.disconnect()
         if not self.dont_tear_down:
             self.device.tear_down()
+        if not self.keep_app:
             self.device.uninstall_app(self.app)
         self.enabled = False
 

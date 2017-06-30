@@ -451,7 +451,7 @@ class ScriptEvent(AppEvent):
             if matched_view is None:
                 device.logger.warning("target_view no match: %s" % target_view)
             else:
-                from device import DeviceState
+                from device_state import DeviceState
                 (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
         return AppEvent.get_event(event_dict)
 

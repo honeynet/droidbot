@@ -600,13 +600,8 @@ class Device(object):
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
             package_info_file = open(package_info_file_name, "w")
-        else:
-            package_info_file = subprocess.PIPE
-
-        subprocess.check_call(["adb", "-s", self.serial, "shell", "dumpsys", "package",
-                               app.get_package_name()], stdout=package_info_file)
-
-        if isinstance(package_info_file, file):
+            subprocess.check_call(["adb", "-s", self.serial, "shell", "dumpsys", "package",
+                                   app.get_package_name()], stdout=package_info_file)
             package_info_file.close()
 
     def uninstall_app(self, app):

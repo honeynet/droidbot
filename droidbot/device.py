@@ -623,7 +623,10 @@ class Device(object):
             subprocess.check_call(["adb", "-s", self.serial, "uninstall", package_name], stdout=subprocess.PIPE)
 
     def get_app_pid(self, app):
-        package = app.get_package_name()
+        if isinstance(app, App):
+            package = app.get_package_name()
+        else:
+            package = app
 
         name2pid = {}
         ps_out = self.adb.shell(["ps", "-t"])

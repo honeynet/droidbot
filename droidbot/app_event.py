@@ -1041,28 +1041,30 @@ class StateBasedEventFactory(EventFactory):
         """
 
         # Get current device state
-        if state is None:
+        if not state:
             state = self.device.get_current_state()
 
-        state.save2dir()
         event = None
 
-        # if the previous operation is not finished, continue
-        if len(self.script_events) > self.script_event_idx:
-            event = self.script_events[self.script_event_idx]
-            self.script_event_idx += 1
+        if state:
+            state.save2dir()
 
-        # First try matching a state defined in the script
-        if event is None and self.script is not None:
-            operation = self.script.get_operation_based_on_state(state)
-            if operation is not None:
-                self.script_events = operation.events
-                # restart script
-                event = self.script_events[0]
-                self.script_event_idx = 1
+            # if the previous operation is not finished, continue
+            if len(self.script_events) > self.script_event_idx:
+                event = self.script_events[self.script_event_idx]
+                self.script_event_idx += 1
 
-        if event is None:
-            event = self.gen_event_based_on_state_wrapper(state)
+            # First try matching a state defined in the script
+            if event is None and self.script is not None:
+                operation = self.script.get_operation_based_on_state(state)
+                if operation is not None:
+                    self.script_events = operation.events
+                    # restart script
+                    event = self.script_events[0]
+                    self.script_event_idx = 1
+
+            if event is None:
+                event = self.gen_event_based_on_state_wrapper(state)
 
         self.last_state = state
         self.last_event = event

@@ -168,9 +168,11 @@ class DroidBotAppConn(Adapter):
 
     def get_views(self):
         import copy
-        if self.last_acc_event is None:
+        if not self.last_acc_event:
             return None
         view_tree = copy.deepcopy(self.last_acc_event['root_node'])
+        if not view_tree:
+            return None
         view_tree['parent'] = -1
         view_list = []
         self.__view_tree_to_list(view_tree, view_list)

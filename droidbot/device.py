@@ -769,11 +769,11 @@ class Device(object):
         self.logger.info("getting current device state...")
         current_state = None
         try:
-            view_client_views = self.dump_views()
+            view_client_views = self.get_views()
             foreground_activity = self.get_top_activity_name()
             background_services = self.get_service_names()
             screenshot_path = self.take_screenshot()
-            self.logger.info("finish getting current device state...")
+            self.logger.debug("finish getting current device state...")
             from device_state import DeviceState
             current_state = DeviceState(self,
                                         view_client_views=view_client_views,
@@ -812,7 +812,7 @@ class Device(object):
     def key_press(self, key_code):
         self.adb.press(key_code)
 
-    def dump_views(self):
+    def get_views(self):
         if self.droidbot_app is not None:
             views = self.droidbot_app.get_views()
             if views is not None:

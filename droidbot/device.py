@@ -597,12 +597,75 @@ class Device(object):
         install_cmd.append(app.app_path)
         subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
 
+        package_name = app.get_package_name()
+        dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
+                                      "dumpsys", "package", package_name], stdout=subprocess.PIPE)
+        dumpsys_lines = []
+        while True:
+            line = dumpsys_p.stdout.readline()
+            if not line:
+                break
+            dumpsys_lines.append(line)
+
+        main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
+        self.logger.info("App installed: %s/%s" % (package_name, main_activity))
+
+        app.dumpsys_main_activity = main_activity
+
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
             package_info_file = open(package_info_file_name, "w")
-            subprocess.check_call(["adb", "-s", self.serial, "shell", "dumpsys", "package",
-                                   app.get_package_name()], stdout=package_info_file)
+            package_info_file.writelines(dumpsys_lines)
             package_info_file.close()
+
+    @staticmethod
+    def __parse_main_activity_from_dumpsys_lines(lines):
+        main_activity = None
+        activity_line_re = re.compile("[^ ]+ ([^ ]+)/([^ ]+) filter [^ ]+")
+        action_re = re.compile("Action: \"([^ ]+)\"")
+        category_re = re.compile("Category: \"([^ ]+)\"")
+
+        activities = {}
+
+        cur_package = None
+        cur_activity = None
+        cur_actions = []
+        cur_categories = []
+
+        for line in lines:
+            line = line.strip()
+            m = activity_line_re.match(line)
+            if m:
+                activities[cur_activity] = {
+                    "actions": cur_actions,
+                    "categories": cur_categories
+                }
+                cur_package = m.group(1)
+                cur_activity = m.group(2)
+                if cur_activity.startswith("."):
+                    cur_activity = cur_package + cur_activity
+                cur_actions = []
+                cur_categories = []
+            else:
+                m1 = action_re.match(line)
+                if m1:
+                    cur_actions.append(m1.group(1))
+                else:
+                    m2 = category_re.match(line)
+                    if m2:
+                        cur_categories.append(m2.group(1))
+
+        if cur_activity is not None:
+            activities[cur_activity] = {
+                "actions": cur_actions,
+                "categories": cur_categories
+            }
+
+        for activity in activities:
+            if "android.intent.action.MAIN" in activities[activity]["actions"] \
+                    and "android.intent.category.LAUNCHER" in activities[activity]["categories"]:
+                main_activity = activity
+        return main_activity
 
     def uninstall_app(self, app):
         """

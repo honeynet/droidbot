@@ -28,6 +28,7 @@ class App(object):
         self.androguard = AndroguardAnalysis(self.app_path)
         self.package_name = self.androguard.a.get_package()
         self.main_activity = self.androguard.a.get_main_activity()
+        self.dumpsys_main_activity = None
         self.possible_broadcasts = self.get_possible_broadcasts()
         self.permissions = self.androguard.a.get_permissions()
         self.activities = None
@@ -58,7 +59,11 @@ class App(object):
         """
         if self.main_activity is None:
             self.main_activity = self.get_androguard_analysis().a.get_main_activity()
-        return self.main_activity
+        if self.main_activity is not None:
+            return self.main_activity
+        else:
+            self.logger.warning("Cannot get main activity from manifest. Using dumpsys result instead.")
+            return self.dumpsys_main_activity
 
     def get_activities(self):
         """

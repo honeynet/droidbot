@@ -6,6 +6,7 @@ import re
 
 from app_event import AppEvent
 from droidbot import DroidBotException
+from utils import safe_re_match
 
 VIEW_ID = '<view_id>'
 STATE_ID = '<state_id>'
@@ -158,7 +159,7 @@ class DroidBotScript(object):
 
     @staticmethod
     def check_grammar_identifier_is_valid(value):
-        m = IDENTIFIER_RE.match(value)
+        m = safe_re_match(IDENTIFIER_RE, value)
         if not m:
             msg = "invalid identifier: %s" % value
             raise ScriptSyntaxError(msg)
@@ -295,11 +296,11 @@ class ViewSelector(object):
             pass
         else:
             return False
-        if self.text_re and not self.text_re.match(view_dict['text']):
+        if self.text_re and not safe_re_match(self.text_re, view_dict['text']):
             return False
-        if self.resource_id_re and not self.resource_id_re.match(view_dict['resource_id']):
+        if self.resource_id_re and not safe_re_match(self.resource_id_re, view_dict['resource_id']):
             return False
-        if self.class_re and not self.class_re.match(view_dict['class']):
+        if self.class_re and not safe_re_match(self.class_re, view_dict['class']):
             return False
         bounds = view_dict['bounds']
         bound_x_min = bounds[0][0]
@@ -360,7 +361,7 @@ class StateSelector(object):
         @param device_state: DeviceState
         @return:
         """
-        if self.activity_re and not self.activity_re.match(device_state.foreground_activity):
+        if self.activity_re and not safe_re_match(self.activity_re, device_state.foreground_activity):
             return False
         for service_re in self.service_re_set:
             service_re_matched = False
@@ -369,7 +370,7 @@ class StateSelector(object):
             if not isinstance(device_state.background_services, list):
                 return False
             for background_service in device_state.background_services:
-                if service_re.match(background_service):
+                if safe_re_match(service_re, background_service):
                     service_re_matched = True
                     break
             if not service_re_matched:

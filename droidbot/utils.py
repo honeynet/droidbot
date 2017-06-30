@@ -74,6 +74,13 @@ def weighted_choice(choices):
         upto += choices[c]
 
 
+def safe_re_match(regex, content):
+    if not regex or not content:
+        return None
+    else:
+        return regex.match(content)
+
+
 class TimeoutException(Exception):
     """
     Exception if connection has been waiting too long

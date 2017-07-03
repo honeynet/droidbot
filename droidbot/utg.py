@@ -10,10 +10,10 @@ class UTG(object):
         self.node2states = {}
         self.edge2events = {}
 
-    def add_transition(self, event_str, old_state, new_state):
+    def add_transition(self, event, old_state, new_state):
         old_node = self.state_to_node(old_state)
         new_node = self.state_to_node(new_state)
-        self.add_edge(event_str, old_node, new_node)
+        self.add_edge(event, old_node, new_node)
 
     def state_to_node(self, state):
         if state is None:
@@ -27,10 +27,10 @@ class UTG(object):
         self.node2states[state_str].append(state_tag)
         return state_str
 
-    def add_edge(self, event_str, old_node, new_node):
+    def add_edge(self, event, old_node, new_node):
         if old_node == new_node:
             return
         edge_str = "<%s> --> <%s>" % (old_node, new_node)
         if edge_str not in self.edge2events:
             self.edge2events[edge_str] = []
-        self.edge2events[edge_str].append(event_str)
+        self.edge2events[edge_str].append(event)

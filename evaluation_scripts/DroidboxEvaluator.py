@@ -166,9 +166,9 @@ class DroidboxEvaluator(object):
         self.droidbot = DroidBot(device_serial=self.device_serial,
                                  app_path=self.apk_path,
                                  env_policy=env_policy,
-                                 event_policy=event_policy,
+                                 policy_name=event_policy,
                                  event_count=self.event_count,
-                                 event_duration=self.event_duration,
+                                 timeout=self.event_duration,
                                  event_interval=self.event_interval,
                                  with_droidbox=True,
                                  quiet=True)

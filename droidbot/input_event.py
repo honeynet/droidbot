@@ -2,6 +2,7 @@ import json
 import os
 import random
 import time
+from abc import abstractmethod
 
 import utils
 from intent import Intent
@@ -35,6 +36,7 @@ class InputEvent(object):
     def __str__(self):
         return self.to_dict().__str__()
 
+    @abstractmethod
     def send(self, device):
         """
         send this event to device
@@ -44,6 +46,7 @@ class InputEvent(object):
         raise NotImplementedError
 
     @staticmethod
+    @abstractmethod
     def get_random_instance(device, app):
         """
         get a random instance of event

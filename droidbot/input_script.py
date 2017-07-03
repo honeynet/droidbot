@@ -111,6 +111,9 @@ class DroidBotScript(object):
         @param state: DeviceState
         @return:
         """
+        if not state:
+            return None
+
         operation = None
         matched_state_selector = None
 

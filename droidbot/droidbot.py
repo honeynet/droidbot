@@ -10,6 +10,7 @@ from device import Device
 from app import App
 from app_env import AppEnvManager
 from app_event import AppEventManager
+from input_manager import InputManager
 from droidbox_scripts.droidbox import DroidBox
 
 
@@ -25,12 +26,12 @@ class DroidBot(object):
                  device_serial=None,
                  output_dir=None,
                  env_policy=None,
-                 event_policy=None,
+                 policy_name=None,
                  no_shuffle=False,
                  script_path=None,
                  event_count=None,
                  event_interval=None,
-                 event_duration=None,
+                 timeout=None,
                  keep_app=None,
                  dont_tear_down=False,
                  quiet=False,
@@ -65,7 +66,7 @@ class DroidBot(object):
         self.app = None
         self.droidbox = None
         self.env_manager = None
-        self.event_manager = None
+        self.input_manager = None
 
         self.enabled = True
 
@@ -82,15 +83,15 @@ class DroidBot(object):
             self.env_manager = AppEnvManager(device=self.device,
                                              app=self.app,
                                              env_policy=env_policy)
-            self.event_manager = AppEventManager(device=self.device,
-                                                 app=self.app,
-                                                 event_policy=event_policy,
-                                                 no_shuffle=no_shuffle,
-                                                 event_count=event_count,
-                                                 event_interval=event_interval,
-                                                 event_duration=event_duration,
-                                                 script_path=script_path,
-                                                 profiling_method=profiling_method)
+            self.input_manager = InputManager(device=self.device,
+                                              app=self.app,
+                                              policy_name=policy_name,
+                                              no_shuffle=no_shuffle,
+                                              event_count=event_count,
+                                              event_interval=event_interval,
+                                              timeout=timeout,
+                                              script_path=script_path,
+                                              profiling_method=profiling_method)
         except Exception as e:
             self.logger.warning("Something went wrong: " + e.message)
             import traceback
@@ -123,11 +124,11 @@ class DroidBot(object):
             if self.droidbox is not None:
                 self.droidbox.set_apk(self.app.app_path)
                 self.droidbox.start_unblocked()
-                self.event_manager.start()
+                self.input_manager.start()
                 self.droidbox.stop()
                 self.droidbox.get_output()
             else:
-                self.event_manager.start()
+                self.input_manager.start()
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt.")
             pass
@@ -144,8 +145,8 @@ class DroidBot(object):
     def stop(self):
         if self.env_manager is not None:
             self.env_manager.stop()
-        if self.event_manager is not None:
-            self.event_manager.stop()
+        if self.input_manager is not None:
+            self.input_manager.stop()
         if self.droidbox is not None:
             self.droidbox.stop()
         self.device.disconnect()

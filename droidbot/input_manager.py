@@ -1,12 +1,11 @@
 import json
 import logging
-import os
 import subprocess
 import time
 from threading import Timer
 
 from input_event import EventLog
-from input_policy import InputPolicy, UtgBasedInputPolicy, UtgBfsPolicy, UtgDfsPolicy
+from input_policy import UtgBasedInputPolicy, UtgBfsPolicy, UtgDfsPolicy
 
 POLICY_NONE = "none"
 POLICY_MONKEY = "monkey"
@@ -18,8 +17,6 @@ DEFAULT_POLICY = POLICY_DFS
 DEFAULT_EVENT_INTERVAL = 1
 DEFAULT_EVENT_COUNT = 1000
 DEFAULT_TIMEOUT = -1
-
-START_RETRY_THRESHOLD = 20
 
 
 class UnknownInputException(Exception):
@@ -160,7 +157,7 @@ class InputManager(object):
             self.monkey = None
             pid = self.device.get_app_pid("com.android.commands.monkey")
             if pid is not None:
-                self.device.shell("kill -9 %d" % pid)
+                self.device.adb.shell("kill -9 %d" % pid)
         if self.timer and self.timer.isAlive():
             self.timer.cancel()
             self.timer = None

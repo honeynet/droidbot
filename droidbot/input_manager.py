@@ -5,11 +5,10 @@ import time
 from threading import Timer
 
 from input_event import EventLog
-from input_policy import UtgBasedInputPolicy, UtgBfsPolicy, UtgDfsPolicy
+from input_policy import UtgBasedInputPolicy, UtgDfsPolicy
 
 POLICY_NONE = "none"
 POLICY_MONKEY = "monkey"
-POLICY_BFS = "bfs"
 POLICY_DFS = "dfs"
 POLICY_MANUAL = "manual"
 
@@ -70,8 +69,6 @@ class InputManager(object):
             input_policy = None
         elif self.policy_name == POLICY_MONKEY:
             input_policy = None
-        elif self.policy_name == POLICY_BFS:
-            input_policy = UtgBfsPolicy(device, app, self.no_shuffle)
         elif self.policy_name == POLICY_DFS:
             input_policy = UtgDfsPolicy(device, app, self.no_shuffle)
         # elif self.policy_name == POLICY_MANUAL:

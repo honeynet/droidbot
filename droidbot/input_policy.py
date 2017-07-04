@@ -1,7 +1,7 @@
 import random
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, DragEvent, SwipeEvent
+from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
 from utg import UTG
 from device_state import DeviceState
 

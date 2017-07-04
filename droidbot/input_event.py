@@ -69,9 +69,9 @@ class InputEvent(object):
         elif event_type == KEY_LongTouchEvent:
             return LongTouchEvent(event_dict=event_dict)
         elif event_type == KEY_DragEvent:
-            return DragEvent(event_dict=event_dict)
-        elif event_type == KEY_SwipeEvent:
             return SwipeEvent(event_dict=event_dict)
+        elif event_type == KEY_SwipeEvent:
+            return ScrollEvent(event_dict=event_dict)
         elif event_type == KEY_TextInputEvent:
             return TextInputEvent(event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
@@ -224,7 +224,7 @@ class UIEvent(InputEvent):
             choices = {
                 TouchEvent: 6,
                 LongTouchEvent: 2,
-                DragEvent: 2
+                SwipeEvent: 2
             }
             event_type = utils.weighted_choice(choices)
             return event_type.get_random_instance(device, app)
@@ -281,7 +281,7 @@ class LongTouchEvent(UIEvent):
         return True
 
 
-class DragEvent(UIEvent):
+class SwipeEvent(UIEvent):
     """
     a drag gesture on screen
     """
@@ -311,8 +311,8 @@ class DragEvent(UIEvent):
         start_y = random.uniform(0, device.get_height())
         end_x = random.uniform(0, device.get_width())
         end_y = random.uniform(0, device.get_height())
-        return DragEvent(start_x=start_x, start_y=start_y,
-                         end_x=end_x, end_y=end_y)
+        return SwipeEvent(start_x=start_x, start_y=start_y,
+                          end_x=end_x, end_y=end_y)
 
     def send(self, device):
         device.view_drag((self.start_x, self.start_y),
@@ -321,7 +321,7 @@ class DragEvent(UIEvent):
         return True
 
 
-class SwipeEvent(UIEvent):
+class ScrollEvent(UIEvent):
     """
     swipe gesture
     """
@@ -341,7 +341,7 @@ class SwipeEvent(UIEvent):
         x = random.uniform(0, device.get_width())
         y = random.uniform(0, device.get_height())
         direction = random.choice(["UP", "DOWN", "LEFT", "RIGHT"])
-        return SwipeEvent(x, y, direction)
+        return ScrollEvent(x, y, direction)
 
     def send(self, device):
         end_x = self.x
@@ -414,7 +414,7 @@ EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
     KEY_LongTouchEvent: LongTouchEvent,
-    KEY_DragEvent: DragEvent,
-    KEY_SwipeEvent: SwipeEvent,
+    KEY_DragEvent: SwipeEvent,
+    KEY_SwipeEvent: ScrollEvent,
     KEY_IntentEvent: IntentEvent,
 }

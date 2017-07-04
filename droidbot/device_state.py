@@ -1,5 +1,6 @@
 import os
 import subprocess
+from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
 
 
 class DeviceState(object):
@@ -146,6 +147,10 @@ class DeviceState(object):
         return key if (key in view_dict and view_dict[key]) else ""
 
     @staticmethod
+    def __safe_dict_get(view_dict, key):
+        return view_dict[key] if (key in view_dict) else None
+
+    @staticmethod
     def get_view_center(view_dict):
         """
         return the center point in a view
@@ -165,3 +170,64 @@ class DeviceState(object):
         bounds = view_dict['bounds']
         import math
         return int(math.fabs((bounds[0][0] - bounds[1][0]) * (bounds[0][1] - bounds[1][1])))
+
+    def get_all_children(self, view_dict):
+        children = self.__safe_dict_get(view_dict, 'children')
+        if not children:
+            return set()
+        children = set(children)
+        for child in children:
+            children_of_child = self.get_all_children(self.views[child])
+            children.union(children_of_child)
+        return children
+
+    def get_possible_input(self):
+        """
+        Get a list of possible input events for this state
+        :return: 
+        """
+        possible_events = []
+        enabled_view_ids = set()
+        touch_exclude_view_ids = set()
+        for view_dict in self.views:
+            if self.__safe_dict_get(view_dict, 'enabled'):
+                enabled_view_ids.add(view_dict['temp_id'])
+
+        for view_id in enabled_view_ids:
+            if self.__safe_dict_get(self.views[view_id], 'clickable'):
+                possible_events.append(TouchEvent(view=self.views[view_id]))
+                touch_exclude_view_ids.add(view_id)
+                touch_exclude_view_ids.union(self.get_all_children(self.views[view_id]))
+
+        for view_id in enabled_view_ids:
+            if self.__safe_dict_get(self.views[view_id], 'scrollable'):
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="UP"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="DOWN"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="LEFT"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="RIGHT"))
+
+        for view_id in enabled_view_ids:
+            if self.__safe_dict_get(self.views[view_id], 'checkable'):
+                possible_events.append(TouchEvent(view=self.views[view_id]))
+                touch_exclude_view_ids.add(view_id)
+                touch_exclude_view_ids.union(self.get_all_children(self.views[view_id]))
+
+        for view_id in enabled_view_ids:
+            if self.__safe_dict_get(self.views[view_id], 'long_clickable'):
+                possible_events.append(LongTouchEvent(view=self.views[view_id]))
+
+        for view_id in enabled_view_ids:
+            if self.__safe_dict_get(self.views[view_id], 'editable'):
+                touch_exclude_view_ids.add(view_id)
+                # TODO figure out what event can be sent to editable views
+                pass
+
+        for view_id in enabled_view_ids:
+            if view_id in touch_exclude_view_ids:
+                continue
+            children = self.__safe_dict_get(self.views[view_id], 'children')
+            if children and len(children) > 0:
+                continue
+            possible_events.append(TouchEvent(view=self.views[view_id]))
+
+        return possible_events

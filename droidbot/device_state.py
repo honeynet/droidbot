@@ -7,11 +7,12 @@ class DeviceState(object):
     the state of the current device
     """
 
-    def __init__(self, device, view_client_views, foreground_activity, background_services, tag=None,
-                 screenshot_path=None):
+    def __init__(self, device, view_client_views, foreground_activity, activity_stack, background_services,
+                 tag=None, screenshot_path=None):
         self.device = device
         self.view_client_views = view_client_views
         self.foreground_activity = foreground_activity
+        self.activity_stack = activity_stack
         self.background_services = background_services
         if tag is None:
             from datetime import datetime
@@ -25,6 +26,7 @@ class DeviceState(object):
         state = {'tag': self.tag,
                  'state_str': self.state_str,
                  'foreground_activity': self.foreground_activity,
+                 'activity_stack': self.activity_stack,
                  'background_services': self.background_services,
                  'views': self.views}
         return state

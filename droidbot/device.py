@@ -494,6 +494,16 @@ class Device(object):
             return m.group(1) + "/" + m.group(2)
         return None
 
+    def get_current_activity_stack(self):
+        """
+        Get current activity stack
+        :return: 
+        """
+        tasks = self.get_task_activities()
+        current_task_id = tasks['current_task']
+        if current_task_id in tasks:
+            return tasks['task_to_activities'][current_task_id]
+
     def get_task_activities(self):
         """
         Get current tasks and corresponding activities.
@@ -771,6 +781,7 @@ class Device(object):
         try:
             view_client_views = self.get_views()
             foreground_activity = self.get_top_activity_name()
+            activity_stack = self.get_current_activity_stack()
             background_services = self.get_service_names()
             screenshot_path = self.take_screenshot()
             self.logger.debug("finish getting current device state...")
@@ -778,6 +789,7 @@ class Device(object):
             current_state = DeviceState(self,
                                         view_client_views=view_client_views,
                                         foreground_activity=foreground_activity,
+                                        activity_stack=activity_stack,
                                         background_services=background_services,
                                         screenshot_path=screenshot_path)
         except Exception as e:

@@ -38,7 +38,7 @@ If successfully installed, you should be able to execute `droidbot -h`.
 2. Start DroidBot:
 
     ```
-    droidbot -d <serial> -a <path_to_apk> -event dfs
+    droidbot -d <serial> -a <path_to_apk> -policy dfs
     ```
 
 ## Test strategy

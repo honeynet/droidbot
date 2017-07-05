@@ -21,7 +21,7 @@ class UTG(object):
         if not old_state or not new_state:
             return
 
-        if (old_state.state_str, new_state.state_str) in self.G.edges():
+        if (old_state.state_str, new_state.state_str) not in self.G.edges():
             self.G.add_edge(old_state.state_str, new_state.state_str, events=[])
 
         self.G[old_state.state_str][new_state.state_str]['events'].append(event)

@@ -9,6 +9,10 @@ It has the following advantages as compared with other input generators:
 3. It is programmable (can customize input for certain UI);
 4. It can produce UI structures and method traces for analysis.
 
+Reference:
+
+Yuanchun Li, Ziyue Yang, Yao Guo, and Xiangqun Chen. 2017. DroidBot: a lightweight UI-guided test input generator for Android. In Proceedings of the 39th International Conference on Software Engineering Companion (ICSE-C '17). Buenos Aires, Argentina.
+
 ## Prerequisite
 
 1. `Python` version `2.7`

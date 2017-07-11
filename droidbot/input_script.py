@@ -4,7 +4,7 @@
 import logging
 import re
 
-from app_event import AppEvent
+from input_event import InputEvent
 from droidbot import DroidBotException
 from utils import safe_re_match
 
@@ -421,7 +421,7 @@ class DroidBotOperation(object):
             self.events.append(script_event)
 
 
-class ScriptEvent(AppEvent):
+class ScriptEvent(InputEvent):
     """
     an event define in DroidBotScript
     """
@@ -445,18 +445,22 @@ class ScriptEvent(AppEvent):
         if 'target_view' in event_dict:
             target_view = event_dict.pop('target_view')
             target_view_selector = event_dict.pop('target_view_selector')
-            state = device.get_current_state()
-            matched_view = None
-            for view_dict in state.views:
-                if target_view_selector.match(view_dict):
-                    matched_view = view_dict
-                    break
-            if matched_view is None:
-                device.logger.warning("target_view no match: %s" % target_view)
-            else:
-                from device_state import DeviceState
-                (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
-        return AppEvent.get_event(event_dict)
+
+            state = device.get_last_known_state()
+            if not state:
+                state = device.get_current_state()
+            if state:
+                matched_view = None
+                for view_dict in state.views:
+                    if target_view_selector.match(view_dict):
+                        matched_view = view_dict
+                        break
+                if matched_view is None:
+                    device.logger.warning("target_view no match: %s" % target_view)
+                else:
+                    from device_state import DeviceState
+                    (event_dict['x'], event_dict['y']) = DeviceState.get_view_center(matched_view)
+        return InputEvent.from_dict(event_dict)
 
     def to_dict(self):
         event_dict = self.event_dict.copy()

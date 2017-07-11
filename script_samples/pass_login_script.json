@@ -33,6 +33,9 @@
             {
                 "event_type": "touch",
                 "target_view": "login_button"
+            },
+            {
+                "event_type": "exit"
             }
         ]
     },

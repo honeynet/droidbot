@@ -59,6 +59,7 @@ class Device(object):
         self.ro_debuggable = None
         self.ro_secure = None
         self.is_connected = False
+        self.last_know_state = None
 
         # adapters
         self.adb = ADB(device=self)
@@ -797,7 +798,11 @@ class Device(object):
             import traceback
             traceback.print_exc()
         self.logger.info("finish getting current device state...")
+        self.last_know_state = current_state
         return current_state
+
+    def get_last_known_state(self):
+        return self.last_know_state
 
     def view_touch(self, x, y):
         self.adb.touch(x, y)

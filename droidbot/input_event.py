@@ -14,6 +14,7 @@ POSSIBLE_KEYS = [
 ]
 
 KEY_KeyEvent = "key"
+KEY_ExitEvent = "exit"
 KEY_TouchEvent = "touch"
 KEY_LongTouchEvent = "long_touch"
 KEY_DragEvent = "drag"
@@ -76,6 +77,8 @@ class InputEvent(object):
             return TextInputEvent(event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
             return IntentEvent(event_dict=event_dict)
+        elif event_type == KEY_ExitEvent:
+            return ExitEvent(event_dict=event_dict)
 
 
 class EventLog(object):
@@ -179,6 +182,26 @@ class EventLog(object):
 
         except Exception as e:
             self.device.logger.warning("profiling event failed: " + e.message)
+
+
+class ExitEvent(InputEvent):
+    """
+    an event to stop testing
+    """
+
+    def __init__(self, event_dict=None):
+        if event_dict is not None:
+            self.__dict__ = event_dict
+            return
+        self.event_type = KEY_ExitEvent
+
+    @staticmethod
+    def get_random_instance(device, app):
+        return None
+
+    def send(self, device):
+        # device.disconnect()
+        raise KeyboardInterrupt()
 
 
 class KeyEvent(InputEvent):

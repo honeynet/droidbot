@@ -292,4 +292,3 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             return
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
-

@@ -796,6 +796,7 @@ class Device(object):
             self.logger.warning("exception in get_current_state: %s" % e)
             import traceback
             traceback.print_exc()
+        self.logger.info("finish getting current device state...")
         return current_state
 
     def view_touch(self, x, y):

@@ -46,19 +46,17 @@ class DroidBotAppConn(Adapter):
         else:
             # install droidbot app
             import pkg_resources
-            from droidbot.app import App
             droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
-            droidbot_app = App(app_path=droidbot_app_path)
-            device.install_app(droidbot_app)
+            install_cmd = "install %s" % droidbot_app_path
+            self.device.adb.run_cmd(install_cmd)
             self.logger.debug("DroidBot app installed.")
 
-        device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
+        # device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
-        if ACCESSIBILITY_SERVICE not in device.adb.get_enabled_accessibility_services():
-            # accessibility not enabled, need to enable manually
-            self.logger.warning("Please enable accessibility for DroidBot app manually.")
+
         # device.start_app(droidbot_app)
         while ACCESSIBILITY_SERVICE not in device.get_service_names():
+            print "Please enable accessibility for DroidBot app manually."
             time.sleep(1)
 
     def tear_down(self):
@@ -123,7 +121,7 @@ class DroidBotAppConn(Adapter):
                         break
                 read_message_bytes += 1
                 cursor += 1
-        print "[CONNECTIVITY] %s is disconnected" % self.__class__.__name__
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def handle_message(self, message):
         # print message
@@ -173,8 +171,10 @@ class DroidBotAppConn(Adapter):
     def get_views(self):
         import copy
         if not self.last_acc_event:
+            self.logger.warning("last_acc_event is None")
             return None
         view_tree = copy.deepcopy(self.last_acc_event['root_node'])
+        # print view_tree
         if not view_tree:
             return None
         view_tree['parent'] = -1
@@ -184,5 +184,5 @@ class DroidBotAppConn(Adapter):
 
 if __name__ == "__main__":
     droidbot_app_conn = DroidBotAppConn()
-    droidbot_app_conn.setup()
+    droidbot_app_conn.set_up()
     droidbot_app_conn.connect()

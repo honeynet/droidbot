@@ -37,7 +37,7 @@ class UserInputMonitor(Adapter):
         self.connected = False
         if self.process is not None:
             self.process.terminate()
-        print "[CONNECTIVITY] %s is disconnected" % self.__class__.__name__
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def check_connectivity(self):
         return self.connected

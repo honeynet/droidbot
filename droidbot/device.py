@@ -74,8 +74,8 @@ class Device(object):
         self.adapters = {
             self.adb: True,
             self.telnet: False,
-            self.view_client: True,
-            self.droidbot_app: False,
+            self.view_client: False,
+            self.droidbot_app: True,
             self.minicap: True,
             self.logcat: True,
             self.user_input_monitor: True,
@@ -93,12 +93,12 @@ class Device(object):
             adapter_name = adapter.__class__.__name__
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
-                print "[CONNECTIVITY] %s is not enabled." % adapter_name
+                print "[CONNECTION] %s is not enabled." % adapter_name
             else:
                 if adapter.check_connectivity():
-                    print "[CONNECTIVITY] %s is enabled and connected." % adapter_name
+                    print "[CONNECTION] %s is enabled and connected." % adapter_name
                 else:
-                    print "[CONNECTIVITY] %s is enabled but not connected." % adapter_name
+                    print "[CONNECTION] %s is enabled but not connected." % adapter_name
 
     def wait_for_device(self):
         """
@@ -608,31 +608,24 @@ class Device(object):
                 install_cmd.append("-g")
             install_cmd.append(app.app_path)
             subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
-        
-        if not app.get_main_activity():
-            dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
-                                          "dumpsys", "package", package_name], stdout=subprocess.PIPE)
-            dumpsys_lines = []
-            while True:
-                line = dumpsys_p.stdout.readline()
-                if not line:
-                    break
-                dumpsys_lines.append(line)
 
-            main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
-            if not main_activity:
-                self.logger.warning("Cannot get the app's main activity!")
-            else:
-                app.dumpsys_main_activity = main_activity
-
-        self.logger.info("App installed: %s" % package_name)
-        self.logger.info("Main activity: %s" % app.get_main_activity())
-
+        dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
+                                      "dumpsys", "package", package_name], stdout=subprocess.PIPE)
+        dumpsys_lines = []
+        while True:
+            line = dumpsys_p.stdout.readline()
+            if not line:
+                break
+            dumpsys_lines.append(line)
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
             package_info_file = open(package_info_file_name, "w")
             package_info_file.writelines(dumpsys_lines)
             package_info_file.close()
+        app.dumpsys_main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
+
+        self.logger.info("App installed: %s" % package_name)
+        self.logger.info("Main activity: %s" % app.get_main_activity())
 
     @staticmethod
     def __parse_main_activity_from_dumpsys_lines(lines):
@@ -838,10 +831,13 @@ class Device(object):
     def get_views(self):
         if self.droidbot_app and self.adapters[self.droidbot_app]:
             views = self.droidbot_app.get_views()
-            if not views:
+            if views:
                 return views
 
         if self.view_client and self.adapters[self.view_client]:
-            return self.view_client.dump()
+            views = self.view_client.dump()
+            if views:
+                return views
 
+        self.logger.warning("failed to get current views!")
         return None

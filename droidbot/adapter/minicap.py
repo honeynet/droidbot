@@ -189,7 +189,7 @@ class Minicap(Adapter):
                         frameBodyLength -= chunk_len - cursor
                         readFrameBytes += chunk_len - cursor
                         cursor = chunk_len
-        print "[CONNECTIVITY] %s is disconnected" % self.__class__.__name__
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def handle_image(self, frameBody):
         # Sanity check for JPG header, only here for debugging purposes.

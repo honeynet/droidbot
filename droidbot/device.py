@@ -618,10 +618,14 @@ class Device(object):
                 break
             dumpsys_lines.append(line)
 
-        main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
-        self.logger.info("App installed: %s/%s" % (package_name, main_activity))
-
-        app.dumpsys_main_activity = main_activity
+        if not app.get_main_activity():
+            main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
+            if not main_activity:
+                self.logger.warning("Cannot get the app's main activity!")
+            else:
+                app.dumpsys_main_activity = main_activity
+        self.logger.info("App installed: %s/%s" % package_name)
+        self.logger.info("Main activity is: %s" % app.get_main_activity())
 
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())

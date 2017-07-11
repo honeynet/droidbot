@@ -123,6 +123,7 @@ class DroidBotAppConn(Adapter):
                         break
                 read_message_bytes += 1
                 cursor += 1
+        print "[CONNECTIVITY] %s is disconnected" % self.__class__.__name__
 
     def handle_message(self, message):
         # print message
@@ -146,9 +147,12 @@ class DroidBotAppConn(Adapter):
         """
         disconnect telnet
         """
-        self.sock.close()
         self.connected = False
-        self.logger.debug("disconnected")
+        if self.sock is not None:
+            try:
+                self.sock.close()
+            except Exception as e:
+                print e.message
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             subprocess.check_call(forward_remove_cmd.split())

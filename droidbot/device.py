@@ -74,8 +74,8 @@ class Device(object):
         self.adapters = {
             self.adb: True,
             self.telnet: False,
-            self.view_client: False,
-            self.droidbot_app: True,
+            self.view_client: True,
+            self.droidbot_app: False,
             self.minicap: True,
             self.logcat: True,
             self.user_input_monitor: True,
@@ -108,12 +108,12 @@ class Device(object):
         self.logger.info("waiting for device")
         try:
             subprocess.check_call(["adb", "-s", self.serial, "wait-for-device"])
-            while True:
-                out = subprocess.check_output(["adb", "-s", self.serial, "shell",
-                                               "getprop", "init.svc.bootanim"]).split()[0]
-                if out == "stopped":
-                    break
-                time.sleep(3)
+            # while True:
+            #     out = subprocess.check_output(["adb", "-s", self.serial, "shell",
+            #                                    "getprop", "init.svc.bootanim"]).split()[0]
+            #     if out == "stopped":
+            #         break
+            #     time.sleep(1)
         except:
             self.logger.warning("error waiting for device")
 
@@ -601,29 +601,30 @@ class Device(object):
         assert isinstance(app, App)
         # subprocess.check_call(["adb", "-s", self.serial, "uninstall", app.get_package_name()],
         #                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        install_cmd = ["adb", "-s", self.serial, "install", "-r"]
-        if self.grant_perm:
-            install_cmd.append("-g")
-        install_cmd.append(app.app_path)
-        subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
-
         package_name = app.get_package_name()
-        dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
-                                      "dumpsys", "package", package_name], stdout=subprocess.PIPE)
-        dumpsys_lines = []
-        while True:
-            line = dumpsys_p.stdout.readline()
-            if not line:
-                break
-            dumpsys_lines.append(line)
-
+        if package_name not in self.adb.get_installed_apps():
+            install_cmd = ["adb", "-s", self.serial, "install", "-r"]
+            if self.grant_perm:
+                install_cmd.append("-g")
+            install_cmd.append(app.app_path)
+            subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
+        
         if not app.get_main_activity():
+            dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
+                                          "dumpsys", "package", package_name], stdout=subprocess.PIPE)
+            dumpsys_lines = []
+            while True:
+                line = dumpsys_p.stdout.readline()
+                if not line:
+                    break
+                dumpsys_lines.append(line)
+
             main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
             if not main_activity:
                 self.logger.warning("Cannot get the app's main activity!")
             else:
                 app.dumpsys_main_activity = main_activity
+
         self.logger.info("App installed: %s" % package_name)
         self.logger.info("Main activity: %s" % app.get_main_activity())
 
@@ -835,9 +836,12 @@ class Device(object):
         self.adb.press(key_code)
 
     def get_views(self):
-        if self.droidbot_app is not None:
+        if self.droidbot_app and self.adapters[self.droidbot_app]:
             views = self.droidbot_app.get_views()
-            if views is not None:
+            if not views:
                 return views
 
-        return self.view_client.dump()
+        if self.view_client and self.adapters[self.view_client]:
+            return self.view_client.dump()
+
+        return None

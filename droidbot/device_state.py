@@ -39,7 +39,7 @@ class DeviceState(object):
     @staticmethod
     def views2list(view_client_views):
         views = []
-        if len(view_client_views) == 0:
+        if not view_client_views or len(view_client_views) == 0:
             return views
 
         from adapter.viewclient import View

@@ -501,9 +501,10 @@ class Device(object):
         :return: 
         """
         tasks = self.get_task_activities()
-        current_task_id = tasks['current_task']
-        if current_task_id in tasks:
-            return tasks['task_to_activities'][current_task_id]
+        if 'current_task' in tasks and 'task_to_activities' in tasks:
+            current_task_id = tasks['current_task']
+            if current_task_id in tasks['task_to_activities']:
+                return tasks['task_to_activities'][current_task_id]
 
     def get_task_activities(self):
         """

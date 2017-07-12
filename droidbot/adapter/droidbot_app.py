@@ -173,6 +173,10 @@ class DroidBotAppConn(Adapter):
         if not self.last_acc_event:
             self.logger.warning("last_acc_event is None")
             return None
+
+        if 'view_list' in self.last_acc_event:
+            return self.last_acc_event['view_list']
+
         view_tree = copy.deepcopy(self.last_acc_event['root_node'])
         # print view_tree
         if not view_tree:
@@ -180,6 +184,7 @@ class DroidBotAppConn(Adapter):
         view_tree['parent'] = -1
         view_list = []
         self.__view_tree_to_list(view_tree, view_list)
+        self.last_acc_event['view_list'] = view_list
         return view_list
 
 if __name__ == "__main__":

@@ -1326,7 +1326,7 @@ class AppModel(object):
             state_str = "none"
             state_tag = "none"
         else:
-            state_str = state.get_state_str()
+            state_str = state.state_str
             state_tag = state.tag
         if state_str not in self.node2states:
             self.node2states[state_str] = []

@@ -787,7 +787,7 @@ class Device(object):
             self.logger.debug("finish getting current device state...")
             from device_state import DeviceState
             current_state = DeviceState(self,
-                                        view_client_views=view_client_views,
+                                        views=view_client_views,
                                         foreground_activity=foreground_activity,
                                         activity_stack=activity_stack,
                                         background_services=background_services,

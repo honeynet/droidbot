@@ -160,6 +160,17 @@ class DroidBotAppConn(Adapter):
     def __view_tree_to_list(self, view_tree, view_list):
         tree_id = len(view_list)
         view_tree['temp_id'] = tree_id
+
+        bounds = [[-1, -1], [-1, -1]]
+        bounds[0][0] = view_tree['bounds'][0]
+        bounds[0][1] = view_tree['bounds'][1]
+        bounds[1][0] = view_tree['bounds'][2]
+        bounds[1][1] = view_tree['bounds'][3]
+        width = bounds[1][0] - bounds[0][0]
+        height = bounds[1][1] - bounds[0][1]
+        view_tree['size'] = "%d*%d" % (width, height)
+        view_tree['bounds'] = bounds
+
         view_list.append(view_tree)
         children_ids = []
         for child_tree in view_tree['children']:
@@ -169,7 +180,6 @@ class DroidBotAppConn(Adapter):
         view_tree['children'] = children_ids
 
     def get_views(self):
-        import copy
         if not self.last_acc_event:
             self.logger.warning("last_acc_event is None")
             return None
@@ -177,6 +187,7 @@ class DroidBotAppConn(Adapter):
         if 'view_list' in self.last_acc_event:
             return self.last_acc_event['view_list']
 
+        import copy
         view_tree = copy.deepcopy(self.last_acc_event['root_node'])
         # print view_tree
         if not view_tree:

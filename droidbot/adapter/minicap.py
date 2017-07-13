@@ -27,8 +27,13 @@ class Minicap(Adapter):
         """
         self.logger = logging.getLogger('minicap')
         self.host = "localhost"
-        self.port = 7335
+
+        if device is None:
+            from droidbot.device import Device
+            device = Device()
         self.device = device
+        self.port = self.device.get_random_port()
+
         self.remote_minicap_path = "/data/local/tmp/minicap-devel"
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,10 +42,6 @@ class Minicap(Adapter):
         self.banner = None
         self.last_screen = None
         self.last_screen_time = None
-
-        if self.device is None:
-            from droidbot.device import Device
-            self.device = Device()
 
     def set_up(self):
         device = self.device

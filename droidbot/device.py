@@ -60,6 +60,7 @@ class Device(object):
         self.ro_secure = None
         self.is_connected = False
         self.last_know_state = None
+        self.__used_ports = []
 
         # adapters
         self.adb = ADB(device=self)
@@ -842,3 +843,18 @@ class Device(object):
 
         self.logger.warning("failed to get current views!")
         return None
+
+    def get_random_port(self):
+        """
+        get a random port on host machine to establish connection
+        :return: 
+        """
+        import socket
+        temp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        temp_sock.bind(("", 0))
+        port = temp_sock.getsockname()[1]
+        temp_sock.close()
+        if port in self.__used_ports:
+            return self.get_random_port()
+        self.__used_ports.append(port)
+        return port

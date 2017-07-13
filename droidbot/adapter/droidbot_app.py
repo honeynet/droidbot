@@ -29,12 +29,13 @@ class DroidBotAppConn(Adapter):
         """
         self.logger = logging.getLogger('DroidBotAppConn')
         self.host = "localhost"
-        self.port = 7336
         if device is None:
             from droidbot.device import Device
             device = Device()
         self.device = device
+        self.port = self.device.get_random_port()
         self.connected = False
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.last_acc_event = None

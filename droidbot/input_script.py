@@ -423,7 +423,7 @@ class DroidBotOperation(object):
 
 class ScriptEvent(InputEvent):
     """
-    an event define in DroidBotScript
+    an event defined in DroidBotScript
     """
     # the grammar of ScriptEvent is similar with the AppEvent in dict format
     event_grammar = {

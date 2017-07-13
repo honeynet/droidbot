@@ -168,7 +168,6 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         generate an event based on current device state
         note: ensure these fields are properly maintained in each transaction:
           last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
-        @param state: DeviceState
         @return: AppEvent
         """
         self.save_state_transition(self.last_event_str, self.last_state, self.current_state)

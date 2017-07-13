@@ -17,8 +17,8 @@ KEY_KeyEvent = "key"
 KEY_ExitEvent = "exit"
 KEY_TouchEvent = "touch"
 KEY_LongTouchEvent = "long_touch"
-KEY_DragEvent = "drag"
 KEY_SwipeEvent = "swipe"
+KEY_ScrollEvent = "scroll"
 KEY_TextInputEvent = "text_input"
 KEY_IntentEvent = "intent"
 
@@ -69,9 +69,9 @@ class InputEvent(object):
             return TouchEvent(event_dict=event_dict)
         elif event_type == KEY_LongTouchEvent:
             return LongTouchEvent(event_dict=event_dict)
-        elif event_type == KEY_DragEvent:
-            return SwipeEvent(event_dict=event_dict)
         elif event_type == KEY_SwipeEvent:
+            return SwipeEvent(event_dict=event_dict)
+        elif event_type == KEY_ScrollEvent:
             return ScrollEvent(event_dict=event_dict)
         elif event_type == KEY_TextInputEvent:
             return TextInputEvent(event_dict=event_dict)
@@ -316,7 +316,7 @@ class SwipeEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = KEY_DragEvent
+        self.event_type = KEY_SwipeEvent
 
         self.start_x = start_x
         self.start_y = start_y
@@ -353,7 +353,7 @@ class ScrollEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = KEY_SwipeEvent
+        self.event_type = KEY_ScrollEvent
         self.x = x
         self.y = y
         self.view = view
@@ -437,7 +437,7 @@ EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
     KEY_LongTouchEvent: LongTouchEvent,
-    KEY_DragEvent: SwipeEvent,
-    KEY_SwipeEvent: ScrollEvent,
+    KEY_SwipeEvent: SwipeEvent,
+    KEY_ScrollEvent: ScrollEvent,
     KEY_IntentEvent: IntentEvent,
 }

@@ -37,7 +37,6 @@ class UserInputMonitor(Adapter):
         self.connected = False
         if self.process is not None:
             self.process.terminate()
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def check_connectivity(self):
         return self.connected
@@ -59,6 +58,7 @@ class UserInputMonitor(Adapter):
 
         if f is not None:
             f.close()
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def parse_line(self, getevent_line):
         pass

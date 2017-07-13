@@ -99,7 +99,7 @@ class ADB(Adapter):
         """
         disconnect adb
         """
-        self.logger.debug("disconnected")
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def get_property(self, property):
         """

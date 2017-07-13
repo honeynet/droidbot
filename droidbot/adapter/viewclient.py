@@ -1050,6 +1050,7 @@ class ViewClient(Adapter):
                 subprocess.check_call(forward_remove_cmd.split())
             except Exception as e:
                 print e.message
+        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
 
     def useViewServer(self):
         self.useUiAutomator = False

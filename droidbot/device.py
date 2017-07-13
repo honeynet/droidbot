@@ -609,7 +609,11 @@ class Device(object):
             if self.grant_perm:
                 install_cmd.append("-g")
             install_cmd.append(app.app_path)
-            subprocess.check_call(install_cmd, stdout=subprocess.PIPE)
+            install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
+            while self.is_connected and package_name not in self.adb.get_installed_apps():
+                pass
+            if not self.is_connected:
+                return
 
         dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",
                                       "dumpsys", "package", package_name], stdout=subprocess.PIPE)

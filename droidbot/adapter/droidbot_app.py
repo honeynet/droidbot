@@ -35,6 +35,7 @@ class DroidBotAppConn(Adapter):
         self.device = device
         self.port = self.device.get_random_port()
         self.connected = False
+        self.__can_wait = True
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -56,7 +57,7 @@ class DroidBotAppConn(Adapter):
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
 
         # device.start_app(droidbot_app)
-        while ACCESSIBILITY_SERVICE not in device.get_service_names():
+        while ACCESSIBILITY_SERVICE not in device.get_service_names() and self.__can_wait:
             print "Please enable accessibility for DroidBot app manually."
             time.sleep(1)
 
@@ -154,9 +155,10 @@ class DroidBotAppConn(Adapter):
                 print e.message
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
-            subprocess.check_call(forward_remove_cmd.split())
+            subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception as e:
             print e.message
+        self.__can_wait = False
 
     def __view_tree_to_list(self, view_tree, view_list):
         tree_id = len(view_list)

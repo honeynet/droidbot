@@ -121,11 +121,21 @@ class DroidBot(object):
                 self.timer.start()
 
             self.device.set_up()
+
+            if not self.enabled:
+                return
             self.device.connect()
 
+            if not self.enabled:
+                return
             self.device.install_app(self.app)
+
+            if not self.enabled:
+                return
             self.env_manager.deploy()
 
+            if not self.enabled:
+                return
             if self.droidbox is not None:
                 self.droidbox.set_apk(self.app.app_path)
                 self.droidbox.start_unblocked()
@@ -148,6 +158,7 @@ class DroidBot(object):
         self.logger.info("DroidBot Stopped")
 
     def stop(self):
+        self.enabled = False
         if self.env_manager is not None:
             self.env_manager.stop()
         if self.input_manager is not None:
@@ -159,7 +170,6 @@ class DroidBot(object):
             self.device.tear_down()
         if not self.keep_app:
             self.device.uninstall_app(self.app)
-        self.enabled = False
 
 
 class DroidBotException(Exception):

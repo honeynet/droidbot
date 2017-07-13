@@ -58,7 +58,7 @@ class Device(object):
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
-        self.is_connected = False
+        self.is_connected = True
         self.last_know_state = None
         self.__used_ports = []
 

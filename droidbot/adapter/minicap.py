@@ -76,7 +76,8 @@ class Minicap(Adapter):
 
     def tear_down(self):
         try:
-            self.device.adb.shell("rm -r %s" % self.remote_minicap_path)
+            delete_minicap_cmd = "adb -s %s rm -r %s" % (self.device.serial, self.remote_minicap_path)
+            subprocess.check_call(delete_minicap_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception:
             pass
 
@@ -228,7 +229,7 @@ class Minicap(Adapter):
                 print e.message
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
-            subprocess.check_call(forward_remove_cmd.split())
+            subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception as e:
             print e.message
 

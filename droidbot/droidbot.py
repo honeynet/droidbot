@@ -5,6 +5,7 @@
 import logging
 import os
 import sys
+from threading import Timer
 
 from device import Device
 from app import App
@@ -53,6 +54,7 @@ class DroidBot(object):
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
 
+        self.timeout = timeout
         self.dont_tear_down = dont_tear_down
         self.keep_app = keep_app
 
@@ -89,7 +91,6 @@ class DroidBot(object):
                                               no_shuffle=no_shuffle,
                                               event_count=event_count,
                                               event_interval=event_interval,
-                                              timeout=timeout,
                                               script_path=script_path,
                                               profiling_method=profiling_method)
         except Exception as e:
@@ -115,6 +116,10 @@ class DroidBot(object):
             return
         self.logger.info("Starting DroidBot")
         try:
+            if self.timeout > 0:
+                self.timer = Timer(self.timeout, self.stop)
+                self.timer.start()
+
             self.device.set_up()
             self.device.connect()
 

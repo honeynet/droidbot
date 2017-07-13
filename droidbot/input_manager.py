@@ -28,7 +28,7 @@ class InputManager(object):
     """
 
     def __init__(self, device, app, policy_name, no_shuffle,
-                 event_count, event_interval, timeout,
+                 event_count, event_interval,
                  script_path=None, profiling_method=None):
         """
         manage input event sent to the target device
@@ -49,7 +49,6 @@ class InputManager(object):
         self.script = None
         self.event_count = event_count
         self.event_interval = event_interval
-        self.timeout = timeout
 
         self.monkey = None
         self.timer = None
@@ -103,10 +102,6 @@ class InputManager(object):
         start sending event
         """
         self.logger.info("start sending events, policy is %s" % self.policy_name)
-
-        if self.timeout > 0:
-            self.timer = Timer(self.timeout, self.stop)
-            self.timer.start()
 
         try:
             if self.policy is not None:

@@ -55,6 +55,7 @@ class DroidBot(object):
                 os.mkdir(output_dir)
 
         self.timeout = timeout
+        self.timer = None
         self.dont_tear_down = dont_tear_down
         self.keep_app = keep_app
 
@@ -159,6 +160,8 @@ class DroidBot(object):
 
     def stop(self):
         self.enabled = False
+        if self.timer and self.timer.isAlive():
+            self.timer.cancel()
         if self.env_manager is not None:
             self.env_manager.stop()
         if self.input_manager is not None:

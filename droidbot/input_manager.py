@@ -51,7 +51,6 @@ class InputManager(object):
         self.event_interval = event_interval
 
         self.monkey = None
-        self.timer = None
 
         if script_path is not None:
             f = open(script_path, 'r')
@@ -150,7 +149,4 @@ class InputManager(object):
             pid = self.device.get_app_pid("com.android.commands.monkey")
             if pid is not None:
                 self.device.adb.shell("kill -9 %d" % pid)
-        if self.timer and self.timer.isAlive():
-            self.timer.cancel()
-            self.timer = None
         self.enabled = False

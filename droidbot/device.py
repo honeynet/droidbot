@@ -611,8 +611,9 @@ class Device(object):
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
             while self.is_connected and package_name not in self.adb.get_installed_apps():
-                pass
+                time.sleep(1)
             if not self.is_connected:
+                install_p.terminate()
                 return
 
         dumpsys_p = subprocess.Popen(["adb", "-s", self.serial, "shell",

@@ -13,6 +13,7 @@ from adapter.process_monitor import ProcessMonitor
 from adapter.telnet import TelnetConsole
 from adapter.user_input_monitor import UserInputMonitor
 from adapter.viewclient import ViewClient
+from adapter.droidbot_ime import DroidBotIme
 from app import App
 from intent import Intent
 
@@ -58,7 +59,7 @@ class Device(object):
         self.release_version = None
         self.ro_debuggable = None
         self.ro_secure = None
-        self.is_connected = True
+        self.connected = True
         self.last_know_state = None
         self.__used_ports = []
 
@@ -71,6 +72,7 @@ class Device(object):
         self.logcat = Logcat(device=self)
         self.user_input_monitor = UserInputMonitor(device=self)
         self.process_monitor = ProcessMonitor(device=self)
+        self.droidbot_ime = DroidBotIme(device=self)
 
         self.adapters = {
             self.adb: True,
@@ -80,7 +82,8 @@ class Device(object):
             self.minicap: True,
             self.logcat: True,
             self.user_input_monitor: True,
-            self.process_monitor: True
+            self.process_monitor: True,
+            self.droidbot_ime: True
         }
 
         # if self.is_emulator:
@@ -150,14 +153,14 @@ class Device(object):
 
         self.unlock()
         self.check_connectivity()
-        self.is_connected = True
+        self.connected = True
 
     def disconnect(self):
         """
         disconnect current device
         :return:
         """
-        self.is_connected = False
+        self.connected = False
         for adapter in self.adapters:
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
@@ -396,7 +399,7 @@ class Device(object):
         @param delta_y: range of y coordinate
         """
         import random
-        while self.is_connected:
+        while self.connected:
             x = random.random() * delta_x * 2 + center_x - delta_x
             y = random.random() * delta_y * 2 + center_y - delta_y
             self.set_gps(x, y)
@@ -610,9 +613,9 @@ class Device(object):
                 install_cmd.append("-g")
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
-            while self.is_connected and package_name not in self.adb.get_installed_apps():
+            while self.connected and package_name not in self.adb.get_installed_apps():
                 time.sleep(1)
-            if not self.is_connected:
+            if not self.connected:
                 install_p.terminate()
                 return
 

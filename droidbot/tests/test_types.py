@@ -19,11 +19,11 @@ class DeviceTest(unittest.TestCase):
         self.device = None
 
     def test_init(self):
-        self.assertTrue(self.device.is_connected)
+        self.assertTrue(self.device.connected)
         self.assertIsNotNone(self.device.get_display_info())
 
         device_real = Device("emulator-5554", is_emulator=False)
-        self.assertTrue(device_real.is_connected)
+        self.assertTrue(device_real.connected)
 
     def test_connect(self):
         if self.device.is_emulator:
@@ -36,7 +36,7 @@ class DeviceTest(unittest.TestCase):
         self.device.check_connectivity()
         self.device.disconnect()
         self.device.connect()
-        self.assertTrue(self.device.is_connected)
+        self.assertTrue(self.device.connected)
 
     def test_is_foreground(self):
         settings_app = App(package_name="com.android.settings")

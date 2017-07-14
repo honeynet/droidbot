@@ -21,12 +21,12 @@
     "operations": {
         "login_operation": [
             {
-                "event_type": "text_input",
+                "event_type": "set_text",
                 "target_view": "login_email",
                 "text": "sample@email.com"
             },
             {
-                "event_type": "text_input",
+                "event_type": "set_text",
                 "target_view": "login_password",
                 "text": "sample_password"
             },

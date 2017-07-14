@@ -85,16 +85,16 @@ class DroidBotIme(Adapter):
         :param mode: 0 - set text; 1 - append text.
         :return: 
         """
-        input_cmd = "am broadcast -a DROIDBOT_INPUT_TEXT --es text %s --ei mode %d" % (text, mode)
+        input_cmd = "am broadcast -a DROIDBOT_INPUT_TEXT --es text \"%s\" --ei mode %d" % (text, mode)
         self.device.adb.shell(input_cmd)
 
 if __name__ == "__main__":
     droidbot_ime_conn = DroidBotIme()
     droidbot_ime_conn.set_up()
     droidbot_ime_conn.connect()
-    droidbot_ime_conn.input_text("hello", 0)
-    droidbot_ime_conn.input_text(u"世界!", 1)
+    droidbot_ime_conn.input_text("hello world!", 0)
+    droidbot_ime_conn.input_text(u"世界你好!", 1)
     time.sleep(2)
-    droidbot_ime_conn.input_text(u"再见，world", 0)
+    droidbot_ime_conn.input_text(u"再见。Bye bye.", 0)
     droidbot_ime_conn.disconnect()
     droidbot_ime_conn.tear_down()

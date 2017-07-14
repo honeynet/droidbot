@@ -19,7 +19,7 @@ KEY_TouchEvent = "touch"
 KEY_LongTouchEvent = "long_touch"
 KEY_SwipeEvent = "swipe"
 KEY_ScrollEvent = "scroll"
-KEY_TextInputEvent = "text_input"
+KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
 
 
@@ -73,8 +73,8 @@ class InputEvent(object):
             return SwipeEvent(event_dict=event_dict)
         elif event_type == KEY_ScrollEvent:
             return ScrollEvent(event_dict=event_dict)
-        elif event_type == KEY_TextInputEvent:
-            return TextInputEvent(event_dict=event_dict)
+        elif event_type == KEY_SetTextEvent:
+            return SetTextEvent(event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
             return IntentEvent(event_dict=event_dict)
         elif event_type == KEY_ExitEvent:
@@ -384,7 +384,7 @@ class ScrollEvent(UIEvent):
         return True
 
 
-class TextInputEvent(UIEvent):
+class SetTextEvent(UIEvent):
     """
     input text to target UI
     """
@@ -397,7 +397,7 @@ class TextInputEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = KEY_TextInputEvent
+        self.event_type = KEY_SetTextEvent
         self.x = x
         self.y = y
         self.view = view
@@ -406,9 +406,7 @@ class TextInputEvent(UIEvent):
     def send(self, device):
         touch_event = TouchEvent(x=self.x, y=self.y)
         touch_event.send(device)
-        escaped = self.text.replace('%s', '\\%s')
-        encoded = escaped.replace(' ', '%s')
-        device.adb.type(encoded)
+        device.view_set_text(self.text)
         return True
 
 

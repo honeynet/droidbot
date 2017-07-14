@@ -378,7 +378,6 @@ class Device(object):
         :param y: float
         :return:
         """
-        assert self.telnet is not None
         return self.telnet.run_cmd("geo fix %s %s" % (x, y))
 
     def set_continuous_gps(self, center_x, center_y, delta_x, delta_y):

@@ -23,7 +23,7 @@ class DroidBotAppConn(Adapter):
     """
     def __init__(self, device=None):
         """
-        initiate a emulator console via telnet
+        initiate a droidbot app connection
         :param device: instance of Device
         :return:
         """

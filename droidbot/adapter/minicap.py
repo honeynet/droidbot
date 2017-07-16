@@ -21,7 +21,7 @@ class Minicap(Adapter):
     """
     def __init__(self, device=None):
         """
-        initiate a emulator console via telnet
+        initiate a minicap connection
         :param device: instance of Device
         :return:
         """

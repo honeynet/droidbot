@@ -4,12 +4,12 @@ from adapter import Adapter
 
 class ProcessMonitor(Adapter):
     """
-    This class is responsible for monitoring the state of process on the device
+    monitoring the state of process on the device
     """
 
     def __init__(self, device=None, app=None):
         """
-        initiate a StateMonitor
+        initiate a process monitor
         :param device: Device instance
         :param app: App instance
         :return:

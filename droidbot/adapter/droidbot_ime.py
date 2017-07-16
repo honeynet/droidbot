@@ -1,10 +1,8 @@
 # coding=utf-8
 
 import logging
-import socket
-import subprocess
 import time
-import json
+
 from adapter import Adapter
 
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"

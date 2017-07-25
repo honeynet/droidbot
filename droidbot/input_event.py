@@ -6,6 +6,7 @@ from abc import abstractmethod
 
 import utils
 from intent import Intent
+from device_state import DeviceState
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -252,6 +253,13 @@ class UIEvent(InputEvent):
             event_type = utils.weighted_choice(choices)
             return event_type.get_random_instance(device, app)
 
+    @staticmethod
+    def get_xy(x, y, view):
+        if x is None or y is None:
+            return DeviceState.get_view_center(view_dict=view)
+        else:
+            return x, y
+
 
 class TouchEvent(UIEvent):
     """
@@ -274,7 +282,8 @@ class TouchEvent(UIEvent):
         return TouchEvent(x, y)
 
     def send(self, device):
-        device.view_long_touch(self.x, self.y, duration=300)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        device.view_long_touch(x=x, y=y, duration=300)
         return True
 
 
@@ -300,7 +309,8 @@ class LongTouchEvent(UIEvent):
         return LongTouchEvent(x, y)
 
     def send(self, device):
-        device.view_long_touch(self.x, self.y, self.duration)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        device.view_long_touch(x=x, y=y, duration=self.duration)
         return True
 
 
@@ -338,9 +348,9 @@ class SwipeEvent(UIEvent):
                           end_x=end_x, end_y=end_y)
 
     def send(self, device):
-        device.view_drag((self.start_x, self.start_y),
-                         (self.end_x, self.end_y),
-                         self.duration)
+        start_x, start_y = UIEvent.get_xy(x=self.start_x, y=self.start_y, view=self.start_view)
+        end_x, end_y = UIEvent.get_xy(x=self.end_x, y=self.end_y, view=self.end_view)
+        device.view_drag((start_x, start_y), (end_x, end_y), self.duration)
         return True
 
 
@@ -367,20 +377,32 @@ class ScrollEvent(UIEvent):
         return ScrollEvent(x, y, direction)
 
     def send(self, device):
-        end_x = self.x
-        end_y = self.y
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        start_x, start_y = x, y
+        end_x, end_y = x, y
         duration = 200
 
-        if self.direction == "UP":
-            end_y = 0
-        elif self.direction == "DOWN":
-            end_y = device.get_height()
-        elif self.direction == "LEFT":
-            end_x = 0
-        elif self.direction == "RIGHT":
-            end_x = device.get_width()
+        if self.view is not None:
+            width = DeviceState.get_view_width(view_dict=self.view)
+            height = DeviceState.get_view_height(view_dict=self.view)
+        else:
+            width = device.get_width()
+            height = device.get_height()
 
-        device.view_drag((self.x, self.y), (end_x, end_y), duration)
+        if self.direction == "UP":
+            start_y -= height * 2 / 5
+            end_y += height * 2 / 5
+        elif self.direction == "DOWN":
+            start_y += height * 2 / 5
+            end_y -= height * 2 / 5
+        elif self.direction == "LEFT":
+            start_x -= width * 2 / 5
+            end_x += width * 2 / 5
+        elif self.direction == "RIGHT":
+            start_x += width * 2 / 5
+            end_x -= width * 2 / 5
+
+        device.view_drag((start_x, start_y), (end_x, end_y), duration)
         return True
 
 
@@ -404,7 +426,8 @@ class SetTextEvent(UIEvent):
         self.text = text
 
     def send(self, device):
-        touch_event = TouchEvent(x=self.x, y=self.y)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        touch_event = TouchEvent(x=x, y=y)
         touch_event.send(device)
         device.view_set_text(self.text)
         return True

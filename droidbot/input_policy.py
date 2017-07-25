@@ -223,7 +223,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         """
         views = []
         for view in state.views:
-            if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
+            if view['enabled'] and len(view['children']) == 0:
                 views.append(view)
 
         if not self.no_shuffle:

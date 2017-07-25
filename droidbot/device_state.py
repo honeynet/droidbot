@@ -194,14 +194,24 @@ class DeviceState(object):
         return (bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2
 
     @staticmethod
-    def get_view_size(view_dict):
+    def get_view_width(view_dict):
         """
-        return the size of a view
+        return the width of a view
         @param view_dict: dict, element of device.get_current_state().views
         @return:
         """
         bounds = view_dict['bounds']
-        return int(math.fabs((bounds[0][0] - bounds[1][0]) * (bounds[0][1] - bounds[1][1])))
+        return int(math.fabs(bounds[0][0] - bounds[1][0]))
+
+    @staticmethod
+    def get_view_height(view_dict):
+        """
+        return the height of a view
+        @param view_dict: dict, element of device.get_current_state().views
+        @return:
+        """
+        bounds = view_dict['bounds']
+        return int(math.fabs(bounds[0][1] - bounds[1][1]))
 
     def get_all_ancestors(self, view_dict):
         result = []

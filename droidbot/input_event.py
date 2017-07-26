@@ -565,7 +565,7 @@ class IntentEvent(InputEvent):
         return True
 
     def get_event_str(self, state):
-        return "%s(state=%s, intent='%s')" % (self.__class__.__name__, state.state_str, self.intent)
+        return "%s(intent='%s')" % (self.__class__.__name__, self.intent)
 
 
 EVENT_TYPES = {

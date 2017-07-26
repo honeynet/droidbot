@@ -263,7 +263,7 @@ class DeviceState(object):
         Get a list of possible input events for this state
         :return: 
         """
-        if not self.possible_events:
+        if self.possible_events:
             return self.possible_events
         possible_events = []
         enabled_view_ids = set()

@@ -1,5 +1,5 @@
 import networkx as nx
-from input_event import UIEvent
+import logging
 
 
 class UTG(object):
@@ -8,10 +8,11 @@ class UTG(object):
     """
 
     def __init__(self, device, app):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
 
-        self.G = nx.Graph()
+        self.G = nx.DiGraph()
         self.effective_events = set()
         self.ineffective_events = set()
 
@@ -43,4 +44,24 @@ class UTG(object):
 
     def is_event_explored(self, event, state):
         event_str = event.get_event_str(state)
+        return event_str in self.effective_events or event_str in self.ineffective_events
 
+    def get_reachable_states(self, current_state):
+        reachable_states = []
+        for target_state_str in nx.descendants(self.G, current_state.state_str):
+            target_state = self.G.node[target_state_str]['state']
+            reachable_states.append(target_state)
+        return reachable_states
+
+    def get_event_path(self, current_state, target_state):
+        path_events = []
+        states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
+        if not isinstance(states, list) or len(states) < 2:
+            self.logger.warning("Error getting path from %s to %s" % (current_state.state_str, target_state.state_str))
+        start_state = states[0]
+        for state in states[1:]:
+            edge = self.G[start_state][state]
+            edge_events = edge['events']
+            path_events.append(edge_events[0])
+            start_state = state
+        return path_events

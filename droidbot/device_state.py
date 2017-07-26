@@ -107,7 +107,7 @@ class DeviceState(object):
                     view_strs.add(view_str)
         state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_strs)))
         import hashlib
-        return hashlib.sha256(state_str.encode('utf-8')).hexdigest()
+        return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
     def save2dir(self, output_dir=None):
         try:
@@ -172,6 +172,8 @@ class DeviceState(object):
             parent_strs.append(DeviceState.__get_view_signature(self.views[parent_id]))
         parent_strs.reverse()
         view_str = "%s//%s//%s" % (self.foreground_activity, "//".join(parent_strs), view_signature)
+        import hashlib
+        view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
         view_dict['view_str'] = view_str
         return view_str
 

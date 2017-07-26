@@ -6,7 +6,6 @@ from abc import abstractmethod
 
 import utils
 from intent import Intent
-from device_state import DeviceState
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -96,6 +95,10 @@ class EventLog(object):
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
 
+        self.start_state = None
+        self.end_state = None
+
+        self.profiling_method = profiling_method
         self.trace_remote_file = "/data/local/tmp/event.trace"
         self.is_profiling = False
         self.profiling_pid = -1
@@ -109,8 +112,14 @@ class EventLog(object):
     def to_dict(self):
         return {
             "tag": self.tag,
-            "event": self.event.to_dict()
+            "event": self.event.to_dict(),
+            "start_state": self.start_state.state_str,
+            "stop_state": self.end_state.state_str,
+            "event_str": self.gen_event_str()
         }
+
+    def gen_event_str(self):
+        return None
 
     def save2dir(self, output_dir=None):
         if output_dir is None:
@@ -135,11 +144,22 @@ class EventLog(object):
                 return True
         return False
 
+    def start(self):
+        """
+        start sending event
+        :return: 
+        """
+        self.start_state = self.device.get_current_state()
+        self.start_profiling()
+        self.device.send_event(self.event)
+
     def start_profiling(self):
         """
         start profiling the current event
         @return:
         """
+        if self.profiling_method is None:
+            return
         if self.is_profiling:
             return
         pid = self.device.get_app_pid(self.app)
@@ -157,7 +177,18 @@ class EventLog(object):
         self.is_profiling = True
         self.profiling_pid = pid
 
+    def stop(self):
+        """
+        finish sending event
+        :return: 
+        """
+        self.stop_profiling()
+        self.end_state = self.device.get_current_state()
+        self.save2dir()
+
     def stop_profiling(self, output_dir=None):
+        if self.profiling_method is None:
+            return
         if not self.is_profiling:
             return
         try:
@@ -256,6 +287,7 @@ class UIEvent(InputEvent):
     @staticmethod
     def get_xy(x, y, view):
         if x is None or y is None:
+            from device_state import DeviceState
             return DeviceState.get_view_center(view_dict=view)
         else:
             return x, y
@@ -383,6 +415,7 @@ class ScrollEvent(UIEvent):
         duration = 200
 
         if self.view is not None:
+            from device_state import DeviceState
             width = DeviceState.get_view_width(view_dict=self.view)
             height = DeviceState.get_view_height(view_dict=self.view)
         else:

@@ -88,13 +88,9 @@ class InputManager(object):
         self.events.append(event)
 
         event_log = EventLog(self.device, self.app, event, self.profiling_method)
-        if self.profiling_method is not None:
-            event_log.start_profiling()
-        self.device.send_event(event)
+        event_log.start()
         time.sleep(self.event_interval)
-        if self.profiling_method is not None:
-            event_log.stop_profiling()
-        event_log.save2dir()
+        event_log.stop()
 
     def start(self):
         """

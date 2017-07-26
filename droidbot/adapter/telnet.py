@@ -21,7 +21,7 @@ class TelnetConsole(Adapter):
         :param device: instance of Device
         :return:
         """
-        self.logger = logging.getLogger('TelnetConsole')
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         if device is None:
             from droidbot.device import Device

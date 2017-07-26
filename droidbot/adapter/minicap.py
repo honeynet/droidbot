@@ -25,7 +25,7 @@ class Minicap(Adapter):
         :param device: instance of Device
         :return:
         """
-        self.logger = logging.getLogger('minicap')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.host = "localhost"
 
         if device is None:

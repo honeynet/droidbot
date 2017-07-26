@@ -1,4 +1,5 @@
 import random
+import logging
 from abc import abstractmethod
 
 from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
@@ -41,13 +42,13 @@ class InputPolicy(object):
             except KeyboardInterrupt:
                 break
             except InputInterruptedException as e:
-                self.device.logger.warning("stop sending events: %s" % e)
+                self.logger.warning("stop sending events: %s" % e)
                 break
             # except RuntimeError as e:
-            #     self.device.logger.warning(e.message)
+            #     self.logger.warning(e.message)
             #     break
             except Exception as e:
-                self.device.logger.warning("exception during sending events: %s" % e)
+                self.logger.warning("exception during sending events: %s" % e)
                 import traceback
                 traceback.print_exc()
                 continue
@@ -152,6 +153,8 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
 
     def __init__(self, device, app, no_shuffle):
         super(UtgDfsPolicy, self).__init__(device, app)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         self.explored_views = set()
         self.state_transitions = set()
         self.no_shuffle = no_shuffle
@@ -240,13 +243,13 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
+                self.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 
         # try to find a un-clicked view
         for view in views:
             if (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.logger.info("selected an un-clicked view: %s" % view['view_str'])
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
@@ -255,16 +258,16 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
-                self.device.logger.info("selected a transition view: %s" % view['view_str'])
+                self.logger.info("selected a transition view: %s" % view['view_str'])
                 return view
 
         # no window transition found, just return a random view
         # view = views[0]
-        # self.device.logger.info("selected a random view: %s" % view['view_str'])
+        # self.logger.info("selected a random view: %s" % view['view_str'])
         # return view
 
         # DroidBot stuck on current state, return None
-        self.device.logger.info("no view could be selected in state: %s" % state.tag)
+        self.logger.info("no view could be selected in state: %s" % state.tag)
         return None
 
     def save_state_transition(self, event_str, old_state, new_state):

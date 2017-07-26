@@ -34,7 +34,7 @@ class Device(object):
         :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
-        self.logger = logging.getLogger("Device")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # options
         if device_serial is None:
@@ -784,7 +784,7 @@ class Device(object):
         return local_image_path
 
     def get_current_state(self):
-        self.logger.info("getting current device state...")
+        self.logger.debug("getting current device state...")
         current_state = None
         try:
             view_client_views = self.get_views()
@@ -804,8 +804,10 @@ class Device(object):
             self.logger.warning("exception in get_current_state: %s" % e)
             import traceback
             traceback.print_exc()
-        self.logger.info("finish getting current device state...")
+        self.logger.debug("finish getting current device state...")
         self.last_know_state = current_state
+        if not current_state:
+            self.logger.warning("Failed to get current state!")
         return current_state
 
     def get_last_known_state(self):

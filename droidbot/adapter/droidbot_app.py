@@ -27,7 +27,7 @@ class DroidBotAppConn(Adapter):
         :param device: instance of Device
         :return:
         """
-        self.logger = logging.getLogger('DroidBotAppConn')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.host = "localhost"
         if device is None:
             from droidbot.device import Device

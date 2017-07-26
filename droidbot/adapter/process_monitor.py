@@ -1,4 +1,5 @@
 import threading
+import logging
 from adapter import Adapter
 
 
@@ -14,6 +15,7 @@ class ProcessMonitor(Adapter):
         :param app: App instance
         :return:
         """
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.enabled = True
         self.device = device
         self.app = app

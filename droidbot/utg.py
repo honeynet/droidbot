@@ -82,10 +82,10 @@ class UTG(object):
         for reachable_state in reachable_states:
             # Do not consider un-related states
             if reachable_state.get_app_activity_depth(self.app) < 0:
-                pass
+                continue
             # Do not consider explored states
             if self.is_state_explored(reachable_state):
-                pass
+                continue
             self.__exploration_target = reachable_state
             self.logger.info("Exploration target is changed to " + reachable_state.state_str)
             return reachable_state

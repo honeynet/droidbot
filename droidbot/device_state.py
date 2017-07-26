@@ -222,6 +222,11 @@ class DeviceState(object):
         return int(math.fabs(bounds[0][1] - bounds[1][1]))
 
     def get_all_ancestors(self, view_dict):
+        """
+        Get temp view ids of the given view's ancestors
+        :param view_dict: 
+        :return: 
+        """
         result = []
         parent_id = self.__safe_dict_get(view_dict, 'parent', -1)
         if 0 <= parent_id < len(self.views):
@@ -230,6 +235,11 @@ class DeviceState(object):
         return result
 
     def get_all_children(self, view_dict):
+        """
+        Get temp view ids of the given view's children
+        :param view_dict: 
+        :return: 
+        """
         children = self.__safe_dict_get(view_dict, 'children')
         if not children:
             return set()
@@ -238,6 +248,15 @@ class DeviceState(object):
             children_of_child = self.get_all_children(self.views[child])
             children.union(children_of_child)
         return children
+
+    def is_related_to(self, app):
+        """
+        Check if this state is related to an app
+        :param app: App
+        :return: True for related, False otherwise
+        """
+        activity_stack_str = "" if not self.activity_stack else "//".join(self.activity_stack)
+        return app.package_name in activity_stack_str
 
     def get_possible_input(self):
         """

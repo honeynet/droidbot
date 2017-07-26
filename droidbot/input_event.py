@@ -244,7 +244,7 @@ class ExitEvent(InputEvent):
         raise KeyboardInterrupt()
 
     def get_event_str(self, state):
-        return self.__class__.__name__
+        return "%s()" % self.__class__.__name__
 
 
 class KeyEvent(InputEvent):

@@ -314,11 +314,9 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         @return: InputEvent
         """
         current_state = self.current_state
-        activity_stack = current_state.activity_stack
-        activity_stack_str = "" if not activity_stack else "//".join(activity_stack)
 
-        # If current app is not in the activity stack, try start app
-        if self.app.package_name not in activity_stack_str:
+        # If the current state is not related to the app, try start app
+        if not current_state.is_related_to(self.app):
             start_app_intent = self.app.get_start_intent()
             return IntentEvent(start_app_intent)
 

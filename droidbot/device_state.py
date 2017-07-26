@@ -99,13 +99,13 @@ class DeviceState(object):
             DeviceState.__assign_depth(views, views[view_id], depth + 1)
 
     def __get_state_str(self):
-        view_strs = set()
+        view_signatures = set()
         for view in self.views:
-            if 'view_str' in view:
-                view_str = view['view_str']
-                if view_str is not None and len(view_str) > 0:
-                    view_strs.add(view_str)
-        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_strs)))
+            if 'signature' in view:
+                view_signature = view['signature']
+                if view_signature is not None and len(view_signature) > 0:
+                    view_signatures.add(view_signature)
+        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
@@ -171,7 +171,12 @@ class DeviceState(object):
         for parent_id in self.get_all_ancestors(view_dict):
             parent_strs.append(DeviceState.__get_view_signature(self.views[parent_id]))
         parent_strs.reverse()
-        view_str = "%s//%s//%s" % (self.foreground_activity, "//".join(parent_strs), view_signature)
+        child_strs = []
+        for child_id in self.get_all_children(view_dict):
+            child_strs.append(DeviceState.__get_view_signature(self.views[child_id]))
+        child_strs.sort()
+        view_str = "Activity:%s\nSelf:%s\nParents:%s\nChildren:%s" %\
+                   (self.foreground_activity, view_signature, "//".join(parent_strs), "||".join(child_strs))
         import hashlib
         view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
         view_dict['view_str'] = view_str

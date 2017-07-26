@@ -23,6 +23,10 @@ KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
 
 
+class InvalidEventException(Exception):
+    pass
+
+
 class InputEvent(object):
     """
     The base class of all events
@@ -80,6 +84,10 @@ class InputEvent(object):
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
 
+    @abstractmethod
+    def get_event_str(self, state):
+        pass
+
 
 class EventLog(object):
     """
@@ -115,11 +123,8 @@ class EventLog(object):
             "event": self.event.to_dict(),
             "start_state": self.start_state.state_str,
             "stop_state": self.end_state.state_str,
-            "event_str": self.gen_event_str()
+            "event_str": self.event.get_event_str(self.start_state)
         }
-
-    def gen_event_str(self):
-        return None
 
     def save2dir(self, output_dir=None):
         if output_dir is None:
@@ -235,6 +240,9 @@ class ExitEvent(InputEvent):
         # device.disconnect()
         raise KeyboardInterrupt()
 
+    def get_event_str(self, state):
+        return self.__class__.__name__
+
 
 class KeyEvent(InputEvent):
     """
@@ -256,6 +264,9 @@ class KeyEvent(InputEvent):
     def send(self, device):
         device.key_press(self.name)
         return True
+
+    def get_event_str(self, state):
+        return "%s(state=%s, name=%s)" % (self.__class__.__name__, state.state_str, self.name)
 
 
 class UIEvent(InputEvent):
@@ -318,6 +329,15 @@ class TouchEvent(UIEvent):
         device.view_long_touch(x=x, y=y, duration=300)
         return True
 
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s)" % (self.__class__.__name__, self.view['view_str'])
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s)" % (self.__class__.__name__, state.state_str, self.x, self.y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
 
 class LongTouchEvent(UIEvent):
     """
@@ -344,6 +364,16 @@ class LongTouchEvent(UIEvent):
         x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
         device.view_long_touch(x=x, y=y, duration=self.duration)
         return True
+
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, duration=%s)" % (self.__class__.__name__, self.view['view_str'], self.duration)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
 
 
 class SwipeEvent(UIEvent):
@@ -384,6 +414,25 @@ class SwipeEvent(UIEvent):
         end_x, end_y = UIEvent.get_xy(x=self.end_x, y=self.end_y, view=self.end_view)
         device.view_drag((start_x, start_y), (end_x, end_y), self.duration)
         return True
+
+    def get_event_str(self, state):
+        if self.start_view is not None:
+            start_view_str = "start_view=%s" % self.start_view['view_str']
+        elif self.start_x is not None and self.start_y is not None:
+            start_view_str = "state=%s, start_x=%s, start_y=%s" % (state.state_str, self.start_x, self.start_y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
+        if self.end_view is not None:
+            end_view_str = "end_view=%s" % self.end_view['view_str']
+        elif self.end_x is not None and self.end_y is not None:
+            end_view_str = "end_x=%s, end_y=%s" % (self.end_x, self.end_y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
+        return "%s(%s, %s, duration=%s)" % (self.__class__.__name__, start_view_str, end_view_str, self.duration)
 
 
 class ScrollEvent(UIEvent):
@@ -438,6 +487,16 @@ class ScrollEvent(UIEvent):
         device.view_drag((start_x, start_y), (end_x, end_y), duration)
         return True
 
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, direction=%s)" % (self.__class__.__name__, self.view['view_str'], self.direction)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
 
 class SetTextEvent(UIEvent):
     """
@@ -465,6 +524,16 @@ class SetTextEvent(UIEvent):
         device.view_set_text(self.text)
         return True
 
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, text=%s)" % (self.__class__.__name__, self.view['view_str'], self.text)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, text=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.text)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
 
 class IntentEvent(InputEvent):
     """
@@ -476,7 +545,13 @@ class IntentEvent(InputEvent):
             self.__dict__ = event_dict
             return
         self.event_type = KEY_IntentEvent
-        self.intent = intent.get_cmd() if isinstance(intent, Intent) else ""
+        if isinstance(intent, Intent):
+            self.intent = intent.get_cmd()
+        elif isinstance(intent, str):
+            self.intent = intent
+        else:
+            msg = "intent must be either an instance of Intent or a string."
+            raise InvalidEventException(msg)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -485,6 +560,9 @@ class IntentEvent(InputEvent):
     def send(self, device):
         device.send_intent(intent=self.intent)
         return True
+
+    def get_event_str(self, state):
+        return "%s(state=%s, intent='%s')" % (self.__class__.__name__, state.state_str, self.intent)
 
 
 EVENT_TYPES = {

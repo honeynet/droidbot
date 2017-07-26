@@ -329,7 +329,7 @@ class TouchEvent(UIEvent):
 
     def send(self, device):
         x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
-        device.view_long_touch(x=x, y=y, duration=300)
+        device.view_long_touch(x=x, y=y, duration=200)
         return True
 
     def get_event_str(self, state):
@@ -464,7 +464,7 @@ class ScrollEvent(UIEvent):
         x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
         start_x, start_y = x, y
         end_x, end_y = x, y
-        duration = 200
+        duration = 1000
 
         if self.view is not None:
             from device_state import DeviceState

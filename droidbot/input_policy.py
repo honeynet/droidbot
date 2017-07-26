@@ -315,31 +315,16 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         """
         current_state = self.current_state
 
-        # If the current state is not related to the app, try start app
-        if not current_state.is_related_to(self.app):
+        # If the current app is not in the activity stack, try start app
+        if current_state.get_app_activity_depth(self.app) < 0:
             start_app_intent = self.app.get_start_intent()
             return IntentEvent(intent=start_app_intent)
 
-        # Get all possible input events
-        possible_events = self.current_state.get_possible_input()
-
-        # If there is an unexplored event, try the event first
-        for input_event in possible_events:
-            if not self.utg.is_event_explored(event=input_event, state=current_state):
-                return input_event
-
-        # If all events in this state had been explored, try navigate to a state with an unexplored event
-        self.logger.info("All events in current state had been explored. Trying to navigate to other states...")
-        reachable_states = self.utg.get_reachable_states(current_state)
-        for reachable_state in reachable_states:
-            # Do not consider external states
-            if not reachable_state.is_related_to(self.app):
-                pass
-            event_path = self.utg.get_event_path(current_state=current_state, target_state=reachable_state)
-            if event_path and len(event_path) > 0:
-                return event_path[0]
+        exploration_event = self.utg.get_exploration_event(current_state)
+        if exploration_event:
+            return exploration_event
 
         # If couldn't navigate to an unexplored state, stop the app
-        self.logger.info("Cannot navigate to other states. Trying to restart app...")
+        self.logger.info("Cannot find an exploration event. Trying to restart app...")
         stop_app_intent = self.app.get_stop_intent()
         return IntentEvent(intent=stop_app_intent)

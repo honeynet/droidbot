@@ -249,14 +249,18 @@ class DeviceState(object):
             children.union(children_of_child)
         return children
 
-    def is_related_to(self, app):
+    def get_app_activity_depth(self, app):
         """
-        Check if this state is related to an app
+        Get the depth of the app's activity in the activity stack
         :param app: App
-        :return: True for related, False otherwise
+        :return: the depth of app's activity, -1 for not found
         """
-        activity_stack_str = "" if not self.activity_stack else "//".join(self.activity_stack)
-        return app.package_name in activity_stack_str
+        depth = 0
+        for activity_str in self.activity_stack:
+            if app.package_name in activity_str:
+                return depth
+            depth += 1
+        return -1
 
     def get_possible_input(self):
         """

@@ -146,13 +146,13 @@ EVENT_FLAG_STOP_APP = "+stop_app"
 EVENT_FLAG_TOUCH = "+touch"
 
 
-class UtgDfsPolicy(UtgBasedInputPolicy):
+class UtgDfsPolicy1(UtgBasedInputPolicy):
     """
-    record device state during execution
+    depth-first strategy to explore UFG (old)
     """
 
     def __init__(self, device, app, no_shuffle):
-        super(UtgDfsPolicy, self).__init__(device, app)
+        super(UtgDfsPolicy1, self).__init__(device, app)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.explored_views = set()
@@ -171,7 +171,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         generate an event based on current device state
         note: ensure these fields are properly maintained in each transaction:
           last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
-        @return: AppEvent
+        @return: InputEvent
         """
         self.save_state_transition(self.last_event_str, self.last_state, self.current_state)
 
@@ -293,3 +293,41 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             return
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
+
+
+class UtgDfsPolicy(UtgBasedInputPolicy):
+    """
+    depth-first strategy to explore UFG (new)
+    """
+
+    def __init__(self, device, app, no_shuffle):
+        super(UtgDfsPolicy, self).__init__(device, app)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.no_shuffle = no_shuffle
+
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
+                                  "allow", "check", "agree", "try", "go", "next"]
+
+    def generate_event_based_on_utg(self):
+        """
+        generate an event based on current UTG
+        @return: InputEvent
+        """
+        current_state = self.current_state
+        activity_stack = current_state.activity_stack
+        activity_stack_str = "" if not activity_stack else "//".join(activity_stack)
+
+        # If current app is not in the activity stack, try start app
+        if self.app.package_name not in activity_stack_str:
+            start_app_intent = self.app.get_start_intent()
+            return IntentEvent(start_app_intent)
+
+        # Get all possible input events
+        possible_events = self.current_state.get_possible_input()
+
+        # TODO If there is an unexplored event, try the event first
+        for input_event in possible_events:
+            pass
+
+        # TODO If all events in this state had been explored, try navigate to a state with an unexplored event
+        pass

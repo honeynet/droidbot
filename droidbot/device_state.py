@@ -23,6 +23,7 @@ class DeviceState(object):
         self.views = DeviceState.__parse_views(views)
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
+        self.possible_events = None
 
     def to_dict(self):
         state = {'tag': self.tag,
@@ -105,7 +106,7 @@ class DeviceState(object):
                 view_signature = view['signature']
                 if view_signature is not None and len(view_signature) > 0:
                     view_signatures.add(view_signature)
-        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+        state_str = "%s{%s}" % (self.activity_stack, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
@@ -243,6 +244,8 @@ class DeviceState(object):
         Get a list of possible input events for this state
         :return: 
         """
+        if not self.possible_events:
+            return self.possible_events
         possible_events = []
         enabled_view_ids = set()
         touch_exclude_view_ids = set()
@@ -287,4 +290,7 @@ class DeviceState(object):
                 continue
             possible_events.append(TouchEvent(view=self.views[view_id]))
 
+        possible_events.append(KeyEvent(name="BACK"))
+
+        self.possible_events = possible_events
         return possible_events

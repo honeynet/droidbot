@@ -1,10 +1,9 @@
-import random
 import logging
+import random
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
+from input_event import KeyEvent, IntentEvent, TouchEvent
 from utg import UTG
-from device_state import DeviceState
 
 
 class InputInterruptedException(Exception):
@@ -211,8 +210,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            x, y = DeviceState.get_view_center(view_to_touch)
-            result = TouchEvent(x, y)
+            result = TouchEvent(view=view_to_touch)
 
         self.last_event_flag += EVENT_FLAG_TOUCH
         self.last_event_str = view_to_touch_str

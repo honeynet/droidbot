@@ -105,6 +105,7 @@ class EventLog(object):
 
         self.start_state = None
         self.end_state = None
+        self.event_str = None
 
         self.profiling_method = profiling_method
         self.trace_remote_file = "/data/local/tmp/event.trace"
@@ -123,7 +124,7 @@ class EventLog(object):
             "event": self.event.to_dict(),
             "start_state": self.start_state.state_str,
             "stop_state": self.end_state.state_str,
-            "event_str": self.event.get_event_str(self.start_state)
+            "event_str": self.event_str
         }
 
     def save2dir(self, output_dir=None):
@@ -156,6 +157,8 @@ class EventLog(object):
         """
         self.start_state = self.device.get_current_state()
         self.start_profiling()
+        self.event_str = self.event.get_event_str(self.start_state)
+        print "Input: " + self.event_str
         self.device.send_event(self.event)
 
     def start_profiling(self):

@@ -449,7 +449,7 @@ class Device(object):
     def send_intent(self, intent):
         """
         send an intent to device via am (ActivityManager)
-        :param intent: instance of Intent
+        :param intent: instance of Intent or str
         :return:
         """
         assert self.adb is not None
@@ -466,7 +466,6 @@ class Device(object):
         :param event: the event to be sent
         :return:
         """
-        self.logger.info("sending event: %s" % event)
         event.send(self)
 
     def start_app(self, app):

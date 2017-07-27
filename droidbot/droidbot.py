@@ -35,7 +35,7 @@ class DroidBot(object):
                  timeout=None,
                  keep_app=None,
                  dont_tear_down=False,
-                 quiet=False,
+                 debug_mode=False,
                  with_droidbox=False,
                  use_hierarchy_viewer=False,
                  profiling_method=None,
@@ -44,7 +44,7 @@ class DroidBot(object):
         initiate droidbot with configurations
         :return:
         """
-        logging.basicConfig(level=logging.WARNING if quiet else logging.INFO)
+        logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
 
         self.logger = logging.getLogger('DroidBot')
         DroidBot.instance = self

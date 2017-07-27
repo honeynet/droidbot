@@ -59,8 +59,8 @@ def parse_args():
     parser.add_argument("-timeout", action="store", dest="timeout", default=app_event.DEFAULT_TIMEOUT,
                         type=int, help="Timeout in seconds, -1 means unlimited. "
                                        "Default: %d" % app_event.DEFAULT_TIMEOUT)
-    parser.add_argument("-q", action="store_true", dest="quiet",
-                        help="Run in quiet mode (dump warning messages only).")
+    parser.add_argument("-debug", action="store_true", dest="debug_mode",
+                        help="Run in debug mode (dump debug messages).")
     parser.add_argument("-random", action="store_true", dest="random_input",
                         help="Add randomness to input events.")
     parser.add_argument("-keep_app", action="store_true", dest="keep_app",
@@ -102,7 +102,7 @@ def main():
                         event_interval=opts.interval,
                         timeout=opts.timeout,
                         event_count=opts.count,
-                        quiet=opts.quiet,
+                        debug_mode=opts.debug_mode,
                         keep_app=opts.keep_app,
                         dont_tear_down=opts.dont_tear_down,
                         with_droidbox=opts.with_droidbox,

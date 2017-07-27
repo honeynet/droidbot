@@ -607,7 +607,7 @@ class Device(object):
         package_name = app.get_package_name()
         if package_name not in self.adb.get_installed_apps():
             install_cmd = ["adb", "-s", self.serial, "install", "-r"]
-            if self.grant_perm:
+            if self.grant_perm and self.get_sdk_version() >= 23:
                 install_cmd.append("-g")
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)

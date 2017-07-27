@@ -372,8 +372,8 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
 
         reachable_states = self.utg.get_reachable_states(current_state)
         for state in reachable_states:
-            # Do not consider un-related states
-            if state.get_app_activity_depth(self.app) < 0:
+            # Only consider foreground states
+            if state.get_app_activity_depth(self.app) != 0:
                 continue
             # Do not consider missed states
             if state.state_str in self.__missed_states:

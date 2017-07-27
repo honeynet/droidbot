@@ -1,5 +1,7 @@
 import networkx as nx
 import logging
+import json
+import os
 
 
 class UTG(object):
@@ -36,6 +38,7 @@ class UTG(object):
         if (old_state.state_str, new_state.state_str) not in self.G.edges():
             self.G.add_edge(old_state.state_str, new_state.state_str, events=[])
         self.G[old_state.state_str][new_state.state_str]['events'].append(event)
+        self.__output_utg()
 
     def add_node(self, state):
         if not state:
@@ -43,6 +46,44 @@ class UTG(object):
         if state.state_str not in self.G.nodes():
             state.save2dir()
             self.G.add_node(state.state_str, state=state)
+
+    def __output_utg(self):
+        """
+        Output current UTG to a dot file
+        :return: 
+        """
+        if not self.device.output_dir:
+            return
+        utg_file_path = os.path.join(self.device.output_dir, "utg.json")
+        utg_file = open(utg_file_path, "w")
+        utg_nodes = []
+        utg_edges = []
+        for state_str in self.G.nodes():
+            state = self.G.node[state_str]['state']
+            utg_node = {
+                "id": state_str,
+                "shape": "image",
+                "image": state.screenshot_path,
+                "label": state.foreground_activity
+            }
+            utg_nodes.append(utg_node)
+        for state_transition in self.G.edges():
+            from_state = state_transition[0]
+            to_state = state_transition[1]
+            # events = self.G[from_state][to_state]['events']
+            # for event in events:
+            #     event_id = "%s: %s->%s" % (event.get_event_str(from_state), from_state, to_state)
+            utg_edge = {
+                "from": from_state,
+                "to": to_state
+            }
+            utg_edges.append(utg_edge)
+        utg = {
+            "nodes": utg_nodes,
+            "edges": utg_edges
+        }
+        json.dump(utg, utg_file, indent=2)
+        utg_file.close()
 
     def is_event_explored(self, event, state):
         event_str = event.get_event_str(state)

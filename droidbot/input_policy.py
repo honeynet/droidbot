@@ -153,13 +153,13 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
     depth-first strategy to explore UFG (old)
     """
 
-    def __init__(self, device, app, no_shuffle):
+    def __init__(self, device, app, random_input):
         super(UtgDfsPolicy1, self).__init__(device, app)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.explored_views = set()
         self.state_transitions = set()
-        self.no_shuffle = no_shuffle
+        self.random_input = random_input
 
         self.last_event_flag = ""
         self.last_event_str = None
@@ -230,7 +230,7 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
             if view['enabled'] and len(view['children']) == 0:
                 views.append(view)
 
-        if not self.no_shuffle:
+        if self.random_input:
             random.shuffle(views)
 
         # add a "BACK" view, consider go back last
@@ -254,7 +254,7 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        if not self.no_shuffle:
+        if self.random_input:
             random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
@@ -302,10 +302,10 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
     depth-first strategy to explore UFG (new)
     """
 
-    def __init__(self, device, app, no_shuffle):
+    def __init__(self, device, app, random_input):
         super(UtgDfsPolicy, self).__init__(device, app)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.no_shuffle = no_shuffle
+        self.random_input = random_input
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
@@ -334,7 +334,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         # Get all possible input events
         possible_events = current_state.get_possible_input()
 
-        if not self.no_shuffle:
+        if self.random_input:
             random.shuffle(possible_events)
 
         # If there is an unexplored event, try the event first
@@ -371,6 +371,9 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
                 self.__missed_states.add(self.__nav_target.event_str)
 
         reachable_states = self.utg.get_reachable_states(current_state)
+        if self.random_input:
+            random.shuffle(reachable_states)
+
         for state in reachable_states:
             # Only consider foreground states
             if state.get_app_activity_depth(self.app) != 0:

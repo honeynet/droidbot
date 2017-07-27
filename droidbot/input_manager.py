@@ -27,7 +27,7 @@ class InputManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, policy_name, no_shuffle,
+    def __init__(self, device, app, policy_name, random_input,
                  event_count, event_interval,
                  script_path=None, profiling_method=None):
         """
@@ -43,7 +43,7 @@ class InputManager(object):
         self.device = device
         self.app = app
         self.policy_name = policy_name
-        self.no_shuffle = no_shuffle
+        self.random_input = random_input
         self.events = []
         self.policy = None
         self.script = None
@@ -68,7 +68,7 @@ class InputManager(object):
         elif self.policy_name == POLICY_MONKEY:
             input_policy = None
         elif self.policy_name == POLICY_DFS:
-            input_policy = UtgDfsPolicy(device, app, self.no_shuffle)
+            input_policy = UtgDfsPolicy(device, app, self.random_input)
         # elif self.policy_name == POLICY_MANUAL:
         #     input_policy = ManualEventFactory(device, app)
         else:

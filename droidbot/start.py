@@ -61,8 +61,8 @@ def parse_args():
                                        "Default: %d" % app_event.DEFAULT_TIMEOUT)
     parser.add_argument("-q", action="store_true", dest="quiet",
                         help="Run in quiet mode (dump warning messages only).")
-    parser.add_argument("-no_shuffle", action="store_true", dest="no_shuffle",
-                        help="Explore the UI without view shuffling.")
+    parser.add_argument("-random", action="store_true", dest="random_input",
+                        help="Add randomness to input events.")
     parser.add_argument("-keep_app", action="store_true", dest="keep_app",
                         help="Keep the app on the device after testing.")
     parser.add_argument("-dont_tear_down", action="store_true", dest="dont_tear_down",
@@ -97,7 +97,7 @@ def main():
                         # env_policy=opts.env_policy,
                         env_policy="none",
                         policy_name=opts.input_policy,
-                        no_shuffle=opts.no_shuffle,
+                        random_input=opts.random_input,
                         script_path=opts.script_path,
                         event_interval=opts.interval,
                         timeout=opts.timeout,

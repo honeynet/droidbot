@@ -66,13 +66,16 @@ class UTG(object):
 
     def get_event_path(self, current_state, target_state):
         path_events = []
-        states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
-        if not isinstance(states, list) or len(states) < 2:
-            self.logger.warning("Error getting path from %s to %s" % (current_state.state_str, target_state.state_str))
-        start_state = states[0]
-        for state in states[1:]:
-            edge = self.G[start_state][state]
-            edge_events = edge['events']
-            path_events.append(edge_events[0])
-            start_state = state
+        try:
+            states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
+            if not isinstance(states, list) or len(states) < 2:
+                self.logger.warning("Error getting path from %s to %s" % (current_state.state_str, target_state.state_str))
+            start_state = states[0]
+            for state in states[1:]:
+                edge = self.G[start_state][state]
+                edge_events = edge['events']
+                path_events.append(edge_events[0])
+                start_state = state
+        except:
+            self.logger.warning("Cannot find a path from %s to %s" % (current_state.state_str, target_state.state_str))
         return path_events

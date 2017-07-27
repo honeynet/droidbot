@@ -6,6 +6,15 @@ from input_event import KeyEvent, IntentEvent, TouchEvent
 from utg import UTG
 
 
+START_RETRY_THRESHOLD = 20
+EVENT_FLAG_STARTED = "+started"
+EVENT_FLAG_START_APP = "+start_app"
+EVENT_FLAG_STOP_APP = "+stop_app"
+EVENT_FLAG_EXPLORE = "+explore"
+EVENT_FLAG_NAVIGATE = "+navigate"
+EVENT_FLAG_TOUCH = "+touch"
+
+
 class InputInterruptedException(Exception):
     def __init__(self, message):
         self.message = message
@@ -137,13 +146,6 @@ class UtgBasedInputPolicy(InputPolicy):
         :return: 
         """
         pass
-
-
-START_RETRY_THRESHOLD = 20
-EVENT_FLAG_STARTED = "+started"
-EVENT_FLAG_START_APP = "+start_app"
-EVENT_FLAG_STOP_APP = "+stop_app"
-EVENT_FLAG_TOUCH = "+touch"
 
 
 class UtgDfsPolicy1(UtgBasedInputPolicy):
@@ -308,8 +310,10 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
 
-        self.__exploration_target = None
-        self.__exploration_num_steps = -1
+        self.__nav_target = None
+        self.__nav_num_steps = -1
+        self.__event_trace = ""
+        self.__missed_states = set()
 
     def generate_event_based_on_utg(self):
         """
@@ -317,41 +321,62 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         @return: InputEvent
         """
         current_state = self.current_state
+        if current_state.state_str in self.__missed_states:
+            self.__missed_states.remove(current_state.state_str)
 
         # If the current app is not in the activity stack, try start app
         if current_state.get_app_activity_depth(self.app) < 0:
             start_app_intent = self.app.get_start_intent()
             self.logger.info("Trying to start app...")
+            self.__event_trace += EVENT_FLAG_START_APP
             return IntentEvent(intent=start_app_intent)
 
         # Get all possible input events
         possible_events = current_state.get_possible_input()
 
+        if not self.no_shuffle:
+            random.shuffle(possible_events)
+
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
                 self.logger.info("Trying a unexplored event.")
+                self.__event_trace += EVENT_FLAG_EXPLORE
                 return input_event
 
-        target_state = self.__get_exploration_target(current_state)
+        target_state = self.__get_nav_target(current_state)
         if target_state:
             event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
-            if not event_path and len(event_path) > 1:
+            if event_path and len(event_path) > 0:
+                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
+                self.__event_trace += EVENT_FLAG_NAVIGATE
+                self.__nav_num_steps = len(event_path)
                 return event_path[0]
 
         # If couldn't find a exploration target, stop the app
-        self.logger.info("Cannot find an exploration target. Trying to restart app...")
         stop_app_intent = self.app.get_stop_intent()
+        self.logger.info("Cannot find an exploration target. Trying to restart app...")
+        self.__event_trace += EVENT_FLAG_STOP_APP
         return IntentEvent(intent=stop_app_intent)
 
-    def __get_exploration_target(self, current_state):
-        if self.__exploration_target:
-            return self.__exploration_target
+    def __get_nav_target(self, current_state):
+        # If last event is a navigation event
+        if self.__nav_target and self.__event_trace.endswith(EVENT_FLAG_NAVIGATE):
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
+            if event_path and 0 < len(event_path) <= self.__nav_num_steps:
+                # If last navigation was successful, use current nav target
+                return self.__nav_target
+            else:
+                # If last navigation was failed, add nav target to missing states
+                self.__missed_states.add(self.__nav_target.event_str)
 
         reachable_states = self.utg.get_reachable_states(current_state)
         for state in reachable_states:
             # Do not consider un-related states
             if state.get_app_activity_depth(self.app) < 0:
+                continue
+            # Do not consider missed states
+            if state.state_str in self.__missed_states:
                 continue
             # Do not consider explored states
             if self.utg.is_state_explored(state):

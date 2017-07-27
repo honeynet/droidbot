@@ -5,8 +5,12 @@ from abc import abstractmethod
 from input_event import KeyEvent, IntentEvent, TouchEvent
 from utg import UTG
 
+# Max number of restarts
+MAX_NUM_RESTARTS = 5
+# Max number of steps outside the app
+MAX_NUM_STEPS_OUTSIDE = 5
 
-START_RETRY_THRESHOLD = 20
+# Some input event flags
 EVENT_FLAG_STARTED = "+started"
 EVENT_FLAG_START_APP = "+start_app"
 EVENT_FLAG_STOP_APP = "+stop_app"
@@ -16,8 +20,7 @@ EVENT_FLAG_TOUCH = "+touch"
 
 
 class InputInterruptedException(Exception):
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class InputPolicy(object):
@@ -186,7 +189,7 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
             # If we have tried too many times but the app is still not started, stop DroidBot
-            if number_of_starts > START_RETRY_THRESHOLD:
+            if number_of_starts > MAX_NUM_RESTARTS:
                 raise InputInterruptedException("The app cannot be started.")
 
             # if app is not started, try start it
@@ -315,6 +318,8 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
 
         self.__nav_target = None
         self.__nav_num_steps = -1
+        self.__num_restarts = 0
+        self.__num_steps_outside = 0
         self.__event_trace = ""
         self.__missed_states = set()
 
@@ -327,12 +332,40 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         if current_state.state_str in self.__missed_states:
             self.__missed_states.remove(current_state.state_str)
 
-        # If the current app is not in the activity stack, try start app
         if current_state.get_app_activity_depth(self.app) < 0:
+            # If the app is not in the activity stack
             start_app_intent = self.app.get_start_intent()
-            self.logger.info("Trying to start app...")
-            self.__event_trace += EVENT_FLAG_START_APP
-            return IntentEvent(intent=start_app_intent)
+
+            if self.__event_trace.endswith(EVENT_FLAG_START_APP + EVENT_FLAG_STOP_APP) \
+                    or self.__event_trace.endswith(EVENT_FLAG_START_APP):
+                self.__num_restarts += 1
+            else:
+                self.__num_restarts = 0
+
+            if self.__num_restarts > MAX_NUM_RESTARTS:
+                # If the app had been restarted too many times, abort
+                msg = "The app had been restarted too many times."
+                self.logger.info(msg)
+                raise InputInterruptedException(msg)
+            else:
+                # Start the app
+                self.__event_trace += EVENT_FLAG_START_APP
+                self.logger.info("Trying to start the app...")
+                return IntentEvent(intent=start_app_intent)
+
+        elif current_state.get_app_activity_depth(self.app) > 0:
+            # If the app is in activity stack but is not in foreground
+            self.__num_steps_outside += 1
+
+            if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE:
+                # If the app has not been in foreground for too long, try to go back
+                go_back_event = KeyEvent(name="BACK")
+                self.__event_trace += EVENT_FLAG_NAVIGATE
+                self.logger.info("Going back to the app...")
+                return go_back_event
+        else:
+            # If the app is in foreground
+            self.__num_steps_outside = 0
 
         # Get all possible input events
         possible_events = current_state.get_possible_input()

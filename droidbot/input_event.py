@@ -158,7 +158,7 @@ class EventLog(object):
         self.start_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.start_state)
-        print "Input: " + self.event_str
+        print "Input: %s" % self.event_str
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -230,10 +230,9 @@ class ExitEvent(InputEvent):
     """
 
     def __init__(self, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_ExitEvent
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -253,11 +252,10 @@ class KeyEvent(InputEvent):
     """
 
     def __init__(self, name=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_KeyEvent
         self.name = name
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -313,13 +311,12 @@ class TouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_TouchEvent
         self.x = x
         self.y = y
         self.view = view
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -348,14 +345,13 @@ class LongTouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, duration=2000, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_LongTouchEvent
         self.x = x
         self.y = y
         self.view = view
         self.duration = duration
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -388,9 +384,6 @@ class SwipeEvent(UIEvent):
                  start_x=None, start_y=None, start_view=None,
                  end_x=None, end_y=None, end_view=None,
                  duration=1000, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_SwipeEvent
 
         self.start_x = start_x
@@ -402,6 +395,9 @@ class SwipeEvent(UIEvent):
         self.end_view = end_view
 
         self.duration = duration
+
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -444,14 +440,14 @@ class ScrollEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, direction="UP", event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_ScrollEvent
         self.x = x
         self.y = y
         self.view = view
         self.direction = direction
+
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -511,14 +507,13 @@ class SetTextEvent(UIEvent):
         pass
 
     def __init__(self, x=None, y=None, view=None, text=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_SetTextEvent
         self.x = x
         self.y = y
         self.view = view
         self.text = text
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     def send(self, device):
         x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
@@ -544,9 +539,6 @@ class IntentEvent(InputEvent):
     """
 
     def __init__(self, intent=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_IntentEvent
         if isinstance(intent, Intent):
             self.intent = intent.get_cmd()
@@ -555,6 +547,8 @@ class IntentEvent(InputEvent):
         else:
             msg = "intent must be either an instance of Intent or a string."
             raise InvalidEventException(msg)
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):

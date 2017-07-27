@@ -129,6 +129,9 @@ class UtgBasedInputPolicy(InputPolicy):
                 event = self.script_events[0]
                 self.script_event_idx = 1
 
+        if event:
+            event = event.get_transformed_event(self.device)
+
         if event is None:
             event = self.generate_event_based_on_utg()
 

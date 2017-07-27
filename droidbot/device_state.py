@@ -270,11 +270,12 @@ class DeviceState(object):
         if self.possible_events:
             return self.possible_events
         possible_events = []
-        enabled_view_ids = set()
+        enabled_view_ids = []
         touch_exclude_view_ids = set()
         for view_dict in self.views:
             if self.__safe_dict_get(view_dict, 'enabled'):
-                enabled_view_ids.add(view_dict['temp_id'])
+                enabled_view_ids.append(view_dict['temp_id'])
+        enabled_view_ids.reverse()
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'clickable'):

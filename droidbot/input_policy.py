@@ -368,7 +368,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
                 return self.__nav_target
             else:
                 # If last navigation was failed, add nav target to missing states
-                self.__missed_states.add(self.__nav_target.event_str)
+                self.__missed_states.add(self.__nav_target.state_str)
 
         reachable_states = self.utg.get_reachable_states(current_state)
         if self.random_input:

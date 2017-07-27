@@ -350,7 +350,6 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             if event_path and len(event_path) > 0:
                 self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
                 self.__event_trace += EVENT_FLAG_NAVIGATE
-                self.__nav_num_steps = len(event_path)
                 return event_path[0]
 
         # If couldn't find a exploration target, stop the app
@@ -365,6 +364,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
             if event_path and 0 < len(event_path) <= self.__nav_num_steps:
                 # If last navigation was successful, use current nav target
+                self.__nav_num_steps = len(event_path)
                 return self.__nav_target
             else:
                 # If last navigation was failed, add nav target to missing states
@@ -384,4 +384,11 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             # Do not consider explored states
             if self.utg.is_state_explored(state):
                 continue
+            self.__nav_target = state
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
+            self.__nav_num_steps = len(event_path)
             return state
+
+        self.__nav_target = None
+        self.__nav_num_steps = -1
+        return None

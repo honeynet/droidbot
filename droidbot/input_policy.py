@@ -308,6 +308,9 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
 
+        self.__exploration_target = None
+        self.__exploration_num_steps = -1
+
     def generate_event_based_on_utg(self):
         """
         generate an event based on current UTG
@@ -318,13 +321,39 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         # If the current app is not in the activity stack, try start app
         if current_state.get_app_activity_depth(self.app) < 0:
             start_app_intent = self.app.get_start_intent()
+            self.logger.info("Trying to start app...")
             return IntentEvent(intent=start_app_intent)
 
-        exploration_event = self.utg.get_exploration_event(current_state)
-        if exploration_event:
-            return exploration_event
+        # Get all possible input events
+        possible_events = current_state.get_possible_input()
 
-        # If couldn't navigate to an unexplored state, stop the app
-        self.logger.info("Cannot find an exploration event. Trying to restart app...")
+        # If there is an unexplored event, try the event first
+        for input_event in possible_events:
+            if not self.utg.is_event_explored(event=input_event, state=current_state):
+                self.logger.info("Trying a unexplored event.")
+                return input_event
+
+        target_state = self.__get_exploration_target(current_state)
+        if target_state:
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
+            if not event_path and len(event_path) > 1:
+                return event_path[0]
+
+        # If couldn't find a exploration target, stop the app
+        self.logger.info("Cannot find an exploration target. Trying to restart app...")
         stop_app_intent = self.app.get_stop_intent()
         return IntentEvent(intent=stop_app_intent)
+
+    def __get_exploration_target(self, current_state):
+        if self.__exploration_target:
+            return self.__exploration_target
+
+        reachable_states = self.utg.get_reachable_states(current_state)
+        for state in reachable_states:
+            # Do not consider un-related states
+            if state.get_app_activity_depth(self.app) < 0:
+                continue
+            # Do not consider explored states
+            if self.utg.is_state_explored(state):
+                continue
+            return state

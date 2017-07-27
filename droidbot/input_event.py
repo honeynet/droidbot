@@ -464,7 +464,7 @@ class ScrollEvent(UIEvent):
         x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
         start_x, start_y = x, y
         end_x, end_y = x, y
-        duration = 1000
+        duration = 500
 
         if self.view is not None:
             from device_state import DeviceState

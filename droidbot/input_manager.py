@@ -150,3 +150,11 @@ class InputManager(object):
             if pid is not None:
                 self.device.adb.shell("kill -9 %d" % pid)
         self.enabled = False
+
+        # BEGIN - For debugging. @Minyi
+        if isinstance(self.policy, UtgBasedInputPolicy):
+            msg = "%s: %d/%d\n" % (self.app.package_name, len(self.policy.explored_activities), len(self.policy.all_activities))
+            with open("/home/chimps/temp/coverage.txt", "a") as myfile:
+                myfile.write(msg)
+            print msg
+        # END

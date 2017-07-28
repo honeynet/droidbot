@@ -1,14 +1,26 @@
+import logging
 import random
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
+from input_event import KeyEvent, IntentEvent, TouchEvent
 from utg import UTG
-from device_state import DeviceState
+
+# Max number of restarts
+MAX_NUM_RESTARTS = 5
+# Max number of steps outside the app
+MAX_NUM_STEPS_OUTSIDE = 5
+
+# Some input event flags
+EVENT_FLAG_STARTED = "+started"
+EVENT_FLAG_START_APP = "+start_app"
+EVENT_FLAG_STOP_APP = "+stop_app"
+EVENT_FLAG_EXPLORE = "+explore"
+EVENT_FLAG_NAVIGATE = "+navigate"
+EVENT_FLAG_TOUCH = "+touch"
 
 
 class InputInterruptedException(Exception):
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class InputPolicy(object):
@@ -18,6 +30,7 @@ class InputPolicy(object):
     """
 
     def __init__(self, device, app):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
 
@@ -41,13 +54,13 @@ class InputPolicy(object):
             except KeyboardInterrupt:
                 break
             except InputInterruptedException as e:
-                self.device.logger.warning("stop sending events: %s" % e)
+                self.logger.warning("stop sending events: %s" % e)
                 break
             # except RuntimeError as e:
-            #     self.device.logger.warning(e.message)
+            #     self.logger.warning(e.message)
             #     break
             except Exception as e:
-                self.device.logger.warning("exception during sending events: %s" % e)
+                self.logger.warning("exception during sending events: %s" % e)
                 import traceback
                 traceback.print_exc()
                 continue
@@ -130,6 +143,9 @@ class UtgBasedInputPolicy(InputPolicy):
                 event = self.script_events[0]
                 self.script_event_idx = 1
 
+        if event:
+            event = event.get_transformed_event(self.device)
+
         if event is None:
             event = self.generate_event_based_on_utg()
 
@@ -149,23 +165,18 @@ class UtgBasedInputPolicy(InputPolicy):
         pass
 
 
-START_RETRY_THRESHOLD = 20
-EVENT_FLAG_STARTED = "+started"
-EVENT_FLAG_START_APP = "+start_app"
-EVENT_FLAG_STOP_APP = "+stop_app"
-EVENT_FLAG_TOUCH = "+touch"
-
-
-class UtgDfsPolicy(UtgBasedInputPolicy):
+class UtgDfsPolicy1(UtgBasedInputPolicy):
     """
-    record device state during execution
+    depth-first strategy to explore UFG (old)
     """
 
-    def __init__(self, device, app, no_shuffle):
-        super(UtgDfsPolicy, self).__init__(device, app)
+    def __init__(self, device, app, random_input):
+        super(UtgDfsPolicy1, self).__init__(device, app)
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         self.explored_views = set()
         self.state_transitions = set()
-        self.no_shuffle = no_shuffle
+        self.random_input = random_input
 
         self.last_event_flag = ""
         self.last_event_str = None
@@ -181,7 +192,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         generate an event based on current device state
         note: ensure these fields are properly maintained in each transaction:
           last_event_flag, last_touched_view, last_state, exploited_views, state_transitions
-        @return: AppEvent
+        @return: InputEvent
         """
         self.save_state_transition(self.last_event_str, self.last_state, self.current_state)
 
@@ -191,7 +202,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         else:
             number_of_starts = self.last_event_flag.count(EVENT_FLAG_START_APP)
             # If we have tried too many times but the app is still not started, stop DroidBot
-            if number_of_starts > START_RETRY_THRESHOLD:
+            if number_of_starts > MAX_NUM_RESTARTS:
                 raise InputInterruptedException("The app cannot be started.")
 
             # if app is not started, try start it
@@ -220,8 +231,7 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         if view_to_touch_str.startswith('BACK'):
             result = KeyEvent('BACK')
         else:
-            x, y = DeviceState.get_view_center(view_to_touch)
-            result = TouchEvent(x, y)
+            result = TouchEvent(view=view_to_touch)
 
         self.last_event_flag += EVENT_FLAG_TOUCH
         self.last_event_str = view_to_touch_str
@@ -236,10 +246,10 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
         """
         views = []
         for view in state.views:
-            if view['enabled'] and len(view['children']) == 0 and DeviceState.get_view_size(view) != 0:
+            if view['enabled'] and len(view['children']) == 0:
                 views.append(view)
 
-        if not self.no_shuffle:
+        if self.random_input:
             random.shuffle(views)
 
         # add a "BACK" view, consider go back last
@@ -253,31 +263,31 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons and \
                             (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an preferred view: %s" % view['view_str'])
+                self.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 
         # try to find a un-clicked view
         for view in views:
             if (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.device.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.logger.info("selected an un-clicked view: %s" % view['view_str'])
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
-        if not self.no_shuffle:
+        if self.random_input:
             random.shuffle(views)
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
-                self.device.logger.info("selected a transition view: %s" % view['view_str'])
+                self.logger.info("selected a transition view: %s" % view['view_str'])
                 return view
 
         # no window transition found, just return a random view
         # view = views[0]
-        # self.device.logger.info("selected a random view: %s" % view['view_str'])
+        # self.logger.info("selected a random view: %s" % view['view_str'])
         # return view
 
         # DroidBot stuck on current state, return None
-        self.device.logger.info("no view could be selected in state: %s" % state.tag)
+        self.logger.info("no view could be selected in state: %s" % state.tag)
         return None
 
     def save_state_transition(self, event_str, old_state, new_state):
@@ -304,3 +314,130 @@ class UtgDfsPolicy(UtgBasedInputPolicy):
             return
         state_activity = state.foreground_activity
         self.explored_views.add((state_activity, view_str))
+
+
+class UtgDfsPolicy(UtgBasedInputPolicy):
+    """
+    depth-first strategy to explore UFG (new)
+    """
+
+    def __init__(self, device, app, random_input):
+        super(UtgDfsPolicy, self).__init__(device, app)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.random_input = random_input
+
+        self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
+                                  "allow", "check", "agree", "try", "go", "next"]
+
+        self.__nav_target = None
+        self.__nav_num_steps = -1
+        self.__num_restarts = 0
+        self.__num_steps_outside = 0
+        self.__event_trace = ""
+        self.__missed_states = set()
+
+    def generate_event_based_on_utg(self):
+        """
+        generate an event based on current UTG
+        @return: InputEvent
+        """
+        current_state = self.current_state
+        if current_state.state_str in self.__missed_states:
+            self.__missed_states.remove(current_state.state_str)
+
+        if current_state.get_app_activity_depth(self.app) < 0:
+            # If the app is not in the activity stack
+            start_app_intent = self.app.get_start_intent()
+
+            if self.__event_trace.endswith(EVENT_FLAG_START_APP + EVENT_FLAG_STOP_APP) \
+                    or self.__event_trace.endswith(EVENT_FLAG_START_APP):
+                self.__num_restarts += 1
+            else:
+                self.__num_restarts = 0
+
+            if self.__num_restarts > MAX_NUM_RESTARTS:
+                # If the app had been restarted too many times, abort
+                msg = "The app had been restarted too many times."
+                self.logger.info(msg)
+                raise InputInterruptedException(msg)
+            else:
+                # Start the app
+                self.__event_trace += EVENT_FLAG_START_APP
+                self.logger.info("Trying to start the app...")
+                return IntentEvent(intent=start_app_intent)
+
+        elif current_state.get_app_activity_depth(self.app) > 0:
+            # If the app is in activity stack but is not in foreground
+            self.__num_steps_outside += 1
+
+            if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE:
+                # If the app has not been in foreground for too long, try to go back
+                go_back_event = KeyEvent(name="BACK")
+                self.__event_trace += EVENT_FLAG_NAVIGATE
+                self.logger.info("Going back to the app...")
+                return go_back_event
+        else:
+            # If the app is in foreground
+            self.__num_steps_outside = 0
+
+        # Get all possible input events
+        possible_events = current_state.get_possible_input()
+
+        if self.random_input:
+            random.shuffle(possible_events)
+
+        # If there is an unexplored event, try the event first
+        for input_event in possible_events:
+            if not self.utg.is_event_explored(event=input_event, state=current_state):
+                self.logger.info("Trying a unexplored event.")
+                self.__event_trace += EVENT_FLAG_EXPLORE
+                return input_event
+
+        target_state = self.__get_nav_target(current_state)
+        if target_state:
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
+            if event_path and len(event_path) > 0:
+                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
+                self.__event_trace += EVENT_FLAG_NAVIGATE
+                return event_path[0]
+
+        # If couldn't find a exploration target, stop the app
+        stop_app_intent = self.app.get_stop_intent()
+        self.logger.info("Cannot find an exploration target. Trying to restart app...")
+        self.__event_trace += EVENT_FLAG_STOP_APP
+        return IntentEvent(intent=stop_app_intent)
+
+    def __get_nav_target(self, current_state):
+        # If last event is a navigation event
+        if self.__nav_target and self.__event_trace.endswith(EVENT_FLAG_NAVIGATE):
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
+            if event_path and 0 < len(event_path) <= self.__nav_num_steps:
+                # If last navigation was successful, use current nav target
+                self.__nav_num_steps = len(event_path)
+                return self.__nav_target
+            else:
+                # If last navigation was failed, add nav target to missing states
+                self.__missed_states.add(self.__nav_target.state_str)
+
+        reachable_states = self.utg.get_reachable_states(current_state)
+        if self.random_input:
+            random.shuffle(reachable_states)
+
+        for state in reachable_states:
+            # Only consider foreground states
+            if state.get_app_activity_depth(self.app) != 0:
+                continue
+            # Do not consider missed states
+            if state.state_str in self.__missed_states:
+                continue
+            # Do not consider explored states
+            if self.utg.is_state_explored(state):
+                continue
+            self.__nav_target = state
+            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
+            self.__nav_num_steps = len(event_path)
+            return state
+
+        self.__nav_target = None
+        self.__nav_num_steps = -1
+        return None

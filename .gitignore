@@ -56,7 +56,7 @@ docs/_build/
 # PyBuilder
 target/
 .idea
-droidbot_out
+droidbot_output
 _site
 Gemfile.lock
 .DS_Store

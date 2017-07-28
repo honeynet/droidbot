@@ -7,7 +7,7 @@ from adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
-ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/com.github.privacystreams.accessibility.PSAccessibilityService"
+ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.accessibility.PSAccessibilityService"
 
 
 class DroidBotAppConnException(Exception):
@@ -23,11 +23,11 @@ class DroidBotAppConn(Adapter):
     """
     def __init__(self, device=None):
         """
-        initiate a emulator console via telnet
+        initiate a droidbot app connection
         :param device: instance of Device
         :return:
         """
-        self.logger = logging.getLogger('DroidBotAppConn')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.host = "localhost"
         if device is None:
             from droidbot.device import Device
@@ -93,7 +93,7 @@ class DroidBotAppConn(Adapter):
                 continue
             chunk_len = len(chunk)
             cursor = 0
-            while cursor < chunk_len:
+            while cursor < chunk_len and self.connected:
                 b = ord(chunk[cursor])
                 if read_message_bytes == 0:
                     if b != 0xff:

@@ -23,6 +23,10 @@ KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
 
 
+class InvalidEventException(Exception):
+    pass
+
+
 class InputEvent(object):
     """
     The base class of all events
@@ -80,6 +84,10 @@ class InputEvent(object):
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
 
+    @abstractmethod
+    def get_event_str(self, state):
+        pass
+
 
 class EventLog(object):
     """
@@ -95,6 +103,11 @@ class EventLog(object):
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
 
+        self.start_state = None
+        self.end_state = None
+        self.event_str = None
+
+        self.profiling_method = profiling_method
         self.trace_remote_file = "/data/local/tmp/event.trace"
         self.is_profiling = False
         self.profiling_pid = -1
@@ -108,7 +121,10 @@ class EventLog(object):
     def to_dict(self):
         return {
             "tag": self.tag,
-            "event": self.event.to_dict()
+            "event": self.event.to_dict(),
+            "start_state": self.start_state.state_str,
+            "stop_state": self.end_state.state_str,
+            "event_str": self.event_str
         }
 
     def save2dir(self, output_dir=None):
@@ -134,11 +150,24 @@ class EventLog(object):
                 return True
         return False
 
+    def start(self):
+        """
+        start sending event
+        :return: 
+        """
+        self.start_state = self.device.get_current_state()
+        self.start_profiling()
+        self.event_str = self.event.get_event_str(self.start_state)
+        print "Input: %s" % self.event_str
+        self.device.send_event(self.event)
+
     def start_profiling(self):
         """
         start profiling the current event
         @return:
         """
+        if self.profiling_method is None:
+            return
         if self.is_profiling:
             return
         pid = self.device.get_app_pid(self.app)
@@ -156,7 +185,18 @@ class EventLog(object):
         self.is_profiling = True
         self.profiling_pid = pid
 
+    def stop(self):
+        """
+        finish sending event
+        :return: 
+        """
+        self.stop_profiling()
+        self.end_state = self.device.get_current_state()
+        self.save2dir()
+
     def stop_profiling(self, output_dir=None):
+        if self.profiling_method is None:
+            return
         if not self.is_profiling:
             return
         try:
@@ -190,10 +230,9 @@ class ExitEvent(InputEvent):
     """
 
     def __init__(self, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_ExitEvent
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -203,6 +242,9 @@ class ExitEvent(InputEvent):
         # device.disconnect()
         raise KeyboardInterrupt()
 
+    def get_event_str(self, state):
+        return "%s()" % self.__class__.__name__
+
 
 class KeyEvent(InputEvent):
     """
@@ -210,11 +252,10 @@ class KeyEvent(InputEvent):
     """
 
     def __init__(self, name=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_KeyEvent
         self.name = name
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -224,6 +265,9 @@ class KeyEvent(InputEvent):
     def send(self, device):
         device.key_press(self.name)
         return True
+
+    def get_event_str(self, state):
+        return "%s(state=%s, name=%s)" % (self.__class__.__name__, state.state_str, self.name)
 
 
 class UIEvent(InputEvent):
@@ -252,6 +296,14 @@ class UIEvent(InputEvent):
             event_type = utils.weighted_choice(choices)
             return event_type.get_random_instance(device, app)
 
+    @staticmethod
+    def get_xy(x, y, view):
+        if x is None or y is None:
+            from device_state import DeviceState
+            return DeviceState.get_view_center(view_dict=view)
+        else:
+            return x, y
+
 
 class TouchEvent(UIEvent):
     """
@@ -259,13 +311,12 @@ class TouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_TouchEvent
         self.x = x
         self.y = y
         self.view = view
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -274,8 +325,18 @@ class TouchEvent(UIEvent):
         return TouchEvent(x, y)
 
     def send(self, device):
-        device.view_long_touch(self.x, self.y, duration=300)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        device.view_long_touch(x=x, y=y, duration=200)
         return True
+
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s)" % (self.__class__.__name__, self.view['view_str'])
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s)" % (self.__class__.__name__, state.state_str, self.x, self.y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
 
 
 class LongTouchEvent(UIEvent):
@@ -284,14 +345,13 @@ class LongTouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, duration=2000, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_LongTouchEvent
         self.x = x
         self.y = y
         self.view = view
         self.duration = duration
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -300,8 +360,19 @@ class LongTouchEvent(UIEvent):
         return LongTouchEvent(x, y)
 
     def send(self, device):
-        device.view_long_touch(self.x, self.y, self.duration)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        device.view_long_touch(x=x, y=y, duration=self.duration)
         return True
+
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, duration=%s)" % (self.__class__.__name__, self.view['view_str'], self.duration)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
 
 
 class SwipeEvent(UIEvent):
@@ -313,9 +384,6 @@ class SwipeEvent(UIEvent):
                  start_x=None, start_y=None, start_view=None,
                  end_x=None, end_y=None, end_view=None,
                  duration=1000, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_SwipeEvent
 
         self.start_x = start_x
@@ -328,6 +396,9 @@ class SwipeEvent(UIEvent):
 
         self.duration = duration
 
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
+
     @staticmethod
     def get_random_instance(device, app):
         start_x = random.uniform(0, device.get_width())
@@ -338,10 +409,29 @@ class SwipeEvent(UIEvent):
                           end_x=end_x, end_y=end_y)
 
     def send(self, device):
-        device.view_drag((self.start_x, self.start_y),
-                         (self.end_x, self.end_y),
-                         self.duration)
+        start_x, start_y = UIEvent.get_xy(x=self.start_x, y=self.start_y, view=self.start_view)
+        end_x, end_y = UIEvent.get_xy(x=self.end_x, y=self.end_y, view=self.end_view)
+        device.view_drag((start_x, start_y), (end_x, end_y), self.duration)
         return True
+
+    def get_event_str(self, state):
+        if self.start_view is not None:
+            start_view_str = "start_view=%s" % self.start_view['view_str']
+        elif self.start_x is not None and self.start_y is not None:
+            start_view_str = "state=%s, start_x=%s, start_y=%s" % (state.state_str, self.start_x, self.start_y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
+        if self.end_view is not None:
+            end_view_str = "end_view=%s" % self.end_view['view_str']
+        elif self.end_x is not None and self.end_y is not None:
+            end_view_str = "end_x=%s, end_y=%s" % (self.end_x, self.end_y)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
+
+        return "%s(%s, %s, duration=%s)" % (self.__class__.__name__, start_view_str, end_view_str, self.duration)
 
 
 class ScrollEvent(UIEvent):
@@ -350,14 +440,14 @@ class ScrollEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, direction="UP", event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_ScrollEvent
         self.x = x
         self.y = y
         self.view = view
         self.direction = direction
+
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -367,21 +457,44 @@ class ScrollEvent(UIEvent):
         return ScrollEvent(x, y, direction)
 
     def send(self, device):
-        end_x = self.x
-        end_y = self.y
-        duration = 200
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        start_x, start_y = x, y
+        end_x, end_y = x, y
+        duration = 500
+
+        if self.view is not None:
+            from device_state import DeviceState
+            width = DeviceState.get_view_width(view_dict=self.view)
+            height = DeviceState.get_view_height(view_dict=self.view)
+        else:
+            width = device.get_width()
+            height = device.get_height()
 
         if self.direction == "UP":
-            end_y = 0
+            start_y -= height * 2 / 5
+            end_y += height * 2 / 5
         elif self.direction == "DOWN":
-            end_y = device.get_height()
+            start_y += height * 2 / 5
+            end_y -= height * 2 / 5
         elif self.direction == "LEFT":
-            end_x = 0
+            start_x -= width * 2 / 5
+            end_x += width * 2 / 5
         elif self.direction == "RIGHT":
-            end_x = device.get_width()
+            start_x += width * 2 / 5
+            end_x -= width * 2 / 5
 
-        device.view_drag((self.x, self.y), (end_x, end_y), duration)
+        device.view_drag((start_x, start_y), (end_x, end_y), duration)
         return True
+
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, direction=%s)" % (self.__class__.__name__, self.view['view_str'], self.direction)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
 
 
 class SetTextEvent(UIEvent):
@@ -394,20 +507,30 @@ class SetTextEvent(UIEvent):
         pass
 
     def __init__(self, x=None, y=None, view=None, text=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_SetTextEvent
         self.x = x
         self.y = y
         self.view = view
         self.text = text
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     def send(self, device):
-        touch_event = TouchEvent(x=self.x, y=self.y)
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        touch_event = TouchEvent(x=x, y=y)
         touch_event.send(device)
         device.view_set_text(self.text)
         return True
+
+    def get_event_str(self, state):
+        if self.view is not None:
+            return "%s(view=%s, text=%s)" % (self.__class__.__name__, self.view['view_str'], self.text)
+        elif self.x is not None and self.y is not None:
+            return "%s(state=%s, x=%s, y=%s, text=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y, self.text)
+        else:
+            msg = "Invalid %s!" % self.__class__.__name__
+            raise InvalidEventException(msg)
 
 
 class IntentEvent(InputEvent):
@@ -416,11 +539,16 @@ class IntentEvent(InputEvent):
     """
 
     def __init__(self, intent=None, event_dict=None):
-        if event_dict is not None:
-            self.__dict__ = event_dict
-            return
         self.event_type = KEY_IntentEvent
-        self.intent = intent.get_cmd() if isinstance(intent, Intent) else ""
+        if isinstance(intent, Intent):
+            self.intent = intent.get_cmd()
+        elif isinstance(intent, str):
+            self.intent = intent
+        else:
+            msg = "intent must be either an instance of Intent or a string."
+            raise InvalidEventException(msg)
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
 
     @staticmethod
     def get_random_instance(device, app):
@@ -429,6 +557,9 @@ class IntentEvent(InputEvent):
     def send(self, device):
         device.send_intent(intent=self.intent)
         return True
+
+    def get_event_str(self, state):
+        return "%s(intent='%s')" % (self.__class__.__name__, self.intent)
 
 
 EVENT_TYPES = {

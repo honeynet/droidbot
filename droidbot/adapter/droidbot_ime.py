@@ -1,10 +1,8 @@
 # coding=utf-8
 
 import logging
-import socket
-import subprocess
 import time
-import json
+
 from adapter import Adapter
 
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
@@ -28,7 +26,7 @@ class DroidBotIme(Adapter):
         :param device: instance of Device
         :return:
         """
-        self.logger = logging.getLogger('DroidBotIME')
+        self.logger = logging.getLogger(self.__class__.__name__)
         if device is None:
             from droidbot.device import Device
             device = Device()

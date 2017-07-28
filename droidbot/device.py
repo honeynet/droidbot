@@ -34,7 +34,7 @@ class Device(object):
         :param is_emulator: boolean, type of device, True for emulator, False for real device
         :return:
         """
-        self.logger = logging.getLogger("Device")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # options
         if device_serial is None:
@@ -449,7 +449,7 @@ class Device(object):
     def send_intent(self, intent):
         """
         send an intent to device via am (ActivityManager)
-        :param intent: instance of Intent
+        :param intent: instance of Intent or str
         :return:
         """
         assert self.adb is not None
@@ -466,7 +466,6 @@ class Device(object):
         :param event: the event to be sent
         :return:
         """
-        self.logger.info("sending event: %s" % event)
         event.send(self)
 
     def start_app(self, app):
@@ -496,6 +495,7 @@ class Device(object):
         m = regex.search(data[1])
         if m:
             return m.group(1) + "/" + m.group(2)
+        self.logger.warning("Unable to get top activity name.")
         return None
 
     def get_current_activity_stack(self):
@@ -503,27 +503,28 @@ class Device(object):
         Get current activity stack
         :return: 
         """
-        tasks = self.get_task_activities()
-        if 'current_task' in tasks and 'task_to_activities' in tasks:
-            current_task_id = tasks['current_task']
-            if current_task_id in tasks['task_to_activities']:
-                return tasks['task_to_activities'][current_task_id]
+        task_to_activities = self.get_task_activities()
+        top_activity = self.get_top_activity_name()
+
+        if top_activity:
+            for task_id in task_to_activities:
+                activities = task_to_activities[task_id]
+                if len(activities) > 0 and activities[0] == top_activity:
+                    return activities
+            self.logger.warning("Unable to get current activity stack.")
+            return [top_activity]
+        else:
+            return None
 
     def get_task_activities(self):
         """
         Get current tasks and corresponding activities.
-        :return: a dict with three attributes: task_to_activities, current_task, and top_activity.
-        task_to_activities is a dict mapping a task id to a list of activities, from top to down.
-        current_task is the id of the active task.
-        top_activity is the name of the top activity
+        :return: a dict mapping each task id to a list of activities, from top to down.
         """
-        lines = self.adb.shell("dumpsys activity activities").splitlines()
-
-        result = {}
         task_to_activities = {}
 
+        lines = self.adb.shell("dumpsys activity activities").splitlines()
         activity_line_re = re.compile('\* Hist #\d+: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
-        focused_activity_line_re = re.compile('mFocusedActivity: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
 
         for line in lines:
             line = line.strip()
@@ -538,16 +539,8 @@ class Device(object):
                     if task_id not in task_to_activities:
                         task_to_activities[task_id] = []
                     task_to_activities[task_id].append(activity)
-            elif line.startswith("mFocusedActivity: "):
-                m = focused_activity_line_re.match(line)
-                if m:
-                    activity = m.group(1)
-                    task_id = m.group(2)
-                    result['current_task'] = task_id
-                    result['top_activity'] = activity
 
-        result['task_to_activities'] = task_to_activities
-        return result
+        return task_to_activities
 
     def get_service_names(self):
         """
@@ -613,8 +606,8 @@ class Device(object):
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
             while self.connected and package_name not in self.adb.get_installed_apps():
-                print "Waiting for app installation..."
-                time.sleep(1)
+                print "Please wait while installing the app..."
+                time.sleep(2)
             if not self.connected:
                 install_p.terminate()
                 return
@@ -785,7 +778,7 @@ class Device(object):
         return local_image_path
 
     def get_current_state(self):
-        self.logger.info("getting current device state...")
+        self.logger.debug("getting current device state...")
         current_state = None
         try:
             view_client_views = self.get_views()
@@ -805,8 +798,10 @@ class Device(object):
             self.logger.warning("exception in get_current_state: %s" % e)
             import traceback
             traceback.print_exc()
-        self.logger.info("finish getting current device state...")
+        self.logger.debug("finish getting current device state...")
         self.last_know_state = current_state
+        if not current_state:
+            self.logger.warning("Failed to get current state!")
         return current_state
 
     def get_last_known_state(self):

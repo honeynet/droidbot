@@ -16,7 +16,7 @@ class App(object):
         :return:
         """
         assert app_path is not None
-        self.logger = logging.getLogger('App')
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.app_path = app_path
 

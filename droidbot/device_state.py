@@ -13,7 +13,7 @@ class DeviceState(object):
                  tag=None, screenshot_path=None):
         self.device = device
         self.foreground_activity = foreground_activity
-        self.activity_stack = activity_stack
+        self.activity_stack = activity_stack if isinstance(activity_stack, list) else []
         self.background_services = background_services
         if tag is None:
             from datetime import datetime
@@ -23,6 +23,7 @@ class DeviceState(object):
         self.views = DeviceState.__parse_views(views)
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
+        self.possible_events = None
 
     def to_dict(self):
         state = {'tag': self.tag,
@@ -99,15 +100,15 @@ class DeviceState(object):
             DeviceState.__assign_depth(views, views[view_id], depth + 1)
 
     def __get_state_str(self):
-        view_strs = set()
+        view_signatures = set()
         for view in self.views:
-            if 'view_str' in view:
-                view_str = view['view_str']
-                if view_str is not None and len(view_str) > 0:
-                    view_strs.add(view_str)
-        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_strs)))
+            if 'signature' in view:
+                view_signature = view['signature']
+                if view_signature is not None and len(view_signature) > 0:
+                    view_signatures.add(view_signature)
+        state_str = "%s{%s}" % (self.activity_stack, ",".join(sorted(view_signatures)))
         import hashlib
-        return hashlib.sha256(state_str.encode('utf-8')).hexdigest()
+        return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
     def save2dir(self, output_dir=None):
         try:
@@ -171,7 +172,14 @@ class DeviceState(object):
         for parent_id in self.get_all_ancestors(view_dict):
             parent_strs.append(DeviceState.__get_view_signature(self.views[parent_id]))
         parent_strs.reverse()
-        view_str = "%s//%s//%s" % (self.foreground_activity, "//".join(parent_strs), view_signature)
+        child_strs = []
+        for child_id in self.get_all_children(view_dict):
+            child_strs.append(DeviceState.__get_view_signature(self.views[child_id]))
+        child_strs.sort()
+        view_str = "Activity:%s\nSelf:%s\nParents:%s\nChildren:%s" %\
+                   (self.foreground_activity, view_signature, "//".join(parent_strs), "||".join(child_strs))
+        import hashlib
+        view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
         view_dict['view_str'] = view_str
         return view_str
 
@@ -194,16 +202,31 @@ class DeviceState(object):
         return (bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2
 
     @staticmethod
-    def get_view_size(view_dict):
+    def get_view_width(view_dict):
         """
-        return the size of a view
+        return the width of a view
         @param view_dict: dict, element of device.get_current_state().views
         @return:
         """
         bounds = view_dict['bounds']
-        return int(math.fabs((bounds[0][0] - bounds[1][0]) * (bounds[0][1] - bounds[1][1])))
+        return int(math.fabs(bounds[0][0] - bounds[1][0]))
+
+    @staticmethod
+    def get_view_height(view_dict):
+        """
+        return the height of a view
+        @param view_dict: dict, element of device.get_current_state().views
+        @return:
+        """
+        bounds = view_dict['bounds']
+        return int(math.fabs(bounds[0][1] - bounds[1][1]))
 
     def get_all_ancestors(self, view_dict):
+        """
+        Get temp view ids of the given view's ancestors
+        :param view_dict: 
+        :return: 
+        """
         result = []
         parent_id = self.__safe_dict_get(view_dict, 'parent', -1)
         if 0 <= parent_id < len(self.views):
@@ -212,6 +235,11 @@ class DeviceState(object):
         return result
 
     def get_all_children(self, view_dict):
+        """
+        Get temp view ids of the given view's children
+        :param view_dict: 
+        :return: 
+        """
         children = self.__safe_dict_get(view_dict, 'children')
         if not children:
             return set()
@@ -221,17 +249,33 @@ class DeviceState(object):
             children.union(children_of_child)
         return children
 
+    def get_app_activity_depth(self, app):
+        """
+        Get the depth of the app's activity in the activity stack
+        :param app: App
+        :return: the depth of app's activity, -1 for not found
+        """
+        depth = 0
+        for activity_str in self.activity_stack:
+            if app.package_name in activity_str:
+                return depth
+            depth += 1
+        return -1
+
     def get_possible_input(self):
         """
         Get a list of possible input events for this state
         :return: 
         """
+        if self.possible_events:
+            return self.possible_events
         possible_events = []
-        enabled_view_ids = set()
+        enabled_view_ids = []
         touch_exclude_view_ids = set()
         for view_dict in self.views:
             if self.__safe_dict_get(view_dict, 'enabled'):
-                enabled_view_ids.add(view_dict['temp_id'])
+                enabled_view_ids.append(view_dict['temp_id'])
+        enabled_view_ids.reverse()
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'clickable'):
@@ -270,4 +314,7 @@ class DeviceState(object):
                 continue
             possible_events.append(TouchEvent(view=self.views[view_id]))
 
+        possible_events.append(KeyEvent(name="BACK"))
+
+        self.possible_events = possible_events
         return possible_events

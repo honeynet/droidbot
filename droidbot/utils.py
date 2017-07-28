@@ -81,6 +81,14 @@ def safe_re_match(regex, content):
         return regex.match(content)
 
 
+def list_to_html_table(dict_data):
+    table = "<table>\n"
+    for (key, value) in dict_data:
+        table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
+    table += "</table>"
+    return table
+
+
 class TimeoutException(Exception):
     """
     Exception if connection has been waiting too long

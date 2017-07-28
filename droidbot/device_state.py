@@ -119,15 +119,16 @@ class DeviceState(object):
                     output_dir = os.path.join(self.device.output_dir, "states")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            state_json_file_path = "%s/state_%s.json" % (output_dir, self.tag)
-            screenshot_output_path = "%s/screen_%s.png" % (output_dir, self.tag)
-            state_json_file = open(state_json_file_path, "w")
+            dest_state_json_path = "%s/state_%s.json" % (output_dir, self.tag)
+            dest_screenshot_path = "%s/screen_%s.png" % (output_dir, self.tag)
+            state_json_file = open(dest_state_json_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
-            subprocess.check_call(["cp", self.screenshot_path, screenshot_output_path])
+            subprocess.check_call(["cp", self.screenshot_path, dest_screenshot_path])
+            self.screenshot_path = dest_screenshot_path
             # from PIL.Image import Image
             # if isinstance(self.screenshot_path, Image):
-            #     self.screenshot_path.save(screenshot_output_path)
+            #     self.screenshot_path.save(dest_screenshot_path)
         except Exception as e:
             self.device.logger.warning("saving state to dir failed: " + e.message)
 

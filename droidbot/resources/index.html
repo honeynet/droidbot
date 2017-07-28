@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <title>DroidBot UTG</title>
+
+  <style type="text/css">
+    body {
+      font: 10pt arial;
+    }
+    #utg_div {
+      width: 100%;
+      height: 1000px;
+      border: 1px solid lightgray;
+      background-color:#dddddd;
+    }
+  </style>
+
+  <script type="text/javascript" src="utg.js"></script>
+  <script type="text/javascript" src="stylesheets/vis.min.js"></script>
+  <script type="text/javascript" src="stylesheets/jquery-3.2.1.min.js"></script>
+  <link href="stylesheets/vis.min.css" rel="stylesheet" type="text/css" />
+
+  <script type="text/javascript">
+    var network = null;
+    // Called when the Visualization API is loaded.
+    function draw() {
+      // create a network
+      var container = document.getElementById('utg_div');
+
+      var options = {
+        autoResize: true,
+        height: '100%',
+        width: '100%',
+        locale: 'en',
+
+        nodes: {
+	        color: {
+            border: '#000',
+            background: '#000'
+          },
+          font:{color:'#000'}
+        },
+        edges: {
+          color: 'black',
+          arrows: {
+            to:{
+              enabled: true,
+              scaleFactor: 0.5
+            }
+          }
+        }
+      };
+      network = new vis.Network(container, utg, options);
+    }
+  </script>
+
+</head>
+
+<body onload="draw()">
+
+<div id="utg_div"></div>
+</body>
+</html>

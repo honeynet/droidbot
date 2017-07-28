@@ -53,6 +53,13 @@ class DroidBot(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
+            import pkg_resources, shutil
+            html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
+            stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
+            target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
+            shutil.rmtree(target_stylesheets_dir)
+            shutil.copy(html_index_path, output_dir)
+            shutil.copytree(stylesheets_path, target_stylesheets_dir)
 
         self.timeout = timeout
         self.timer = None

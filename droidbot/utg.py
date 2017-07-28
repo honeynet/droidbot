@@ -2,6 +2,7 @@ import networkx as nx
 import logging
 import json
 import os
+import utils
 
 
 class UTG(object):
@@ -20,6 +21,11 @@ class UTG(object):
         self.ineffective_events = set()
         self.explored_states = set()
 
+        self.first_state_str = None
+        self.last_state_str = None
+        self.last_transition = None
+        self.effective_event_count = 0
+
     def add_transition(self, event, old_state, new_state):
         self.add_node(old_state)
         self.add_node(new_state)
@@ -35,9 +41,15 @@ class UTG(object):
             return
 
         self.effective_events.add(event_str)
+        self.effective_event_count += 1
+
         if (old_state.state_str, new_state.state_str) not in self.G.edges():
-            self.G.add_edge(old_state.state_str, new_state.state_str, events=[])
+            self.G.add_edge(old_state.state_str, new_state.state_str, events=[], event_ids=[])
+
         self.G[old_state.state_str][new_state.state_str]['events'].append(event)
+        self.G[old_state.state_str][new_state.state_str]['event_ids'].append(self.effective_event_count)
+        self.last_state_str = new_state.state_str
+        self.last_transition = (old_state.state_str, new_state.state_str)
         self.__output_utg()
 
     def add_node(self, state):
@@ -46,6 +58,8 @@ class UTG(object):
         if state.state_str not in self.G.nodes():
             state.save2dir()
             self.G.add_node(state.state_str, state=state)
+            if self.first_state_str is None:
+                self.first_state_str = state.state_str
 
     def __output_utg(self):
         """
@@ -54,35 +68,70 @@ class UTG(object):
         """
         if not self.device.output_dir:
             return
-        utg_file_path = os.path.join(self.device.output_dir, "utg.json")
+        utg_file_path = os.path.join(self.device.output_dir, "utg.js")
         utg_file = open(utg_file_path, "w")
         utg_nodes = []
         utg_edges = []
         for state_str in self.G.nodes():
             state = self.G.node[state_str]['state']
+            package_name = state.foreground_activity.split("/")[0]
+            activity_name = state.foreground_activity.split("/")[1]
+            short_activity_name = activity_name.split(".")[-1]
+
+            state_desc = utils.list_to_html_table([
+                ("package", package_name),
+                ("activity", activity_name),
+                ("state_str", state.state_str)
+            ])
+
             utg_node = {
                 "id": state_str,
                 "shape": "image",
-                "image": state.screenshot_path,
-                "label": state.foreground_activity
+                "image": os.path.relpath(state.screenshot_path, self.device.output_dir),
+                "label": short_activity_name,
+                "group": state.foreground_activity,
+                "title": state_desc
             }
+
+            if state.state_str == self.first_state_str:
+                utg_node["label"] += "\n<FIRST>"
+                utg_node["font"] = "18px Arial red"
+            if state.state_str == self.last_state_str:
+                utg_node["label"] += "\n<LAST>"
+                utg_node["font"] = "18px Arial red"
+
             utg_nodes.append(utg_node)
+
         for state_transition in self.G.edges():
             from_state = state_transition[0]
             to_state = state_transition[1]
-            # events = self.G[from_state][to_state]['events']
-            # for event in events:
-            #     event_id = "%s: %s->%s" % (event.get_event_str(from_state), from_state, to_state)
+
+            events = self.G[from_state][to_state]['events']
+            event_ids = self.G[from_state][to_state]['event_ids']
+            event_list = []
+
+            for event_id, event in zip(event_ids, events):
+                event_list.append((event_id, event.get_event_str(self.G.node[from_state]['state'])))
+
             utg_edge = {
                 "from": from_state,
-                "to": to_state
+                "to": to_state,
+                "title": utils.list_to_html_table(event_list),
+                "label": ", ".join(map(str, event_ids))
             }
+
+            if state_transition == self.last_transition:
+                utg_edge["color"] = "red"
+
             utg_edges.append(utg_edge)
+
         utg = {
             "nodes": utg_nodes,
             "edges": utg_edges
         }
-        json.dump(utg, utg_file, indent=2)
+        utg_json = json.dumps(utg, indent=2)
+        utg_file.write("var utg = \n")
+        utg_file.write(utg_json)
         utg_file.close()
 
     def is_event_explored(self, event, state):

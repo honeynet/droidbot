@@ -162,13 +162,14 @@ class DroidBot(object):
         self.enabled = False
         if self.timer and self.timer.isAlive():
             self.timer.cancel()
-        if self.env_manager is not None:
+        if self.env_manager:
             self.env_manager.stop()
-        if self.input_manager is not None:
+        if self.input_manager:
             self.input_manager.stop()
-        if self.droidbox is not None:
+        if self.droidbox:
             self.droidbox.stop()
-        self.device.disconnect()
+        if self.device:
+            self.device.disconnect()
         if not self.keep_env:
             self.device.tear_down()
         if not self.keep_app:

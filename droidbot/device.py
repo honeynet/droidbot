@@ -36,7 +36,6 @@ class Device(object):
         """
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # options
         if device_serial is None:
             import utils
             all_devices = utils.get_available_devices()
@@ -226,7 +225,7 @@ class Device(object):
 
     def get_display_info(self, refresh=True):
         """
-        get device display infomation, including width, height, and density
+        get device display information, including width, height, and density
         :param refresh: if set to True, refresh the display info instead of using the old values
         :return: dict, display_info
         """

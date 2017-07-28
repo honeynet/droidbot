@@ -7,7 +7,7 @@ from adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
-ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/com.github.privacystreams.accessibility.PSAccessibilityService"
+ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.accessibility.PSAccessibilityService"
 
 
 class DroidBotAppConnException(Exception):

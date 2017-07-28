@@ -13,7 +13,7 @@ class DeviceState(object):
                  tag=None, screenshot_path=None):
         self.device = device
         self.foreground_activity = foreground_activity
-        self.activity_stack = activity_stack
+        self.activity_stack = activity_stack if isinstance(activity_stack, list) else []
         self.background_services = background_services
         if tag is None:
             from datetime import datetime

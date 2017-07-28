@@ -148,7 +148,7 @@ class Minicap(Adapter):
                 continue
             chunk_len = len(chunk)
             cursor = 0
-            while cursor < chunk_len:
+            while cursor < chunk_len and self.connected:
                 if readBannerBytes < bannerLength:
                     if readBannerBytes == 0:
                         banner['version'] = chunk[cursor]
@@ -232,6 +232,7 @@ class Minicap(Adapter):
             subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception as e:
             print e.message
+
 
 if __name__ == "__main__":
     minicap = Minicap()

@@ -65,8 +65,8 @@ def parse_args():
                         help="Add randomness to input events.")
     parser.add_argument("-keep_app", action="store_true", dest="keep_app",
                         help="Keep the app on the device after testing.")
-    parser.add_argument("-dont_tear_down", action="store_true", dest="dont_tear_down",
-                        help="Don't tear down test environment (eg. minicap and accessibility service).")
+    parser.add_argument("-keep_env", action="store_true", dest="keep_env",
+                        help="Keep the test environment (eg. minicap and accessibility service) after testing.")
     parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
                         help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
@@ -104,7 +104,7 @@ def main():
                         event_count=opts.count,
                         debug_mode=opts.debug_mode,
                         keep_app=opts.keep_app,
-                        dont_tear_down=opts.dont_tear_down,
+                        keep_env=opts.keep_env,
                         with_droidbox=opts.with_droidbox,
                         use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method,

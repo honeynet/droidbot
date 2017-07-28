@@ -34,7 +34,7 @@ class DroidBot(object):
                  event_interval=None,
                  timeout=None,
                  keep_app=None,
-                 dont_tear_down=False,
+                 keep_env=False,
                  debug_mode=False,
                  with_droidbox=False,
                  use_hierarchy_viewer=False,
@@ -56,7 +56,7 @@ class DroidBot(object):
 
         self.timeout = timeout
         self.timer = None
-        self.dont_tear_down = dont_tear_down
+        self.keep_env = keep_env
         self.keep_app = keep_app
 
         # if device_serial is None:
@@ -169,7 +169,7 @@ class DroidBot(object):
         if self.droidbox is not None:
             self.droidbox.stop()
         self.device.disconnect()
-        if not self.dont_tear_down:
+        if not self.keep_env:
             self.device.tear_down()
         if not self.keep_app:
             self.device.uninstall_app(self.app)

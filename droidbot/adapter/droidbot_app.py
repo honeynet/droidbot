@@ -93,7 +93,7 @@ class DroidBotAppConn(Adapter):
                 continue
             chunk_len = len(chunk)
             cursor = 0
-            while cursor < chunk_len:
+            while cursor < chunk_len and self.connected:
                 b = ord(chunk[cursor])
                 if read_message_bytes == 0:
                     if b != 0xff:

@@ -57,7 +57,8 @@ class DroidBot(object):
             html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
             stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
-            shutil.rmtree(target_stylesheets_dir)
+            if os.path.exists(target_stylesheets_dir):
+                shutil.rmtree(target_stylesheets_dir)
             shutil.copy(html_index_path, output_dir)
             shutil.copytree(stylesheets_path, target_stylesheets_dir)
 

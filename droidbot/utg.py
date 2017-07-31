@@ -3,6 +3,7 @@ import logging
 import json
 import os
 import utils
+import datetime
 
 
 class UTG(object):
@@ -26,6 +27,9 @@ class UTG(object):
         self.last_state_str = None
         self.last_transition = None
         self.effective_event_count = 0
+        self.input_event_count = 0
+
+        self.start_time = datetime.datetime.now()
 
     def add_transition(self, event, old_state, new_state):
         self.add_node(old_state)
@@ -36,6 +40,7 @@ class UTG(object):
             return
 
         event_str = event.get_event_str(old_state)
+        self.input_event_count += 1
 
         if old_state.state_str == new_state.state_str:
             self.ineffective_event_strs.add(event_str)
@@ -122,7 +127,7 @@ class UTG(object):
                 event_list.append({
                     "event_str": event_str,
                     "event_id": event_id,
-                    "event_type": event['event_type']
+                    "event_type": event.event_type
                 })
 
             utg_edge = {
@@ -143,14 +148,23 @@ class UTG(object):
         utg = {
             "nodes": utg_nodes,
             "edges": utg_edges,
+
             "num_nodes": len(utg_nodes),
             "num_edges": len(utg_edges),
             "num_effective_events": len(self.effective_event_strs),
             "num_reached_activities": len(self.reached_activities),
-            "num_total_activities": len(self.app.activities),
-            "package": self.app.package_name,
-            "main_activity": self.app.main_activity,
-            "device_serial": self.device.serial
+            "test_date": self.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "time_spent": (datetime.datetime.now() - self.start_time).total_seconds(),
+            "num_input_events": self.input_event_count,
+
+            "device_serial": self.device.serial,
+            "device_model_number": self.device.get_model_number(),
+            "device_sdk_version": self.device.get_sdk_version(),
+
+            "app_sha256": self.app.hashes[2],
+            "app_package": self.app.package_name,
+            "app_main_activity": self.app.main_activity,
+            "app_num_total_activities": len(self.app.activities),
         }
 
         utg_json = json.dumps(utg, indent=2)

@@ -54,6 +54,7 @@ class Device(object):
         # basic device information
         self.settings = {}
         self.display_info = None
+        self.model_number = None
         self.sdk_version = None
         self.release_version = None
         self.ro_debuggable = None
@@ -196,6 +197,14 @@ class Device(object):
         if top_activity_name is None:
             return False
         return top_activity_name.startswith(package_name)
+
+    def get_model_number(self):
+        """
+        Get model number
+        """
+        if self.model_number is None:
+            self.model_number = self.adb.get_model_number()
+        return self.model_number
 
     def get_sdk_version(self):
         """

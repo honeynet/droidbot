@@ -21,6 +21,7 @@ class ADB(Adapter):
     UP = 0
     DOWN = 1
     DOWN_AND_UP = 2
+    MODEL_PROPERTY = "ro.product.model"
     VERSION_SDK_PROPERTY = 'ro.build.version.sdk'
     VERSION_RELEASE_PROPERTY = 'ro.build.version.release'
     RO_SECURE_PROPERTY = 'ro.secure'
@@ -108,6 +109,12 @@ class ADB(Adapter):
         @return:
         """
         return self.shell(["getprop", property])
+
+    def get_model_number(self):
+        """
+        Get device model number. e.g. SM-G935F
+        """
+        return self.get_property(ADB.MODEL_PROPERTY)
 
     def get_sdk_version(self):
         """

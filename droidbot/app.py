@@ -33,6 +33,7 @@ class App(object):
         self.permissions = self.androguard.a.get_permissions()
         self.activities = None
         self.get_activities()
+        self.hashes = self.get_hashes()
 
     def get_androguard_analysis(self):
         """

@@ -88,6 +88,9 @@ class InputEvent(object):
     def get_event_str(self, state):
         pass
 
+    def get_views(self):
+        return None
+
 
 class EventLog(object):
     """
@@ -103,8 +106,8 @@ class EventLog(object):
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
 
-        self.start_state = None
-        self.end_state = None
+        self.from_state = None
+        self.to_state = None
         self.event_str = None
 
         self.profiling_method = profiling_method
@@ -122,8 +125,8 @@ class EventLog(object):
         return {
             "tag": self.tag,
             "event": self.event.to_dict(),
-            "start_state": self.start_state.state_str,
-            "stop_state": self.end_state.state_str,
+            "start_state": self.from_state.state_str,
+            "stop_state": self.to_state.state_str,
             "event_str": self.event_str
         }
 
@@ -144,6 +147,13 @@ class EventLog(object):
         except Exception as e:
             self.device.logger.warning("Saving event to dir failed: " + e.message)
 
+    def save_views(self, output_dir=None):
+        # Save views
+        views = self.event.get_views()
+        if views:
+            for view_dict in views:
+                self.from_state.save_view_img(view_dict=view_dict, output_dir=output_dir)
+
     def is_start_event(self):
         if isinstance(self.event, IntentEvent):
             intent_cmd = self.event.intent
@@ -156,9 +166,9 @@ class EventLog(object):
         start sending event
         :return: 
         """
-        self.start_state = self.device.get_current_state()
+        self.from_state = self.device.get_current_state()
         self.start_profiling()
-        self.event_str = self.event.get_event_str(self.start_state)
+        self.event_str = self.event.get_event_str(self.from_state)
         print "Input: %s" % self.event_str
         self.device.send_event(self.event)
 
@@ -192,8 +202,9 @@ class EventLog(object):
         :return: 
         """
         self.stop_profiling()
-        self.end_state = self.device.get_current_state()
+        self.to_state = self.device.get_current_state()
         self.save2dir()
+        self.save_views()
 
     def stop_profiling(self, output_dir=None):
         if self.profiling_method is None:
@@ -339,6 +350,10 @@ class TouchEvent(UIEvent):
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
 
+    def get_views(self):
+        if self.view:
+            return [self.view]
+
 
 class LongTouchEvent(UIEvent):
     """
@@ -374,6 +389,10 @@ class LongTouchEvent(UIEvent):
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
+
+    def get_views(self):
+        if self.view:
+            return [self.view]
 
 
 class SwipeEvent(UIEvent):
@@ -433,6 +452,14 @@ class SwipeEvent(UIEvent):
             raise InvalidEventException(msg)
 
         return "%s(%s, %s, duration=%s)" % (self.__class__.__name__, start_view_str, end_view_str, self.duration)
+
+    def get_views(self):
+        views = []
+        if self.start_view:
+            views.append(self.start_view)
+        if self.end_view:
+            views.append(self.end_view)
+        return views
 
 
 class ScrollEvent(UIEvent):
@@ -497,6 +524,10 @@ class ScrollEvent(UIEvent):
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
 
+    def get_views(self):
+        if self.view:
+            return [self.view]
+
 
 class SetTextEvent(UIEvent):
     """
@@ -532,6 +563,10 @@ class SetTextEvent(UIEvent):
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
+
+    def get_views(self):
+        if self.view:
+            return [self.view]
 
 
 class IntentEvent(InputEvent):

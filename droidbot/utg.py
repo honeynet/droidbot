@@ -95,10 +95,10 @@ class UTG(object):
 
             if state.state_str == self.first_state_str:
                 utg_node["label"] += "\n<FIRST>"
-                utg_node["font"] = "18px Arial red"
+                utg_node["font"] = "14px Arial red"
             if state.state_str == self.last_state_str:
                 utg_node["label"] += "\n<LAST>"
-                utg_node["font"] = "18px Arial red"
+                utg_node["font"] = "14px Arial red"
 
             utg_nodes.append(utg_node)
 

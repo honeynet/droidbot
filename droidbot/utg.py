@@ -17,9 +17,10 @@ class UTG(object):
 
         self.G = nx.DiGraph()
 
-        self.effective_events = set()
-        self.ineffective_events = set()
-        self.explored_states = set()
+        self.effective_event_strs = set()
+        self.ineffective_event_strs = set()
+        self.explored_state_strs = set()
+        self.reached_activities = set()
 
         self.first_state_str = None
         self.last_state_str = None
@@ -37,10 +38,10 @@ class UTG(object):
         event_str = event.get_event_str(old_state)
 
         if old_state.state_str == new_state.state_str:
-            self.ineffective_events.add(event_str)
+            self.ineffective_event_strs.add(event_str)
             return
 
-        self.effective_events.add(event_str)
+        self.effective_event_strs.add(event_str)
         self.effective_event_count += 1
 
         if (old_state.state_str, new_state.state_str) not in self.G.edges():
@@ -60,6 +61,8 @@ class UTG(object):
             self.G.add_node(state.state_str, state=state)
             if self.first_state_str is None:
                 self.first_state_str = state.state_str
+        if state.foreground_activity.startswith(self.app.package_name):
+            self.reached_activities.add(state.foreground_activity)
 
     def __output_utg(self):
         """
@@ -90,6 +93,8 @@ class UTG(object):
                 "image": os.path.relpath(state.screenshot_path, self.device.output_dir),
                 "label": short_activity_name,
                 "group": state.foreground_activity,
+                "package": package_name,
+                "activity": activity_name,
                 "title": state_desc
             }
 
@@ -108,27 +113,46 @@ class UTG(object):
 
             events = self.G[from_state][to_state]['events']
             event_ids = self.G[from_state][to_state]['event_ids']
+            event_short_descs = []
             event_list = []
 
             for event_id, event in zip(event_ids, events):
-                event_list.append((event_id, event.get_event_str(self.G.node[from_state]['state'])))
+                event_str = event.get_event_str(self.G.node[from_state]['state'])
+                event_short_descs.append((event_id, event_str))
+                event_list.append({
+                    "event_str": event_str,
+                    "event_id": event_id,
+                    "event_type": event['event_type']
+                })
 
             utg_edge = {
                 "from": from_state,
                 "to": to_state,
-                "title": utils.list_to_html_table(event_list),
-                "label": ", ".join(map(str, event_ids))
+                "id": from_state + "-->" + to_state,
+                "title": utils.list_to_html_table(event_short_descs),
+                "label": ", ".join(map(str, event_ids)),
+                "events": event_list
             }
 
-            if state_transition == self.last_transition:
-                utg_edge["color"] = "red"
+            # # Highlight last transition
+            # if state_transition == self.last_transition:
+            #     utg_edge["color"] = "red"
 
             utg_edges.append(utg_edge)
 
         utg = {
             "nodes": utg_nodes,
-            "edges": utg_edges
+            "edges": utg_edges,
+            "num_nodes": len(utg_nodes),
+            "num_edges": len(utg_edges),
+            "num_effective_events": len(self.effective_event_strs),
+            "num_reached_activities": len(self.reached_activities),
+            "num_total_activities": len(self.app.activities),
+            "package": self.app.package_name,
+            "main_activity": self.app.main_activity,
+            "device_serial": self.device.serial
         }
+
         utg_json = json.dumps(utg, indent=2)
         utg_file.write("var utg = \n")
         utg_file.write(utg_json)
@@ -136,15 +160,15 @@ class UTG(object):
 
     def is_event_explored(self, event, state):
         event_str = event.get_event_str(state)
-        return event_str in self.effective_events or event_str in self.ineffective_events
+        return event_str in self.effective_event_strs or event_str in self.ineffective_event_strs
 
     def is_state_explored(self, state):
-        if state.state_str in self.explored_states:
+        if state.state_str in self.explored_state_strs:
             return True
         for possible_event in state.get_possible_input():
             if not self.is_event_explored(possible_event, state):
                 return False
-        self.explored_states.add(state.state_str)
+        self.explored_state_strs.add(state.state_str)
         return True
 
     def get_reachable_states(self, current_state):

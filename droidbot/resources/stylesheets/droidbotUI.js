@@ -1,8 +1,10 @@
 var network = null;
-// Called when the Visualization API is loaded.
+
 function draw() {
-  // create a network
-  var container = document.getElementById('utg_div');
+  var utg_div = document.getElementById('utg_div');
+  var utg_details = document.getElementById('utg_details');
+
+  showOverall();
 
   var options = {
     autoResize: true,
@@ -34,5 +36,48 @@ function draw() {
       }
     }
   };
-  network = new vis.Network(container, utg, options);
+
+  network = new vis.Network(utg_div, utg, options);
+
+  network.on("click", function (params) {
+    if (params.nodes.length > 0) {
+      node = params.nodes[0];
+      utg_details.innerHTML = '<h2>State Details</h2>\n' + getNodeDetails(node);
+    }
+    else if (params.edges.length > 0) {
+      edge = params.edges[0];
+      utg_details.innerHTML = '<h2>Edge Details</h2>\n' + getEdgeDetails(edge);
+    }
+  });
+}
+
+function showOverall() {
+  var utg_details = document.getElementById('utg_details');
+  utg_details.innerHTML = "<h2>Overall Results</h2>\n" + getOverallResult();
+}
+
+function getOverallResult() {
+  return utg.overall;
+}
+
+function getEdgeDetails(edgeId) {
+  var i, numEdges;
+  numEdges = utg.edges.length;
+  for (i = 0; i < numEdges; i++) {
+    if (utg.edges[i].id == edgeId) {
+      return utg.edges[i];
+    }
+  }
+  return "";
+}
+
+function getNodeDetails(nodeId) {
+  var i, numNodes;
+  numNodes = utg.nodes.length;
+  for (i = 0; i < numNodes; i++) {
+    if (utg.nodes[i].id == nodeId) {
+      return utg.nodes[i];
+    }
+  }
+  return "";
 }

@@ -128,6 +128,7 @@ class EventLog(object):
         }
 
     def save2dir(self, output_dir=None):
+        # Save event
         if output_dir is None:
             if self.device.output_dir is None:
                 return

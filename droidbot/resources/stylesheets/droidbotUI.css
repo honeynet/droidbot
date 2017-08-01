@@ -17,3 +17,10 @@ body {
 #utg_details {
 	background-color:#eeeeee;	
 }
+
+.viewImg {
+	max-height: 200px;
+    max-width: 200px;
+    height: auto;
+    width: auto;
+}

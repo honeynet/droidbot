@@ -82,7 +82,7 @@ def safe_re_match(regex, content):
 
 
 def list_to_html_table(dict_data):
-    table = "<table>\n"
+    table = "<table class=\"table\">\n"
     for (key, value) in dict_data:
         table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
     table += "</table>"

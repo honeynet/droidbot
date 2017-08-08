@@ -89,7 +89,7 @@ class InputEvent(object):
         pass
 
     def get_views(self):
-        return None
+        return []
 
 
 class EventLog(object):
@@ -351,8 +351,7 @@ class TouchEvent(UIEvent):
             raise InvalidEventException(msg)
 
     def get_views(self):
-        if self.view:
-            return [self.view]
+        return [self.view] if self.view else []
 
 
 class LongTouchEvent(UIEvent):
@@ -391,8 +390,7 @@ class LongTouchEvent(UIEvent):
             raise InvalidEventException(msg)
 
     def get_views(self):
-        if self.view:
-            return [self.view]
+        return [self.view] if self.view else []
 
 
 class SwipeEvent(UIEvent):
@@ -530,8 +528,7 @@ class ScrollEvent(UIEvent):
             raise InvalidEventException(msg)
 
     def get_views(self):
-        if self.view:
-            return [self.view]
+        return [self.view] if self.view else []
 
 
 class SetTextEvent(UIEvent):
@@ -570,8 +567,7 @@ class SetTextEvent(UIEvent):
             raise InvalidEventException(msg)
 
     def get_views(self):
-        if self.view:
-            return [self.view]
+        return [self.view] if self.view else []
 
 
 class IntentEvent(InputEvent):

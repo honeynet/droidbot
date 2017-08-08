@@ -485,11 +485,6 @@ class ScrollEvent(UIEvent):
         return ScrollEvent(x, y, direction)
 
     def send(self, device):
-        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
-        start_x, start_y = x, y
-        end_x, end_y = x, y
-        duration = 500
-
         if self.view is not None:
             from device_state import DeviceState
             width = DeviceState.get_view_width(view_dict=self.view)
@@ -497,6 +492,16 @@ class ScrollEvent(UIEvent):
         else:
             width = device.get_width()
             height = device.get_height()
+
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        if not x or not y:
+            # If no view and no coordinate specified, use the screen center coordinate
+            x = width / 2
+            y = height / 2
+
+        start_x, start_y = x, y
+        end_x, end_y = x, y
+        duration = 500
 
         if self.direction == "UP":
             start_y -= height * 2 / 5

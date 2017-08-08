@@ -465,7 +465,7 @@ class ScrollEvent(UIEvent):
     swipe gesture
     """
 
-    def __init__(self, x=None, y=None, view=None, direction="UP", event_dict=None):
+    def __init__(self, x=None, y=None, view=None, direction="DOWN", event_dict=None):
         self.event_type = KEY_ScrollEvent
         self.x = x
         self.y = y
@@ -524,8 +524,8 @@ class ScrollEvent(UIEvent):
             return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
-            raise InvalidEventException(msg)
+            return "%s(state=%s, direction=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.direction)
 
     def get_views(self):
         return [self.view] if self.view else []

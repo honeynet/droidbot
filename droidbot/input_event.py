@@ -88,6 +88,9 @@ class InputEvent(object):
     def get_event_str(self, state):
         pass
 
+    def get_views(self):
+        return []
+
 
 class EventLog(object):
     """
@@ -103,8 +106,8 @@ class EventLog(object):
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
 
-        self.start_state = None
-        self.end_state = None
+        self.from_state = None
+        self.to_state = None
         self.event_str = None
 
         self.profiling_method = profiling_method
@@ -122,12 +125,13 @@ class EventLog(object):
         return {
             "tag": self.tag,
             "event": self.event.to_dict(),
-            "start_state": self.start_state.state_str,
-            "stop_state": self.end_state.state_str,
+            "start_state": self.from_state.state_str,
+            "stop_state": self.to_state.state_str,
             "event_str": self.event_str
         }
 
     def save2dir(self, output_dir=None):
+        # Save event
         if output_dir is None:
             if self.device.output_dir is None:
                 return
@@ -143,6 +147,13 @@ class EventLog(object):
         except Exception as e:
             self.device.logger.warning("Saving event to dir failed: " + e.message)
 
+    def save_views(self, output_dir=None):
+        # Save views
+        views = self.event.get_views()
+        if views:
+            for view_dict in views:
+                self.from_state.save_view_img(view_dict=view_dict, output_dir=output_dir)
+
     def is_start_event(self):
         if isinstance(self.event, IntentEvent):
             intent_cmd = self.event.intent
@@ -155,9 +166,9 @@ class EventLog(object):
         start sending event
         :return: 
         """
-        self.start_state = self.device.get_current_state()
+        self.from_state = self.device.get_current_state()
         self.start_profiling()
-        self.event_str = self.event.get_event_str(self.start_state)
+        self.event_str = self.event.get_event_str(self.from_state)
         print "Input: %s" % self.event_str
         self.device.send_event(self.event)
 
@@ -191,8 +202,9 @@ class EventLog(object):
         :return: 
         """
         self.stop_profiling()
-        self.end_state = self.device.get_current_state()
+        self.to_state = self.device.get_current_state()
         self.save2dir()
+        self.save_views()
 
     def stop_profiling(self, output_dir=None):
         if self.profiling_method is None:
@@ -338,6 +350,9 @@ class TouchEvent(UIEvent):
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
 
+    def get_views(self):
+        return [self.view] if self.view else []
+
 
 class LongTouchEvent(UIEvent):
     """
@@ -373,6 +388,9 @@ class LongTouchEvent(UIEvent):
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
+
+    def get_views(self):
+        return [self.view] if self.view else []
 
 
 class SwipeEvent(UIEvent):
@@ -433,6 +451,14 @@ class SwipeEvent(UIEvent):
 
         return "%s(%s, %s, duration=%s)" % (self.__class__.__name__, start_view_str, end_view_str, self.duration)
 
+    def get_views(self):
+        views = []
+        if self.start_view:
+            views.append(self.start_view)
+        if self.end_view:
+            views.append(self.end_view)
+        return views
+
 
 class ScrollEvent(UIEvent):
     """
@@ -457,11 +483,6 @@ class ScrollEvent(UIEvent):
         return ScrollEvent(x, y, direction)
 
     def send(self, device):
-        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
-        start_x, start_y = x, y
-        end_x, end_y = x, y
-        duration = 500
-
         if self.view is not None:
             from device_state import DeviceState
             width = DeviceState.get_view_width(view_dict=self.view)
@@ -469,6 +490,16 @@ class ScrollEvent(UIEvent):
         else:
             width = device.get_width()
             height = device.get_height()
+
+        x, y = UIEvent.get_xy(x=self.x, y=self.y, view=self.view)
+        if not x or not y:
+            # If no view and no coordinate specified, use the screen center coordinate
+            x = width / 2
+            y = height / 2
+
+        start_x, start_y = x, y
+        end_x, end_y = x, y
+        duration = 500
 
         if self.direction == "UP":
             start_y -= height * 2 / 5
@@ -495,6 +526,9 @@ class ScrollEvent(UIEvent):
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
+
+    def get_views(self):
+        return [self.view] if self.view else []
 
 
 class SetTextEvent(UIEvent):
@@ -531,6 +565,9 @@ class SetTextEvent(UIEvent):
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
+
+    def get_views(self):
+        return [self.view] if self.view else []
 
 
 class IntentEvent(InputEvent):

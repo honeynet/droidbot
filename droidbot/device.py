@@ -36,7 +36,6 @@ class Device(object):
         """
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # options
         if device_serial is None:
             import utils
             all_devices = utils.get_available_devices()
@@ -55,6 +54,7 @@ class Device(object):
         # basic device information
         self.settings = {}
         self.display_info = None
+        self.model_number = None
         self.sdk_version = None
         self.release_version = None
         self.ro_debuggable = None
@@ -198,6 +198,14 @@ class Device(object):
             return False
         return top_activity_name.startswith(package_name)
 
+    def get_model_number(self):
+        """
+        Get model number
+        """
+        if self.model_number is None:
+            self.model_number = self.adb.get_model_number()
+        return self.model_number
+
     def get_sdk_version(self):
         """
         Get version of current SDK
@@ -226,7 +234,7 @@ class Device(object):
 
     def get_display_info(self, refresh=True):
         """
-        get device display infomation, including width, height, and density
+        get device display information, including width, height, and density
         :param refresh: if set to True, refresh the display info instead of using the old values
         :return: dict, display_info
         """

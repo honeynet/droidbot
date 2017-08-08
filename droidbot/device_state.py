@@ -119,17 +119,41 @@ class DeviceState(object):
                     output_dir = os.path.join(self.device.output_dir, "states")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            state_json_file_path = "%s/state_%s.json" % (output_dir, self.tag)
-            screenshot_output_path = "%s/screen_%s.png" % (output_dir, self.tag)
-            state_json_file = open(state_json_file_path, "w")
+            dest_state_json_path = "%s/state_%s.json" % (output_dir, self.tag)
+            dest_screenshot_path = "%s/screen_%s.png" % (output_dir, self.tag)
+            state_json_file = open(dest_state_json_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
-            subprocess.check_call(["cp", self.screenshot_path, screenshot_output_path])
+            subprocess.check_call(["cp", self.screenshot_path, dest_screenshot_path])
+            self.screenshot_path = dest_screenshot_path
             # from PIL.Image import Image
             # if isinstance(self.screenshot_path, Image):
-            #     self.screenshot_path.save(screenshot_output_path)
+            #     self.screenshot_path.save(dest_screenshot_path)
         except Exception as e:
             self.device.logger.warning("saving state to dir failed: " + e.message)
+
+    def save_view_img(self, view_dict, output_dir=None):
+        try:
+            if output_dir is None:
+                if self.device.output_dir is None:
+                    return
+                else:
+                    output_dir = os.path.join(self.device.output_dir, "views")
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            view_str = view_dict['view_str']
+            view_file_path = "%s/view_%s.png" % (output_dir, view_str)
+            if os.path.exists(view_file_path):
+                return
+            from PIL import Image
+            # Load the original image:
+            view_bound = view_dict['bounds']
+            original_img = Image.open(self.screenshot_path)
+            view_img = original_img.crop((view_bound[0][0], view_bound[0][1],
+                                          view_bound[1][0], view_bound[1][1]))
+            view_img.save(view_file_path)
+        except Exception as e:
+            self.device.logger.warning("saving view to dir failed: " + e.message)
 
     def is_different_from(self, another_state):
         """

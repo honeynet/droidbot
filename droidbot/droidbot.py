@@ -53,6 +53,14 @@ class DroidBot(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
+            import pkg_resources, shutil
+            html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
+            stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
+            target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
+            if os.path.exists(target_stylesheets_dir):
+                shutil.rmtree(target_stylesheets_dir)
+            shutil.copy(html_index_path, output_dir)
+            shutil.copytree(stylesheets_path, target_stylesheets_dir)
 
         self.timeout = timeout
         self.timer = None
@@ -162,13 +170,14 @@ class DroidBot(object):
         self.enabled = False
         if self.timer and self.timer.isAlive():
             self.timer.cancel()
-        if self.env_manager is not None:
+        if self.env_manager:
             self.env_manager.stop()
-        if self.input_manager is not None:
+        if self.input_manager:
             self.input_manager.stop()
-        if self.droidbox is not None:
+        if self.droidbox:
             self.droidbox.stop()
-        self.device.disconnect()
+        if self.device:
+            self.device.disconnect()
         if not self.keep_env:
             self.device.tear_down()
         if not self.keep_app:

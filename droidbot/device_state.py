@@ -23,11 +23,13 @@ class DeviceState(object):
         self.views = DeviceState.__parse_views(views)
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
+        self.state_str_content_free = self.__get_content_free_state_str()
         self.possible_events = None
 
     def to_dict(self):
         state = {'tag': self.tag,
                  'state_str': self.state_str,
+                 'state_str_content_free': self.state_str_content_free,
                  'foreground_activity': self.foreground_activity,
                  'activity_stack': self.activity_stack,
                  'background_services': self.background_services,
@@ -83,6 +85,7 @@ class DeviceState(object):
     def __generate_view_strs(self):
         for view_dict in self.views:
             self.__get_view_str(view_dict)
+            # self.__get_view_structure(view_dict)
 
     @staticmethod
     def __calculate_depth(views):
@@ -102,11 +105,20 @@ class DeviceState(object):
     def __get_state_str(self):
         view_signatures = set()
         for view in self.views:
-            if 'signature' in view:
-                view_signature = view['signature']
-                if view_signature is not None and len(view_signature) > 0:
-                    view_signatures.add(view_signature)
+            view_signature = DeviceState.__get_view_signature(view)
+            if view_signature:
+                view_signatures.add(view_signature)
         state_str = "%s{%s}" % (self.activity_stack, ",".join(sorted(view_signatures)))
+        import hashlib
+        return hashlib.md5(state_str.encode('utf-8')).hexdigest()
+
+    def __get_content_free_state_str(self):
+        view_signatures = set()
+        for view in self.views:
+            view_signature = DeviceState.__get_content_free_view_signature(view)
+            if view_signature:
+                view_signatures.add(view_signature)
+        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
@@ -124,7 +136,8 @@ class DeviceState(object):
             state_json_file = open(dest_state_json_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
-            subprocess.check_call(["cp", self.screenshot_path, dest_screenshot_path])
+            import shutil
+            shutil.copyfile(self.screenshot_path, dest_screenshot_path)
             self.screenshot_path = dest_screenshot_path
             # from PIL.Image import Image
             # if isinstance(self.screenshot_path, Image):
@@ -167,7 +180,7 @@ class DeviceState(object):
     def __get_view_signature(view_dict):
         """
         get the signature of the given view
-        @param view_dict: dict, an element of list device.get_current_state().views
+        @param view_dict: dict, an element of list DeviceState.views
         @return:
         """
         if 'signature' in view_dict:
@@ -183,10 +196,25 @@ class DeviceState(object):
         view_dict['signature'] = signature
         return signature
 
+    @staticmethod
+    def __get_content_free_view_signature(view_dict):
+        """
+        get the content-free signature of the given view
+        @param view_dict: dict, an element of list DeviceState.views
+        @return:
+        """
+        if 'content_free_signature' in view_dict:
+            return view_dict['content_free_signature']
+        content_free_signature = "[class]%s[resource_id]%s" % \
+                                 (DeviceState.__safe_dict_get(view_dict, 'class', "None"),
+                                  DeviceState.__safe_dict_get(view_dict, 'resource_id', "None"))
+        view_dict['content_free_signature'] = content_free_signature
+        return content_free_signature
+
     def __get_view_str(self, view_dict):
         """
         get a string which can represent the given view
-        @param view_dict: dict, an element of list device.get_current_state().views
+        @param view_dict: dict, an element of list DeviceState.views
         @return:
         """
         if 'view_str' in view_dict:
@@ -206,6 +234,37 @@ class DeviceState(object):
         view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
         view_dict['view_str'] = view_str
         return view_str
+
+    def __get_view_structure(self, view_dict):
+        """
+        get the structure of the given view
+        :param view_dict: dict, an element of list DeviceState.views
+        :return: 
+        """
+        if 'view_structure' in view_dict:
+            return view_dict['view_structure']
+        width = DeviceState.get_view_width(view_dict)
+        height = DeviceState.get_view_height(view_dict)
+        class_name = DeviceState.__safe_dict_get(view_dict, 'class', "None")
+        children = {}
+
+        root_x = view_dict['bounds'][0][0]
+        root_y = view_dict['bounds'][0][1]
+
+        child_view_ids = self.__safe_dict_get(view_dict, 'children')
+        if child_view_ids:
+            for child_view_id in child_view_ids:
+                child_view = self.views[child_view_id]
+                child_x = child_view['bounds'][0][0]
+                child_y = child_view['bounds'][0][1]
+                relative_x, relative_y = child_x - root_x, child_y - root_y
+                children["(%d,%d)" % (relative_x, relative_y)] = self.__get_view_structure(child_view)
+
+        view_structure = {
+            "%s(%d*%d)" % (class_name, width, height) : children
+        }
+        view_dict['view_structure'] = view_structure
+        return view_structure
 
     @staticmethod
     def __key_if_true(view_dict, key):

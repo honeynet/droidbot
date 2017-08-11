@@ -1,0 +1,697 @@
+{
+  "views": [
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        1
+      ], 
+      "size": "1368*863", 
+      "checked": false, 
+      "temp_id": 0, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": -1, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "3b8dd12f762a0baefe4cddcf62b81015", 
+      "enabled": true, 
+      "bounds": [
+        [
+          36, 
+          896
+        ], 
+        [
+          1404, 
+          1759
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        2
+      ], 
+      "size": "1240*735", 
+      "checked": false, 
+      "temp_id": 1, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 0, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "bd47640a29840b18167c0650cd212126", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          960
+        ], 
+        [
+          1340, 
+          1695
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/content", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        3
+      ], 
+      "size": "1240*735", 
+      "checked": false, 
+      "temp_id": 2, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]android:id/content", 
+      "is_password": false, 
+      "parent": 1, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "d72fafe39f19954c88307710f6903c1a", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          960
+        ], 
+        [
+          1340, 
+          1695
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]android:id/content[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/parentPanel", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        4, 
+        8, 
+        12
+      ], 
+      "size": "1240*735", 
+      "checked": false, 
+      "temp_id": 3, 
+      "selected": false, 
+      "child_count": 3, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]android:id/parentPanel", 
+      "is_password": false, 
+      "parent": 2, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "7d5b1fd2bf155fee0fbb966dff65fc88", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          960
+        ], 
+        [
+          1340, 
+          1695
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]android:id/parentPanel[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/topPanel", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        5, 
+        7
+      ], 
+      "size": "1240*211", 
+      "checked": false, 
+      "temp_id": 4, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]android:id/topPanel", 
+      "is_password": false, 
+      "parent": 3, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "d7b62c14069c8fcb05d31fef2d9cb7ea", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          960
+        ], 
+        [
+          1340, 
+          1171
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]android:id/topPanel[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/title_template", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        6
+      ], 
+      "size": "1240*179", 
+      "checked": false, 
+      "temp_id": 5, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]android:id/title_template", 
+      "is_password": false, 
+      "parent": 4, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "c2ea837ec92f063f0aef90d644761840", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          960
+        ], 
+        [
+          1340, 
+          1139
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]android:id/title_template[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/alertTitle", 
+      "text": "Access to failure", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1048*107", 
+      "checked": false, 
+      "temp_id": 6, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]android:id/alertTitle", 
+      "is_password": false, 
+      "parent": 5, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "44f762984b1e0c08f7d6c84c5b8663ce", 
+      "enabled": true, 
+      "bounds": [
+        [
+          196, 
+          1032
+        ], 
+        [
+          1244, 
+          1139
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]android:id/alertTitle[text]Access to failure[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/titleDividerNoCustom", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1240*32", 
+      "checked": false, 
+      "temp_id": 7, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]android:id/titleDividerNoCustom", 
+      "is_password": false, 
+      "parent": 4, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "d224c79cf61ee63924e50a426f043df5", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1139
+        ], 
+        [
+          1340, 
+          1171
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]android:id/titleDividerNoCustom[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/contentPanel", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        9
+      ], 
+      "size": "1240*236", 
+      "checked": false, 
+      "temp_id": 8, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]android:id/contentPanel", 
+      "is_password": false, 
+      "parent": 3, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "ae6641348a18bfd726254d805c241164", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1171
+        ], 
+        [
+          1340, 
+          1407
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]android:id/contentPanel[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/scrollView", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        10
+      ], 
+      "size": "1240*236", 
+      "checked": false, 
+      "temp_id": 9, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.ScrollView[resource_id]android:id/scrollView", 
+      "is_password": false, 
+      "parent": 8, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ScrollView", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "21eeab69f362359ba2c6617a04b554e3", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1171
+        ], 
+        [
+          1340, 
+          1407
+        ]
+      ], 
+      "signature": "[class]android.widget.ScrollView[resource_id]android:id/scrollView[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        11
+      ], 
+      "size": "1240*236", 
+      "checked": false, 
+      "temp_id": 10, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 9, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "c9e4584604f6219356e588fc733ef9d1", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1171
+        ], 
+        [
+          1340, 
+          1407
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/message", 
+      "text": "Failed to get camera permissions, please authorize in the Settings before use.", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1240*236", 
+      "checked": false, 
+      "temp_id": 11, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]android:id/message", 
+      "is_password": false, 
+      "parent": 10, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "f67eef8451ea86ffd326b92289d44e97", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1171
+        ], 
+        [
+          1340, 
+          1407
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]android:id/message[text]Failed to get camera permissions, please authorize in the Settings before use.[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/buttonPanel", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        13
+      ], 
+      "size": "1240*288", 
+      "checked": false, 
+      "temp_id": 12, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.ScrollView[resource_id]android:id/buttonPanel", 
+      "is_password": false, 
+      "parent": 3, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ScrollView", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "6cf4121e5ef9a73efc00757792e3ecb6", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1407
+        ], 
+        [
+          1340, 
+          1695
+        ]
+      ], 
+      "signature": "[class]android.widget.ScrollView[resource_id]android:id/buttonPanel[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        14
+      ], 
+      "size": "1192*224", 
+      "checked": false, 
+      "temp_id": 13, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 12, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "a2c3049fbabda7f1f315e2f2bf7337fb", 
+      "enabled": true, 
+      "bounds": [
+        [
+          124, 
+          1407
+        ], 
+        [
+          1316, 
+          1631
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/button1", 
+      "text": "OK", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "256*192", 
+      "checked": false, 
+      "temp_id": 14, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]android:id/button1", 
+      "is_password": false, 
+      "parent": 13, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "ca3ab7a0bbb39dd5635c8b62b4b141da", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1012, 
+          1423
+        ], 
+        [
+          1268, 
+          1615
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]android:id/button1[text]OK[enabled,,]"
+    }
+  ], 
+  "state_str_content_free": "f3249be4726607eca22e1b9125146f5a", 
+  "activity_stack": [
+    "com.yanzhenjie.album.sample/com.yanzhenjie.album.AlbumActivity", 
+    "com.yanzhenjie.album.sample/.MainActivity"
+  ], 
+  "background_services": [
+    "com.android.bluetooth/.hid.HidService", 
+    "com.samsung.android.widgetapp.briefing/.CatchNotificationsService", 
+    "io.github.privacystreams.app/.PStreamCollectService", 
+    "com.sec.android.app.bluetoothtest/.BluetoothBDTestService", 
+    "com.sec.bcservice/.BroadcastService", 
+    "com.google.android.gms/.deviceconnection.service.DeviceConnectionWatcherService", 
+    "com.google.android.gms/com.google.android.location.places.service.PlaceDetectionAsyncService", 
+    "com.android.systemui/.keyguard.KeyguardService", 
+    "com.android.bluetooth/.btservice.AdapterService", 
+    "com.samsung.android.service.peoplestripe/.PeopleNotiListenerService", 
+    "com.android.systemui/.ImageWallpaper", 
+    "com.google.android.gms/com.google.android.location.geocode.GeocodeService", 
+    "com.android.bluetooth/.hid.HidDevService", 
+    "com.samsung.enhanceservice/.EnhanceService", 
+    "io.github.privacystreams.app/io.github.privacystreams.notification.PSNotificationListenerService", 
+    "com.google.android.gms/.auth.setup.devicesignals.LockScreenService", 
+    "com.google.android.gms/.gcm.GcmService", 
+    "com.google.android.gms/.auth.proximity.firstparty.SystemMemoryCacheService", 
+    "com.sec.enterprise.mdm.services.simpin/.EnterpriseSimPin", 
+    "com.samsung.SMT/.SamsungTTSService", 
+    "com.facebook.katana/com.facebook.offline.mode.helper.DisableOfflineModeGCMService", 
+    "com.dsi.ant.server/.AntService", 
+    "com.google.android.gms/com.google.location.nearby.direct.service.NearbyDirectService", 
+    "com.samsung.voiceserviceplatform/com.samsung.vsf.core.framework.VoiceFrameworkService", 
+    "com.sec.location.nsflp2/.nsmonitor.NSMonitorService", 
+    "com.google.android.gms/.chimera.PersistentBoundBrokerService", 
+    "com.sec.android.app.samsungapps/.account.SamsungAccountServiceReceiver", 
+    "com.android.bluetooth/.gatt.GattService", 
+    "com.google.android.gms/.auth.account.service.WorkAccountService", 
+    "com.android.bluetooth/.hdp.HealthService", 
+    "com.android.bluetooth/.sap.SapService", 
+    "com.google.android.gms/.usagereporting.service.UsageReportingService", 
+    "org.simalliance.openmobileapi.service/.SmartcardService", 
+    "com.google.android.gms/.pseudonymous.service.PseudonymousIdService", 
+    "com.android.vending/com.google.android.finsky.contentfilter.impl.ContentFiltersService", 
+    "com.google.android.ext.services/android.ext.services.notification.Ranker", 
+    "io.github.ylimit.droidbotapp/.DroidBotIME", 
+    "com.android.bluetooth/.pbap.BluetoothPbapService", 
+    "com.google.android.gms/.beacon.BleService", 
+    "com.google.android.gms/com.google.android.location.fused.FusedLocationService", 
+    "org.simalliance.openmobileapi.service/org.simalliance.openmobileapi.uiccterminal.UiccTerminal", 
+    "com.samsung.android.contacts/com.samsung.dialer.util.StickyService", 
+    "com.samsung.android.authfw/.pass.PassService", 
+    "com.sec.android.daemonapp/.appservice.WeatherService", 
+    "com.qihoo.browser/.pushmanager.PushBrowserService", 
+    "com.android.bluetooth/.a2dp.A2dpService", 
+    "io.github.ylimit.droidbotapp/io.github.privacystreams.accessibility.PSAccessibilityService", 
+    "com.google.android.gms/com.google.android.location.geofencer.service.GeofenceProviderService", 
+    "com.samsung.sec.android.application.csc/.CscUpdateService", 
+    "com.trustonic.tuiservice/.TuiService", 
+    "com.sec.spp.push/.PushClientService", 
+    "com.sec.sve/.service.SecVideoEngineService", 
+    "com.android.systemui/.SystemUIService", 
+    "android/.hardware.location.GeofenceHardwareService", 
+    "com.sec.android.daemonapp/com.samsung.android.weather.common.service.WeatherDataService", 
+    "com.facebook.katana/com.facebook.rti.orca.MainService", 
+    "com.samsung.android.oneconnect/.QcService", 
+    "com.samsung.android.scloud/.backup.auto.AutoBackupManagerService", 
+    "com.samsung.android.MtpApplication/.MtpService", 
+    "com.qihoo.browser/com.qihoo360.loader2.KeepAliveService", 
+    "com.google.android.gms/com.google.android.location.internal.PendingIntentCallbackService", 
+    "com.google.android.gms/com.google.android.location.reporting.service.ReportingAndroidService", 
+    "com.google.android.gms/.nearby.messages.service.NearbyMessagesService", 
+    "com.samsung.android.scloud/.auth.AuthService", 
+    "com.android.server.telecom/.components.BluetoothPhoneService", 
+    "com.estrongs.android.pop/com.estrongs.android.ui.notification.ESTaskService", 
+    "com.google.android.gms/com.google.android.location.internal.server.GoogleLocationService", 
+    "com.google.android.gms/com.google.android.contextmanager.service.ContextManagerService", 
+    "com.google.android.gms/com.google.android.location.network.NetworkLocationService", 
+    "com.android.stk/.StkAppService", 
+    "com.facebook.katana/com.facebook.rti.push.service.FbnsService", 
+    "com.google.android.gms/com.google.android.location.internal.GoogleLocationManagerService", 
+    "com.sec.android.app.shealth/com.samsung.android.service.health.HealthService", 
+    "com.android.bluetooth/com.samsung.ble.BleAutoConnectService", 
+    "android/com.android.server.DrmEventService", 
+    "com.android.server.telecom/.components.TelecomService", 
+    "com.android.providers.media/.MtpService", 
+    "com.android.bluetooth/.hfp.HeadsetService", 
+    "com.samsung.android.authservice/.AuthService", 
+    "com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService", 
+    "com.samsung.android.providers.context/.ContextService", 
+    "com.android.server.telecom/.components.BluetoothVoIPService", 
+    "com.google.android.gms/.security.snet.SafetyNetClientService", 
+    "android/com.android.internal.backup.LocalTransportService", 
+    "com.qihoo.browser/com.qihoo360.loader.s.L0S1", 
+    "android/com.android.server.content.SyncJobService", 
+    "com.google.android.gms/.common.stats.GmsCoreStatsService", 
+    "com.google.android.gms/.clearcut.service.ClearcutLoggerService", 
+    "com.google.android.gms/com.google.android.location.internal.server.HardwareArProviderService", 
+    "com.samsung.android.service.peoplestripe/.PeopleStripeService", 
+    "com.samsung.dcmservice/.DCMService", 
+    "com.samsung.android.app.cocktailbarservice/.CocktailBarService", 
+    "com.samsung.android.beaconmanager/.BeaconService", 
+    "com.android.bluetooth/.map.BluetoothMapService", 
+    "com.android.stk2/.StkAppService", 
+    "com.samsung.storyservice/.StoryService", 
+    "com.android.phone/.TelephonyDebugService", 
+    "com.android.bluetooth/.opp.BluetoothOppService", 
+    "com.android.bluetooth/.pan.PanService", 
+    "org.simalliance.openmobileapi.service/org.simalliance.openmobileapi.eseterminal.eSETerminal", 
+    "com.google.android.gms/.backup.BackupTransportService", 
+    "com.sec.phone/.SecPhoneService", 
+    "com.android.bluetooth/.a2dpsink.A2dpSinkService"
+  ], 
+  "state_str": "7d41494c9b5e44109ecc3aeb80c078aa", 
+  "tag": "2017-08-11_155828", 
+  "foreground_activity": "com.yanzhenjie.album.sample/com.yanzhenjie.album.AlbumActivity"
+}

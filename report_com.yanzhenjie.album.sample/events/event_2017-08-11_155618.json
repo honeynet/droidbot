@@ -1,0 +1,48 @@
+{
+  "stop_state": "d88bbbf0761da44c8f9f467286a9a166", 
+  "event_str": "TouchEvent(view=f35335d0ca94b968f766584e9f175b8f)", 
+  "tag": "2017-08-11_155618", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": "NONE", 
+      "resource_id": "NONE", 
+      "text": "Nostalgia", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "331*628", 
+      "checked": false, 
+      "temp_id": 70, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]GLSelectButton[resource_id]NONE", 
+      "is_password": false, 
+      "parent": 69, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "GLSelectButton", 
+      "scrollable": false, 
+      "package": "com.sec.android.app.camera", 
+      "long_clickable": false, 
+      "view_str": "f35335d0ca94b968f766584e9f175b8f", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1109, 
+          1468
+        ], 
+        [
+          1440, 
+          2096
+        ]
+      ], 
+      "signature": "[class]GLSelectButton[resource_id]NONE[text]Nostalgia[enabled,,]"
+    }
+  }, 
+  "start_state": "d88bbbf0761da44c8f9f467286a9a166"
+}

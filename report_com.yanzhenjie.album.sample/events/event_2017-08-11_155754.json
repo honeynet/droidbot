@@ -1,0 +1,48 @@
+{
+  "stop_state": "23f0ffdf7da9f80b5b419a9a3508f5b4", 
+  "event_str": "TouchEvent(view=acf3ea04c37365580940c9cc924e22a0)", 
+  "tag": "2017-08-11_155754", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "android:id/titleDividerNoCustom", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1240*32", 
+      "checked": false, 
+      "temp_id": 7, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]android:id/titleDividerNoCustom", 
+      "is_password": false, 
+      "parent": 4, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "acf3ea04c37365580940c9cc924e22a0", 
+      "enabled": true, 
+      "bounds": [
+        [
+          100, 
+          1161
+        ], 
+        [
+          1340, 
+          1193
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]android:id/titleDividerNoCustom[text]None[enabled,,]"
+    }
+  }, 
+  "start_state": "23f0ffdf7da9f80b5b419a9a3508f5b4"
+}

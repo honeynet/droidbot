@@ -1,0 +1,10 @@
+{
+  "stop_state": "08bd71908a03b06087f7bdabc43a7894", 
+  "event_str": "IntentEvent(intent='am start com.yanzhenjie.album.sample/com.yanzhenjie.album.sample.MainActivity')", 
+  "tag": "2017-08-11_155535", 
+  "event": {
+    "intent": "am start com.yanzhenjie.album.sample/com.yanzhenjie.album.sample.MainActivity", 
+    "event_type": "intent"
+  }, 
+  "start_state": "f7b58d3da442c82da472f76899c7eb29"
+}

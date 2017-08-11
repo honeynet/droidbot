@@ -1,0 +1,134 @@
+Activity Resolver Table:
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        2ed55cc com.yanzhenjie.album.sample/.MainActivity filter d44378d
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+          AutoVerify=false
+
+Service Resolver Table:
+  Non-Data Actions:
+      android.service.notification.NotificationListenerService:
+        6f9e015 com.yanzhenjie.album.sample/com.github.privacystreams.notification.PSNotificationListenerService filter 2450024
+          Action: "android.service.notification.NotificationListenerService"
+          AutoVerify=false
+      android.accessibilityservice.AccessibilityService:
+        fe8ff2a com.yanzhenjie.album.sample/com.github.privacystreams.accessibility.PSAccessibilityService filter ad5c0b7
+          Action: "android.accessibilityservice.AccessibilityService"
+          Category: "android.accessibilityservice.category.FEEDBACK_GENERIC"
+          AutoVerify=false
+
+Registered ContentProviders:
+  com.yanzhenjie.album.sample/com.yanzhenjie.album.provider.CameraFileProvider:
+    Provider{86fa11b com.yanzhenjie.album.sample/com.yanzhenjie.album.provider.CameraFileProvider}
+  com.yanzhenjie.album.sample/com.github.privacystreams.utils.PSFileProvider:
+    Provider{8002b8 com.yanzhenjie.album.sample/com.github.privacystreams.utils.PSFileProvider}
+
+ContentProvider Authorities:
+  [com.yanzhenjie.album.sample.provider]:
+    Provider{8002b8 com.yanzhenjie.album.sample/com.github.privacystreams.utils.PSFileProvider}
+      applicationInfo=ApplicationInfo{9a56891 com.yanzhenjie.album.sample}
+  [com.yanzhenjie.album.sample.album.camera.provider]:
+    Provider{86fa11b com.yanzhenjie.album.sample/com.yanzhenjie.album.provider.CameraFileProvider}
+      applicationInfo=ApplicationInfo{9a56891 com.yanzhenjie.album.sample}
+
+Key Set Manager:
+  [com.yanzhenjie.album.sample]
+      Signing KeySets: 1963
+
+Packages:
+  Package [com.yanzhenjie.album.sample] (26fe3f6):
+    userId=12109
+    pkg=Package{75d33f7 com.yanzhenjie.album.sample}
+    codePath=/data/app/com.yanzhenjie.album.sample-1
+    resourcePath=/data/app/com.yanzhenjie.album.sample-1
+    legacyNativeLibraryDir=/data/app/com.yanzhenjie.album.sample-1/lib
+    primaryCpuAbi=null
+    secondaryCpuAbi=null
+    versionCode=11 minSdk=16 targetSdk=23
+    versionName=1.1
+    splits=[base]
+    apkSigningVersion=2
+    applicationInfo=ApplicationInfo{9a56891 com.yanzhenjie.album.sample}
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    dataDir=/data/user/0/com.yanzhenjie.album.sample
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2017-08-11 15:54:25
+    firstInstallTime=2017-08-11 15:54:26
+    lastUpdateTime=2017-08-11 15:54:26
+    signatures=PackageSignatures{8e9264 [b53468c3]}
+    installPermissionsFixed=true installStatus=1
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    requested permissions:
+      android.permission.CAMERA
+      android.permission.READ_EXTERNAL_STORAGE
+      android.permission.WRITE_EXTERNAL_STORAGE
+      android.permission.MOUNT_UNMOUNT_FILESYSTEMS
+    User 0: ceDataInode=525404 installed=true hidden=false suspended=false stopped=true notLaunched=true enabled=0
+      runtime permissions:
+        android.permission.READ_EXTERNAL_STORAGE: granted=true
+        android.permission.CAMERA: granted=true
+        android.permission.WRITE_EXTERNAL_STORAGE: granted=true
+mSkippingApks:
+  package : SamsungPayStub.apk
+  package : GalaxyCare.apk
+  package : smartcallprovider-open-release.apk
+  package : AndroidPay_erasable_Hero.apk
+  package : CnnPanel.apk
+  package : NaverV_N.apk
+  package : AuthService_v1.apk
+  package : FidoUafAsm_v15.apk
+  package : FidoUafClient_v15.apk
+  package : AxelSpringer.apk
+  package : imsservice.apk
+  package : ImsSettings.apk
+  package : ImsLogger+.apk
+  package : ImsTelephonyService.apk
+  package : SamsungUpdates.apk
+  package : OMCAgent.apk
+  package : vsimservice.apk
+
+
+Dexopt state:
+  [com.yanzhenjie.album.sample]
+    Instruction Set: arm64
+      path: /data/app/com.yanzhenjie.album.sample-1/base.apk
+      status: /data/app/com.yanzhenjie.album.sample-1/oat/arm64/base.odex [compilation_filter=interpret-only, status=kOa
+      tUpToDate]
+
+
+Package sem_cleanAPKs log:
+17-Jul-2017 10:20 installd sem_cleanAPKs start
+17-Jul-2017 10:20 installd don't have sales code path
+17-Jul-2017 10:20 installd sem_cleanAPKs end
+
+-------- coreapps list ---------
+com.samsung.android.radiobasedlocation.manager:/system/priv-app/RadioBasedLocationManager
+com.sec.location.nsflp2:/system/priv-app/NSFusedLocation_v2.2
+com.google.android.ext.services:/system/priv-app/GoogleExtServices
+com.android.providers.telephony:/system/priv-app/SecTelephonyProvider_Epic
+com.google.android.ext.shared:/system/app/GoogleExtShared
+com.samsung.android.incallui:/system/priv-app/SamsungInCallUI
+org.simalliance.openmobileapi.service:/system/app/SmartcardService
+com.android.mms.service:/system/priv-app/MmsService
+com.samsung.ucs.agent.boot:/system/app/bootagent
+com.android.defcontainer:/system/priv-app/DefaultContainerService
+com.sec.sve:/system/app/sveservice
+com.samsung.android.SettingsReceiver:/system/priv-app/SettingsReceiver
+android:/system/framework/framework-res.apk
+com.android.providers.settings:/system/priv-app/SecSettingsProvider2
+com.android.inputdevices:/system/priv-app/InputDevices
+com.samsung.knox.securefolder:/system/priv-app/SecureFolderStub
+com.sec.android.inputmethod:/system/app/SamsungIMEv4
+com.android.server.telecom:/system/priv-app/Telecom
+com.google.android.packageinstaller:/system/priv-app/GooglePackageInstaller
+com.android.proxyhandler:/system/priv-app/ProxyHandler
+com.sec.phone:/system/app/SecFactoryPhoneTest
+com.sec.app.RilErrorNotifier:/system/priv-app/PhoneErrService
+com.android.settings:/system/priv-app/SecSettings2
+com.android.phone:/system/priv-app/TeleService
+com.android.shell:/system/priv-app/Shell
+com.android.location.fused:/system/priv-app/FusedLocation
+com.sec.epdg:/system/app/EpdgService
+com.android.systemui:/system/priv-app/SystemUI
+com.sec.knox.switcher:/system/app/KnoxSwitcher

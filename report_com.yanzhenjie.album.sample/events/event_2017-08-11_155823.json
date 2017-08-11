@@ -1,0 +1,48 @@
+{
+  "stop_state": "438e57d0106e1a9a0fb83a0217cea089", 
+  "event_str": "TouchEvent(view=8e4c91414bbf684731920204f85e7753)", 
+  "tag": "2017-08-11_155823", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": "MENUID_HDR", 
+      "resource_id": "MENUID_HDR", 
+      "text": "HDR (rich tone)", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "180*180", 
+      "checked": false, 
+      "temp_id": 23, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]GLButton[resource_id]MENUID_HDR", 
+      "is_password": false, 
+      "parent": 22, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "GLButton", 
+      "scrollable": false, 
+      "package": "com.sec.android.app.camera", 
+      "long_clickable": false, 
+      "view_str": "8e4c91414bbf684731920204f85e7753", 
+      "enabled": true, 
+      "bounds": [
+        [
+          436, 
+          0
+        ], 
+        [
+          616, 
+          180
+        ]
+      ], 
+      "signature": "[class]GLButton[resource_id]MENUID_HDR[text]HDR (rich tone)[enabled,,]"
+    }
+  }, 
+  "start_state": "438e57d0106e1a9a0fb83a0217cea089"
+}

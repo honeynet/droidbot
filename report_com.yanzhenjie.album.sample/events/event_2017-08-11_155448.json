@@ -1,0 +1,48 @@
+{
+  "stop_state": "c8d120766cf9e88552d43e4c5a46e5cc", 
+  "event_str": "TouchEvent(view=7c07994a1b00e2d71d9a4423fe4538c2)", 
+  "tag": "2017-08-11_155448", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yanzhenjie.album.sample:id/btn_switch_dir", 
+      "text": "PHOTOFRAMES", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "628*192", 
+      "checked": false, 
+      "temp_id": 26, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]com.yanzhenjie.album.sample:id/btn_switch_dir", 
+      "is_password": false, 
+      "parent": 25, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "7c07994a1b00e2d71d9a4423fe4538c2", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2360
+        ], 
+        [
+          628, 
+          2552
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]com.yanzhenjie.album.sample:id/btn_switch_dir[text]PHOTOFRAMES[enabled,,]"
+    }
+  }, 
+  "start_state": "a4113af94aff84b092e6a7113dffb372"
+}

@@ -1,0 +1,48 @@
+{
+  "stop_state": "23f0ffdf7da9f80b5b419a9a3508f5b4", 
+  "event_str": "TouchEvent(view=ffc4ce6b262a9e79025b70a6d63b1507)", 
+  "tag": "2017-08-11_155757", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "android:id/alertTitle", 
+      "text": "Tips", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1048*107", 
+      "checked": false, 
+      "temp_id": 6, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]android:id/alertTitle", 
+      "is_password": false, 
+      "parent": 5, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "ffc4ce6b262a9e79025b70a6d63b1507", 
+      "enabled": true, 
+      "bounds": [
+        [
+          196, 
+          1054
+        ], 
+        [
+          1244, 
+          1161
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]android:id/alertTitle[text]Tips[enabled,,]"
+    }
+  }, 
+  "start_state": "23f0ffdf7da9f80b5b419a9a3508f5b4"
+}

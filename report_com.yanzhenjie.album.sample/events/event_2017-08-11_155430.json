@@ -1,0 +1,48 @@
+{
+  "stop_state": "72eaed0ade1c06067be81d18aa5604af", 
+  "event_str": "TouchEvent(view=98986a84bd367dce0a2fa6259e3f4e89)", 
+  "tag": "2017-08-11_155430", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yanzhenjie.album.sample:id/btn_preview", 
+      "text": " (0)", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "289*192", 
+      "checked": false, 
+      "temp_id": 47, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]com.yanzhenjie.album.sample:id/btn_preview", 
+      "is_password": false, 
+      "parent": 45, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yanzhenjie.album.sample", 
+      "long_clickable": false, 
+      "view_str": "98986a84bd367dce0a2fa6259e3f4e89", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1151, 
+          2360
+        ], 
+        [
+          1440, 
+          2552
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]com.yanzhenjie.album.sample:id/btn_preview[text] (0)[enabled,,]"
+    }
+  }, 
+  "start_state": "72eaed0ade1c06067be81d18aa5604af"
+}

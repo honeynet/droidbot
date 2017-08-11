@@ -1,0 +1,48 @@
+{
+  "stop_state": "438e57d0106e1a9a0fb83a0217cea089", 
+  "event_str": "TouchEvent(view=b98f6ff08bd96132f8f18bf6891fb086)", 
+  "tag": "2017-08-11_155813", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": "NONE", 
+      "resource_id": "NONE", 
+      "text": "Record", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "192*192", 
+      "checked": false, 
+      "temp_id": 30, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]GLButton[resource_id]NONE", 
+      "is_password": false, 
+      "parent": 10, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "GLButton", 
+      "scrollable": false, 
+      "package": "com.sec.android.app.camera", 
+      "long_clickable": false, 
+      "view_str": "b98f6ff08bd96132f8f18bf6891fb086", 
+      "enabled": true, 
+      "bounds": [
+        [
+          284, 
+          2260
+        ], 
+        [
+          476, 
+          2452
+        ]
+      ], 
+      "signature": "[class]GLButton[resource_id]NONE[text]Record[enabled,,]"
+    }
+  }, 
+  "start_state": "438e57d0106e1a9a0fb83a0217cea089"
+}

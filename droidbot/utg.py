@@ -97,10 +97,11 @@ class UTG(object):
                 "shape": "image",
                 "image": os.path.relpath(state.screenshot_path, self.device.output_dir),
                 "label": short_activity_name,
-                "group": state.foreground_activity,
+                # "group": state.foreground_activity,
                 "package": package_name,
                 "activity": activity_name,
-                "title": state_desc
+                "title": state_desc,
+                "content": "\n".join([package_name, activity_name, state.state_str, state.search_content])
             }
 
             if state.state_str == self.first_state_str:

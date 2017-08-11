@@ -13,11 +13,24 @@ function draw() {
     locale: 'en',
 
     nodes: {
-      color: {
-        border: '#000',
-        background: '#000'
+      shapeProperties: {
+        useBorderWithImage: true
       },
-      font:{
+
+      borderWidth: 0,
+      borderWidthSelected: 5,
+
+      color: {
+        border: '#FFFFFF',
+        background: '#FFFFFF',
+
+        highlight: {
+          border: '#0000FF',
+          background: '#0000FF',
+        }
+      },
+
+      font: {
         size: 12,
         color:'#000'
       }
@@ -138,5 +151,38 @@ function getNode(nodeId) {
     if (utg.nodes[i].id == nodeId) {
       return utg.nodes[i];
     }
+  }
+}
+
+function showAbout() {
+  var utg_details = document.getElementById('utg_details');
+  utg_details.innerHTML = getAboutInfo();
+}
+
+function getAboutInfo() {
+  var aboutInfo = "<hr />";
+  aboutInfo += "<h2>About</h2>\n"
+  aboutInfo += "<p>This report is generated using <a href=\"https://github.com/honeynet/droidbot\">DroidBot</a>.</p>\n";
+  aboutInfo += "<p>Please find copyright information in the project page.</p>";
+  return aboutInfo;
+}
+
+function searchUTG() {
+  var searchKeyword = document.getElementById("utgSearchBar").value.toUpperCase();
+  if (searchKeyword == null || searchKeyword == "") {
+    network.unselectAll()
+  } else {
+    var i, numNodes;
+    nodes = utg.nodes;
+    numNodes = nodes.length;
+    selectedNodes = []
+    for (i = 0; i < numNodes; i++) {
+      if (nodes[i].content.toUpperCase().indexOf(searchKeyword) > -1) {
+        selectedNodes.push(nodes[i].id)
+      }
+    }
+    network.unselectAll()
+    // console.log("Selecting: " + selectedNodes)
+    network.selectNodes(selectedNodes, false)
   }
 }

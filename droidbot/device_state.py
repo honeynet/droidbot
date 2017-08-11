@@ -24,6 +24,7 @@ class DeviceState(object):
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
         self.state_str_content_free = self.__get_content_free_state_str()
+        self.search_content = self.__get_search_content()
         self.possible_events = None
 
     def to_dict(self):
@@ -121,6 +122,28 @@ class DeviceState(object):
         state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
+
+    def __get_search_content(self):
+        """
+        get a text for searching the state
+        :return: str
+        """
+        words = []
+        words.append(",".join(self.__get_property_from_all_views("resource_id")))
+        words.append(",".join(self.__get_property_from_all_views("text")))
+        return "\n".join(words)
+
+    def __get_property_from_all_views(self, property):
+        """
+        get the values of a property from all views
+        :return: a list of property values
+        """
+        property_values = set()
+        for view in self.views:
+            property_value = DeviceState.__safe_dict_get(view, property, None)
+            if property_value:
+                property_values.add(property_value)
+        return property_values
 
     def save2dir(self, output_dir=None):
         try:

@@ -89,7 +89,8 @@ class UTG(object):
             state_desc = utils.list_to_html_table([
                 ("package", package_name),
                 ("activity", activity_name),
-                ("state_str", state.state_str)
+                ("state_str", state.state_str),
+                ("structure_str", state.structure_str)
             ])
 
             utg_node = {
@@ -100,6 +101,8 @@ class UTG(object):
                 # "group": state.foreground_activity,
                 "package": package_name,
                 "activity": activity_name,
+                "state_str": state_str,
+                "structure_str": state.structure_str,
                 "title": state_desc,
                 "content": "\n".join([package_name, activity_name, state.state_str, state.search_content])
             }

@@ -18,6 +18,10 @@ body {
 	background-color:#eeeeee;	
 }
 
+#utgSearchBar {
+    width: 500px;
+}
+
 .viewImg {
 	max-height: 200px;
     max-width: 200px;

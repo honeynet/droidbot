@@ -1,6 +1,8 @@
 import os
 import math
 import subprocess
+
+import utils
 from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
 
 
@@ -23,14 +25,14 @@ class DeviceState(object):
         self.views = DeviceState.__parse_views(views)
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
-        self.state_str_content_free = self.__get_content_free_state_str()
+        self.structure_str = self.__get_content_free_state_str()
         self.search_content = self.__get_search_content()
         self.possible_events = None
 
     def to_dict(self):
         state = {'tag': self.tag,
                  'state_str': self.state_str,
-                 'state_str_content_free': self.state_str_content_free,
+                 'state_str_content_free': self.structure_str,
                  'foreground_activity': self.foreground_activity,
                  'activity_stack': self.activity_stack,
                  'background_services': self.background_services,
@@ -104,14 +106,16 @@ class DeviceState(object):
             DeviceState.__assign_depth(views, views[view_id], depth + 1)
 
     def __get_state_str(self):
+        state_str_raw = self.__get_state_str_raw()
+        return utils.md5(state_str_raw)
+
+    def __get_state_str_raw(self):
         view_signatures = set()
         for view in self.views:
             view_signature = DeviceState.__get_view_signature(view)
             if view_signature:
                 view_signatures.add(view_signature)
-        state_str = "%s{%s}" % (self.activity_stack, ",".join(sorted(view_signatures)))
-        import hashlib
-        return hashlib.md5(state_str.encode('utf-8')).hexdigest()
+        return "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
 
     def __get_content_free_state_str(self):
         view_signatures = set()
@@ -208,14 +212,13 @@ class DeviceState(object):
         """
         if 'signature' in view_dict:
             return view_dict['signature']
-        signature = "[class]%s[resource_id]%s[text]%s[%s,%s,%s,%s]" % \
+        signature = "[class]%s[resource_id]%s[text]%s[%s,%s,%s]" % \
                     (DeviceState.__safe_dict_get(view_dict, 'class', "None"),
                      DeviceState.__safe_dict_get(view_dict, 'resource_id', "None"),
                      DeviceState.__safe_dict_get(view_dict, 'text', "None"),
                      DeviceState.__key_if_true(view_dict, 'enabled'),
                      DeviceState.__key_if_true(view_dict, 'checked'),
-                     DeviceState.__key_if_true(view_dict, 'selected'),
-                     DeviceState.__key_if_true(view_dict, 'focused'))
+                     DeviceState.__key_if_true(view_dict, 'selected'))
         view_dict['signature'] = signature
         return signature
 

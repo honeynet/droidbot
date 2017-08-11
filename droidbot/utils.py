@@ -89,6 +89,11 @@ def list_to_html_table(dict_data):
     return table
 
 
+def md5(input_str):
+    import hashlib
+    return hashlib.md5(input_str.encode('utf-8')).hexdigest()
+
+
 class TimeoutException(Exception):
     """
     Exception if connection has been waiting too long

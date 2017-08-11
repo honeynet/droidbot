@@ -55,11 +55,21 @@ function draw() {
   network.on("click", function (params) {
     if (params.nodes.length > 0) {
       node = params.nodes[0];
-      utg_details.innerHTML = getNodeDetails(node);
+      if (network.isCluster(node)) {
+        utg_details.innerHTML = getClusterDetails(node);
+      }
+      else {
+        utg_details.innerHTML = getNodeDetails(node);
+      }
     }
     else if (params.edges.length > 0) {
       edge = params.edges[0];
-      utg_details.innerHTML = getEdgeDetails(edge);
+      baseEdge = network.clustering.getBaseEdge(edge)
+      if (baseEdge == null || baseEdge == edge) {
+        utg_details.innerHTML = getEdgeDetails(edge);
+      } else {
+        utg_details.innerHTML = getEdgeDetails(baseEdge);
+      }
     }
   });
 }
@@ -134,6 +144,19 @@ function getNodeDetails(nodeId) {
   return stateInfo;
 }
 
+function getClusterDetails(clusterId) {
+  clusterInfo = "<h2>Cluster Details</h2><hr/>\n";
+  var nodeIds = network.getNodesInCluster(clusterId);
+  for (var i = 0; i < nodeIds.length; i++) {
+    var selectedNode = getNode(nodeIds[i]);
+    clusterInfo += "<div class=\"row\">\n"
+    clusterInfo += "<img class=\"col-md-5\" src=\"" + selectedNode.image + "\">"
+    clusterInfo += "<div class=\"col-md-7\">" + selectedNode.title + "</div>";
+    clusterInfo += "</div><br />"
+  }
+  return clusterInfo;
+}
+
 function getEdge(edgeId) {
   var i, numEdges;
   numEdges = utg.edges.length;
@@ -142,6 +165,7 @@ function getEdge(edgeId) {
       return utg.edges[i];
     }
   }
+  console.log("cannot find edge: " + edgeId);
 }
 
 function getNode(nodeId) {
@@ -152,6 +176,7 @@ function getNode(nodeId) {
       return utg.nodes[i];
     }
   }
+  console.log("cannot find node: " + nodeId);
 }
 
 function showAbout() {
@@ -185,4 +210,47 @@ function searchUTG() {
     // console.log("Selecting: " + selectedNodes)
     network.selectNodes(selectedNodes, false)
   }
+}
+
+function showSimplifiedUTG() {
+  var structures = [];
+
+  for (var i = 0; i < utg.nodes.length; i++) {
+    node = utg.nodes[i]
+    if (structures.indexOf(node.structure_str) < 0) {
+      structures.push(node.structure_str)
+    }
+  }
+
+  var clusterOptionsByData;
+  for (var i = 0; i < structures.length; i++) {
+      var structure = structures[i];
+      clusterOptionsByData = {
+          joinCondition: function (childOptions) {
+              return childOptions.structure_str == structure;
+          },
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+              clusterOptions.title = childNodes[0].title;
+              clusterOptions.state_str = childNodes[0].state_str;
+              clusterOptions.label = childNodes[0].label;
+              clusterOptions.image = childNodes[0].image;
+              return clusterOptions;
+          },
+          clusterNodeProperties: {id: 'structure:' + structure, shape: 'image'}
+      };
+      network.cluster(clusterOptionsByData);
+  }
+
+  utgToggleBtn = document.getElementById("utgToggleBtn")
+  utgToggleBtn.setAttribute("onClick", "showOriginalUTG()")
+  utgToggleBtn.innerHTML = "Original UTG"
+}
+
+function showOriginalUTG() {
+  network.setData(utg)
+  network.redraw()
+
+  utgToggleBtn = document.getElementById("utgToggleBtn")
+  utgToggleBtn.setAttribute("onClick", "showSimplifiedUTG()")
+  utgToggleBtn.innerHTML = "Simplified UTG"
 }

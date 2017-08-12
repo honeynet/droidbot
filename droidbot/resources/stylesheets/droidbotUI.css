@@ -15,6 +15,7 @@ body {
 }
 
 #utg_details {
+    overflow: auto;
 	background-color:#eeeeee;	
 }
 

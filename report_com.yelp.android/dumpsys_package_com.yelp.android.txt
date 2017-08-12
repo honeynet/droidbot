@@ -1,0 +1,271 @@
+Activity Resolver Table:
+  Full MIME Types:
+      video/*:
+        6a11263 com.yelp.android/.ui.activities.ActivityContributionSearch
+      text/plain:
+        1c12e60 com.yelp.android/.ui.activities.messaging.ActivityComposeMessage
+      image/*:
+        6a11263 com.yelp.android/.ui.activities.ActivityContributionSearch
+
+  Base MIME Types:
+      text:
+        1c12e60 com.yelp.android/.ui.activities.messaging.ActivityComposeMessage
+
+  Wild MIME Types:
+      image:
+        6a11263 com.yelp.android/.ui.activities.ActivityContributionSearch
+      video:
+        6a11263 com.yelp.android/.ui.activities.ActivityContributionSearch
+
+  Schemes:
+      line.1439349040:
+        9a22f19 com.yelp.android/jp.line.android.sdk.activity.LineAuthCompleteActivity
+      yelp4.2:
+        abddbde com.yelp.android/.ui.activities.ActivityBadge
+      yelp4.5:
+        7ad08c com.yelp.android/.ui.activities.ActivityMyOffers
+        78871bf com.yelp.android/.ui.activities.search.SearchUrlInterceptorApp2App
+      yelp5.3:
+        35c6adb com.yelp.android/.ui.activities.deals.ActivityDealDetail
+        81da3d5 com.yelp.android/.ui.activities.deals.ActivityMyDeals
+        847d7ea com.yelp.android/.ui.activities.profile.ActivityUserProfile
+      yelp-app-indexing:
+        12b5a53 com.yelp.android/.ui.activities.urlcatcher.ActivityHomeUrlCatcher
+        1a1a851 com.yelp.android/.ui.activities.urlcatcher.ActivityTalkUrlCatcher (2 filters)
+        2c388b6 com.yelp.android/.ui.activities.urlcatcher.ActivityBusinessMenuUrlCatcher
+        3acd9b7 com.yelp.android/.ui.activities.urlcatcher.ActivitySearchUrlCatcher
+        487788d com.yelp.android/.ui.activities.urlcatcher.ActivityPhotoUrlCatcher
+        578a524 com.yelp.android/.ui.activities.urlcatcher.ActivityBizUrlCatcher
+        74a6978 com.yelp.android/.ui.activities.urlcatcher.ActivityEventUrlCatcher
+        e777a42 com.yelp.android/.ui.activities.urlcatcher.ActivityMomentUrlCatcher
+      http:
+        9d8b66 com.yelp.android/.ui.activities.urlcatcher.ActivityUserProfileUrlCatcher
+        12b5a53 com.yelp.android/.ui.activities.urlcatcher.ActivityHomeUrlCatcher (2 filters)
+        166f7f2 com.yelp.android/.ui.activities.urlcatcher.ActivityLocalIssueUrlCatcher (2 filters)
+        1801089 com.yelp.android/.ui.activities.urlcatcher.ActivityEliteInvitationAcceptUrlCatcher
+        1a1a851 com.yelp.android/.ui.activities.urlcatcher.ActivityTalkUrlCatcher (2 filters)
+        2c388b6 com.yelp.android/.ui.activities.urlcatcher.ActivityBusinessMenuUrlCatcher
+        3acd9b7 com.yelp.android/.ui.activities.urlcatcher.ActivitySearchUrlCatcher
+        40748af com.yelp.android/.ui.activities.urlcatcher.ActivityWriteReviewUrlCatcher
+        42cef90 com.yelp.android/.ui.activities.urlcatcher.ActivityCouponReferralsUrlCatcher
+        487788d com.yelp.android/.ui.activities.urlcatcher.ActivityPhotoUrlCatcher
+        578a524 com.yelp.android/.ui.activities.urlcatcher.ActivityBizUrlCatcher
+        59974bc com.yelp.android/.ui.activities.urlcatcher.ActivityAnswersUrlCatcher
+        6fe0f9a com.yelp.android/.ui.activities.urlcatcher.ActivityComplimentsUrlCatcher
+        74a6978 com.yelp.android/.ui.activities.urlcatcher.ActivityEventUrlCatcher (2 filters)
+        9502c45 com.yelp.android/.ui.activities.urlcatcher.ActivityReportUrlCatcher
+        9949efd com.yelp.android/.ui.activities.urlcatcher.ActivityFavoritesListUrlCatcher
+        a4c47c1 com.yelp.android/.ui.activities.urlcatcher.ActivityCollectionsUrlCatcher
+        a719ea7 com.yelp.android/.ui.activities.rewards.ActivityRewardsSignupUrlCatcher
+        ae720a8 com.yelp.android/.ui.activities.urlcatcher.ActivityConfirmAccountUrlCatcher
+        b86f88e com.yelp.android/.ui.activities.urlcatcher.ActivityEliteNominationUrlCatcher
+        ce19f54 com.yelp.android/.ui.activities.rewards.dashboard.ActivityRewardsDashboardUrlCatcher
+        e09c0cb com.yelp.android/.ui.activities.urlcatcher.ActivityDealsUrlCatcher
+        e777a42 com.yelp.android/.ui.activities.urlcatcher.ActivityMomentUrlCatcher
+        f8f7e43 com.yelp.android/.ui.activities.urlcatcher.ActivityCityGuideUrlCatcher
+      yelp:
+        7ad08c com.yelp.android/.ui.activities.ActivityMyOffers
+        12b5a53 com.yelp.android/.ui.activities.urlcatcher.ActivityHomeUrlCatcher
+        155a331 com.yelp.android/.ui.activities.urlcatcher.ActivityBranchioUrlCatcher
+        166f7f2 com.yelp.android/.ui.activities.urlcatcher.ActivityLocalIssueUrlCatcher
+        1a1a851 com.yelp.android/.ui.activities.urlcatcher.ActivityTalkUrlCatcher
+        2159a16 com.yelp.android/.ui.activities.friends.ActivityFindFriends
+        32db0b5 com.yelp.android/.ui.activities.urlcatcher.ActivityVideoUrlCatcher
+        35c6adb com.yelp.android/.ui.activities.deals.ActivityDealDetail
+        3635cc0 com.yelp.android/.ui.activities.RootActivity
+        40748af com.yelp.android/.ui.activities.urlcatcher.ActivityWriteReviewUrlCatcher
+        4112df9 com.yelp.android/.ui.activities.urlcatcher.ActivityPlayStoreCouponReferralsUrlCatcher
+        487788d com.yelp.android/.ui.activities.urlcatcher.ActivityPhotoUrlCatcher (2 filters)
+        59974bc com.yelp.android/.ui.activities.urlcatcher.ActivityAnswersUrlCatcher
+        749934a com.yelp.android/.ui.activities.ActivityBusinessPageUrlCatcherApp2App
+        74a6978 com.yelp.android/.ui.activities.urlcatcher.ActivityEventUrlCatcher
+        78184ec com.yelp.android/.ui.activities.tips.TipComplimentsLikes
+        78871bf com.yelp.android/.ui.activities.search.SearchUrlInterceptorApp2App
+        81da3d5 com.yelp.android/.ui.activities.deals.ActivityMyDeals
+        847d7ea com.yelp.android/.ui.activities.profile.ActivityUserProfile (2 filters)
+        9949efd com.yelp.android/.ui.activities.urlcatcher.ActivityFavoritesListUrlCatcher
+        a30416d com.yelp.android/.ui.activities.urlcatcher.ActivityReviewHighlightsUrlCatcher
+        a4c47c1 com.yelp.android/.ui.activities.urlcatcher.ActivityCollectionsUrlCatcher
+        a7072bb com.yelp.android/.ui.activities.friends.ReviewFriendRequest
+        a719ea7 com.yelp.android/.ui.activities.rewards.ActivityRewardsSignupUrlCatcher
+        abddbde com.yelp.android/.ui.activities.ActivityBadge
+        b297f97 com.yelp.android/.util.CheckInUrlListener
+        b558584 com.yelp.android/.ui.activities.messaging.ActivityMessaging
+        c7803d8 com.yelp.android/.ui.activities.compliments.ActivityCompliments
+        ce19f54 com.yelp.android/.ui.activities.rewards.dashboard.ActivityRewardsDashboardUrlCatcher
+        e21bb9f com.yelp.android/.ui.activities.urlcatcher.ActivityReviewUrlCatcher
+        e777a42 com.yelp.android/.ui.activities.urlcatcher.ActivityMomentUrlCatcher
+        ee8a13e com.yelp.android/.ui.activities.urlcatcher.BusinessListComboUrlCatcher
+        f8f7e43 com.yelp.android/.ui.activities.urlcatcher.ActivityCityGuideUrlCatcher
+      https:
+        9d8b66 com.yelp.android/.ui.activities.urlcatcher.ActivityUserProfileUrlCatcher
+        12b5a53 com.yelp.android/.ui.activities.urlcatcher.ActivityHomeUrlCatcher (2 filters)
+        155a331 com.yelp.android/.ui.activities.urlcatcher.ActivityBranchioUrlCatcher
+        166f7f2 com.yelp.android/.ui.activities.urlcatcher.ActivityLocalIssueUrlCatcher (2 filters)
+        1801089 com.yelp.android/.ui.activities.urlcatcher.ActivityEliteInvitationAcceptUrlCatcher
+        1a1a851 com.yelp.android/.ui.activities.urlcatcher.ActivityTalkUrlCatcher (2 filters)
+        2c388b6 com.yelp.android/.ui.activities.urlcatcher.ActivityBusinessMenuUrlCatcher
+        3acd9b7 com.yelp.android/.ui.activities.urlcatcher.ActivitySearchUrlCatcher
+        40748af com.yelp.android/.ui.activities.urlcatcher.ActivityWriteReviewUrlCatcher
+        42cef90 com.yelp.android/.ui.activities.urlcatcher.ActivityCouponReferralsUrlCatcher
+        487788d com.yelp.android/.ui.activities.urlcatcher.ActivityPhotoUrlCatcher
+        578a524 com.yelp.android/.ui.activities.urlcatcher.ActivityBizUrlCatcher
+        59974bc com.yelp.android/.ui.activities.urlcatcher.ActivityAnswersUrlCatcher
+        6fe0f9a com.yelp.android/.ui.activities.urlcatcher.ActivityComplimentsUrlCatcher
+        74a6978 com.yelp.android/.ui.activities.urlcatcher.ActivityEventUrlCatcher (2 filters)
+        9502c45 com.yelp.android/.ui.activities.urlcatcher.ActivityReportUrlCatcher
+        9949efd com.yelp.android/.ui.activities.urlcatcher.ActivityFavoritesListUrlCatcher
+        a4c47c1 com.yelp.android/.ui.activities.urlcatcher.ActivityCollectionsUrlCatcher
+        a719ea7 com.yelp.android/.ui.activities.rewards.ActivityRewardsSignupUrlCatcher
+        ae720a8 com.yelp.android/.ui.activities.urlcatcher.ActivityConfirmAccountUrlCatcher
+        b86f88e com.yelp.android/.ui.activities.urlcatcher.ActivityEliteNominationUrlCatcher
+        ce19f54 com.yelp.android/.ui.activities.rewards.dashboard.ActivityRewardsDashboardUrlCatcher
+        e09c0cb com.yelp.android/.ui.activities.urlcatcher.ActivityDealsUrlCatcher
+        e777a42 com.yelp.android/.ui.activities.urlcatcher.ActivityMomentUrlCatcher
+        f8f7e43 com.yelp.android/.ui.activities.urlcatcher.ActivityCityGuideUrlCatcher
+      yelp4:
+        749934a com.yelp.android/.ui.activities.ActivityBusinessPageUrlCatcherApp2App
+        78871bf com.yelp.android/.ui.activities.search.SearchUrlInterceptorApp2App
+        847d7ea com.yelp.android/.ui.activities.profile.ActivityUserProfile
+        b297f97 com.yelp.android/.util.CheckInUrlListener
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        1c941a2 com.yelp.android/.ui.ActivityNearby
+        3635cc0 com.yelp.android/.ui.activities.RootActivity
+      com.google.android.gms.actions.SEARCH_ACTION:
+        9fc7e33 com.yelp.android/.ui.activities.search.SearchBusinessesByList
+      android.intent.action.SEARCH:
+        9fc7e33 com.yelp.android/.ui.activities.search.SearchBusinessesByList
+        d6775f0 com.yelp.android/.ui.activities.search.SearchBusinessesByMap
+
+  MIME Typed Actions:
+      android.intent.action.SEND:
+        1c12e60 com.yelp.android/.ui.activities.messaging.ActivityComposeMessage
+        6a11263 com.yelp.android/.ui.activities.ActivityContributionSearch
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      com.google.android.gms.measurement.UPLOAD:
+        29c8769 com.yelp.android/com.google.android.gms.measurement.AppMeasurementReceiver
+      com.yelp.android.offer_redeemed:
+        21dd5ee com.yelp.android/.services.OfferChangeListener
+      com.android.vending.INSTALL_REFERRER:
+        1f6ca8f com.yelp.android/.analytics.InstallBroadcastReceiver
+      com.google.android.c2dm.intent.RECEIVE:
+        166011c com.yelp.android/.services.push.GcmReceiver
+        46d3125 com.yelp.android/com.kahuna.sdk.KahunaPushReceiver
+      android.intent.action.BOOT_COMPLETED:
+        f1562fa com.yelp.android/.services.BootReceiver
+      android.appwidget.action.APPWIDGET_UPDATE:
+        79f80ab com.yelp.android/.appwidget.YelpAppWidgetProvider
+      com.google.android.c2dm.intent.REGISTRATION:
+        166011c com.yelp.android/.services.push.GcmReceiver
+        46d3125 com.yelp.android/com.kahuna.sdk.KahunaPushReceiver
+      android.intent.action.MY_PACKAGE_REPLACED:
+        7601308 com.yelp.android/.services.push.AppUpdatedReceiver
+      com.yelp.android.intent.invalid_bundle_url:
+        9e4baa1 com.yelp.android/.analytics.InvalidBundleReceiver
+
+Permissions:
+  Permission [com.yelp.android.permission.C2D_MESSAGE] (c6b4c6):
+    sourcePackage=com.yelp.android
+    uid=10500 gids=null type=0 prot=signature
+    perm=Permission{6d37c87 com.yelp.android.permission.C2D_MESSAGE}
+    packageSetting=PackageSetting{f6757b4 com.yelp.android/10500}
+  Permission [com.yelp.android.permission.MAPS_RECEIVE] (4f15fdd):
+    sourcePackage=com.yelp.android
+    uid=10500 gids=null type=0 prot=signature
+    perm=Permission{7e95752 com.yelp.android.permission.MAPS_RECEIVE}
+    packageSetting=PackageSetting{f6757b4 com.yelp.android/10500}
+
+Registered ContentProviders:
+  com.yelp.android/.services.YelpDataContentProvider:
+    Provider{2615a23 com.yelp.android/.services.YelpDataContentProvider}
+  com.yelp.android/com.facebook.FacebookContentProvider:
+    Provider{6fc3b20 com.yelp.android/com.facebook.FacebookContentProvider}
+  com.yelp.android/com.google.android.gms.measurement.AppMeasurementContentProvider:
+    Provider{e291cd9 com.yelp.android/com.google.android.gms.measurement.AppMeasurementContentProvider}
+
+ContentProvider Authorities:
+  [com.yelp.android.services.YelpDataContentProvider]:
+    Provider{2615a23 com.yelp.android/.services.YelpDataContentProvider}
+      applicationInfo=ApplicationInfo{721969e com.yelp.android}
+  [com.yelp.android.google_measurement_service]:
+    Provider{e291cd9 com.yelp.android/com.google.android.gms.measurement.AppMeasurementContentProvider}
+      applicationInfo=ApplicationInfo{721969e com.yelp.android}
+  [com.facebook.app.FacebookContentProvider97534753161]:
+    Provider{6fc3b20 com.yelp.android/com.facebook.FacebookContentProvider}
+      applicationInfo=ApplicationInfo{721969e com.yelp.android}
+
+Key Set Manager:
+  [com.yelp.android]
+      Signing KeySets: 1222
+
+Packages:
+  Package [com.yelp.android] (f6757b4):
+    userId=10500
+    pkg=Package{165757f com.yelp.android}
+    codePath=/data/app/com.yelp.android-1
+    resourcePath=/data/app/com.yelp.android-1
+    legacyNativeLibraryDir=/data/app/com.yelp.android-1/lib
+    primaryCpuAbi=arm64-v8a
+    secondaryCpuAbi=null
+    versionCode=19019403 targetSdk=23
+    versionName=9.17.0
+    splits=[base]
+    applicationInfo=ApplicationInfo{721969e com.yelp.android}
+    flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]
+    privateFlags=[ ]
+    dataDir=/data/user/0/com.yelp.android
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2017-08-11 20:22:55
+    firstInstallTime=2017-08-11 20:23:18
+    lastUpdateTime=2017-08-11 20:23:18
+    signatures=PackageSignatures{139e94c [785ad95]}
+    installPermissionsFixed=true installStatus=1
+    pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]
+    declared permissions:
+      com.yelp.android.permission.C2D_MESSAGE: prot=signature, INSTALLED
+      com.yelp.android.permission.MAPS_RECEIVE: prot=signature, INSTALLED
+    requested permissions:
+      android.permission.INTERNET
+      android.permission.ACCESS_COARSE_LOCATION
+      android.permission.ACCESS_FINE_LOCATION
+      android.permission.WRITE_EXTERNAL_STORAGE
+      android.permission.READ_EXTERNAL_STORAGE
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.CAMERA
+      android.permission.VIBRATE
+      android.permission.READ_CONTACTS
+      android.permission.GET_ACCOUNTS
+      android.permission.RECORD_AUDIO
+      android.permission.RECEIVE_BOOT_COMPLETED
+      com.google.android.gms.permission.ACTIVITY_RECOGNITION
+      android.permission.WAKE_LOCK
+      com.google.android.c2dm.permission.RECEIVE
+      com.yelp.android.permission.C2D_MESSAGE
+      com.yelp.android.permission.MAPS_RECEIVE
+      com.google.android.providers.gsf.permission.READ_GSERVICES
+    install permissions:
+      com.google.android.c2dm.permission.RECEIVE: granted=true
+      com.google.android.providers.gsf.permission.READ_GSERVICES: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      com.yelp.android.permission.C2D_MESSAGE: granted=true
+      com.google.android.gms.permission.ACTIVITY_RECOGNITION: granted=true
+      com.yelp.android.permission.MAPS_RECEIVE: granted=true
+      android.permission.VIBRATE: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0:  installed=true hidden=false stopped=true notLaunched=true enabled=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.ACCESS_FINE_LOCATION: granted=true
+        android.permission.READ_EXTERNAL_STORAGE: granted=true
+        android.permission.ACCESS_COARSE_LOCATION: granted=true
+        android.permission.CAMERA: granted=true
+        android.permission.GET_ACCOUNTS: granted=true
+        android.permission.WRITE_EXTERNAL_STORAGE: granted=true
+        android.permission.RECORD_AUDIO: granted=true
+        android.permission.READ_CONTACTS: granted=true

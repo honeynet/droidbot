@@ -1,0 +1,10 @@
+{
+  "stop_state": "0af6d735a1c5d36cbe97478109060c13", 
+  "event_str": "IntentEvent(intent='am start com.yelp.android/com.yelp.android.ui.activities.RootActivity')", 
+  "tag": "2017-08-11_202324", 
+  "event": {
+    "intent": "am start com.yelp.android/com.yelp.android.ui.activities.RootActivity", 
+    "event_type": "intent"
+  }, 
+  "start_state": "5757ae159cc2654555e1b34ae92e50d4"
+}

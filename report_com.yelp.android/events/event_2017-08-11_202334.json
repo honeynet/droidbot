@@ -1,0 +1,48 @@
+{
+  "stop_state": "68493b690d93c9ef9a8a4534fd122721", 
+  "event_str": "TouchEvent(view=abba110bb74cf59e183fd54d257e380c)", 
+  "tag": "2017-08-11_202334", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/sign_up_button", 
+      "text": "I'm New", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "650*189", 
+      "checked": false, 
+      "temp_id": 28, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/sign_up_button", 
+      "is_password": false, 
+      "parent": 26, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "abba110bb74cf59e183fd54d257e380c", 
+      "enabled": true, 
+      "bounds": [
+        [
+          737, 
+          2150
+        ], 
+        [
+          1387, 
+          2339
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/sign_up_button[text]I'm New[enabled,,]"
+    }
+  }, 
+  "start_state": "f899ce8e97714e110559a35d4e3d1b21"
+}

@@ -1,0 +1,48 @@
+{
+  "stop_state": "68493b690d93c9ef9a8a4534fd122721", 
+  "event_str": "TouchEvent(view=7f6ec842503fb01030b0896e2a16707a)", 
+  "tag": "2017-08-11_202339", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/fb_sign_up", 
+      "text": "Sign up with Facebook", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1230*189", 
+      "checked": false, 
+      "temp_id": 25, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/fb_sign_up", 
+      "is_password": false, 
+      "parent": 21, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "7f6ec842503fb01030b0896e2a16707a", 
+      "enabled": true, 
+      "bounds": [
+        [
+          105, 
+          1451
+        ], 
+        [
+          1335, 
+          1640
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/fb_sign_up[text]Sign up with Facebook[enabled,,]"
+    }
+  }, 
+  "start_state": "68493b690d93c9ef9a8a4534fd122721"
+}

@@ -1,0 +1,10 @@
+{
+  "stop_state": "5757ae159cc2654555e1b34ae92e50d4", 
+  "event_str": "KeyEvent(state=5757ae159cc2654555e1b34ae92e50d4, name=HOME)", 
+  "tag": "2017-08-11_202321", 
+  "event": {
+    "event_type": "key", 
+    "name": "HOME"
+  }, 
+  "start_state": "5757ae159cc2654555e1b34ae92e50d4"
+}

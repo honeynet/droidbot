@@ -1,0 +1,2944 @@
+{
+  "views": [
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        1, 
+        72, 
+        73
+      ], 
+      "size": "1440*2560", 
+      "checked": false, 
+      "temp_id": 0, 
+      "selected": false, 
+      "child_count": 3, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": -1, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6bf68dc3902cfc276bc9ec1058c5d626", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1440, 
+          2560
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        2
+      ], 
+      "size": "1440*2392", 
+      "checked": false, 
+      "temp_id": 1, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 0, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "e0b387be8aaf8ee013025696a594ba6d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        3
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 2, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 1, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "248efcfdc503dcbd75d45960a34a6950", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/action_bar_root", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        4
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 3, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/action_bar_root", 
+      "is_password": false, 
+      "parent": 2, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "cd7cb32dcb88e677e7da29827b8589e2", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/action_bar_root[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/content", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        5
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 4, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]android:id/content", 
+      "is_password": false, 
+      "parent": 3, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6b512a6f653af62af2799315f88e40da", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]android:id/content[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/bottomsheet", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        6
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 5, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/bottomsheet", 
+      "is_password": false, 
+      "parent": 4, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6856ae47eb14700746606bf82eb62ce8", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/bottomsheet[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/drawer_layout", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        7
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 6, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.support.v4.widget.DrawerLayout[resource_id]com.yelp.android:id/drawer_layout", 
+      "is_password": false, 
+      "parent": 5, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.support.v4.widget.DrawerLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "dc6d740ce950eda96c40940d1119b224", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.support.v4.widget.DrawerLayout[resource_id]com.yelp.android:id/drawer_layout[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/content_wrapper", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        8, 
+        11, 
+        61, 
+        65, 
+        66
+      ], 
+      "size": "1440*2308", 
+      "checked": false, 
+      "temp_id": 7, 
+      "selected": false, 
+      "child_count": 5, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/content_wrapper", 
+      "is_password": false, 
+      "parent": 6, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "61e3d5bb7a8b3c6eabb05b111806dfa8", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/content_wrapper[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/toolbar", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        9, 
+        10
+      ], 
+      "size": "1440*196", 
+      "checked": false, 
+      "temp_id": 8, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.view.ViewGroup[resource_id]com.yelp.android:id/toolbar", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.ViewGroup", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "33d062639d1d9e439ee82e9073791e36", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          1440, 
+          280
+        ]
+      ], 
+      "signature": "[class]android.view.ViewGroup[resource_id]com.yelp.android:id/toolbar[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": "Navigate up", 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "196*196", 
+      "checked": false, 
+      "temp_id": 9, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageButton[resource_id]None", 
+      "is_password": false, 
+      "parent": 8, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.ImageButton", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "595573da1b5d3da82769ed43072eca42", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          84
+        ], 
+        [
+          196, 
+          280
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageButton[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "0*196", 
+      "checked": false, 
+      "temp_id": 10, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.support.v7.widget.LinearLayoutCompat[resource_id]None", 
+      "is_password": false, 
+      "parent": 8, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.support.v7.widget.LinearLayoutCompat", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "fcf26c7a4dc99fd3f85b9738dd0c8f6c", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1440, 
+          84
+        ], 
+        [
+          1440, 
+          280
+        ]
+      ], 
+      "signature": "[class]android.support.v7.widget.LinearLayoutCompat[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/content_frame", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        12
+      ], 
+      "size": "1440*1916", 
+      "checked": false, 
+      "temp_id": 11, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/content_frame", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "9515d633713502e44860efe2d33e8917", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/content_frame[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/yelp_fragment_container", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        13
+      ], 
+      "size": "1440*1916", 
+      "checked": false, 
+      "temp_id": 12, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/yelp_fragment_container", 
+      "is_password": false, 
+      "parent": 11, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "b5ccea45e9f60998bb6709917d98fbff", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/yelp_fragment_container[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        14
+      ], 
+      "size": "1440*1916", 
+      "checked": false, 
+      "temp_id": 13, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.view.ViewGroup[resource_id]None", 
+      "is_password": false, 
+      "parent": 12, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.ViewGroup", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "8ac91161567ab641898a2d6898b53b62", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.view.ViewGroup[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/list", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        15, 
+        16, 
+        17, 
+        52
+      ], 
+      "size": "1440*1916", 
+      "checked": false, 
+      "temp_id": 14, 
+      "selected": false, 
+      "child_count": 4, 
+      "content_free_signature": "[class]android.widget.ListView[resource_id]android:id/list", 
+      "is_password": false, 
+      "parent": 13, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": true, 
+      "clickable": true, 
+      "class": "android.widget.ListView", 
+      "scrollable": true, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "04960ef880be4e68b18796bf01a2401d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.ListView[resource_id]android:id/list[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*196", 
+      "checked": false, 
+      "temp_id": 15, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]None", 
+      "is_password": false, 
+      "parent": 14, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "a535ca7f4ec5a8b837d47e333c0c993a", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          476
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*0", 
+      "checked": false, 
+      "temp_id": 16, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 14, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "aeab01b2c4ebd82fe370ce32299a21d9", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          476
+        ], 
+        [
+          1440, 
+          476
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        18, 
+        26, 
+        27
+      ], 
+      "size": "1440*1439", 
+      "checked": false, 
+      "temp_id": 17, 
+      "selected": false, 
+      "child_count": 3, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 14, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "cce5c4e275f4996cd8f6acc19619b145", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          476
+        ], 
+        [
+          1440, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/banner", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        19, 
+        22, 
+        23, 
+        24, 
+        25
+      ], 
+      "size": "1440*697", 
+      "checked": false, 
+      "temp_id": 18, 
+      "selected": false, 
+      "child_count": 5, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/banner", 
+      "is_password": false, 
+      "parent": 17, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "644ceb97a04c2c39e148735eca420a3d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          476
+        ], 
+        [
+          1440, 
+          1173
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/banner[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        20, 
+        21
+      ], 
+      "size": "1440*76", 
+      "checked": false, 
+      "temp_id": 19, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 18, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "846b223e6d79af904e49b99c656e7785", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          494
+        ], 
+        [
+          1440, 
+          570
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/banner_title", 
+      "text": "Give $5, Get $5 Off", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "472*76", 
+      "checked": false, 
+      "temp_id": 20, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/banner_title", 
+      "is_password": false, 
+      "parent": 19, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "d00f0d58c528c8d409b5f49b22bea968", 
+      "enabled": true, 
+      "bounds": [
+        [
+          484, 
+          494
+        ], 
+        [
+          956, 
+          570
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/banner_title[text]Give $5, Get $5 Off[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/close_banner", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "449*63", 
+      "checked": false, 
+      "temp_id": 21, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/close_banner", 
+      "is_password": false, 
+      "parent": 19, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "7318bb5da6bb31cc40489703cfe960d2", 
+      "enabled": true, 
+      "bounds": [
+        [
+          956, 
+          494
+        ], 
+        [
+          1405, 
+          557
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/close_banner[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/banner_text", 
+      "text": "Get $5 off when your friends place their first order on Yelp.", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1370*66", 
+      "checked": false, 
+      "temp_id": 22, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/banner_text", 
+      "is_password": false, 
+      "parent": 18, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "a520f9c72e9cac7f154c8d9847beb49c", 
+      "enabled": true, 
+      "bounds": [
+        [
+          35, 
+          570
+        ], 
+        [
+          1405, 
+          636
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/banner_text[text]Get $5 off when your friends place their first order on Yelp.[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "560*326", 
+      "checked": false, 
+      "temp_id": 23, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]None", 
+      "is_password": false, 
+      "parent": 18, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "e3f72f00242bb5293d5b340ef010f180", 
+      "enabled": true, 
+      "bounds": [
+        [
+          440, 
+          654
+        ], 
+        [
+          1000, 
+          980
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/invite_friends", 
+      "text": "Invite Friends", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1370*136", 
+      "checked": false, 
+      "temp_id": 24, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/invite_friends", 
+      "is_password": false, 
+      "parent": 18, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.Button", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "deb2f274d4d13a82f6dca854c374b0ab", 
+      "enabled": true, 
+      "bounds": [
+        [
+          35, 
+          998
+        ], 
+        [
+          1405, 
+          1134
+        ]
+      ], 
+      "signature": "[class]android.widget.Button[resource_id]com.yelp.android:id/invite_friends[text]Invite Friends[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*4", 
+      "checked": false, 
+      "temp_id": 25, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]None", 
+      "is_password": false, 
+      "parent": 18, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "b97156c9b5b437eb3be2a72c54161941", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1169
+        ], 
+        [
+          1440, 
+          1173
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/nearby_category_header", 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*0", 
+      "checked": false, 
+      "temp_id": 26, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/nearby_category_header", 
+      "is_password": false, 
+      "parent": 17, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6de105222672546689ff21c6db930164", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1173
+        ], 
+        [
+          1440, 
+          1173
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/nearby_category_header[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_container", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        28, 
+        31, 
+        34, 
+        37, 
+        40, 
+        43, 
+        46, 
+        49
+      ], 
+      "size": "1440*742", 
+      "checked": false, 
+      "temp_id": 27, 
+      "selected": false, 
+      "child_count": 8, 
+      "content_free_signature": "[class]android.widget.GridView[resource_id]com.yelp.android:id/category_container", 
+      "is_password": false, 
+      "parent": 17, 
+      "focusable": true, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.GridView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "48c62b3850eeeaf2198e87fbd608e974", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1173
+        ], 
+        [
+          1440, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.GridView[resource_id]com.yelp.android:id/category_container[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        29, 
+        30
+      ], 
+      "size": "360*371", 
+      "checked": false, 
+      "temp_id": 28, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "8271ad7487a423583b9b0255ca29c21d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1177
+        ], 
+        [
+          360, 
+          1548
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 29, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 28, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          124, 
+          1241
+        ], 
+        [
+          236, 
+          1353
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Restaurants", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "225*102", 
+      "checked": false, 
+      "temp_id": 30, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 28, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6648129286ccbc2e0ff30748074855fc", 
+      "enabled": true, 
+      "bounds": [
+        [
+          67, 
+          1381
+        ], 
+        [
+          292, 
+          1483
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Restaurants[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        32, 
+        33
+      ], 
+      "size": "360*371", 
+      "checked": false, 
+      "temp_id": 31, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "02f68ee9600bec8ec9f860b9048e1b79", 
+      "enabled": true, 
+      "bounds": [
+        [
+          360, 
+          1177
+        ], 
+        [
+          720, 
+          1548
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 32, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 31, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          484, 
+          1241
+        ], 
+        [
+          596, 
+          1353
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Coffee & Tea", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "239*102", 
+      "checked": false, 
+      "temp_id": 33, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 31, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "28a35469a287a26f0737bb7820fad6e1", 
+      "enabled": true, 
+      "bounds": [
+        [
+          420, 
+          1381
+        ], 
+        [
+          659, 
+          1483
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Coffee & Tea[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        35, 
+        36
+      ], 
+      "size": "360*371", 
+      "checked": false, 
+      "temp_id": 34, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "07579256596ef87ed6ffbc1220d08eef", 
+      "enabled": true, 
+      "bounds": [
+        [
+          720, 
+          1177
+        ], 
+        [
+          1080, 
+          1548
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 35, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 34, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          844, 
+          1241
+        ], 
+        [
+          956, 
+          1353
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Hair Salons", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "214*102", 
+      "checked": false, 
+      "temp_id": 36, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 34, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6ef027b93e1e89be0718ceca1d67a09c", 
+      "enabled": true, 
+      "bounds": [
+        [
+          793, 
+          1381
+        ], 
+        [
+          1007, 
+          1483
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Hair Salons[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        38, 
+        39
+      ], 
+      "size": "360*371", 
+      "checked": false, 
+      "temp_id": 37, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "9a236d73423fb6dbf84862f0fb2beddf", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1080, 
+          1177
+        ], 
+        [
+          1440, 
+          1548
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 38, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 37, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1204, 
+          1241
+        ], 
+        [
+          1316, 
+          1353
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Bars", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "85*102", 
+      "checked": false, 
+      "temp_id": 39, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 37, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "b6219403a59f3123e3176f108ca20e7b", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1217, 
+          1381
+        ], 
+        [
+          1302, 
+          1483
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Bars[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        41, 
+        42
+      ], 
+      "size": "360*367", 
+      "checked": false, 
+      "temp_id": 40, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "d411c5f9401be10e107da955cfeeca9f", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1548
+        ], 
+        [
+          360, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 41, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 40, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          124, 
+          1612
+        ], 
+        [
+          236, 
+          1724
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Delivery", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "146*102", 
+      "checked": false, 
+      "temp_id": 42, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 40, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6cb6b67968b7e279559f0ac2e4cea828", 
+      "enabled": true, 
+      "bounds": [
+        [
+          107, 
+          1752
+        ], 
+        [
+          253, 
+          1854
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Delivery[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        44, 
+        45
+      ], 
+      "size": "360*367", 
+      "checked": false, 
+      "temp_id": 43, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "010df58560c64e5036ecfc1c6464d4c2", 
+      "enabled": true, 
+      "bounds": [
+        [
+          360, 
+          1548
+        ], 
+        [
+          720, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 44, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 43, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          484, 
+          1612
+        ], 
+        [
+          596, 
+          1724
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Takeout", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "150*102", 
+      "checked": false, 
+      "temp_id": 45, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 43, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "b721de1d9d64abff7067cd38f7c99ee7", 
+      "enabled": true, 
+      "bounds": [
+        [
+          465, 
+          1752
+        ], 
+        [
+          615, 
+          1854
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Takeout[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        47, 
+        48
+      ], 
+      "size": "360*367", 
+      "checked": false, 
+      "temp_id": 46, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "31d0de7e3bf22f0a1ced6d35696cffba", 
+      "enabled": true, 
+      "bounds": [
+        [
+          720, 
+          1548
+        ], 
+        [
+          1080, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 47, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 46, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          844, 
+          1612
+        ], 
+        [
+          956, 
+          1724
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Reservations", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "242*102", 
+      "checked": false, 
+      "temp_id": 48, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 46, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "dedceb3460ccd5f9c13453369d54d6f9", 
+      "enabled": true, 
+      "bounds": [
+        [
+          779, 
+          1752
+        ], 
+        [
+          1021, 
+          1854
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Reservations[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/category_suggestion", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        50, 
+        51
+      ], 
+      "size": "360*367", 
+      "checked": false, 
+      "temp_id": 49, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "4b62aaeabe6f32256af8b5cbe0b3f32b", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1080, 
+          1548
+        ], 
+        [
+          1440, 
+          1915
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/category_suggestion[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "112*112", 
+      "checked": false, 
+      "temp_id": 50, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon", 
+      "is_password": false, 
+      "parent": 49, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "f4232ebf20906778d5cef2225488e210", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1204, 
+          1612
+        ], 
+        [
+          1316, 
+          1724
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "More", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "97*102", 
+      "checked": false, 
+      "temp_id": 51, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 49, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "88b8f4d55e18b0b9e4a9c47017aec9d5", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1211, 
+          1752
+        ], 
+        [
+          1308, 
+          1854
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]More[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        53
+      ], 
+      "size": "1440*281", 
+      "checked": false, 
+      "temp_id": 52, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 14, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "fef47d935d83d5b5f460f847e933ae09", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1915
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        54, 
+        57, 
+        60
+      ], 
+      "size": "1440*281", 
+      "checked": false, 
+      "temp_id": 53, 
+      "selected": false, 
+      "child_count": 3, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 52, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "195eaefd35c54e71569a8574eef2712d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1915
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        55, 
+        56
+      ], 
+      "size": "1440*228", 
+      "checked": false, 
+      "temp_id": 54, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 53, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "032667e7192e05ebb76c9ed00cb027fb", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1968
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/local_issue_image", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*228", 
+      "checked": false, 
+      "temp_id": 55, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/local_issue_image", 
+      "is_password": false, 
+      "parent": 54, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "eab2f35818d57f4cde65e637a6d57f76", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1968
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/local_issue_image[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/title", 
+      "text": "Bookstores: A Novel Idea", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "989*122", 
+      "checked": false, 
+      "temp_id": 56, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title", 
+      "is_password": false, 
+      "parent": 54, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "b45653b7df1acab6a83d376be40a3524", 
+      "enabled": true, 
+      "bounds": [
+        [
+          35, 
+          2003
+        ], 
+        [
+          1024, 
+          2125
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/title[text]Bookstores: A Novel Idea[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [
+        58, 
+        59
+      ], 
+      "size": "1440*-472", 
+      "checked": false, 
+      "temp_id": 57, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]None", 
+      "is_password": false, 
+      "parent": 53, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "ae5e5bddb70acae9c0a7f7864df9712d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2668
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": "The Local Yelp", 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "409*-507", 
+      "checked": false, 
+      "temp_id": 58, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]None", 
+      "is_password": false, 
+      "parent": 57, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "716827ec86e45d385b451c6a15f62cca", 
+      "enabled": true, 
+      "bounds": [
+        [
+          35, 
+          2703
+        ], 
+        [
+          444, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]None[text]The Local Yelp[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/local_issue_location", 
+      "text": "Pittsburgh", 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "225*-592", 
+      "checked": false, 
+      "temp_id": 59, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/local_issue_location", 
+      "is_password": false, 
+      "parent": 57, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "262bc3157a0a0a74abb36b6bb5329079", 
+      "enabled": true, 
+      "bounds": [
+        [
+          35, 
+          2788
+        ], 
+        [
+          260, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/local_issue_location[text]Pittsburgh[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": null, 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*-693", 
+      "checked": false, 
+      "temp_id": 60, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]None", 
+      "is_password": false, 
+      "parent": 53, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "0d86731380a1397f8baac39202a559ad", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2889
+        ], 
+        [
+          1440, 
+          2196
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]None[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/search_holder", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        62
+      ], 
+      "size": "1440*196", 
+      "checked": false, 
+      "temp_id": 61, 
+      "selected": false, 
+      "child_count": 1, 
+      "content_free_signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/search_holder", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.FrameLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "5a449e90041021306881dd335e153c4b", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          280
+        ], 
+        [
+          1440, 
+          476
+        ]
+      ], 
+      "signature": "[class]android.widget.FrameLayout[resource_id]com.yelp.android:id/search_holder[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/search_text_wrapper", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        63, 
+        64
+      ], 
+      "size": "1384*168", 
+      "checked": false, 
+      "temp_id": 62, 
+      "selected": false, 
+      "child_count": 2, 
+      "content_free_signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/search_text_wrapper", 
+      "is_password": false, 
+      "parent": 61, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.RelativeLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "72017809b23d98dc235cfece97a05097", 
+      "enabled": true, 
+      "bounds": [
+        [
+          28, 
+          280
+        ], 
+        [
+          1412, 
+          448
+        ]
+      ], 
+      "signature": "[class]android.widget.RelativeLayout[resource_id]com.yelp.android:id/search_text_wrapper[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/search_text_icon", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "196*168", 
+      "checked": false, 
+      "temp_id": 63, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/search_text_icon", 
+      "is_password": false, 
+      "parent": 62, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "884e21609fbe2a4712d45687751e7a1a", 
+      "enabled": true, 
+      "bounds": [
+        [
+          28, 
+          280
+        ], 
+        [
+          224, 
+          448
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/search_text_icon[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/search_text", 
+      "text": "Search for restaurants, delivery, etc.", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1188*168", 
+      "checked": false, 
+      "temp_id": 64, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.EditText[resource_id]com.yelp.android:id/search_text", 
+      "is_password": false, 
+      "parent": 62, 
+      "focusable": false, 
+      "editable": true, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.EditText", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": true, 
+      "view_str": "5a73e0119a2154bef5b360a50a82ea9f", 
+      "enabled": true, 
+      "bounds": [
+        [
+          224, 
+          280
+        ], 
+        [
+          1412, 
+          448
+        ]
+      ], 
+      "signature": "[class]android.widget.EditText[resource_id]com.yelp.android:id/search_text[text]Search for restaurants, delivery, etc.[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/shadow_view", 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*0", 
+      "checked": false, 
+      "temp_id": 65, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/shadow_view", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.ImageView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "88366792b92cfd16bdbd6ea30264f606", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          476
+        ], 
+        [
+          1440, 
+          476
+        ]
+      ], 
+      "signature": "[class]android.widget.ImageView[resource_id]com.yelp.android:id/shadow_view[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/hot_buttons", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [
+        67, 
+        68, 
+        69, 
+        70, 
+        71
+      ], 
+      "size": "1440*196", 
+      "checked": false, 
+      "temp_id": 66, 
+      "selected": false, 
+      "child_count": 5, 
+      "content_free_signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/hot_buttons", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.LinearLayout", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "8acc4e379a4a6218ae56d05a717e215d", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2196
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.LinearLayout[resource_id]com.yelp.android:id/hot_buttons[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": "Nearby", 
+      "resource_id": "com.yelp.android:id/hot_button_nearby", 
+      "text": "Nearby", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 67, 
+      "selected": true, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_nearby", 
+      "is_password": false, 
+      "parent": 66, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "271bc48d96c01b9452380f3518006feb", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2196
+        ], 
+        [
+          288, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_nearby[text]Nearby[enabled,,selected]"
+    }, 
+    {
+      "content_description": "Search", 
+      "resource_id": "com.yelp.android:id/hot_button_search", 
+      "text": "Search", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 68, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_search", 
+      "is_password": false, 
+      "parent": 66, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "db6d502d7429d9fe291b8e769deed3fa", 
+      "enabled": true, 
+      "bounds": [
+        [
+          288, 
+          2196
+        ], 
+        [
+          576, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_search[text]Search[enabled,,]"
+    }, 
+    {
+      "content_description": "Me", 
+      "resource_id": "com.yelp.android:id/hot_button_profile", 
+      "text": "Me", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 69, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_profile", 
+      "is_password": false, 
+      "parent": 66, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "04d47a6183668c4f6df02fa663220e27", 
+      "enabled": true, 
+      "bounds": [
+        [
+          576, 
+          2196
+        ], 
+        [
+          864, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_profile[text]Me[enabled,,]"
+    }, 
+    {
+      "content_description": "Activity", 
+      "resource_id": "com.yelp.android:id/hot_button_feed", 
+      "text": "Activity", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 70, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_feed", 
+      "is_password": false, 
+      "parent": 66, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "319cc81f86490f755cbbd45faa8f5963", 
+      "enabled": true, 
+      "bounds": [
+        [
+          864, 
+          2196
+        ], 
+        [
+          1152, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_feed[text]Activity[enabled,,]"
+    }, 
+    {
+      "content_description": "Bookmarks", 
+      "resource_id": "com.yelp.android:id/hot_button_bookmarks", 
+      "text": "Bookmarks", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 71, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_bookmarks", 
+      "is_password": false, 
+      "parent": 66, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "0f91ec9f81a6f4fc7d44474381f73e00", 
+      "enabled": true, 
+      "bounds": [
+        [
+          1152, 
+          2196
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_bookmarks[text]Bookmarks[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/statusBarBackground", 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*84", 
+      "checked": false, 
+      "temp_id": 72, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]android:id/statusBarBackground", 
+      "is_password": false, 
+      "parent": 0, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "0fb290b1e1f4d802b03e9e24696f6062", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          0
+        ], 
+        [
+          1440, 
+          84
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]android:id/statusBarBackground[text]None[enabled,,]"
+    }, 
+    {
+      "content_description": null, 
+      "resource_id": "android:id/navigationBarBackground", 
+      "text": null, 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*168", 
+      "checked": false, 
+      "temp_id": 73, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]android:id/navigationBarBackground", 
+      "is_password": false, 
+      "parent": 0, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "a3b5e621b8c94e84b7cfccd4eecdb428", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2392
+        ], 
+        [
+          1440, 
+          2560
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]android:id/navigationBarBackground[text]None[enabled,,]"
+    }
+  ], 
+  "state_str_content_free": "f6b9023c4d6c2d99ee1bbde3b29b7aef", 
+  "activity_stack": [
+    "com.yelp.android/.ui.activities.nearby.ActivityNearby", 
+    "com.yelp.android/.ui.activities.search.SearchBusinessesByList", 
+    "com.yelp.android/.ui.activities.profile.ActivityUserProfile", 
+    "com.yelp.android/.ui.activities.profile.ActivityUserProfile", 
+    "com.yelp.android/.ui.activities.search.SearchBusinessesByList", 
+    "com.yelp.android/.ui.activities.feed.ActivityFeed", 
+    "com.yelp.android/.ui.activities.profile.ActivityUserProfile", 
+    "com.yelp.android/.ui.activities.feed.ActivityFeed", 
+    "com.yelp.android/.ui.activities.search.SearchBusinessesByList", 
+    "com.yelp.android/.ui.activities.bookmarks.ActivityBookmarks", 
+    "com.yelp.android/.ui.activities.profile.ActivityUserProfile", 
+    "com.yelp.android/.ui.activities.bookmarks.ActivityBookmarks", 
+    "com.yelp.android/.ui.activities.feed.ActivityFeed", 
+    "com.yelp.android/.ui.activities.bookmarks.ActivityBookmarks", 
+    "com.yelp.android/.ui.activities.search.SearchBusinessesByList", 
+    "com.yelp.android/.ui.activities.nearby.ActivityNearby"
+  ], 
+  "background_services": [
+    "com.android.bluetooth/.hid.HidService", 
+    "com.snapchat.android/.service.SnapchatService", 
+    "com.google.android.apps.messaging/com.google.android.ims.service.JibeService", 
+    "com.huawei.callstatisticsutils/.CallStatisticsService", 
+    "com.facebook.katana/com.facebook.video.vps.VideoPlayerService", 
+    "org.codeaurora.ims/.ImsService", 
+    "io.github.privacystreams.app/.db.PStreamCollectService", 
+    "com.google.android.gms/.deviceconnection.service.DeviceConnectionWatcherService", 
+    "com.google.android.gms/com.google.android.location.places.service.PlaceDetectionAsyncService", 
+    "com.google.android.gms/.tapandpay.hce.service.TpHceService", 
+    "com.android.systemui/.keyguard.KeyguardService", 
+    "com.android.bluetooth/.btservice.AdapterService", 
+    "com.google.android.gms/.instantapps.service.InstantAppsService", 
+    "com.android.systemui/.ImageWallpaper", 
+    "com.google.android.inputmethod.latin/com.android.inputmethod.latin.spellcheck.AndroidSpellCheckerService", 
+    "com.google.android.gms/com.google.android.location.geocode.GeocodeService", 
+    "io.github.privacystreams.app/io.github.privacystreams.notification.PSNotificationListenerService", 
+    "com.google.android.gms/.auth.setup.devicesignals.LockScreenService", 
+    "com.google.android.gms/.gcm.GcmService", 
+    "com.google.android.gms/.analytics.service.AnalyticsService", 
+    "com.google.android.gms/com.google.location.nearby.direct.service.NearbyDirectService", 
+    "com.google.android.gms/.chimera.PersistentBoundBrokerService", 
+    "com.android.bluetooth/.gatt.GattService", 
+    "net.loadinghome.smartunlock/.Servicio", 
+    "com.google.android.gms/.auth.account.service.WorkAccountService", 
+    "com.google.android.gms/com.google.android.location.fused.service.FusedProviderService", 
+    "com.google.android.gms/.pseudonymous.service.PseudonymousIdService", 
+    "com.instagram.android/com.facebook.rti.push.service.FbnsService", 
+    "com.android.vending/com.google.android.finsky.contentfilter.impl.ContentFiltersService", 
+    "io.github.ylimit.droidbotapp/.DroidBotIME", 
+    "com.android.bluetooth/.pbap.BluetoothPbapService", 
+    "com.google.android.gms/.beacon.BleService", 
+    "com.google.android.gms/.update.SystemUpdateService", 
+    "com.google.android.gms/com.google.android.location.fused.FusedLocationService", 
+    "com.android.bluetooth/.a2dp.A2dpService", 
+    "com.qualcomm.qcrilmsgtunnel/.QcrilMsgTunnelService", 
+    "com.qualcomm.cabl/.CABLService", 
+    "io.github.ylimit.droidbotapp/io.github.privacystreams.accessibility.PSAccessibilityService", 
+    "com.google.android.gms/com.google.android.location.geofencer.service.GeofenceProviderService", 
+    "com.google.android.gms/.auth.account.be.legacy.GoogleAccountDataService", 
+    "com.android.systemui/.SystemUIService", 
+    "android/.hardware.location.GeofenceHardwareService", 
+    "com.google.android.gms/com.google.android.location.reporting.service.DispatchingService", 
+    "com.facebook.katana/com.facebook.rti.orca.MainService", 
+    "com.huawei.sarcontrolservice/.SarControlService", 
+    "com.google.android.gms/com.google.android.location.internal.PendingIntentCallbackService", 
+    "com.tms.easyro.nopspro/com.tms.pdf.util.NopsService", 
+    "com.google.android.gms/.nearby.messages.service.NearbyMessagesService", 
+    "com.google.android.gms/.auth.GetToken", 
+    "com.android.server.telecom/.components.BluetoothPhoneService", 
+    "com.google.android.googlequicksearchbox/com.google.android.apps.gsa.search.core.service.SearchService", 
+    "english.grammar.test.app/io.presage.PresageService", 
+    "com.google.android.gms/com.google.android.location.internal.server.GoogleLocationService", 
+    "com.google.android.gms/com.google.android.contextmanager.service.ContextManagerService", 
+    "com.google.android.gms/com.google.android.location.network.NetworkLocationService", 
+    "com.android.stk/.StkAppService", 
+    "com.facebook.katana/com.facebook.rti.push.service.FbnsService", 
+    "com.google.android.gms/com.google.android.location.internal.GoogleLocationManagerService", 
+    "me.twrp.twrpapp/me.twrp.officialtwrpapp.OnBootService", 
+    "com.android.server.telecom/.components.TelecomService", 
+    "com.android.providers.media/.MtpService", 
+    "com.android.bluetooth/.hfp.HeadsetService", 
+    "com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService", 
+    "android/com.android.internal.backup.LocalTransportService", 
+    "com.google.android.gms/.common.stats.GmsCoreStatsService", 
+    "com.google.android.gms/.clearcut.service.ClearcutLoggerService", 
+    "com.google.android.gms/com.google.android.location.internal.server.HardwareArProviderService", 
+    "com.android.bluetooth/.map.BluetoothMapService", 
+    "com.android.mms.service/.MmsService", 
+    "com.android.phone/.TelephonyDebugService", 
+    "com.google.android.gms/.icing.service.IndexService", 
+    "com.android.bluetooth/.pan.PanService", 
+    "com.google.android.gms/.backup.BackupTransportService"
+  ], 
+  "state_str": "6c73d6bec6cb1049597067d3e7d6e7a0", 
+  "tag": "2017-08-11_202533", 
+  "foreground_activity": "com.yelp.android/.ui.activities.nearby.ActivityNearby"
+}

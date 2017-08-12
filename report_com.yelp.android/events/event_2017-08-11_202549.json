@@ -1,0 +1,48 @@
+{
+  "stop_state": "373bca43a74662d184b8b2bad7e04e54", 
+  "event_str": "TouchEvent(view=a41dc2da70f68d9279fb291f9b8de3f9)", 
+  "tag": "2017-08-11_202549", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": "Nearby", 
+      "resource_id": "com.yelp.android:id/hot_button_nearby", 
+      "text": "Nearby", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "288*196", 
+      "checked": false, 
+      "temp_id": 33, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_nearby", 
+      "is_password": false, 
+      "parent": 32, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "a41dc2da70f68d9279fb291f9b8de3f9", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          2196
+        ], 
+        [
+          288, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/hot_button_nearby[text]Nearby[enabled,,]"
+    }
+  }, 
+  "start_state": "7690400f7f64b24493fc9b3260a6c98a"
+}

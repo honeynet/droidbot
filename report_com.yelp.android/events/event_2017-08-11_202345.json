@@ -1,0 +1,48 @@
+{
+  "stop_state": "8c0b4d9c4ffe0aea498b56180309d4d3", 
+  "event_str": "TouchEvent(view=226488077c03e9ca1415cab2add6e21b)", 
+  "tag": "2017-08-11_202345", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "android:id/message", 
+      "text": "Signing up\u2026", 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "836*66", 
+      "checked": false, 
+      "temp_id": 9, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]android:id/message", 
+      "is_password": false, 
+      "parent": 7, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": false, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "226488077c03e9ca1415cab2add6e21b", 
+      "enabled": true, 
+      "bounds": [
+        [
+          428, 
+          1205
+        ], 
+        [
+          1264, 
+          1271
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]android:id/message[text]Signing up\u2026[enabled,,]"
+    }
+  }, 
+  "start_state": "e5053440a9b942325d9c282f2f39cd4a"
+}

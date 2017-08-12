@@ -1,0 +1,31 @@
+html { height:100%; }
+
+body {
+	height: 100%;
+	font: 12pt arial;
+	padding-top: 50px;
+}
+
+.full_height {
+	height: 100%;
+}
+
+#utg_div {
+	background-color:#dddddd;
+}
+
+#utg_details {
+    overflow: auto;
+	background-color:#eeeeee;	
+}
+
+#utgSearchBar {
+    width: 500px;
+}
+
+.viewImg {
+	max-height: 200px;
+    max-width: 200px;
+    height: auto;
+    width: auto;
+}

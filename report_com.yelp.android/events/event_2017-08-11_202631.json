@@ -1,0 +1,48 @@
+{
+  "stop_state": "138b509fa2662a89b010b5ac6c1f619c", 
+  "event_str": "TouchEvent(view=0bb502b6756eb9e8db185e9665436d88)", 
+  "tag": "2017-08-11_202631", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/nav_support_center", 
+      "text": "Support Center", 
+      "visible": false, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1050*-1769", 
+      "checked": false, 
+      "temp_id": 64, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/nav_support_center", 
+      "is_password": false, 
+      "parent": 27, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.widget.TextView", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "0bb502b6756eb9e8db185e9665436d88", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          4161
+        ], 
+        [
+          1050, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.widget.TextView[resource_id]com.yelp.android:id/nav_support_center[text]Support Center[enabled,,]"
+    }
+  }, 
+  "start_state": "138b509fa2662a89b010b5ac6c1f619c"
+}

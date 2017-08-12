@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DroidBot UTG</title>
+
+    <link href="stylesheets/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/droidbotUI.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/vis.min.css" rel="stylesheet" type="text/css" />
+
+    <script type="text/javascript" src="utg.js"></script>
+    <script type="text/javascript" src="stylesheets/vis.min.js"></script>
+    <script type="text/javascript" src="stylesheets/jquery.min.js"></script>
+    <script type="text/javascript" src="stylesheets/bootstrap.min.js"></script>
+    <script type="text/javascript" src="stylesheets/droidbotUI.js"></script>
+  </head>
+
+  <body onload="draw()">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">DroidBot Report</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#" onClick="showOverall()">Overall</a></li>
+            <li><a href="#" onClick="showOriginalUTG()">Original UTG</a></li>
+            <li><a href="#" onClick="clusterStructures()">Cluster structures</a></li>
+            <li><a href="#" onClick="clusterActivities()">Cluster activities</a></li>
+            <li><a href="#" onClick="showAbout()">About</a></li>
+          </ul>
+          <form class="navbar-form navbar-right">
+            <input id="utgSearchBar" onkeyup="searchUTG()" type="text" class="form-control" placeholder="Search (activity name, resource id, text, etc.)">
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid full_height">
+      <div class="row full_height">
+        <div class="col-md-7 full_height" id="utg_div">
+        </div>
+        <div class="col-md-5 sidebar full_height" id="utg_details">
+          <h2>Details</h2>
+          <p>Detailed information shown here.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

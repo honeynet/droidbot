@@ -1,0 +1,48 @@
+{
+  "stop_state": "58beb4c94a1a4d1ac267e0058540fb30", 
+  "event_str": "TouchEvent(view=6d6af54552aa2b5178f25704264ae22b)", 
+  "tag": "2017-08-11_202521", 
+  "event": {
+    "y": null, 
+    "x": null, 
+    "event_type": "touch", 
+    "view": {
+      "content_description": null, 
+      "resource_id": "com.yelp.android:id/tint", 
+      "text": null, 
+      "visible": true, 
+      "checkable": false, 
+      "children": [], 
+      "size": "1440*766", 
+      "checked": false, 
+      "temp_id": 42, 
+      "selected": false, 
+      "child_count": 0, 
+      "content_free_signature": "[class]android.view.View[resource_id]com.yelp.android:id/tint", 
+      "is_password": false, 
+      "parent": 8, 
+      "focusable": false, 
+      "editable": false, 
+      "focused": false, 
+      "clickable": true, 
+      "class": "android.view.View", 
+      "scrollable": false, 
+      "package": "com.yelp.android", 
+      "long_clickable": false, 
+      "view_str": "6d6af54552aa2b5178f25704264ae22b", 
+      "enabled": true, 
+      "bounds": [
+        [
+          0, 
+          1626
+        ], 
+        [
+          1440, 
+          2392
+        ]
+      ], 
+      "signature": "[class]android.view.View[resource_id]com.yelp.android:id/tint[text]None[enabled,,]"
+    }
+  }, 
+  "start_state": "69bedf7eafa58edbee51b4b989e5b234"
+}

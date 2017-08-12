@@ -1,0 +1,35 @@
+add device 1: /dev/input/event6
+  name:     "uinput-folio"
+add device 2: /dev/input/event5
+  name:     "msm8994-tomtom-mtp-snd-card Headset Jack"
+add device 3: /dev/input/event4
+  name:     "msm8994-tomtom-mtp-snd-card Button Jack"
+add device 4: /dev/input/event2
+  name:     "qpnp_pon"
+add device 5: /dev/input/event1
+  name:     "STM VL6180 proximity sensor"
+could not get driver version for /dev/input/mice, Not a typewriter
+add device 6: /dev/input/event3
+  name:     "gpio-keys"
+could not get driver version for /dev/input/mouse0, Not a typewriter
+add device 7: /dev/input/event0
+  name:     "synaptics_dsx"
+[   10462.142048] /dev/input/event0: EV_ABS       ABS_MT_TRACKING_ID   000000a8            
+[   10462.142048] /dev/input/event0: EV_KEY       BTN_TOUCH            DOWN                
+[   10462.142048] /dev/input/event0: EV_KEY       BTN_TOOL_FINGER      DOWN                
+[   10462.142048] /dev/input/event0: EV_ABS       ABS_MT_POSITION_X    00000172            
+[   10462.142048] /dev/input/event0: EV_ABS       ABS_MT_POSITION_Y    000009d4            
+[   10462.142048] /dev/input/event0: EV_ABS       ABS_MT_TOUCH_MINOR   00000005            
+[   10462.142048] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            
+[   10462.153764] /dev/input/event0: EV_ABS       ABS_MT_TOUCH_MINOR   00000006            
+[   10462.153764] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            
+[   10462.225398] /dev/input/event0: EV_ABS       ABS_MT_TOUCH_MINOR   00000005            
+[   10462.225398] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            
+[   10462.235685] /dev/input/event0: EV_ABS       ABS_MT_POSITION_Y    000009d5            
+[   10462.235685] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            
+[   10462.245854] /dev/input/event0: EV_ABS       ABS_MT_TOUCH_MINOR   00000006            
+[   10462.245854] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            
+[   10462.256008] /dev/input/event0: EV_ABS       ABS_MT_TRACKING_ID   ffffffff            
+[   10462.256008] /dev/input/event0: EV_KEY       BTN_TOUCH            UP                  
+[   10462.256008] /dev/input/event0: EV_KEY       BTN_TOOL_FINGER      UP                  
+[   10462.256008] /dev/input/event0: EV_SYN       SYN_REPORT           00000000            

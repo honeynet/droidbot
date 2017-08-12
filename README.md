@@ -47,8 +47,9 @@ If successfully installed, you should be able to execute `droidbot -h`.
 2. Start DroidBot:
 
     ```
-    droidbot -a <path_to_apk>
+    droidbot -a <path_to_apk> -o output_dir
     ```
+    That's it! You will find much useful information, including the UTG, generated in the output dir.
 
     + If you are using multiple devices, you may need to use `-d <device_serial>` to specify the target device. The easiest way to determine a device's serial number is calling `adb devices`.
     + On some devices, you may need to manually turn on accessibility service for DroidBot (required by DroidBot to get current view hierarchy).

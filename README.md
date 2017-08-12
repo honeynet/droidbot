@@ -24,7 +24,7 @@ DroidBot has the following advantages as compared with other input generators:
 1. `Python` version `2.7`
 2. `Java` version `1.7`
 3. `Android SDK`
-4. Add `platform_tools` directory and `tools` directory in Android SDK to `PATH`
+4. Add `platform_tools` directory in Android SDK to `PATH`
 
 ## How to install
 
@@ -43,24 +43,18 @@ If successfully installed, you should be able to execute `droidbot -h`.
 
     + `.apk` file path of the app you want to analyze.
     + A device or an emulator connected to your host machine via `adb`.
-    + Get the serial number (e.g. `emulator-5554`) of target device using `adb devices`.
 
 2. Start DroidBot:
 
     ```
-    droidbot -d <serial> -a <path_to_apk>
+    droidbot -a <path_to_apk>
     ```
-    
-    Note: If you want to run DroidBot for multiple apps, you can add `-keep_env` option to avoid re-installing test environment.
-    You may find other useful features in `droidbot -h`.
 
-## Test strategy
-
-DroidBot uses an app model to generate test input.
-Currently, DroidBot explores the UI states using a depth-first strategy.
-
-You can also use a json-format script to customize input for certain states. [Script samples](script_samples/).
-Simply use `-script <path_to_script.json>` to use DroidBot with a script.
+    + If you are using multiple devices, you may need to use `-d <device_serial>` to specify the target device. The easiest way to determine a device's serial number is calling `adb devices`.
+    + On some devices, you may need to manually turn on accessibility service for DroidBot (required by DroidBot to get current view hierarchy).
+    + If you want to test a large scale of apps, you may want to add `-keep_env` option to avoid re-installing the test environment every time.
+    + You can also use a json-format script to customize input for certain states. Here are some [script samples](script_samples/). Simply use `-script <path_to_script.json>` to use DroidBot with a script.
+    + You may find other useful features in `droidbot -h`.
 
 ## Evaluation
 

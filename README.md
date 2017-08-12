@@ -48,17 +48,19 @@ If successfully installed, you should be able to execute `droidbot -h`.
 2. Start DroidBot:
 
     ```
-    droidbot -d <serial> -a <path_to_apk> -policy dfs
+    droidbot -d <serial> -a <path_to_apk>
     ```
+    
+    Note: If you want to run DroidBot for multiple apps, you can add `-keep_env` option to avoid re-installing test environment.
+    You may find other useful features in `droidbot -h`.
 
 ## Test strategy
 
 DroidBot uses an app model to generate test input.
-Currently, DroidBot support following three strategies:
+Currently, DroidBot explores the UI states using a depth-first strategy.
 
-1. **random** -- Generate random input events;
-2. **dfs**/**bfs** -- Explore the UI states using a depth-first/breadth-first strategy;
-3. **script** -- Use a script to customize input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
+You can also use a json-format script to customize input for certain states. [Script samples](script_samples/).
+Simply use `-script <path_to_script.json>` to use DroidBot with a script.
 
 ## Evaluation
 

@@ -10,9 +10,7 @@ from threading import Timer
 from device import Device
 from app import App
 from app_env import AppEnvManager
-from app_event import AppEventManager
 from input_manager import InputManager
-from droidbox_scripts.droidbox import DroidBox
 
 
 class DroidBot(object):
@@ -36,7 +34,6 @@ class DroidBot(object):
                  keep_app=None,
                  keep_env=False,
                  debug_mode=False,
-                 with_droidbox=False,
                  use_hierarchy_viewer=False,
                  profiling_method=None,
                  grant_perm=False):
@@ -87,9 +84,6 @@ class DroidBot(object):
                                  use_hierarchy_viewer=use_hierarchy_viewer,
                                  grant_perm=grant_perm)
             self.app = App(app_path, output_dir=self.output_dir)
-
-            if with_droidbox:
-                self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
 
             self.env_manager = AppEnvManager(device=self.device,
                                              app=self.app,

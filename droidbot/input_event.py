@@ -13,6 +13,62 @@ POSSIBLE_KEYS = [
     "HOME"
 ]
 
+# Unused currently, but should be useful.
+POSSIBLE_BROADCASTS = [
+    "android.intent.action.AIRPLANE_MODE_CHANGED",
+    "android.intent.action.BATTERY_CHANGED",
+    "android.intent.action.BATTERY_LOW",
+    "android.intent.action.BATTERY_OKAY",
+    "android.intent.action.BOOT_COMPLETED",
+    "android.intent.action.DATE_CHANGED",
+    "android.intent.action.DEVICE_STORAGE_LOW",
+    "android.intent.action.DEVICE_STORAGE_OK",
+    "android.intent.action.INPUT_METHOD_CHANGED",
+    "android.intent.action.INSTALL_PACKAGE",
+    "android.intent.action.LOCALE_CHANGED",
+    "android.intent.action.MEDIA_EJECT",
+    "android.intent.action.MEDIA_MOUNTED",
+    "android.intent.action.MEDIA_REMOVED",
+    "android.intent.action.MEDIA_SHARED",
+    "android.intent.action.MEDIA_UNMOUNTED",
+    "android.intent.action.NEW_OUTGOING_CALL",
+    "android.intent.action.OPEN_DOCUMENT",
+    "android.intent.action.OPEN_DOCUMENT_TREE",
+    "android.intent.action.PACKAGE_ADDED",
+    "android.intent.action.PACKAGE_CHANGED",
+    "android.intent.action.PACKAGE_DATA_CLEARED",
+    "android.intent.action.PACKAGE_FIRST_LAUNCH",
+    "android.intent.action.PACKAGE_FULLY_REMOVED",
+    "android.intent.action.PACKAGE_INSTALL",
+    "android.intent.action.PACKAGE_REMOVED",
+    "android.intent.action.PACKAGE_REPLACED",
+    "android.intent.action.PACKAGE_RESTARTED",
+    "android.intent.action.PACKAGE_VERIFIED",
+    "android.intent.action.PASTE",
+    "android.intent.action.POWER_CONNECTED",
+    "android.intent.action.POWER_DISCONNECTED",
+    "android.intent.action.POWER_USAGE_SUMMARY",
+    "android.intent.action.PROVIDER_CHANGED",
+    "android.intent.action.QUICK_CLOCK",
+    "android.intent.action.REBOOT",
+    "android.intent.action.SCREEN_OFF",
+    "android.intent.action.SCREEN_ON",
+    "android.intent.action.SET_WALLPAPER",
+    "android.intent.action.SHUTDOWN",
+    "android.intent.action.TIMEZONE_CHANGED",
+    "android.intent.action.TIME_CHANGED",
+    "android.intent.action.TIME_TICK",
+    "android.intent.action.UID_REMOVED",
+    "android.intent.action.UNINSTALL_PACKAGE",
+    "android.intent.action.USER_BACKGROUND",
+    "android.intent.action.USER_FOREGROUND",
+    "android.intent.action.USER_INITIALIZE",
+    "android.intent.action.USER_PRESENT",
+    "android.intent.action.VOICE_COMMAND",
+    "android.intent.action.WALLPAPER_CHANGED",
+    "android.intent.action.WEB_SEARCH"
+]
+
 KEY_KeyEvent = "key"
 KEY_ExitEvent = "exit"
 KEY_TouchEvent = "touch"

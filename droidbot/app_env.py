@@ -1,9 +1,9 @@
 # This file is responsible for setup up the executing environment of droidbox app
 # Here the executing environment includes:
 # 1. Static environments: contacts, call logs, SMS, pre-installed apps, etc
-#    2. Dynamic environments: continuous GPS, Accelerometer, etc
+# 2. Dynamic environments: continuous GPS, Accelerometer, etc
 # The environment should be determined before app start running.
-# We don't need to set up all environment aspects for one app,
+# We don't need to set up all environments for one app,
 # instead we select a subset according to static analysis result of app.
 import logging
 import json

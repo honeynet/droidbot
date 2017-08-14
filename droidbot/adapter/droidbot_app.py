@@ -201,6 +201,7 @@ class DroidBotAppConn(Adapter):
         self.last_acc_event['view_list'] = view_list
         return view_list
 
+
 if __name__ == "__main__":
     droidbot_app_conn = DroidBotAppConn()
     droidbot_app_conn.set_up()

@@ -71,8 +71,7 @@ class UTG(object):
 
     def __output_utg(self):
         """
-        Output current UTG to a dot file
-        :return: 
+        Output current UTG to a js file
         """
         if not self.device.output_dir:
             return

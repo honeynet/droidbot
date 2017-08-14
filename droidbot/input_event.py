@@ -220,7 +220,6 @@ class EventLog(object):
     def start(self):
         """
         start sending event
-        :return: 
         """
         self.from_state = self.device.get_current_state()
         self.start_profiling()
@@ -255,7 +254,6 @@ class EventLog(object):
     def stop(self):
         """
         finish sending event
-        :return: 
         """
         self.stop_profiling()
         self.to_state = self.device.get_current_state()

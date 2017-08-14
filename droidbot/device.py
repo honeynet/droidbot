@@ -124,7 +124,6 @@ class Device(object):
     def set_up(self):
         """
         Set connections on this device
-        :return: 
         """
         # wait for emulator to start
         self.wait_for_device()
@@ -276,14 +275,11 @@ class Device(object):
     def shake(self):
         """
         shake the device
-        :return: 
         """
+        # TODO the telnet-simulated shake event is not usable
         telnet = self.telnet
         if telnet is None:
             self.logger.warning("Telnet not connected, so can't shake the device.")
-        l2h = range(0, 11)
-        h2l = range(0, 11)
-        h2l.reverse()
         sensor_xyz = [(-float(v * 10) + 1, float(v) + 9.8, float(v * 2) + 0.5) for v in [1, -1, 1, -1, 1, -1, 0]]
         for (x, y, z) in sensor_xyz:
             telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x, y, z))
@@ -509,11 +505,10 @@ class Device(object):
     def get_current_activity_stack(self):
         """
         Get current activity stack
-        :return: 
+        :return: a list of str, each str is an activity name, the first is the top activity name
         """
         task_to_activities = self.get_task_activities()
         top_activity = self.get_top_activity_name()
-
         if top_activity:
             for task_id in task_to_activities:
                 activities = task_to_activities[task_id]
@@ -567,9 +562,6 @@ class Device(object):
                 service = m.group(2)
                 services.append("%s/%s" % (package, service))
         return services
-
-    def get_focused_window_name(self):
-        return self.adb.get_focused_window_name()
 
     def get_package_path(self, package_name):
         """
@@ -691,7 +683,6 @@ class Device(object):
         """
         Uninstall an app from device.
         :param app: an instance of App or a package name
-        :return: 
         """
         if isinstance(app, App):
             package_name = app.get_package_name()
@@ -868,7 +859,7 @@ class Device(object):
     def get_random_port(self):
         """
         get a random port on host machine to establish connection
-        :return: 
+        :return: a port number
         """
         import socket
         temp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

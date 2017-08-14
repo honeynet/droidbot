@@ -34,7 +34,7 @@ def parse_log(log_msg):
 def get_available_devices():
     """
     Get a list of device serials connected via adb
-    :return: 
+    :return: list of str, each str is a device serial number
     """
     import subprocess
     lines = subprocess.check_output(["adb", "devices"]).splitlines()

@@ -2,7 +2,6 @@ import json
 import logging
 import subprocess
 import time
-from threading import Timer
 
 from input_event import EventLog
 from input_policy import UtgBasedInputPolicy, UtgDfsPolicy

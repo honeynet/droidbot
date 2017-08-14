@@ -89,7 +89,7 @@ class App(object):
         """
         get launch mode of an activity
         :param activity: the name of the activity
-        :return: 
+        :return str
         """
         activities = self.get_activities()
         if activities is None:

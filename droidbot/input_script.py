@@ -295,7 +295,7 @@ class ViewSelector(object):
         @return:
         """
         if 'text' in view_dict and 'resource_id' in view_dict \
-            and 'class' in view_dict and 'bounds' in view_dict:
+                and 'class' in view_dict and 'bounds' in view_dict:
             pass
         else:
             return False
@@ -426,6 +426,7 @@ class ScriptEvent(InputEvent):
     an event defined in DroidBotScript
     the grammar of ScriptEvent is similar with the InputEvent in dict format
     """
+
     def __init__(self, event_dict):
         self.event_dict = event_dict
 

@@ -5,6 +5,8 @@
 import logging
 import os
 import sys
+import pkg_resources
+import shutil
 from threading import Timer
 
 from device import Device
@@ -50,7 +52,6 @@ class DroidBot(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
-            import pkg_resources, shutil
             html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
             stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")

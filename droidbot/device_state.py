@@ -1,9 +1,8 @@
-import os
 import math
-import subprocess
+import os
 
 import utils
-from input_event import KeyEvent, IntentEvent, TouchEvent, LongTouchEvent, SwipeEvent, ScrollEvent
+from input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent
 
 
 class DeviceState(object):
@@ -254,7 +253,7 @@ class DeviceState(object):
         for child_id in self.get_all_children(view_dict):
             child_strs.append(DeviceState.__get_view_signature(self.views[child_id]))
         child_strs.sort()
-        view_str = "Activity:%s\nSelf:%s\nParents:%s\nChildren:%s" %\
+        view_str = "Activity:%s\nSelf:%s\nParents:%s\nChildren:%s" % \
                    (self.foreground_activity, view_signature, "//".join(parent_strs), "||".join(child_strs))
         import hashlib
         view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
@@ -265,7 +264,7 @@ class DeviceState(object):
         """
         get the structure of the given view
         :param view_dict: dict, an element of list DeviceState.views
-        :return: 
+        :return: dict, representing the view structure
         """
         if 'view_structure' in view_dict:
             return view_dict['view_structure']
@@ -287,7 +286,7 @@ class DeviceState(object):
                 children["(%d,%d)" % (relative_x, relative_y)] = self.__get_view_structure(child_view)
 
         view_structure = {
-            "%s(%d*%d)" % (class_name, width, height) : children
+            "%s(%d*%d)" % (class_name, width, height): children
         }
         view_dict['view_structure'] = view_structure
         return view_structure
@@ -304,8 +303,8 @@ class DeviceState(object):
     def get_view_center(view_dict):
         """
         return the center point in a view
-        @param view_dict: dict, element of device.get_current_state().views
-        @return:
+        @param view_dict: dict, an element of DeviceState.views
+        @return: a pair of int
         """
         bounds = view_dict['bounds']
         return (bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2
@@ -314,8 +313,8 @@ class DeviceState(object):
     def get_view_width(view_dict):
         """
         return the width of a view
-        @param view_dict: dict, element of device.get_current_state().views
-        @return:
+        @param view_dict: dict, an element of DeviceState.views
+        @return: int
         """
         bounds = view_dict['bounds']
         return int(math.fabs(bounds[0][0] - bounds[1][0]))
@@ -324,8 +323,8 @@ class DeviceState(object):
     def get_view_height(view_dict):
         """
         return the height of a view
-        @param view_dict: dict, element of device.get_current_state().views
-        @return:
+        @param view_dict: dict, an element of DeviceState.views
+        @return: int
         """
         bounds = view_dict['bounds']
         return int(math.fabs(bounds[0][1] - bounds[1][1]))
@@ -333,8 +332,8 @@ class DeviceState(object):
     def get_all_ancestors(self, view_dict):
         """
         Get temp view ids of the given view's ancestors
-        :param view_dict: 
-        :return: 
+        :param view_dict: dict, an element of DeviceState.views
+        :return: list of int, each int is an ancestor node id
         """
         result = []
         parent_id = self.__safe_dict_get(view_dict, 'parent', -1)
@@ -346,8 +345,8 @@ class DeviceState(object):
     def get_all_children(self, view_dict):
         """
         Get temp view ids of the given view's children
-        :param view_dict: 
-        :return: 
+        :param view_dict: dict, an element of DeviceState.views
+        :return: set of int, each int is a child node id
         """
         children = self.__safe_dict_get(view_dict, 'children')
         if not children:
@@ -374,7 +373,7 @@ class DeviceState(object):
     def get_possible_input(self):
         """
         Get a list of possible input events for this state
-        :return: 
+        :return: list of InputEvent
         """
         if self.possible_events:
             return self.possible_events

@@ -12,7 +12,6 @@ from adapter.minicap import Minicap
 from adapter.process_monitor import ProcessMonitor
 from adapter.telnet import TelnetConsole
 from adapter.user_input_monitor import UserInputMonitor
-from adapter.viewclient import ViewClient
 from adapter.droidbot_ime import DroidBotIme
 from app import App
 from intent import Intent
@@ -27,7 +26,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
+                 grant_perm=False, telnet_auth_token=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -66,7 +65,6 @@ class Device(object):
         # adapters
         self.adb = ADB(device=self)
         self.telnet = TelnetConsole(device=self, auth_token=telnet_auth_token)
-        self.view_client = ViewClient(device=self, forceviewserveruse=use_hierarchy_viewer)
         self.droidbot_app = DroidBotAppConn(device=self)
         self.minicap = Minicap(device=self)
         self.logcat = Logcat(device=self)
@@ -77,7 +75,6 @@ class Device(object):
         self.adapters = {
             self.adb: True,
             self.telnet: False,
-            self.view_client: False,
             self.droidbot_app: True,
             self.minicap: True,
             self.logcat: True,
@@ -780,7 +777,7 @@ class Device(object):
         self.logger.debug("getting current device state...")
         current_state = None
         try:
-            view_client_views = self.get_views()
+            views = self.get_views()
             foreground_activity = self.get_top_activity_name()
             activity_stack = self.get_current_activity_stack()
             background_services = self.get_service_names()
@@ -788,7 +785,7 @@ class Device(object):
             self.logger.debug("finish getting current device state...")
             from device_state import DeviceState
             current_state = DeviceState(self,
-                                        views=view_client_views,
+                                        views=views,
                                         foreground_activity=foreground_activity,
                                         activity_stack=activity_stack,
                                         background_services=background_services,
@@ -845,11 +842,6 @@ class Device(object):
     def get_views(self):
         if self.droidbot_app and self.adapters[self.droidbot_app]:
             views = self.droidbot_app.get_views()
-            if views:
-                return views
-
-        if self.view_client and self.adapters[self.view_client]:
-            views = self.view_client.dump()
             if views:
                 return views
 

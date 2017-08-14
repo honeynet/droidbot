@@ -48,40 +48,13 @@ class DeviceState(object):
         if not raw_views or len(raw_views) == 0:
             return views
 
-        from adapter.viewclient import View
-        if isinstance(raw_views[0], View):  # If the raw views are from viewclient
-            view2id_map = {}
-            id2view_map = {}
-            temp_id = 0
-            for view in raw_views:
-                view2id_map[view] = temp_id
-                id2view_map[temp_id] = view
-                temp_id += 1
-
-            for view in raw_views:
-                view_dict = {}
-                view_dict['class'] = view.getClass()  # None is possible value
-                view_dict['text'] = view.getText()  # None is possible value
-                view_dict['resource_id'] = view.getId()  # None is possible value
-
-                view_dict['parent'] = DeviceState.__safe_dict_get(view2id_map, view.getParent(), -1)
-                view_dict['temp_id'] = view2id_map.get(view)
-
-                view_dict['children'] = [view2id_map.get(view_child) for view_child in view.getChildren()]
-                view_dict['enabled'] = view.isEnabled()
-                view_dict['focused'] = view.isFocused()
-                view_dict['clickable'] = view.isClickable()
-                view_dict['bounds'] = view.getBounds()
-                view_dict['size'] = "%d*%d" % (view.getWidth(), view.getHeight())
-                views.append(view_dict)
-        elif isinstance(raw_views[0], dict):  # If the raw views are from droidbotApp
-            for view_dict in raw_views:
-                # # Simplify resource_id
-                # resource_id = view_dict['resource_id']
-                # if resource_id is not None and ":" in resource_id:
-                #     resource_id = resource_id[(resource_id.find(":") + 1):]
-                #     view_dict['resource_id'] = resource_id
-                views.append(view_dict)
+        for view_dict in raw_views:
+            # # Simplify resource_id
+            # resource_id = view_dict['resource_id']
+            # if resource_id is not None and ":" in resource_id:
+            #     resource_id = resource_id[(resource_id.find(":") + 1):]
+            #     view_dict['resource_id'] = resource_id
+            views.append(view_dict)
         return views
 
     def __generate_view_strs(self):

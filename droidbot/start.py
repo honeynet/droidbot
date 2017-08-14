@@ -2,6 +2,7 @@
 # it parses command arguments and send the options to droidbot
 import argparse
 import input_manager
+import env_manager
 from droidbot import DroidBot
 
 
@@ -55,8 +56,6 @@ def parse_args():
                         help="Keep the app on the device after testing.")
     parser.add_argument("-keep_env", action="store_true", dest="keep_env",
                         help="Keep the test environment (eg. minicap and accessibility service) after testing.")
-    parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
-                        help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
     parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",
@@ -81,7 +80,7 @@ def main():
                         device_serial=opts.device_serial,
                         output_dir=opts.output_dir,
                         # env_policy=opts.env_policy,
-                        env_policy="none",
+                        env_policy=env_manager.POLICY_NONE,
                         policy_name=opts.input_policy,
                         random_input=opts.random_input,
                         script_path=opts.script_path,
@@ -91,7 +90,6 @@ def main():
                         debug_mode=opts.debug_mode,
                         keep_app=opts.keep_app,
                         keep_env=opts.keep_env,
-                        use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method,
                         grant_perm=opts.grant_perm)
     droidbot.start()

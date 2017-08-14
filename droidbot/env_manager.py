@@ -10,12 +10,11 @@ import json
 import time
 import os
 
-ENV_POLICIES = [
-    "none",
-    "dummy",
-    "static",
-    "file",
-]
+POLICY_NONE = "none"
+POLICY_DUMMY = "dummy"
+POLICY_STATIC = "static"
+
+DEFAULT_POLICY = POLICY_NONE
 
 
 class UnknownEnvException(Exception):
@@ -248,13 +247,13 @@ class AppEnvManager(object):
         self.enabled = True
 
         if not self.policy:
-            self.policy = "none"
+            self.policy = POLICY_NONE
 
-        if self.policy == "none":
+        if self.policy == POLICY_NONE:
             self.env_factory = None
-        elif self.policy == "dummy":
+        elif self.policy == POLICY_DUMMY:
             self.env_factory = DummyEnvFactory()
-        elif self.policy == "static":
+        elif self.policy == POLICY_STATIC:
             self.env_factory = StaticEnvFactory(app)
         else:
             self.env_factory = FileEnvFactory(self.policy)

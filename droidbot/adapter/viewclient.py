@@ -145,7 +145,7 @@ class View:
                 r = self.attributes[mangledName[0]]
             else:
                 # Default behavior
-                raise AttributeError, name
+                raise AttributeError(name)
         elif name.startswith('is'):
             # try removing 'is' prefix
             suffix = name[2:].lower()
@@ -153,7 +153,7 @@ class View:
                 r = self.attributes[suffix]
             else:
                 # Default behavior
-                raise AttributeError, name
+                raise AttributeError(name)
         elif name.startswith('get'):
             # try removing 'get' prefix
             suffix = name[3:].lower()
@@ -161,16 +161,16 @@ class View:
                 r = self.attributes[suffix]
             else:
                 # Default behavior
-                raise AttributeError, name
+                raise AttributeError(name)
         elif name == 'getResourceId':
             if self.attributes.has_key('resource-id'):
                 r = self.attributes['resource-id']
             else:
                 # Default behavior
-                raise AttributeError, name
+                raise AttributeError(name)
         else:
             # Default behavior
-            raise AttributeError, name
+            raise AttributeError(name)
 
         if r == 'true':
             r = True

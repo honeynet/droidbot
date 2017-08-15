@@ -13,14 +13,14 @@
     "operations": {
         "swipe_operation": [
             {
-                "event_type": "swipe",
+                "event_type": "scroll",
                 "target_view": "first_time_use_carousel",
-                "direction": "LEFT"
+                "direction": "RIGHT"
             },
             {
-                "event_type": "swipe",
+                "event_type": "scroll",
                 "target_view": "first_time_use_carousel",
-                "direction": "LEFT"
+                "direction": "RIGHT"
             }
         ]
     },

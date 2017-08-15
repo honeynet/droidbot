@@ -32,11 +32,13 @@
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
             <li><a href="#" onClick="showOverall()">Overall</a></li>
-            <li><a href="https://github.com/honeynet/droidbot">DroidBot source</a></li>
-            <li><a href="#">About</a></li>
+            <li><a href="#" onClick="showOriginalUTG()">Original UTG</a></li>
+            <li><a href="#" onClick="clusterStructures()">Cluster structures</a></li>
+            <li><a href="#" onClick="clusterActivities()">Cluster activities</a></li>
+            <li><a href="#" onClick="showAbout()">About</a></li>
           </ul>
           <form class="navbar-form navbar-right">
-            <input type="text" class="form-control" placeholder="Search...">
+            <input id="utgSearchBar" onkeyup="searchUTG()" type="text" class="form-control" placeholder="Search (activity name, resource id, text, etc.)">
           </form>
         </div>
       </div>

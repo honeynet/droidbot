@@ -34,7 +34,7 @@ def parse_log(log_msg):
 def get_available_devices():
     """
     Get a list of device serials connected via adb
-    :return: 
+    :return: list of str, each str is a device serial number
     """
     import subprocess
     lines = subprocess.check_output(["adb", "devices"]).splitlines()
@@ -87,6 +87,11 @@ def list_to_html_table(dict_data):
         table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
     table += "</table>"
     return table
+
+
+def md5(input_str):
+    import hashlib
+    return hashlib.md5(input_str.encode('utf-8')).hexdigest()
 
 
 class TimeoutException(Exception):

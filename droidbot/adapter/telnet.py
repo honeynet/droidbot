@@ -17,7 +17,8 @@ class TelnetConsole(Adapter):
     """
     def __init__(self, device=None, auth_token=None):
         """
-        initiate a emulator console via telnet
+        Initiate a emulator console via telnet.
+        On some devices, an authentication token is required to use telnet
         :param device: instance of Device
         :return:
         """
@@ -85,7 +86,7 @@ class TelnetConsole(Adapter):
         if self.console is None:
             return False
         try:
-            r = self.run_cmd("help")
+            self.run_cmd("help")
         except:
             return False
         return True

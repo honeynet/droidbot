@@ -1,8 +1,14 @@
+![DroidBot UTG](droidbot/resources/dummy_documents/droidbot_utg.png)
+
 # DroidBot
 
 ## About
 DroidBot is a lightweight test input generator for Android.
-It has the following advantages as compared with other input generators:
+It can send random or scripted input events to an Android app, achieve higher test coverage more quickly, and generate a UI transition graph (UTG) after testing.
+
+A sample UTG is shown [here](http://honeynet.github.io/droidbot/report_com.yelp.android/).
+
+DroidBot has the following advantages as compared with other input generators:
 
 1. It does not require system modification or app instrumentation;
 2. Events are based on a GUI model (instead of random);
@@ -18,7 +24,7 @@ It has the following advantages as compared with other input generators:
 1. `Python` version `2.7`
 2. `Java` version `1.7`
 3. `Android SDK`
-4. Add `platform_tools` directory and `tools` directory in Android SDK to `PATH`
+4. Add `platform_tools` directory in Android SDK to `PATH`
 
 ## How to install
 
@@ -37,22 +43,19 @@ If successfully installed, you should be able to execute `droidbot -h`.
 
     + `.apk` file path of the app you want to analyze.
     + A device or an emulator connected to your host machine via `adb`.
-    + Get the serial number (e.g. `emulator-5554`) of target device using `adb devices`.
 
 2. Start DroidBot:
 
     ```
-    droidbot -d <serial> -a <path_to_apk> -policy dfs
+    droidbot -a <path_to_apk> -o output_dir
     ```
+    That's it! You will find much useful information, including the UTG, generated in the output dir.
 
-## Test strategy
-
-DroidBot uses an app model to generate test input.
-Currently, DroidBot support following three strategies:
-
-1. **random** -- Generate random input events;
-2. **dfs**/**bfs** -- Explore the UI states using a depth-first/breadth-first strategy;
-3. **script** -- Use a script to customize input for certain states. [HOW](http://honeynet.github.io/droidbot/2016/08/19/DroidBot_Script.html).
+    + If you are using multiple devices, you may need to use `-d <device_serial>` to specify the target device. The easiest way to determine a device's serial number is calling `adb devices`.
+    + On some devices, you may need to manually turn on accessibility service for DroidBot (required by DroidBot to get current view hierarchy).
+    + If you want to test a large scale of apps, you may want to add `-keep_env` option to avoid re-installing the test environment every time.
+    + You can also use a json-format script to customize input for certain states. Here are some [script samples](script_samples/). Simply use `-script <path_to_script.json>` to use DroidBot with a script.
+    + You may find other useful features in `droidbot -h`.
 
 ## Evaluation
 

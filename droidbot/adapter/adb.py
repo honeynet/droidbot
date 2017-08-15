@@ -92,7 +92,6 @@ class ADB(Adapter):
     def connect(self):
         """
         connect adb
-        :return: 
         """
         self.logger.debug("connected")
 
@@ -222,7 +221,6 @@ class ADB(Adapter):
         """
         Disable an accessibility service
         :param service_name: the service to disable, in <package_name>/<service_name> format
-        :return: 
         """
         service_names = self.get_enabled_accessibility_services()
         if service_name in service_names:
@@ -233,7 +231,6 @@ class ADB(Adapter):
         """
         Enable an accessibility service
         :param service_name: the service to enable, in <package_name>/<service_name> format
-        :return: 
         """
         service_names = self.get_enabled_accessibility_services()
         if service_name not in service_names:
@@ -261,123 +258,6 @@ class ADB(Adapter):
         else:
             return -1.0
 
-    def get_focused_window(self):
-        """
-        Get the focused window
-        """
-        for window in self.get_windows().values():
-            if window.focused:
-                return window
-        return None
-
-    def get_focused_window_name(self):
-        """
-        Get the focused window name
-        """
-        window = self.get_focused_window()
-        if window:
-            return window.activity
-        return None
-
-    def get_windows(self):
-        from viewclient_utils import _nd, _nh, _ns, obtainPxPy, obtainVwVh, obtainVxVy, Window
-        windows = {}
-        dww = self.shell("dumpsys window windows")
-        lines = dww.splitlines()
-        widRE = re.compile("^ *Window #%s Window\{%s (u\d+ )?%s?.*}:" %
-                           (_nd("num"), _nh("winId"), _ns("activity", greedy=True)))
-        currentFocusRE = re.compile("^ {2}mCurrentFocus=Window\{%s .*" % _nh("winId"))
-        viewVisibilityRE = re.compile(" mViewVisibility=0x%s " % _nh("visibility"))
-        # This is for 4.0.4 API-15
-        containingFrameRE = re.compile("^ {3}mContainingFrame=\[%s,%s\]\[%s,%s\] mParentFrame=\[%s,%s\]\[%s,%s\]" %
-                                       (_nd("cx"), _nd("cy"), _nd("cw"), _nd("ch"), _nd("px"), _nd("py"), _nd("pw"),
-                                        _nd("ph")))
-        contentFrameRE = re.compile("^ {3}mContentFrame=\[%s,%s\]\[%s,%s\] mVisibleFrame=\[%s,%s\]\[%s,%s\]" %
-                                    (_nd("x"), _nd("y"), _nd("w"), _nd("h"), _nd("vx"), _nd("vy"), _nd("vx1"),
-                                     _nd("vy1")))
-        # This is for 4.1 API-16
-        framesRE = re.compile("^ {3}Frames: containing=\[%s,%s\]\[%s,%s\] parent=\[%s,%s\]\[%s,%s\]" %
-                              (_nd("cx"), _nd("cy"), _nd("cw"), _nd("ch"), _nd("px"), _nd("py"), _nd("pw"), _nd("ph")))
-        contentRE = re.compile("^ {5}content=\[%s,%s\]\[%s,%s\] visible=\[%s,%s\]\[%s,%s\]" %
-                               (_nd("x"), _nd("y"), _nd("w"), _nd("h"), _nd("vx"), _nd("vy"), _nd("vx1"), _nd("vy1")))
-        policyVisibilityRE = re.compile("mPolicyVisibility=%s " % _ns("policyVisibility", greedy=True))
-
-        currentFocus = None
-
-        for l in range(len(lines)):
-            m = widRE.search(lines[l])
-            if m:
-                num = int(m.group("num"))
-                winId = m.group("winId")
-                activity = m.group("activity")
-                wvx = 0
-                wvy = 0
-                wvw = 0
-                wvh = 0
-                px = 0
-                py = 0
-                visibility = -1
-                policyVisibility = 0x0
-                sdkVer = self.get_sdk_version()
-
-                for l2 in range(l + 1, len(lines)):
-                    m = widRE.search(lines[l2])
-                    if m:
-                        l += (l2 - 1)
-                        break
-                    m = viewVisibilityRE.search(lines[l2])
-                    if m:
-                        visibility = int(m.group("visibility"))
-                    if sdkVer >= 17:
-                        wvx, wvy = (0, 0)
-                        wvw, wvh = (0, 0)
-                    if sdkVer >= 16:
-                        m = framesRE.search(lines[l2])
-                        if m:
-                            px, py = obtainPxPy(m)
-                            m = contentRE.search(lines[l2 + 1])
-                            if m:
-                                # FIXME: the information provided by 'dumpsys window windows' in 4.2.1 (API 16)
-                                # when there's a system dialog may not be correct and causes the View coordinates
-                                # be offset by this amount, see
-                                # https://github.com/dtmilano/AndroidViewClient/issues/29
-                                wvx, wvy = obtainVxVy(m)
-                                wvw, wvh = obtainVwVh(m)
-                    elif sdkVer == 15:
-                        m = containingFrameRE.search(lines[l2])
-                        if m:
-                            px, py = obtainPxPy(m)
-                            m = contentFrameRE.search(lines[l2 + 1])
-                            if m:
-                                wvx, wvy = obtainVxVy(m)
-                                wvw, wvh = obtainVwVh(m)
-                    elif sdkVer == 10:
-                        m = containingFrameRE.search(lines[l2])
-                        if m:
-                            px, py = obtainPxPy(m)
-                            m = contentFrameRE.search(lines[l2 + 1])
-                            if m:
-                                wvx, wvy = obtainVxVy(m)
-                                wvw, wvh = obtainVwVh(m)
-                    else:
-                        self.logger.warning("Unsupported Android version %d" % sdkVer)
-
-                    # print >> sys.stderr, "Searching policyVisibility in", lines[l2]
-                    m = policyVisibilityRE.search(lines[l2])
-                    if m:
-                        policyVisibility = 0x0 if m.group("policyVisibility") == "true" else 0x8
-
-                windows[winId] = Window(num, winId, activity, wvx, wvy, wvw, wvh, px, py, visibility + policyVisibility)
-            else:
-                m = currentFocusRE.search(lines[l])
-                if m:
-                    currentFocus = m.group("winId")
-
-        if currentFocus in windows and windows[currentFocus].visibility == 0:
-            windows[currentFocus].focused = True
-
-        return windows
-
     def __transform_point_by_orientation(self, (x, y), orientation_orig, orientation_dest):
         if orientation_orig != orientation_dest:
             if orientation_dest == 1:
@@ -391,9 +271,9 @@ class ADB(Adapter):
         return x, y
 
     def get_orientation(self):
-        displayInfo = self.get_display_info()
-        if 'orientation' in displayInfo:
-            return displayInfo['orientation']
+        display_info = self.get_display_info()
+        if 'orientation' in display_info:
+            return display_info['orientation']
         else:
             return -1
 

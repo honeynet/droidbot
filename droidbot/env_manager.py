@@ -1,21 +1,20 @@
 # This file is responsible for setup up the executing environment of droidbox app
 # Here the executing environment includes:
 # 1. Static environments: contacts, call logs, SMS, pre-installed apps, etc
-#    2. Dynamic environments: continuous GPS, Accelerometer, etc
+# 2. Dynamic environments: continuous GPS, Accelerometer, etc
 # The environment should be determined before app start running.
-# We don't need to set up all environment aspects for one app,
+# We don't need to set up all environments for one app,
 # instead we select a subset according to static analysis result of app.
 import logging
 import json
 import time
 import os
 
-ENV_POLICIES = [
-    "none",
-    "dummy",
-    "static",
-    "file",
-]
+POLICY_NONE = "none"
+POLICY_DUMMY = "dummy"
+POLICY_STATIC = "static"
+
+DEFAULT_POLICY = POLICY_NONE
 
 
 class UnknownEnvException(Exception):
@@ -26,6 +25,7 @@ class AppEnv(object):
     """
     This class describes a environment attribute of device
     """
+
     def to_dict(self):
         return self.__dict__
 
@@ -66,6 +66,7 @@ class ContactAppEnv(StaticAppEnv):
     """
     This class describes a contact inside device
     """
+
     def __init__(self, name='Lynn', phone="1234567890", email="droidbot@honeynet.com", env_dict=None):
         if env_dict is not None:
             self.__dict__ = env_dict
@@ -88,6 +89,7 @@ class SettingsAppEnv(StaticAppEnv):
     """
     This class describes settings of device
     """
+
     def __init__(self, table_name="system", name="screen_brightness", value="50", env_dict=None):
         if env_dict is not None:
             self.__dict__ = env_dict
@@ -105,6 +107,7 @@ class CallLogEnv(StaticAppEnv):
     """
     call log
     """
+
     def __init__(self, phone="1234567890", call_in=True, accepted=True, env_dict=None):
         """
         a call log
@@ -151,6 +154,7 @@ class DummyFilesEnv(StaticAppEnv):
     """
     push dummy files to device
     """
+
     def __init__(self, dummy_files_dir=None):
         """
         :param: dummy_files_dir: directory to dummy files
@@ -170,6 +174,7 @@ class SMSLogEnv(StaticAppEnv):
     """
     SMS log
     """
+
     def __init__(self, phone="1234567890", sms_in=True, content="Hello world", env_dict=None):
         """
         a call log
@@ -197,6 +202,7 @@ class GPSAppEnv(DynamicAppEnv):
     """
     This class describes the continuous updating GPS data inside device
     """
+
     def __init__(self, center_x=50, center_y=50, delta_x=1, delta_y=1, env_dict=None):
         if env_dict is not None:
             self.__dict__ = env_dict
@@ -241,13 +247,13 @@ class AppEnvManager(object):
         self.enabled = True
 
         if not self.policy:
-            self.policy = "none"
+            self.policy = POLICY_NONE
 
-        if self.policy == "none":
+        if self.policy == POLICY_NONE:
             self.env_factory = None
-        elif self.policy == "dummy":
+        elif self.policy == POLICY_DUMMY:
             self.env_factory = DummyEnvFactory()
-        elif self.policy == "static":
+        elif self.policy == POLICY_STATIC:
             self.env_factory = StaticEnvFactory(app)
         else:
             self.env_factory = FileEnvFactory(self.policy)
@@ -310,6 +316,7 @@ class AppEnvFactory(object):
     """
     This class is responsible for produce a list of static and dynamic AppEnv
     """
+
     def produce_envs(self):
         return []
 
@@ -318,6 +325,7 @@ class DummyEnvFactory(AppEnvFactory):
     """
     A dummy factory which generate randomized app environment
     """
+
     def produce_envs(self):
         """
         produce a list of dummy environment
@@ -355,9 +363,9 @@ class StaticEnvFactory(AppEnvFactory):
         if 'android.permission.READ_SMS' in permissions:
             envs.append(SMSLogEnv())
             envs.append(SMSLogEnv(sms_in=False))
-        if 'android.permission.READ_EXTERNAL_STORAGE' in permissions or \
-            'android.permission.WRITE_EXTERNAL_STORAGE' in permissions or \
-            'android.permission.MOUNT_UNMOUNT_FILESYSTEMS' in permissions:
+        if 'android.permission.READ_EXTERNAL_STORAGE' in permissions \
+                or 'android.permission.WRITE_EXTERNAL_STORAGE' in permissions \
+                or 'android.permission.MOUNT_UNMOUNT_FILESYSTEMS' in permissions:
             envs.append(DummyFilesEnv())
 
         # TODO add more app-specific app environment
@@ -377,15 +385,14 @@ class FileEnvFactory(AppEnvFactory):
         self.envs = []
         self.file = env_file
         f = open(env_file, 'r')
-        env_json = f.readall()
-        env_array = json.loads(env_json)
+        env_array = json.load(f)
         for env_dict in env_array:
             if not isinstance(env_dict, dict):
                 raise UnknownEnvException
-            if not env_dict.has_key('env_type'):
+            if 'env_type' not in env_dict:
                 raise UnknownEnvException
             env_type = env_dict['env_type']
-            if not ENV_TYPES.has_key('env_type'):
+            if 'env_type' not in ENV_TYPES:
                 raise UnknownEnvException
             EnvType = ENV_TYPES[env_type]
             env = EnvType(dict=env_dict)

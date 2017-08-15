@@ -15,7 +15,12 @@ body {
 }
 
 #utg_details {
+    overflow: auto;
 	background-color:#eeeeee;	
+}
+
+#utgSearchBar {
+    width: 500px;
 }
 
 .viewImg {

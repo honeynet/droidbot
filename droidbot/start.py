@@ -1,7 +1,8 @@
 # helper file of droidbot
 # it parses command arguments and send the options to droidbot
 import argparse
-import app_event
+import input_manager
+import env_manager
 from droidbot import DroidBot
 
 
@@ -24,41 +25,29 @@ def parse_args():
     #                          "dummy\tadd some fake contacts, SMS log, call log; \n"
     #                          "static\tset environment based on static analysis result; \n"
     #                          "<file>\tget environment policy from a json file.\n")
-    parser.add_argument("-policy", action="store", dest="input_policy", default=app_event.DEFAULT_POLICY,
+    parser.add_argument("-policy", action="store", dest="input_policy", default=input_manager.DEFAULT_POLICY,
                         help='Policy to use for test input generation. '
-                             'Default: %s.\nSupported policies:\n' % app_event.DEFAULT_POLICY +
-                             # '%s\tno event will be sent, user should interact manually with device; \n'
-                             # '%s\tuse "adb shell monkey" to send events; \n'
-                             '  \"%s\" -- Generate random input events.\n'
-                             # '%s\tsend events based on static analysis result; \n'
-                             # '%s\tbased on dynamic app state, this policy requires framework instrumented\n'
-                             '  \"%s\" -- Explore UI using a breadth-first strategy.\n'
+                             'Default: %s.\nSupported policies:\n' % input_manager.DEFAULT_POLICY +
+                             '  \"%s\" -- No event will be sent, user should interact manually with device; \n'
+                             '  \"%s\" -- Use "adb shell monkey" to send events; \n'
                              '  \"%s\" -- Explore UI using a depth-first strategy.\n'
-                             # '<%s>\tUse a script to customize input for certain states.\n'
-                             # '%s\tmanually interact with your app, and we will record the events.\n'
                              %
                              (
-                                 # app_event.POLICY_NONE,
-                                 # app_event.POLICY_MONKEY,
-                                 app_event.POLICY_RANDOM,
-                                 # app_event.POLICY_STATIC,
-                                 # app_event.POLICY_DYNAMIC,
-                                 app_event.POLICY_BFS,
-                                 app_event.POLICY_DFS,
-                                 # app_event.POLICY_FILE,
-                                 # app_event.POLICY_MANUAL
+                                 input_manager.POLICY_NONE,
+                                 input_manager.POLICY_MONKEY,
+                                 input_manager.POLICY_DFS,
                              ))
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
-    parser.add_argument("-count", action="store", dest="count", default=app_event.DEFAULT_EVENT_COUNT,
+    parser.add_argument("-count", action="store", dest="count", default=input_manager.DEFAULT_EVENT_COUNT,
                         type=int, help="Number of events to generate in total. "
-                                       "Default: %d" % app_event.DEFAULT_EVENT_COUNT)
-    parser.add_argument("-interval", action="store", dest="interval", default=app_event.DEFAULT_EVENT_INTERVAL,
+                                       "Default: %d" % input_manager.DEFAULT_EVENT_COUNT)
+    parser.add_argument("-interval", action="store", dest="interval", default=input_manager.DEFAULT_EVENT_INTERVAL,
                         type=int, help="Interval in seconds between each two events. "
-                                       "Default: %d" % app_event.DEFAULT_EVENT_INTERVAL)
-    parser.add_argument("-timeout", action="store", dest="timeout", default=app_event.DEFAULT_TIMEOUT,
+                                       "Default: %d" % input_manager.DEFAULT_EVENT_INTERVAL)
+    parser.add_argument("-timeout", action="store", dest="timeout", default=input_manager.DEFAULT_TIMEOUT,
                         type=int, help="Timeout in seconds, -1 means unlimited. "
-                                       "Default: %d" % app_event.DEFAULT_TIMEOUT)
+                                       "Default: %d" % input_manager.DEFAULT_TIMEOUT)
     parser.add_argument("-debug", action="store_true", dest="debug_mode",
                         help="Run in debug mode (dump debug messages).")
     parser.add_argument("-random", action="store_true", dest="random_input",
@@ -67,14 +56,10 @@ def parse_args():
                         help="Keep the app on the device after testing.")
     parser.add_argument("-keep_env", action="store_true", dest="keep_env",
                         help="Keep the test environment (eg. minicap and accessibility service) after testing.")
-    parser.add_argument("-use_hierarchy_viewer", action="store_true", dest="use_hierarchy_viewer",
-                        help="Force use Hierarchy Viewer to dump UI states instead of UI Automator.")
     parser.add_argument("-use_method_profiling", action="store", dest="profiling_method",
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
     parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",
                         help="Grant all permissions while installing. Useful for Android 6.0+.")
-    parser.add_argument("-use_with_droidbox", action="store_true", dest="with_droidbox",
-                        help="Use DroidBot with DroidBox. Need to run on a DroidBox emulator.")
     options = parser.parse_args()
     # print options
     return options
@@ -95,7 +80,7 @@ def main():
                         device_serial=opts.device_serial,
                         output_dir=opts.output_dir,
                         # env_policy=opts.env_policy,
-                        env_policy="none",
+                        env_policy=env_manager.POLICY_NONE,
                         policy_name=opts.input_policy,
                         random_input=opts.random_input,
                         script_path=opts.script_path,
@@ -105,8 +90,6 @@ def main():
                         debug_mode=opts.debug_mode,
                         keep_app=opts.keep_app,
                         keep_env=opts.keep_env,
-                        with_droidbox=opts.with_droidbox,
-                        use_hierarchy_viewer=opts.use_hierarchy_viewer,
                         profiling_method=opts.profiling_method,
                         grant_perm=opts.grant_perm)
     droidbot.start()

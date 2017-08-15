@@ -12,7 +12,6 @@ from adapter.minicap import Minicap
 from adapter.process_monitor import ProcessMonitor
 from adapter.telnet import TelnetConsole
 from adapter.user_input_monitor import UserInputMonitor
-from adapter.viewclient import ViewClient
 from adapter.droidbot_ime import DroidBotIme
 from app import App
 from intent import Intent
@@ -27,7 +26,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
-                 use_hierarchy_viewer=False, grant_perm=False, telnet_auth_token=None):
+                 grant_perm=False, telnet_auth_token=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -66,7 +65,6 @@ class Device(object):
         # adapters
         self.adb = ADB(device=self)
         self.telnet = TelnetConsole(device=self, auth_token=telnet_auth_token)
-        self.view_client = ViewClient(device=self, forceviewserveruse=use_hierarchy_viewer)
         self.droidbot_app = DroidBotAppConn(device=self)
         self.minicap = Minicap(device=self)
         self.logcat = Logcat(device=self)
@@ -77,7 +75,6 @@ class Device(object):
         self.adapters = {
             self.adb: True,
             self.telnet: False,
-            self.view_client: False,
             self.droidbot_app: True,
             self.minicap: True,
             self.logcat: True,
@@ -124,7 +121,6 @@ class Device(object):
     def set_up(self):
         """
         Set connections on this device
-        :return: 
         """
         # wait for emulator to start
         self.wait_for_device()
@@ -276,14 +272,11 @@ class Device(object):
     def shake(self):
         """
         shake the device
-        :return: 
         """
+        # TODO the telnet-simulated shake event is not usable
         telnet = self.telnet
         if telnet is None:
             self.logger.warning("Telnet not connected, so can't shake the device.")
-        l2h = range(0, 11)
-        h2l = range(0, 11)
-        h2l.reverse()
         sensor_xyz = [(-float(v * 10) + 1, float(v) + 9.8, float(v * 2) + 0.5) for v in [1, -1, 1, -1, 1, -1, 0]]
         for (x, y, z) in sensor_xyz:
             telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x, y, z))
@@ -509,11 +502,10 @@ class Device(object):
     def get_current_activity_stack(self):
         """
         Get current activity stack
-        :return: 
+        :return: a list of str, each str is an activity name, the first is the top activity name
         """
         task_to_activities = self.get_task_activities()
         top_activity = self.get_top_activity_name()
-
         if top_activity:
             for task_id in task_to_activities:
                 activities = task_to_activities[task_id]
@@ -567,9 +559,6 @@ class Device(object):
                 service = m.group(2)
                 services.append("%s/%s" % (package, service))
         return services
-
-    def get_focused_window_name(self):
-        return self.adb.get_focused_window_name()
 
     def get_package_path(self, package_name):
         """
@@ -691,7 +680,6 @@ class Device(object):
         """
         Uninstall an app from device.
         :param app: an instance of App or a package name
-        :return: 
         """
         if isinstance(app, App):
             package_name = app.get_package_name()
@@ -789,7 +777,7 @@ class Device(object):
         self.logger.debug("getting current device state...")
         current_state = None
         try:
-            view_client_views = self.get_views()
+            views = self.get_views()
             foreground_activity = self.get_top_activity_name()
             activity_stack = self.get_current_activity_stack()
             background_services = self.get_service_names()
@@ -797,7 +785,7 @@ class Device(object):
             self.logger.debug("finish getting current device state...")
             from device_state import DeviceState
             current_state = DeviceState(self,
-                                        views=view_client_views,
+                                        views=views,
                                         foreground_activity=foreground_activity,
                                         activity_stack=activity_stack,
                                         background_services=background_services,
@@ -857,18 +845,13 @@ class Device(object):
             if views:
                 return views
 
-        if self.view_client and self.adapters[self.view_client]:
-            views = self.view_client.dump()
-            if views:
-                return views
-
         self.logger.warning("failed to get current views!")
         return None
 
     def get_random_port(self):
         """
         get a random port on host machine to establish connection
-        :return: 
+        :return: a port number
         """
         import socket
         temp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

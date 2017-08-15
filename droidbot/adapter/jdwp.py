@@ -1,8 +1,6 @@
 import logging
 import socket
-import subprocess
-import time
-from datetime import datetime
+
 from adapter import Adapter
 
 
@@ -59,6 +57,7 @@ class JDWP(Adapter):
             except Exception as e:
                 print e.message
         # TODO
+
 
 if __name__ == "__main__":
     pass

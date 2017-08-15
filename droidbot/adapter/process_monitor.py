@@ -1,5 +1,7 @@
 import threading
 import logging
+import time
+import subprocess
 from adapter import Adapter
 
 
@@ -62,7 +64,6 @@ class ProcessMonitor(Adapter):
         """
         maintain pid2user mapping, pid2ppid mapping and pid2name mapping by continuously calling ps command
         """
-        import time, subprocess
         while self.enabled:
             if self.device is not None:
                 ps_cmd = ["adb", "-s", self.device.serial, "shell", "ps", "-t"]

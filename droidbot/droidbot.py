@@ -5,14 +5,14 @@
 import logging
 import os
 import sys
+import pkg_resources
+import shutil
 from threading import Timer
 
 from device import Device
 from app import App
-from app_env import AppEnvManager
-from app_event import AppEventManager
+from env_manager import AppEnvManager
 from input_manager import InputManager
-from droidbox_scripts.droidbox import DroidBox
 
 
 class DroidBot(object):
@@ -36,8 +36,6 @@ class DroidBot(object):
                  keep_app=None,
                  keep_env=False,
                  debug_mode=False,
-                 with_droidbox=False,
-                 use_hierarchy_viewer=False,
                  profiling_method=None,
                  grant_perm=False):
         """
@@ -53,7 +51,6 @@ class DroidBot(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.mkdir(output_dir)
-            import pkg_resources, shutil
             html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
             stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
@@ -67,12 +64,6 @@ class DroidBot(object):
         self.keep_env = keep_env
         self.keep_app = keep_app
 
-        # if device_serial is None:
-        #     # Dirty Workaround: Set device_serial to Default='.*', because com/dtmilano/android/viewclient.py
-        #     #  set serial to an arbitrary argument. IN connectToDeviceOrExit(..) line 2539f.
-        #     # FIXED by requiring device_serial in cmd
-        #     device_serial = '.*'
-
         self.device = None
         self.app = None
         self.droidbox = None
@@ -84,12 +75,8 @@ class DroidBot(object):
         try:
             self.device = Device(device_serial=device_serial,
                                  output_dir=self.output_dir,
-                                 use_hierarchy_viewer=use_hierarchy_viewer,
                                  grant_perm=grant_perm)
             self.app = App(app_path, output_dir=self.output_dir)
-
-            if with_droidbox:
-                self.droidbox = DroidBox(droidbot=self, output_dir=self.output_dir)
 
             self.env_manager = AppEnvManager(device=self.device,
                                              app=self.app,

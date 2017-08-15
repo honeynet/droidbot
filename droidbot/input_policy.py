@@ -160,7 +160,7 @@ class UtgBasedInputPolicy(InputPolicy):
     def generate_event_based_on_utg(self):
         """
         generate an event based on UTG
-        :return: 
+        :return: InputEvent
         """
         pass
 
@@ -261,8 +261,8 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
         for view in views:
             view_text = view['text'] if view['text'] is not None else ''
             view_text = view_text.lower().strip()
-            if view_text in self.preferred_buttons and \
-                            (state.foreground_activity, view['view_str']) not in self.explored_views:
+            if view_text in self.preferred_buttons \
+                    and (state.foreground_activity, view['view_str']) not in self.explored_views:
                 self.logger.info("selected an preferred view: %s" % view['view_str'])
                 return view
 

@@ -13,11 +13,24 @@ function draw() {
     locale: 'en',
 
     nodes: {
-      color: {
-        border: '#000',
-        background: '#000'
+      shapeProperties: {
+        useBorderWithImage: true
       },
-      font:{
+
+      borderWidth: 0,
+      borderWidthSelected: 5,
+
+      color: {
+        border: '#FFFFFF',
+        background: '#FFFFFF',
+
+        highlight: {
+          border: '#0000FF',
+          background: '#0000FF',
+        }
+      },
+
+      font: {
         size: 12,
         color:'#000'
       }
@@ -42,11 +55,21 @@ function draw() {
   network.on("click", function (params) {
     if (params.nodes.length > 0) {
       node = params.nodes[0];
-      utg_details.innerHTML = getNodeDetails(node);
+      if (network.isCluster(node)) {
+        utg_details.innerHTML = getClusterDetails(node);
+      }
+      else {
+        utg_details.innerHTML = getNodeDetails(node);
+      }
     }
     else if (params.edges.length > 0) {
       edge = params.edges[0];
-      utg_details.innerHTML = getEdgeDetails(edge);
+      baseEdge = network.clustering.getBaseEdge(edge)
+      if (baseEdge == null || baseEdge == edge) {
+        utg_details.innerHTML = getEdgeDetails(edge);
+      } else {
+        utg_details.innerHTML = getEdgeDetails(baseEdge);
+      }
     }
   });
 }
@@ -121,6 +144,19 @@ function getNodeDetails(nodeId) {
   return stateInfo;
 }
 
+function getClusterDetails(clusterId) {
+  clusterInfo = "<h2>Cluster Details</h2><hr/>\n";
+  var nodeIds = network.getNodesInCluster(clusterId);
+  for (var i = 0; i < nodeIds.length; i++) {
+    var selectedNode = getNode(nodeIds[i]);
+    clusterInfo += "<div class=\"row\">\n"
+    clusterInfo += "<img class=\"col-md-5\" src=\"" + selectedNode.image + "\">"
+    clusterInfo += "<div class=\"col-md-7\">" + selectedNode.title + "</div>";
+    clusterInfo += "</div><br />"
+  }
+  return clusterInfo;
+}
+
 function getEdge(edgeId) {
   var i, numEdges;
   numEdges = utg.edges.length;
@@ -129,6 +165,7 @@ function getEdge(edgeId) {
       return utg.edges[i];
     }
   }
+  console.log("cannot find edge: " + edgeId);
 }
 
 function getNode(nodeId) {
@@ -139,4 +176,105 @@ function getNode(nodeId) {
       return utg.nodes[i];
     }
   }
+  console.log("cannot find node: " + nodeId);
+}
+
+function showAbout() {
+  var utg_details = document.getElementById('utg_details');
+  utg_details.innerHTML = getAboutInfo();
+}
+
+function getAboutInfo() {
+  var aboutInfo = "<hr />";
+  aboutInfo += "<h2>About</h2>\n"
+  aboutInfo += "<p>This report is generated using <a href=\"https://github.com/honeynet/droidbot\">DroidBot</a>.</p>\n";
+  aboutInfo += "<p>Please find copyright information in the project page.</p>";
+  return aboutInfo;
+}
+
+function searchUTG() {
+  var searchKeyword = document.getElementById("utgSearchBar").value.toUpperCase();
+  if (searchKeyword == null || searchKeyword == "") {
+    network.unselectAll()
+  } else {
+    var i, numNodes;
+    nodes = utg.nodes;
+    numNodes = nodes.length;
+    selectedNodes = []
+    for (i = 0; i < numNodes; i++) {
+      if (nodes[i].content.toUpperCase().indexOf(searchKeyword) > -1) {
+        selectedNodes.push(nodes[i].id)
+      }
+    }
+    network.unselectAll()
+    // console.log("Selecting: " + selectedNodes)
+    network.selectNodes(selectedNodes, false)
+  }
+}
+
+function clusterStructures() {
+  network.setData(utg)
+  var structures = [];
+
+  for (var i = 0; i < utg.nodes.length; i++) {
+    node = utg.nodes[i]
+    if (structures.indexOf(node.structure_str) < 0) {
+      structures.push(node.structure_str)
+    }
+  }
+
+  var clusterOptionsByData;
+  for (var i = 0; i < structures.length; i++) {
+      var structure = structures[i];
+      clusterOptionsByData = {
+          joinCondition: function (childOptions) {
+              return childOptions.structure_str == structure;
+          },
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+              clusterOptions.title = childNodes[0].title;
+              clusterOptions.state_str = childNodes[0].state_str;
+              clusterOptions.label = childNodes[0].label;
+              clusterOptions.image = childNodes[0].image;
+              return clusterOptions;
+          },
+          clusterNodeProperties: {id: 'structure:' + structure, shape: 'image'}
+      };
+      network.cluster(clusterOptionsByData);
+  }
+}
+
+function clusterActivities() {
+  network.setData(utg)
+  var activities = [];
+
+  for (var i = 0; i < utg.nodes.length; i++) {
+    node = utg.nodes[i]
+    if (activities.indexOf(node.activity) < 0) {
+      activities.push(node.activity)
+    }
+  }
+
+  var clusterOptionsByData;
+  for (var i = 0; i < activities.length; i++) {
+      var activity = activities[i];
+      clusterOptionsByData = {
+          joinCondition: function (childOptions) {
+              return childOptions.activity == activity;
+          },
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+              clusterOptions.title = childNodes[0].title;
+              clusterOptions.state_str = childNodes[0].state_str;
+              clusterOptions.label = childNodes[0].label;
+              clusterOptions.image = childNodes[0].image;
+              return clusterOptions;
+          },
+          clusterNodeProperties: {id: 'activity:' + activity, shape: 'image'}
+      };
+      network.cluster(clusterOptionsByData);
+  }
+}
+
+function showOriginalUTG() {
+  network.setData(utg)
+  network.redraw()
 }

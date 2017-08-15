@@ -310,11 +310,12 @@ class UIEvent(InputEvent):
 
     @staticmethod
     def get_xy(x, y, view):
-        if x is None or y is None:
+        if x and y:
+            return x, y
+        if view:
             from device_state import DeviceState
             return DeviceState.get_view_center(view_dict=view)
-        else:
-            return x, y
+        return x, y
 
 
 class TouchEvent(UIEvent):

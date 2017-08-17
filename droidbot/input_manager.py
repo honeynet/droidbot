@@ -4,7 +4,7 @@ import subprocess
 import time
 
 from input_event import EventLog
-from input_policy import UtgBasedInputPolicy, UtgDfsPolicy
+from input_policy import UtgBasedInputPolicy, UtgDfsPolicy, ManualPolicy
 
 POLICY_NONE = "none"
 POLICY_MONKEY = "monkey"
@@ -68,8 +68,8 @@ class InputManager(object):
             input_policy = None
         elif self.policy_name == POLICY_DFS:
             input_policy = UtgDfsPolicy(device, app, self.random_input)
-        # elif self.policy_name == POLICY_MANUAL:
-        #     input_policy = ManualEventFactory(device, app)
+        elif self.policy_name == POLICY_MANUAL:
+            input_policy = ManualPolicy(device, app)
         else:
             input_policy = None
         if isinstance(input_policy, UtgBasedInputPolicy):

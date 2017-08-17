@@ -70,6 +70,7 @@ POSSIBLE_BROADCASTS = [
 ]
 
 KEY_KeyEvent = "key"
+KEY_ManualEvent = "manual"
 KEY_ExitEvent = "exit"
 KEY_TouchEvent = "touch"
 KEY_LongTouchEvent = "long_touch"
@@ -288,6 +289,29 @@ class EventLog(object):
 
         except Exception as e:
             self.device.logger.warning("profiling event failed: " + e.message)
+
+
+class ManualEvent(InputEvent):
+    """
+    a manual event
+    """
+
+    def __init__(self, event_dict=None):
+        self.event_type = KEY_ManualEvent
+        self.time = time.time()
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
+
+    @staticmethod
+    def get_random_instance(device, app):
+        return None
+
+    def send(self, device):
+        # do nothing
+        pass
+
+    def get_event_str(self, state):
+        return "%s(time=%s)" % (self.__class__.__name__, self.time)
 
 
 class ExitEvent(InputEvent):

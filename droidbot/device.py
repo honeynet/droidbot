@@ -61,6 +61,7 @@ class Device(object):
         self.connected = True
         self.last_know_state = None
         self.__used_ports = []
+        self.pause_sending_event = False
 
         # adapters
         self.adb = ADB(device=self)
@@ -862,3 +863,15 @@ class Device(object):
             return self.get_random_port()
         self.__used_ports.append(port)
         return port
+
+    def handle_rotation(self):
+        if not self.adapters[self.minicap]:
+            return
+        self.pause_sending_event = True
+        if self.minicap.check_connectivity():
+            self.minicap.disconnect()
+            self.minicap.connect()        
+
+        if self.minicap.check_connectivity():
+            print "[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__
+        self.pause_sending_event = False

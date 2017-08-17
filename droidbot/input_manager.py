@@ -88,7 +88,10 @@ class InputManager(object):
 
         event_log = EventLog(self.device, self.app, event, self.profiling_method)
         event_log.start()
-        time.sleep(self.event_interval)
+        while True:
+            time.sleep(self.event_interval)
+            if not self.device.pause_sending_event:
+                break
         event_log.stop()
 
     def start(self):

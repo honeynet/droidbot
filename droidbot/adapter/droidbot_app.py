@@ -133,6 +133,8 @@ class DroidBotAppConn(Adapter):
             if tag == "AccEvent":
                 body = json.loads(message[(tag_index + 5):])
                 self.last_acc_event = body
+            elif tag == "rotation":
+                self.device.handle_rotation()
             else:
                 self.logger.warning("Unhandled message from droidbot app: " + tag)
 

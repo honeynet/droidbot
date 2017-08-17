@@ -106,11 +106,6 @@ class UtgBasedInputPolicy(InputPolicy):
         self.utg = UTG(device=device, app=app)
         self.script_event_idx = 0
 
-        # BEGIN - For debugging. @Minyi
-        self.all_activities = self.app.get_activities()
-        self.explored_activities = set()
-        # END
-
     def generate_event(self):
         """
         generate an event
@@ -119,12 +114,6 @@ class UtgBasedInputPolicy(InputPolicy):
 
         # Get current device state
         self.current_state = self.device.get_current_state()
-
-        # BEGIN - For debugging. @Minyi
-        if self.current_state and self.app.package_name in self.current_state.foreground_activity:
-            self.explored_activities.add(self.current_state.foreground_activity)
-        # END
-
         self.__update_utg()
 
         event = None
@@ -184,8 +173,6 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]
-
-
 
     def generate_event_based_on_utg(self):
         """

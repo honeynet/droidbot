@@ -862,3 +862,8 @@ class Device(object):
             return self.get_random_port()
         self.__used_ports.append(port)
         return port
+
+    def handle_rotation(self):
+        if self.minicap.check_connectivity():
+            self.minicap.disconnect()
+            self.minicap.connect()

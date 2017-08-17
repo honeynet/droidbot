@@ -36,7 +36,7 @@ class Minicap(Adapter):
 
         self.remote_minicap_path = "/data/local/tmp/minicap-devel"
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = None
         self.connected = False
         self.minicap_process = None
         self.banner = None
@@ -111,6 +111,7 @@ class Minicap(Adapter):
             # forward host port to remote port
             forward_cmd = "adb -s %s forward tcp:%d %s" % (device.serial, self.port, MINICAP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.host, self.port))
             import threading
             listen_thread = threading.Thread(target=self.listen_messages)

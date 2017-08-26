@@ -687,7 +687,12 @@ class Device(object):
         else:
             package_name = app
         if package_name in self.adb.get_installed_apps():
-            subprocess.check_call(["adb", "-s", self.serial, "uninstall", package_name], stdout=subprocess.PIPE)
+            uninstall_cmd = ["adb", "-s", self.serial, "uninstall", package_name]
+            uninstall_p = subprocess.Popen(uninstall_cmd, stdout=subprocess.PIPE)
+            while package_name in self.adb.get_installed_apps():
+                print "Please wait while uninstalling the app..."
+                time.sleep(2)
+            uninstall_p.terminate()
 
     def get_app_pid(self, app):
         if isinstance(app, App):

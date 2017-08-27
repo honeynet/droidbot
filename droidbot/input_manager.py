@@ -26,7 +26,8 @@ class InputManager(object):
     This class manages all events to send during app running
     """
 
-    def __init__(self, device, app, policy_name, random_input,
+    def __init__(self, device, app, policy_name,
+                 cv_mode, random_input,
                  event_count, event_interval,
                  script_path=None, profiling_method=None):
         """
@@ -34,6 +35,7 @@ class InputManager(object):
         :param device: instance of Device
         :param app: instance of App
         :param policy_name: policy of generating events, string
+        :param cv_mode: whether run in cv mode
         :return:
         """
         self.logger = logging.getLogger('InputEventManager')

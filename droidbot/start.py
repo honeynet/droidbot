@@ -48,6 +48,8 @@ def parse_args():
     parser.add_argument("-timeout", action="store", dest="timeout", default=input_manager.DEFAULT_TIMEOUT,
                         type=int, help="Timeout in seconds, -1 means unlimited. "
                                        "Default: %d" % input_manager.DEFAULT_TIMEOUT)
+    parser.add_argument("-cv", action="store_true", dest="cv_mode",
+                        help="Use opencv (instead of UIAutomator) to identify UI components. Useful for games.")
     parser.add_argument("-debug", action="store_true", dest="debug_mode",
                         help="Run in debug mode (dump debug messages).")
     parser.add_argument("-random", action="store_true", dest="random_input",
@@ -87,6 +89,7 @@ def main():
                         event_interval=opts.interval,
                         timeout=opts.timeout,
                         event_count=opts.count,
+                        cv_mode=opts.cv_mode,
                         debug_mode=opts.debug_mode,
                         keep_app=opts.keep_app,
                         keep_env=opts.keep_env,

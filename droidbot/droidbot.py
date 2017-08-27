@@ -35,6 +35,7 @@ class DroidBot(object):
                  timeout=None,
                  keep_app=None,
                  keep_env=False,
+                 cv_mode=False,
                  debug_mode=False,
                  profiling_method=None,
                  grant_perm=False):
@@ -84,6 +85,7 @@ class DroidBot(object):
             self.input_manager = InputManager(device=self.device,
                                               app=self.app,
                                               policy_name=policy_name,
+                                              cv_mode=cv_mode,
                                               random_input=random_input,
                                               event_count=event_count,
                                               event_interval=event_interval,

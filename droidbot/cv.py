@@ -1,5 +1,4 @@
-import cv2
-import numpy as numpy
+# https://github.com/hjaurum/DHash/blob/master/dHash.py
 
 def isIntersect(rect1, rect2):
 	"""
@@ -19,10 +18,10 @@ def isIntersect(rect1, rect2):
 		y_intersect = True
 	return x_intersect and y_intersect
 
-def find_possible_view(img):
-	"""
-	:param img: numpy.ndarray, should be a color image
-	"""
+def find_possible_view(img_path):
+	import cv2
+
+	img = cv2.imread(img_path)
 	x_scale = 0.3
 	y_scale = 0.3
 	# resize to smaller image
@@ -113,12 +112,12 @@ def hamming_distance(first, second):
 	"""
 	# A. use dHash value to calculate hamming distance
 	if isinstance(first, str):
-		return DHash.__hamming_distance_with_hash(first, second)
+		return __hamming_distance_with_hash(first, second)
 
 	# B. use numpy.ndarray to calculaet hamming distance
 	hamming_distance = 0
-	image1_difference = DHash.__difference(first)
-	image2_difference = DHash.__difference(second)
+	image1_difference = __difference(first)
+	image2_difference = __difference(second)
 	for index, img1_pix in enumerate(image1_difference):
 		img2_pix = image2_difference[index]
 		if img1_pix != img2_pix:

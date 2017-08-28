@@ -26,7 +26,7 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
-                 grant_perm=False, telnet_auth_token=None):
+                 cv_mode=False, grant_perm=False, telnet_auth_token=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device

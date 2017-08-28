@@ -85,7 +85,6 @@ class DroidBot(object):
             self.input_manager = InputManager(device=self.device,
                                               app=self.app,
                                               policy_name=policy_name,
-                                              cv_mode=cv_mode,
                                               random_input=random_input,
                                               event_count=event_count,
                                               event_interval=event_interval,

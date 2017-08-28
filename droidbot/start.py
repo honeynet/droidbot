@@ -49,7 +49,9 @@ def parse_args():
                         type=int, help="Timeout in seconds, -1 means unlimited. "
                                        "Default: %d" % input_manager.DEFAULT_TIMEOUT)
     parser.add_argument("-cv", action="store_true", dest="cv_mode",
-                        help="Use opencv (instead of UIAutomator) to identify UI components. Useful for games.")
+                        help="Use OpenCV (instead of UIAutomator) to identify UI components. "
+                             "CV mode requires opencv-python installed (see http://docs.opencv.org/) "
+                             "and an output dir specified (use -o option).")
     parser.add_argument("-debug", action="store_true", dest="debug_mode",
                         help="Run in debug mode (dump debug messages).")
     parser.add_argument("-random", action="store_true", dest="random_input",
@@ -75,8 +77,10 @@ def main():
     opts = parse_args()
     import os
     if not os.path.exists(opts.apk_path):
-        print "apk not exist"
+        print "APK does not exist."
         return
+    if not opts.output_dir and opts.cv_mode:
+        print "To run in CV mode, you need to specify an output dir (using -o option)."
 
     droidbot = DroidBot(app_path=opts.apk_path,
                         device_serial=opts.device_serial,

@@ -42,6 +42,7 @@ class Minicap(Adapter):
         self.banner = None
         self.last_screen = None
         self.last_screen_time = None
+        self.last_views = []
 
     def set_up(self):
         device = self.device
@@ -200,7 +201,8 @@ class Minicap(Adapter):
             self.logger.warning("Frame body does not start with JPG header")
         self.last_screen = frameBody
         self.last_screen_time = datetime.now()
-        # print "Got an image at %s" % self.last_screen_time
+        self.last_views = None
+        self.logger.debug("Received an image at %s" % self.last_screen_time)
 
     def check_connectivity(self):
         """
@@ -234,8 +236,33 @@ class Minicap(Adapter):
         except Exception as e:
             print e.message
 
+    def get_views(self):
+        """
+        get UI views using cv module
+        opencv-python need to be installed for this function
+        :return: a list of views
+        """
+        if not self.last_screen:
+            self.logger.warning("last_screen is None")
+            return None
+        if self.last_views:
+            return self.last_views
+        from droidbot import cv
+        img = cv.load_image_from_bytes(self.last_screen)
+        view_bounds = cv.find_views(img)
+        views = []
+        for x,y,w,h in view_bounds:
+            view = {
+                "class": "CVView",
+                "bounds": [[x,y], [x+w, y+h]]
+            }
+            views.append(view)
+        self.last_views = views
+        return views
+
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     minicap = Minicap()
     try:
         minicap.connect()

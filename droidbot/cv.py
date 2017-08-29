@@ -24,14 +24,33 @@ def _intersect(rect1, rect2):
     return x_intersect and y_intersect
 
 
-def find_views(img_path):
+def load_image_from_path(img_path):
+    """
+    Load an image from path
+    :param img_path: The path to the image
+    :return:
+    """
+    import cv2
+    return cv2.imread(img_path)
+
+
+def load_image_from_bytes(img_bytes):
+    """
+    Load an image from a byte array
+    :param img_bytes: The byte array of an image
+    :return:
+    """
+    import cv2
+    return cv2.imdecode(img_bytes, None)
+
+
+def find_views(img):
     """
     Find rectangular views given a UI screenshot
-    :param img_path: The path to the screenshot image
+    :param img: numpy.ndarray, representing an image in opencv
     :return: a list of rectangles, each of which is a tuple (x,y,w,h) representing an identified UI view.
     """
     import cv2
-    img = cv2.imread(img_path)
     x_scale = 0.3
     y_scale = 0.3
     # resize to a smaller image

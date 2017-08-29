@@ -76,6 +76,7 @@ class DroidBot(object):
         try:
             self.device = Device(device_serial=device_serial,
                                  output_dir=self.output_dir,
+                                 cv_mode=cv_mode,
                                  grant_perm=grant_perm)
             self.app = App(app_path, output_dir=self.output_dir)
 

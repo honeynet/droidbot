@@ -44,6 +44,7 @@ class Device(object):
             device_serial = all_devices[0]
         self.serial = device_serial
         self.is_emulator = is_emulator
+        self.cv_mode = cv_mode
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
@@ -762,9 +763,9 @@ class Device(object):
         if not os.path.exists(local_image_dir):
             os.mkdir(local_image_dir)
 
-        if self.minicap is not None:
+        if self.minicap:
             last_screen = self.minicap.last_screen
-            if last_screen is not None:
+            if last_screen:
                 local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
                 f = open(local_image_path, 'w')
                 f.write(last_screen)
@@ -846,10 +847,19 @@ class Device(object):
         self.adb.press(key_code)
 
     def get_views(self):
+        if self.cv_mode and self.adapters[self.minicap]:
+            # Get views using cv module
+            views = self.minicap.get_views()
+            if views:
+                return views
+            else:
+                self.logger.warning("Failed to get views using OpenCV.")
         if self.droidbot_app and self.adapters[self.droidbot_app]:
             views = self.droidbot_app.get_views()
             if views:
                 return views
+            else:
+                self.logger.warning("Failed to get views using Accessibility.")
 
         self.logger.warning("failed to get current views!")
         return None

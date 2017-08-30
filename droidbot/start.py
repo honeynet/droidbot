@@ -50,8 +50,7 @@ def parse_args():
                                        "Default: %d" % input_manager.DEFAULT_TIMEOUT)
     parser.add_argument("-cv", action="store_true", dest="cv_mode",
                         help="Use OpenCV (instead of UIAutomator) to identify UI components. "
-                             "CV mode requires opencv-python installed (see http://docs.opencv.org/) "
-                             "and an output dir specified (use -o option).")
+                             "CV mode requires opencv-python installed.")
     parser.add_argument("-debug", action="store_true", dest="debug_mode",
                         help="Run in debug mode (dump debug messages).")
     parser.add_argument("-random", action="store_true", dest="random_input",

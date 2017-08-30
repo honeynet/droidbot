@@ -25,6 +25,7 @@ DroidBot has the following advantages as compared with other input generators:
 2. `Java` version `1.7`
 3. `Android SDK`
 4. Add `platform_tools` directory in Android SDK to `PATH`
+5. (Optional) `OpenCV-Python` if you want to run DroidBot in cv mode.
 
 ## How to install
 
@@ -55,6 +56,7 @@ If successfully installed, you should be able to execute `droidbot -h`.
     + On some devices, you may need to manually turn on accessibility service for DroidBot (required by DroidBot to get current view hierarchy).
     + If you want to test a large scale of apps, you may want to add `-keep_env` option to avoid re-installing the test environment every time.
     + You can also use a json-format script to customize input for certain states. Here are some [script samples](script_samples/). Simply use `-script <path_to_script.json>` to use DroidBot with a script.
+    + If your apps do not support getting views through Accessibility (e.g., most games based on Cocos2d, Unity3d), you may find `-cv` option helpful.
     + You may find other useful features in `droidbot -h`.
 
 ## Evaluation

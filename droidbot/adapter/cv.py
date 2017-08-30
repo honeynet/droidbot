@@ -105,12 +105,12 @@ def find_views(img):
         for x, y, w, h, len_approx in rectangle_list]
 
     # For debugging, show the image
-    print result_rectangles
-    for x, y, w, h, len_approx in rectangle_list:
-        cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 5)
-    cv2.imshow('image', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # print result_rectangles
+    # for x, y, w, h, len_approx in rectangle_list:
+    #     cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 5)
+    # cv2.imshow('image', img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     return result_rectangles
 

@@ -34,14 +34,16 @@ def load_image_from_path(img_path):
     return cv2.imread(img_path)
 
 
-def load_image_from_bytes(img_bytes):
+def load_image_from_buf(img_bytes):
     """
     Load an image from a byte array
     :param img_bytes: The byte array of an image
     :return:
     """
     import cv2
-    return cv2.imdecode(img_bytes, None)
+    import numpy
+    img_bytes = numpy.array(img_bytes)
+    return cv2.imdecode(img_bytes, cv2.IMREAD_UNCHANGED)
 
 
 def find_views(img):
@@ -98,10 +100,19 @@ def find_views(img):
         if should_append:
             rectangle_list.append(new_rectangle)
 
-    result_rectangle = [
+    result_rectangles = [
         (int(float(x)/x_scale), int(float(y)/y_scale), int(float(w)/x_scale), int(float(h)/y_scale))
         for x, y, w, h, len_approx in rectangle_list]
-    return result_rectangle
+
+    # For debugging, show the image
+    print result_rectangles
+    for x, y, w, h, len_approx in rectangle_list:
+        cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 5)
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    return result_rectangles
 
 
 def calculate_dhash(img):

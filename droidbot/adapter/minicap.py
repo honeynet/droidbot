@@ -40,6 +40,10 @@ class Minicap(Adapter):
         self.connected = False
         self.minicap_process = None
         self.banner = None
+        self.width = -1
+        self.height = -1
+        self.orientation = -1
+
         self.last_screen = None
         self.last_screen_time = None
         self.last_views = []
@@ -95,16 +99,21 @@ class Minicap(Adapter):
             w = h
             h = temp
         o = display['orientation'] * 90
+        self.width = w
+        self.height = h
+        self.orientation = o
 
         size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
+        grant_minicap_perm_cmd = "adb -s %s shell chmod -R a+x %s" % \
+                                 (device.serial, self.remote_minicap_path)
         start_minicap_cmd = "adb -s %s shell LD_LIBRARY_PATH=%s %s/minicap -P %s" % \
                             (device.serial, self.remote_minicap_path, self.remote_minicap_path, size_opt)
         self.logger.debug("starting minicap: " + start_minicap_cmd)
+        subprocess.check_call(grant_minicap_perm_cmd.split(),
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self.minicap_process = subprocess.Popen(start_minicap_cmd.split(),
-                                                stdin=subprocess.PIPE,
-                                                stderr=subprocess.PIPE,
-                                                stdout=subprocess.PIPE)
-        # Wait 2 seconds for minicap starting
+                                                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        # Wait 2 seconds for starting minicap
         time.sleep(2)
         self.logger.debug("minicap started.")
 
@@ -247,16 +256,31 @@ class Minicap(Adapter):
             return None
         if self.last_views:
             return self.last_views
-        from droidbot import cv
-        img = cv.load_image_from_bytes(self.last_screen)
+
+        import cv
+        img = cv.load_image_from_buf(self.last_screen)
         view_bounds = cv.find_views(img)
-        views = []
+        root_view = {
+            "class": "CVViewRoot",
+            "bounds": [[0, 0], [self.width, self.height]],
+            "enabled": True,
+            "temp_id": 0
+        }
+        views = [root_view]
+        temp_id = 1
         for x,y,w,h in view_bounds:
             view = {
                 "class": "CVView",
-                "bounds": [[x,y], [x+w, y+h]]
+                "bounds": [[x,y], [x+w, y+h]],
+                "enabled": True,
+                "temp_id": temp_id,
+                "signature": cv.calculate_dhash(img[y:y+h, x:x+w]),
+                "parent": 0
             }
             views.append(view)
+            temp_id += 1
+        root_view["children"] = range(1, temp_id)
+
         self.last_views = views
         return views
 
@@ -265,7 +289,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     minicap = Minicap()
     try:
+        minicap.set_up()
         minicap.connect()
     except:
         minicap.disconnect()
+        minicap.tear_down()
         minicap.device.disconnect()

@@ -25,7 +25,7 @@ class Device(object):
     this class describes a connected device
     """
 
-    def __init__(self, device_serial=None, is_emulator=True, output_dir=None,
+    def __init__(self, device_serial=None, is_emulator=False, output_dir=None,
                  cv_mode=False, grant_perm=False, telnet_auth_token=None):
         """
         initialize a device connection
@@ -85,8 +85,10 @@ class Device(object):
             self.droidbot_ime: True
         }
 
-        # if self.is_emulator:
-        #     self.telnet_enabled = True
+        # minicap currently not working on emulators
+        if self.is_emulator:
+            self.logger.info("disable minicap on emulator")
+            self.adapters[self.minicap] = False
 
     def check_connectivity(self):
         """
@@ -763,20 +765,19 @@ class Device(object):
         if not os.path.exists(local_image_dir):
             os.mkdir(local_image_dir)
 
-        if self.minicap:
-            last_screen = self.minicap.last_screen
-            if last_screen:
-                local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
-                f = open(local_image_path, 'w')
-                f.write(last_screen)
-                f.close()
-                return local_image_path
-
-        local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
-        remote_image_path = "/sdcard/screen_%s.png" % tag
-        self.adb.shell("screencap -p %s" % remote_image_path)
-        self.pull_file(remote_image_path, local_image_path)
-        self.adb.shell("rm %s" % remote_image_path)
+        if self.adapters[self.minicap] and self.minicap.last_screen:
+            # minicap use jpg format
+            local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
+            with open(local_image_path, 'w') as local_image_file:
+                local_image_file.write(self.minicap.last_screen)
+            return local_image_path
+        else:
+            # screencap use png format
+            local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
+            remote_image_path = "/sdcard/screen_%s.png" % tag
+            self.adb.shell("screencap -p %s" % remote_image_path)
+            self.pull_file(remote_image_path, local_image_path)
+            self.adb.shell("rm %s" % remote_image_path)
 
         return local_image_path
 

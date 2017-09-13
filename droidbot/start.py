@@ -63,6 +63,8 @@ def parse_args():
                         help="Record method trace for each event. can be \"full\" or a sampling rate.")
     parser.add_argument("-grant_perm", action="store_true", dest="grant_perm",
                         help="Grant all permissions while installing. Useful for Android 6.0+.")
+    parser.add_argument("-is_emulator", action="store_true", dest="is_emulator",
+                        help="Declare the target device to be an emulator, which would be treated specially by DroidBot.")
     options = parser.parse_args()
     # print options
     return options
@@ -83,6 +85,7 @@ def main():
 
     droidbot = DroidBot(app_path=opts.apk_path,
                         device_serial=opts.device_serial,
+                        is_emulator=opts.is_emulator,
                         output_dir=opts.output_dir,
                         # env_policy=opts.env_policy,
                         env_policy=env_manager.POLICY_NONE,

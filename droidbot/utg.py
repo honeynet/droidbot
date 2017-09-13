@@ -127,7 +127,10 @@ class UTG(object):
             for event_id, event in zip(event_ids, events):
                 event_str = event.get_event_str(self.G.node[from_state]['state'])
                 event_short_descs.append((event_id, event_str))
-                view_images = ["views/view_" + view['view_str'] + ".png" for view in event.get_views()]
+                if self.device.minicap:
+                    view_images = ["views/view_" + view['view_str'] + ".jpg" for view in event.get_views()]
+                else:
+                    view_images = ["views/view_" + view['view_str'] + ".png" for view in event.get_views()]
                 event_list.append({
                     "event_str": event_str,
                     "event_id": event_id,

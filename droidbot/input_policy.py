@@ -18,6 +18,15 @@ EVENT_FLAG_EXPLORE = "+explore"
 EVENT_FLAG_NAVIGATE = "+navigate"
 EVENT_FLAG_TOUCH = "+touch"
 
+# Policy taxanomy
+POLICY_NAIVE_DFS = "dfs_naive"
+POLICY_GREEDY_DFS = "dfs_greedy"
+POLICY_NAIVE_BFS = "bfs_naive"
+POLICY_GREEDY_BFS = "bfs_greedy"
+POLICY_MANUAL = "manual"
+POLICY_MONKEY = "monkey"
+POLICY_NONE = "none"
+
 
 class InputInterruptedException(Exception):
     pass
@@ -154,18 +163,19 @@ class UtgBasedInputPolicy(InputPolicy):
         pass
 
 
-class UtgDfsPolicy1(UtgBasedInputPolicy):
+class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
     """
     depth-first strategy to explore UFG (old)
     """
 
-    def __init__(self, device, app, random_input):
-        super(UtgDfsPolicy1, self).__init__(device, app)
+    def __init__(self, device, app, random_input, search_method):
+        super(UtgNaiveSearchPolicy, self).__init__(device, app)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.explored_views = set()
         self.state_transitions = set()
         self.random_input = random_input
+        self.search_method = search_method
 
         self.last_event_flag = ""
         self.last_event_str = None
@@ -222,7 +232,7 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
 
         self.last_event_flag += EVENT_FLAG_TOUCH
         self.last_event_str = view_to_touch_str
-        self.save_explored_view(self.last_state, self.last_event_str)
+        self.save_explored_view(self.current_state, self.last_event_str)
         return result
 
     def select_a_view(self, state):
@@ -239,10 +249,13 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
         if self.random_input:
             random.shuffle(views)
 
-        # add a "BACK" view, consider go back last
+        # add a "BACK" view, consider go back first/last according to search policy
         mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
                           'text': 'BACK_%s' % state.foreground_activity}
-        views.append(mock_view_back)
+        if self.search_method == POLICY_NAIVE_DFS:
+            views.append(mock_view_back)
+        elif self.search_method == POLICY_NAIVE_BFS:
+            views.insert(0, mock_view_back)
 
         # first try to find a preferable view
         for view in views:
@@ -303,15 +316,16 @@ class UtgDfsPolicy1(UtgBasedInputPolicy):
         self.explored_views.add((state_activity, view_str))
 
 
-class UtgDfsPolicy(UtgBasedInputPolicy):
+class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     """
     depth-first strategy to explore UFG (new)
     """
 
-    def __init__(self, device, app, random_input):
-        super(UtgDfsPolicy, self).__init__(device, app)
+    def __init__(self, device, app, random_input, search_method):
+        super(UtgGreedySearchPolicy, self).__init__(device, app)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.random_input = random_input
+        self.search_method = search_method
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",
                                   "allow", "check", "agree", "try", "go", "next"]

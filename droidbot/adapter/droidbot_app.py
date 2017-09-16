@@ -9,6 +9,8 @@ DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
 ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.accessibility.PSAccessibilityService"
 
+MAX_NUM_GET_VIEWS = 5
+GET_VIEW_WAIT_TIME = 1
 
 class DroidBotAppConnException(Exception):
     """
@@ -37,8 +39,7 @@ class DroidBotAppConn(Adapter):
         self.connected = False
         self.__can_wait = True
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.sock = None
         self.last_acc_event = None
 
     def set_up(self):
@@ -65,6 +66,7 @@ class DroidBotAppConn(Adapter):
         self.device.uninstall_app(DROIDBOT_APP_PACKAGE)
 
     def connect(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             # forward host port to remote port
             serial_cmd = "" if self.device is None else "-s " + self.device.serial
@@ -76,7 +78,7 @@ class DroidBotAppConn(Adapter):
             listen_thread.start()
         except socket.error as ex:
             self.connected = False
-            self.logger.warning(ex.message)
+            self.logger.warning(ex)
             raise DroidBotAppConnException()
 
     def listen_messages(self):
@@ -86,44 +88,52 @@ class DroidBotAppConn(Adapter):
         message_len = 0
         message = ""
         self.connected = True
-        while self.connected:
-            chunk = self.sock.recv(CHUNK_SIZE)
-            # print chunk
-            if not chunk:
-                continue
-            chunk_len = len(chunk)
-            cursor = 0
-            while cursor < chunk_len and self.connected:
-                b = ord(chunk[cursor])
-                if read_message_bytes == 0:
-                    if b != 0xff:
-                        continue
-                elif read_message_bytes == 1:
-                    if b != 0x00:
-                        continue
-                elif read_message_bytes < 6:
-                    message_len += b << ((5 - read_message_bytes) * 8)
-                    # if read_message_bytes == 5:
-                    #     print "received a message with a length of %d" % message_len
-                else:
-                    if chunk_len - cursor >= message_len:
-                        message += chunk[cursor:(cursor + message_len)]
-                        # print "received a message:"
-                        # print message
-                        self.handle_message(message)
-                        cursor += message_len
-                        message_len = 0
-                        read_message_bytes = 0
-                        message = ""
-                        continue
+        try:
+            while self.connected:
+                chunk = self.sock.recv(CHUNK_SIZE)
+                # print chunk
+                if not chunk:
+                    continue
+                chunk_len = len(chunk)
+                cursor = 0
+                while cursor < chunk_len and self.connected:
+                    b = ord(chunk[cursor])
+                    if read_message_bytes == 0:
+                        if b != 0xff:
+                            continue
+                    elif read_message_bytes == 1:
+                        if b != 0x00:
+                            continue
+                    elif read_message_bytes < 6:
+                        message_len += b << ((5 - read_message_bytes) * 8)
+                        # if read_message_bytes == 5:
+                        #     print "received a message with a length of %d" % message_len
                     else:
-                        message += chunk[cursor:]
-                        message_len -= (chunk_len - cursor)
-                        read_message_bytes += (chunk_len - cursor)
-                        break
-                read_message_bytes += 1
-                cursor += 1
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+                        if chunk_len - cursor >= message_len:
+                            message += chunk[cursor:(cursor + message_len)]
+                            # print "received a message:"
+                            # print message
+                            self.handle_message(message)
+                            cursor += message_len
+                            message_len = 0
+                            read_message_bytes = 0
+                            message = ""
+                            continue
+                        else:
+                            message += chunk[cursor:]
+                            message_len -= (chunk_len - cursor)
+                            read_message_bytes += (chunk_len - cursor)
+                            break
+                    read_message_bytes += 1
+                    cursor += 1
+            print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        except Exception as ex:
+            self.logger.warning(ex)
+            self.logger.warning("Restarting droidbot app")
+            # clear self.last_acc_event
+            self.last_acc_event = None
+            self.disconnect()
+            self.connect()
 
     def handle_message(self, message):
         # print message
@@ -137,6 +147,7 @@ class DroidBotAppConn(Adapter):
                 self.device.handle_rotation()
             else:
                 self.logger.warning("Unhandled message from droidbot app: " + tag)
+                raise DroidBotAppConnException()
 
     def check_connectivity(self):
         """
@@ -185,9 +196,14 @@ class DroidBotAppConn(Adapter):
         view_tree['children'] = children_ids
 
     def get_views(self):
-        if not self.last_acc_event:
-            self.logger.warning("last_acc_event is None")
-            return None
+        get_views_times = 0
+        while not self.last_acc_event:
+            self.logger.warning("last_acc_event is None, waiting")
+            get_views_times += 1
+            if get_views_times > MAX_NUM_GET_VIEWS:
+                self.logger.warning("cannot get non-None last_acc_event")
+                return None
+            time.sleep(GET_VIEW_WAIT_TIME)
 
         if 'view_list' in self.last_acc_event:
             return self.last_acc_event['view_list']

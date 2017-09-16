@@ -206,6 +206,8 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
             if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
                 # It seems the app stuck at some state, and cannot be started
                 # just pass to let viewclient deal with this case
+                self.logger.info("The app had been restarted %d times.", number_of_starts)
+                self.logger.info("Trying to restart app...")
                 pass
             else:
                 start_app_intent = self.app.get_start_intent()
@@ -343,6 +345,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         @return: InputEvent
         """
         current_state = self.current_state
+        self.logger.info("Current state: %s" % current_state.state_str)
         if current_state.state_str in self.__missed_states:
             self.__missed_states.remove(current_state.state_str)
 
@@ -350,22 +353,33 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             # If the app is not in the activity stack
             start_app_intent = self.app.get_start_intent()
 
+            # It seems the app stucks at some state, has been
+            # 1) force stopped (START, STOP)
+            #    just start the app again by increasing self.__num_restarts
+            # 2) started at least once and cannot be started (START)
+            #    pass to let viewclient deal with this case
+            # 3) nothing
+            #    a normal start. clear self.__num_restarts.
+
             if self.__event_trace.endswith(EVENT_FLAG_START_APP + EVENT_FLAG_STOP_APP) \
                     or self.__event_trace.endswith(EVENT_FLAG_START_APP):
                 self.__num_restarts += 1
+                self.logger.info("The app had been restarted %d times.", self.__num_restarts)
             else:
                 self.__num_restarts = 0
 
-            if self.__num_restarts > MAX_NUM_RESTARTS:
-                # If the app had been restarted too many times, abort
-                msg = "The app had been restarted too many times."
-                self.logger.info(msg)
-                raise InputInterruptedException(msg)
-            else:
-                # Start the app
-                self.__event_trace += EVENT_FLAG_START_APP
-                self.logger.info("Trying to start the app...")
-                return IntentEvent(intent=start_app_intent)
+            # pass (START) through
+            if not self.__event_trace.endswith(EVENT_FLAG_START_APP):
+                if self.__num_restarts > MAX_NUM_RESTARTS:
+                    # If the app had been restarted too many times, abort
+                    msg = "The app had been restarted too many times."
+                    self.logger.info(msg)
+                    raise InputInterruptedException(msg)
+                else:
+                    # Start the app
+                    self.__event_trace += EVENT_FLAG_START_APP
+                    self.logger.info("Trying to start the app...")
+                    return IntentEvent(intent=start_app_intent)
 
         elif current_state.get_app_activity_depth(self.app) > 0:
             # If the app is in activity stack but is not in foreground

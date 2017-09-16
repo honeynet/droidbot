@@ -387,6 +387,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         if self.random_input:
             random.shuffle(possible_events)
 
+        if self.search_method == POLICY_GREEDY_DFS:
+            possible_events.append(KeyEvent(name="BACK"))
+        elif self.search_method == POLICY_GREEDY_BFS:
+            possible_events.insert(0, KeyEvent(name="BACK"))
+
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):

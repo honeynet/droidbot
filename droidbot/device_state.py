@@ -355,7 +355,7 @@ class DeviceState(object):
         :return: list of InputEvent
         """
         if self.possible_events:
-            return self.possible_events
+            return [] + self.possible_events
         possible_events = []
         enabled_view_ids = []
         touch_exclude_view_ids = set()
@@ -401,7 +401,5 @@ class DeviceState(object):
                 continue
             possible_events.append(TouchEvent(view=self.views[view_id]))
 
-        possible_events.append(KeyEvent(name="BACK"))
-
         self.possible_events = possible_events
-        return possible_events
+        return [] + possible_events

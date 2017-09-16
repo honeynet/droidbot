@@ -4,14 +4,13 @@ import subprocess
 import time
 
 from input_event import EventLog
-from input_policy import UtgBasedInputPolicy, UtgDfsPolicy, ManualPolicy
+from input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySearchPolicy, \
+                         ManualPolicy, \
+                         POLICY_NAIVE_DFS, POLICY_GREEDY_DFS, \
+                         POLICY_NAIVE_BFS, POLICY_GREEDY_BFS, \
+                         POLICY_MANUAL, POLICY_MONKEY, POLICY_NONE
 
-POLICY_NONE = "none"
-POLICY_MONKEY = "monkey"
-POLICY_DFS = "dfs"
-POLICY_MANUAL = "manual"
-
-DEFAULT_POLICY = POLICY_DFS
+DEFAULT_POLICY = POLICY_GREEDY_DFS
 DEFAULT_EVENT_INTERVAL = 1
 DEFAULT_EVENT_COUNT = 1000
 DEFAULT_TIMEOUT = -1
@@ -67,11 +66,14 @@ class InputManager(object):
             input_policy = None
         elif self.policy_name == POLICY_MONKEY:
             input_policy = None
-        elif self.policy_name == POLICY_DFS:
-            input_policy = UtgDfsPolicy(device, app, self.random_input)
+        elif self.policy_name in [POLICY_NAIVE_DFS, POLICY_NAIVE_BFS]:
+            input_policy = UtgNaiveSearchPolicy(device, app, self.random_input, self.policy_name)
+        elif self.policy_name in [POLICY_GREEDY_DFS, POLICY_GREEDY_BFS]:
+            input_policy = UtgGreedySearchPolicy(device, app, self.random_input, self.policy_name)
         elif self.policy_name == POLICY_MANUAL:
             input_policy = ManualPolicy(device, app)
         else:
+            self.logger.warning("No valid input policy specified. Using policy \"none\".")
             input_policy = None
         if isinstance(input_policy, UtgBasedInputPolicy):
             input_policy.script = self.script

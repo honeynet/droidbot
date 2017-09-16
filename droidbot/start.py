@@ -2,6 +2,7 @@
 # it parses command arguments and send the options to droidbot
 import argparse
 import input_manager
+import input_policy
 import env_manager
 from droidbot import DroidBot
 
@@ -30,12 +31,18 @@ def parse_args():
                              'Default: %s.\nSupported policies:\n' % input_manager.DEFAULT_POLICY +
                              '  \"%s\" -- No event will be sent, user should interact manually with device; \n'
                              '  \"%s\" -- Use "adb shell monkey" to send events; \n'
-                             '  \"%s\" -- Explore UI using a depth-first strategy.\n'
+                             '  \"%s\" -- Explore UI using a naive depth-first strategy;\n'
+                             '  \"%s\" -- Explore UI using a greedy depth-first strategy;\n'
+                             '  \"%s\" -- Explore UI using a naive breadth-first strategy;\n'
+                             '  \"%s\" -- Explore UI using a greedy breadth-first strategy;\n'
                              %
                              (
-                                 input_manager.POLICY_NONE,
-                                 input_manager.POLICY_MONKEY,
-                                 input_manager.POLICY_DFS,
+                                 input_policy.POLICY_NONE,
+                                 input_policy.POLICY_MONKEY,
+                                 input_policy.POLICY_NAIVE_DFS,
+                                 input_policy.POLICY_GREEDY_DFS,
+                                 input_policy.POLICY_NAIVE_BFS,
+                                 input_policy.POLICY_GREEDY_DFS,
                              ))
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")

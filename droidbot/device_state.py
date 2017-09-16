@@ -131,7 +131,7 @@ class DeviceState(object):
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             dest_state_json_path = "%s/state_%s.json" % (output_dir, self.tag)
-            if self.device.minicap:
+            if self.device.adapters[self.device.minicap]:
                 dest_screenshot_path = "%s/screen_%s.jpg" % (output_dir, self.tag)
             else:
                 dest_screenshot_path = "%s/screen_%s.png" % (output_dir, self.tag)
@@ -157,7 +157,7 @@ class DeviceState(object):
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
             view_str = view_dict['view_str']
-            if self.device.minicap:
+            if self.device.adapters[self.device.minicap]:
                 view_file_path = "%s/view_%s.jpg" % (output_dir, view_str)
             else:
                 view_file_path = "%s/view_%s.png" % (output_dir, view_str)

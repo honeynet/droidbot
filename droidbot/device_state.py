@@ -1,6 +1,6 @@
 import math
 import os
-
+import json
 import utils
 from input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent
 
@@ -82,12 +82,18 @@ class DeviceState(object):
         return utils.md5(state_str_raw)
 
     def __get_state_str_raw(self):
-        view_signatures = set()
+        ret_str = self.foreground_activity
+        old_bounds = ""
         for view in self.views:
+            # always select the most inner one when
+            # there are same bounds
+            view_bounds = json.dumps(view['bounds'])
             view_signature = DeviceState.__get_view_signature(view)
-            if view_signature:
-                view_signatures.add(view_signature)
-        return "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+            if old_bounds != view_bounds:
+                if len(old_bounds):
+                    ret_str += "{%s,%s}" % (view_signature, old_bounds)
+                old_bounds = view_bounds
+        return ret_str
 
     def __get_content_free_state_str(self):
         view_signatures = set()

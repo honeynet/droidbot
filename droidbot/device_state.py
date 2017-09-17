@@ -167,8 +167,11 @@ class DeviceState(object):
             # Load the original image:
             view_bound = view_dict['bounds']
             original_img = Image.open(self.screenshot_path)
-            view_img = original_img.crop((view_bound[0][0], view_bound[0][1],
-                                          view_bound[1][0], view_bound[1][1]))
+            # view bound should be in original image bound
+            view_img = original_img.crop((min(original_img.width - 1, max(0, view_bound[0][0])),
+                                          min(original_img.height - 1, max(0, view_bound[0][1])),
+                                          min(original_img.width, max(0, view_bound[1][0])),
+                                          min(original_img.height, max(0, view_bound[1][1]))))
             view_img.save(view_file_path)
         except Exception as e:
             self.device.logger.warning("saving view to dir failed: " + e.message)

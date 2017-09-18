@@ -3,10 +3,12 @@ import socket
 import subprocess
 import time
 import json
+import struct
 from adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
+DROIDBOT_APP_PACKET_HEAD_LEN = 6
 ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.accessibility.PSAccessibilityService"
 
 MAX_NUM_GET_VIEWS = 5
@@ -18,6 +20,11 @@ class DroidBotAppConnException(Exception):
     """
     pass
 
+class EOF(Exception):
+    """
+    Exception in telnet connection
+    """
+    pass
 
 class DroidBotAppConn(Adapter):
     """
@@ -81,51 +88,29 @@ class DroidBotAppConn(Adapter):
             self.logger.warning(ex)
             raise DroidBotAppConnException()
 
+    def sock_read(self, rest_len):
+        buf = ''
+        while rest_len:
+            pkt = self.sock.recv(rest_len)
+            if not pkt: raise EOF()
+            buf += pkt
+            rest_len -= len(pkt)
+        return buf
+
+    def read_head(self):
+        header = self.sock_read(DROIDBOT_APP_PACKET_HEAD_LEN)
+        data = struct.unpack(">BBI", header)
+        return data
+
     def listen_messages(self):
         self.logger.debug("start listening messages")
-        CHUNK_SIZE = 1024
-        read_message_bytes = 0
         message_len = 0
-        message = ""
         self.connected = True
         try:
             while self.connected:
-                chunk = self.sock.recv(CHUNK_SIZE)
-                # print chunk
-                if not chunk:
-                    continue
-                chunk_len = len(chunk)
-                cursor = 0
-                while cursor < chunk_len and self.connected:
-                    b = ord(chunk[cursor])
-                    if read_message_bytes == 0:
-                        if b != 0xff:
-                            continue
-                    elif read_message_bytes == 1:
-                        if b != 0x00:
-                            continue
-                    elif read_message_bytes < 6:
-                        message_len += b << ((5 - read_message_bytes) * 8)
-                        # if read_message_bytes == 5:
-                        #     print "received a message with a length of %d" % message_len
-                    else:
-                        if chunk_len - cursor >= message_len:
-                            message += chunk[cursor:(cursor + message_len)]
-                            # print "received a message:"
-                            # print message
-                            self.handle_message(message)
-                            cursor += message_len
-                            message_len = 0
-                            read_message_bytes = 0
-                            message = ""
-                            continue
-                        else:
-                            message += chunk[cursor:]
-                            message_len -= (chunk_len - cursor)
-                            read_message_bytes += (chunk_len - cursor)
-                            break
-                    read_message_bytes += 1
-                    cursor += 1
+                _, _, message_len = self.read_head()
+                message = self.sock_read(message_len)
+                self.handle_message(message)
             print "[CONNECTION] %s is disconnected" % self.__class__.__name__
         except Exception as ex:
             self.logger.warning(ex)
@@ -136,18 +121,23 @@ class DroidBotAppConn(Adapter):
             self.connect()
 
     def handle_message(self, message):
-        # print message
-        tag_index = message.find(" >>> ")
-        if tag_index != -1:
-            tag = message[:tag_index]
-            if tag == "AccEvent":
-                body = json.loads(message[(tag_index + 5):])
-                self.last_acc_event = body
-            elif tag == "rotation":
-                self.device.handle_rotation()
-            else:
-                self.logger.warning("Unhandled message from droidbot app: " + tag)
-                raise DroidBotAppConnException()
+        acc_event_idx = message.find("AccEvent >>> ")
+        if acc_event_idx >= 0:
+            if acc_event_idx > 0:
+                self.logger.warning("Invalid data before packet head: " + message[:acc_event_idx])
+            body = json.loads(message[acc_event_idx + len("AccEvent >>> "):])
+            self.last_acc_event = body
+            return
+
+        rotation_idx = message.find("rotation >>> ")
+        if rotation_idx >= 0:
+            if rotation_idx > 0:
+                self.logger.warning("Invalid data before packet head: " + message[:rotation_idx])
+            self.device.handle_rotation()
+            return
+
+        self.logger.warning("Unhandled message from droidbot app: " + message)
+        raise DroidBotAppConnException()
 
     def check_connectivity(self):
         """

@@ -1,9 +1,11 @@
-import networkx as nx
 import logging
 import json
 import os
+import random
 import utils
 import datetime
+
+import networkx as nx
 
 
 class UTG(object):
@@ -11,10 +13,11 @@ class UTG(object):
     UI transition graph
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, random_input):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
+        self.random_input = random_input
 
         self.G = nx.DiGraph()
 
@@ -44,16 +47,24 @@ class UTG(object):
 
         if old_state.state_str == new_state.state_str:
             self.ineffective_event_strs.add(event_str)
+            # delete the transitions including the event from utg
+            for new_state_str in self.G[old_state.state_str]:
+                if event_str in self.G[old_state.state_str][new_state_str]["events"]:
+                    self.G[old_state.state_str][new_state.state_str]["events"].pop(event_str)
+            if event_str in self.effective_event_strs:
+                self.effective_event_strs.remove(event_str)
             return
 
         self.effective_event_strs.add(event_str)
         self.effective_event_count += 1
 
         if (old_state.state_str, new_state.state_str) not in self.G.edges():
-            self.G.add_edge(old_state.state_str, new_state.state_str, events=[], event_ids=[])
+            self.G.add_edge(old_state.state_str, new_state.state_str, events={})
 
-        self.G[old_state.state_str][new_state.state_str]['events'].append(event)
-        self.G[old_state.state_str][new_state.state_str]['event_ids'].append(self.effective_event_count)
+        self.G[old_state.state_str][new_state.state_str]["events"][event_str] = {
+            "event": event,
+            "id": self.effective_event_count
+        }
         self.last_state_str = new_state.state_str
         self.last_transition = (old_state.state_str, new_state.state_str)
         self.__output_utg()
@@ -80,7 +91,7 @@ class UTG(object):
         utg_nodes = []
         utg_edges = []
         for state_str in self.G.nodes():
-            state = self.G.node[state_str]['state']
+            state = self.G.node[state_str]["state"]
             package_name = state.foreground_activity.split("/")[0]
             activity_name = state.foreground_activity.split("/")[1]
             short_activity_name = activity_name.split(".")[-1]
@@ -119,22 +130,20 @@ class UTG(object):
             from_state = state_transition[0]
             to_state = state_transition[1]
 
-            events = self.G[from_state][to_state]['events']
-            event_ids = self.G[from_state][to_state]['event_ids']
+            events = self.G[from_state][to_state]["events"]
             event_short_descs = []
             event_list = []
 
-            for event_id, event in zip(event_ids, events):
-                event_str = event.get_event_str(self.G.node[from_state]['state'])
-                event_short_descs.append((event_id, event_str))
+            for event_str, event_info in sorted(events.iteritems(), key=lambda x: x[1]["id"]):
+                event_short_descs.append((event_info["id"], event_str))
                 if self.device.adapters[self.device.minicap]:
-                    view_images = ["views/view_" + view['view_str'] + ".jpg" for view in event.get_views()]
+                    view_images = ["views/view_" + view["view_str"] + ".jpg" for view in event_info["event"].get_views()]
                 else:
-                    view_images = ["views/view_" + view['view_str'] + ".png" for view in event.get_views()]
+                    view_images = ["views/view_" + view["view_str"] + ".png" for view in event_info["event"].get_views()]
                 event_list.append({
                     "event_str": event_str,
-                    "event_id": event_id,
-                    "event_type": event.event_type,
+                    "event_id": event_info["id"],
+                    "event_type": event_info["event"].event_type,
                     "view_images": view_images
                 })
 
@@ -143,7 +152,7 @@ class UTG(object):
                 "to": to_state,
                 "id": from_state + "-->" + to_state,
                 "title": utils.list_to_html_table(event_short_descs),
-                "label": ", ".join(map(str, event_ids)),
+                "label": ", ".join([str(x["event_id"]) for x in event_list]),
                 "events": event_list
             }
 
@@ -196,7 +205,7 @@ class UTG(object):
     def get_reachable_states(self, current_state):
         reachable_states = []
         for target_state_str in nx.descendants(self.G, current_state.state_str):
-            target_state = self.G.node[target_state_str]['state']
+            target_state = self.G.node[target_state_str]["state"]
             reachable_states.append(target_state)
         return reachable_states
 
@@ -209,8 +218,10 @@ class UTG(object):
             start_state = states[0]
             for state in states[1:]:
                 edge = self.G[start_state][state]
-                edge_events = edge['events']
-                path_events.append(edge_events[0])
+                edge_event_strs = edge["events"].keys()
+                if self.random_input:
+                    random.shuffle(edge_event_strs)
+                path_events.append(edge["events"][edge_event_strs[0]]["event"])
                 start_state = state
         except:
             self.logger.warning("Cannot find a path from %s to %s" % (current_state.state_str, target_state.state_str))

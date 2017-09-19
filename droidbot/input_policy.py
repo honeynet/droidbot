@@ -105,14 +105,15 @@ class UtgBasedInputPolicy(InputPolicy):
     state-based input policy
     """
 
-    def __init__(self, device, app):
+    def __init__(self, device, app, random_input):
         super(UtgBasedInputPolicy, self).__init__(device, app)
+        self.random_input = random_input
         self.script = None
         self.script_events = []
         self.last_event = None
         self.last_state = None
         self.current_state = None
-        self.utg = UTG(device=device, app=app)
+        self.utg = UTG(device=device, app=app, random_input=random_input)
         self.script_event_idx = 0
 
     def generate_event(self):
@@ -169,12 +170,11 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
     """
 
     def __init__(self, device, app, random_input, search_method):
-        super(UtgNaiveSearchPolicy, self).__init__(device, app)
+        super(UtgNaiveSearchPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.explored_views = set()
         self.state_transitions = set()
-        self.random_input = random_input
         self.search_method = search_method
 
         self.last_event_flag = ""
@@ -324,9 +324,8 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     """
 
     def __init__(self, device, app, random_input, search_method):
-        super(UtgGreedySearchPolicy, self).__init__(device, app)
+        super(UtgGreedySearchPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.random_input = random_input
         self.search_method = search_method
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more", "access",

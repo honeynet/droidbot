@@ -113,12 +113,13 @@ class DroidBotAppConn(Adapter):
                 self.handle_message(message)
             print "[CONNECTION] %s is disconnected" % self.__class__.__name__
         except Exception as ex:
-            self.logger.warning(ex)
-            self.logger.warning("Restarting droidbot app")
-            # clear self.last_acc_event
-            self.last_acc_event = None
-            self.disconnect()
-            self.connect()
+            if self.check_connectivity():
+                # clear self.last_acc_event
+                self.logger.warning(ex)
+                self.logger.warning("Restarting droidbot app")
+                self.last_acc_event = None
+                self.disconnect()
+                self.connect()
 
     def handle_message(self, message):
         acc_event_idx = message.find("AccEvent >>> ")

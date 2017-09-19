@@ -84,6 +84,8 @@ class DeviceState(object):
     def __get_state_str_raw(self):
         ret_str = self.foreground_activity
         old_bounds = ""
+        view_bounds = ""
+        view_signature = ""
         for view in self.views:
             # always select the most inner one when
             # there are same bounds
@@ -93,6 +95,7 @@ class DeviceState(object):
                 if len(old_bounds):
                     ret_str += "{%s,%s}" % (view_signature, old_bounds)
                 old_bounds = view_bounds
+        ret_str += "{%s,%s}" % (view_signature, view_bounds)
         return ret_str
 
     def __get_content_free_state_str(self):

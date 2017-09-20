@@ -50,7 +50,7 @@ class UTG(object):
             # delete the transitions including the event from utg
             for new_state_str in self.G[old_state.state_str]:
                 if event_str in self.G[old_state.state_str][new_state_str]["events"]:
-                    self.G[old_state.state_str][new_state.state_str]["events"].pop(event_str)
+                    self.G[old_state.state_str][new_state_str]["events"].pop(event_str)
             if event_str in self.effective_event_strs:
                 self.effective_event_strs.remove(event_str)
             return

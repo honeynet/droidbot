@@ -123,8 +123,7 @@ class InputManager(object):
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE,
                                                stderr=subprocess.PIPE)
-                while self.enabled:
-                    time.sleep(1)
+                self.monkey.wait()
             elif self.policy_name == POLICY_MANUAL:
                 self.device.start_app(self.app)
                 while self.enabled:
@@ -145,7 +144,8 @@ class InputManager(object):
         stop sending event
         """
         if self.monkey:
-            self.monkey.terminate()
+            if self.monkey.returncode is None:
+                self.monkey.terminate()
             self.monkey = None
             pid = self.device.get_app_pid("com.android.commands.monkey")
             if pid is not None:

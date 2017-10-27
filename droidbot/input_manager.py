@@ -115,7 +115,7 @@ class InputManager(object):
             elif self.policy_name == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
                 monkey_cmd = "adb -s %s shell monkey %s --ignore-crashes --ignore-security-exceptions" \
-                             " --throttle %d %d" % \
+                             " --throttle %d -v %d" % \
                              (self.device.serial,
                               "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
                               throttle,
@@ -123,7 +123,11 @@ class InputManager(object):
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE,
                                                stderr=subprocess.PIPE)
-                self.monkey.wait()
+                for monkey_out_line in iter(self.monkey.stdout.readline, ''):
+                    self.logger.info(monkey_out_line)
+                # may be disturbed from outside
+                if self.monkey is not None:
+                    self.monkey.wait()
             elif self.policy_name == POLICY_MANUAL:
                 self.device.start_app(self.app)
                 while self.enabled:

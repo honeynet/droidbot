@@ -55,11 +55,15 @@ class DroidBotAppConn(Adapter):
             self.logger.debug("DroidBot app was already installed.")
         else:
             # install droidbot app
-            import pkg_resources
-            droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
-            install_cmd = "install %s" % droidbot_app_path
-            self.device.adb.run_cmd(install_cmd)
-            self.logger.debug("DroidBot app installed.")
+            try:
+                import pkg_resources
+                droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
+                install_cmd = "install %s" % droidbot_app_path
+                self.device.adb.run_cmd(install_cmd)
+                self.logger.debug("DroidBot app installed.")
+            except Exception as e:
+                self.logger.warning(e.message)
+                self.logger.warning("Failed to install DroidBotApp.")
 
         # device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)

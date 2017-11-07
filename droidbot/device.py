@@ -495,7 +495,7 @@ class Device(object):
         """
         Get current activity
         """
-        data = self.adb.shell("dumpsys activity top").splitlines()
+        data = self.adb.shell("dumpsys activity top").split("\n")
         regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
         m = regex.search(data[1])
         if m:

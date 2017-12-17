@@ -4,6 +4,7 @@ import subprocess
 import time
 import json
 import telnetlib
+import threading
 from adapter import Adapter
 
 
@@ -46,7 +47,7 @@ class QEMUConn(Adapter):
                                         "-smp", "cpus=4",
                                         "-m", "2048",
                                         "-machine", "q35",
-                                        "-qmp", "tcp:%s:%d,server,nowait" % \
+                                        "-monitor", "telnet:%s:%d,server,nowait" % \
                                         (self.domain, self.telnet_port),
                                         "-net", "nic",
                                         "-net", "user,hostfwd=tcp::%d-:5555" % \
@@ -55,22 +56,21 @@ class QEMUConn(Adapter):
         self.pid = self.qemu_p.pid
         time.sleep(QEMU_START_DELAY)
 
-    def send_command(self, tel_conn, command_str=None):
-        """
-        send command if not null, then read back one QMP object
-        """
-        if command_str is not None:
-            tel_conn.write(command_str)
-        return json.loads(tel_conn.read_until("\r\n"))
-
     def connect(self):
         # 1. Connect to QMP
         self.qemu_tel = telnetlib.Telnet(host=self.domain, port=self.telnet_port)
-        self.logger.info(self.send_command(self.qemu_tel))
-        self.logger.info(self.send_command(self.qemu_tel, '{"execute":"qmp_capabilities"}'))
+        self.logger.info(self.qemu_tel.read_until("\r\n"))
         # 2. Connect to ADB
         r = subprocess.Popen(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
         self.connected = True
+
+    def send_command(self, command_str):
+        """
+        send command, then read result
+        """
+        self.qemu_tel.write(command_str + "\r\n")
+        self.qemu_tel.read_until("\r\n")
+        self.qemu_tel.read_until("\r\n")
 
     def check_connectivity(self):
         """
@@ -96,5 +96,15 @@ if __name__ == "__main__":
                          8002, 4444)
     qemu_conn.set_up()
     qemu_conn.connect()
+    time.sleep(5)
+    print("Start saving")
+    qemu_conn.send_command("stop")
+    qemu_conn.send_command("savevm test1")
+    qemu_conn.send_command("cont")
+    time.sleep(10)
+    print("Start recovering")
+    qemu_conn.send_command("loadvm test1")
+    time.sleep(10)
+    qemu_conn.send_command("delvm test1")
     qemu_conn.disconnect()
     qemu_conn.tear_down()

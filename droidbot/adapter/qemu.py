@@ -56,11 +56,27 @@ class QEMUConn(Adapter):
         self.pid = self.qemu_p.pid
         time.sleep(QEMU_START_DELAY)
 
-    def connect(self):
+    def connect(self, from_snapshot):
         # 1. Connect to QMP
         self.qemu_tel = telnetlib.Telnet(host=self.domain, port=self.telnet_port)
         self.logger.info(self.qemu_tel.read_until("\r\n"))
-        # 2. Connect to ADB
+        # 2. Recover adbd if from_snapshot
+        if from_snapshot:
+            self.send_command("loadvm spawn")
+
+            self.send_keystrokes(["alt-f1"])
+            self.send_keystrokes("killall")
+            self.send_keystrokes(["spc"])
+            self.send_keystrokes("adbd")
+            self.send_keystrokes(["kp_enter"])
+            self.send_keystrokes("adbd")
+            self.send_keystrokes(["spc"])
+            self.send_keystrokes("&")
+            self.send_keystrokes(["kp_enter"])
+            self.send_keystrokes(["alt-f7"])
+
+        # 3. Connect to ADB
+        print(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
         r = subprocess.Popen(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
         self.connected = True
 
@@ -71,6 +87,10 @@ class QEMUConn(Adapter):
         self.qemu_tel.write(command_str + "\r\n")
         self.qemu_tel.read_until("\r\n")
         self.qemu_tel.read_until("\r\n")
+
+    def send_keystrokes(self, keystrokes):
+        for keystroke in keystrokes:
+            self.send_command("sendkey %s" % keystroke)
 
     def check_connectivity(self):
         """

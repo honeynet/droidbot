@@ -696,7 +696,36 @@ class SpawnEvent(InputEvent):
         return None
 
     def send(self, device):
-        print(self.__dict__)
+        master = self.__dict__["master"]
+        # force touch the view
+        init_script = {
+            "views": {
+                "droid_master_view": {
+                    "resource_id": self.__dict__["view"]["resource_id"],
+                    "class": self.__dict__["view"]["class"],
+                }
+            },
+            "states": {
+                "droid_master_state": {
+                    "views": ["droid_master_view"]
+                }
+            },
+            "operations": {
+                "droid_master_operation": [
+                    {
+                        "event_type": "touch",
+                        "target_view": "droid_master_view"
+                    }
+                ]
+            },
+            "main": {
+                "droid_master_state": ["droid_master_operation"]
+            }
+        }
+        init_script_json = json.dumps(init_script, indent=2)
+        import xmlrpclib
+        proxy = xmlrpclib.ServerProxy(master)
+        proxy.spawn(device.serial, init_script_json)
 
     def get_event_str(self, state):
         return "%s()" % self.__class__.__name__

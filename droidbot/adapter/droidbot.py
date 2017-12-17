@@ -38,7 +38,8 @@ class DroidBotConn(Adapter):
                  cv_mode=False,
                  debug_mode=False,
                  profiling_method=None,
-                 grant_perm=False):
+                 grant_perm=False,
+                 master=None):
         """
         initiate a DroidBot connection
         :return:
@@ -62,6 +63,7 @@ class DroidBotConn(Adapter):
         self.debug_mode = debug_mode
         self.profiling_method = profiling_method
         self.grant_perm = grant_perm
+        self.master = master
 
     def set_up(self):
         # start droidbot instance
@@ -76,8 +78,10 @@ class DroidBotConn(Adapter):
                         (self.output_dir, self.device_unique_id),
                         "-use_method_profiling", self.profiling_method,
                         "-distributed", "worker"]
-        if self.script_path:
+        if self.script_path is not None:
             droidbot_cmd += ["-script", self.script_path]
+        if self.master is not None:
+            droidbot_cmd += ["-master", self.master]
 
         self.droidbot_p = subprocess.Popen(droidbot_cmd)
         self.pid = self.droidbot_p.pid

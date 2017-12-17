@@ -21,7 +21,7 @@ class DroidBotConn(Adapter):
     """
     a connection with DroidBot.
     """
-    def __init__(self,
+    def __init__(self, device_unique_id,
                  app_path=None,
                  device_serial=None,
                  is_emulator=False,
@@ -43,6 +43,8 @@ class DroidBotConn(Adapter):
         initiate a DroidBot connection
         :return:
         """
+        self.device_unique_id = device_unique_id
+
         self.app_path = app_path
         self.device_serial = device_serial
         self.is_emulator = is_emulator
@@ -70,9 +72,12 @@ class DroidBotConn(Adapter):
                         "-count", str(self.event_count),
                         "-policy", "dfs_greedy",
                         "-grant_perm", "-keep_env", "-random",
-                        "-o", self.output_dir,
+                        "-o", "%s_%d" % \
+                        (self.output_dir, self.device_unique_id),
                         "-use_method_profiling", self.profiling_method,
                         "-distributed", "worker"]
+        if self.script_path:
+            droidbot_cmd += ["-script", self.script_path]
 
         self.droidbot_p = subprocess.Popen(droidbot_cmd)
         self.pid = self.droidbot_p.pid

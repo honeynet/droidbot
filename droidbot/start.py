@@ -45,11 +45,16 @@ def parse_args():
                                  input_policy.POLICY_NAIVE_BFS,
                                  input_policy.POLICY_GREEDY_DFS,
                              ))
+
+    # for distributed DroidBot
     parser.add_argument("-distributed", action="store", dest="distributed",
                         choices=["master", "worker"],
                         help="Start DroidBot in distributed mode.")
     parser.add_argument("-qemu_hda", action="store", dest="qemu_hda",
                         help="The QEMU's hda image")
+    parser.add_argument("-master", action="store", dest="master",
+                        help="DroidMaster's RPC address")
+
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="count", default=input_manager.DEFAULT_EVENT_COUNT,
@@ -143,7 +148,8 @@ def main():
                             keep_app=opts.keep_app,
                             keep_env=opts.keep_env,
                             profiling_method=opts.profiling_method,
-                            grant_perm=opts.grant_perm)
+                            grant_perm=opts.grant_perm,
+                            master=opts.master)
         droidbot.start()
     return
 

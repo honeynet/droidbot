@@ -86,6 +86,7 @@ class DroidMaster(object):
 
         self.device_pool_capacity = 2
         self.device_pool = {}
+        self.device_unique_id = 0
 
         for port_offset in range(self.device_pool_capacity):
             adb_port = self.adb_default_port + port_offset
@@ -100,7 +101,8 @@ class DroidMaster(object):
                 # droidbot is indexed by adb_target
                 # qemu is indexed by droidbot
                 "droidbot": None,
-                "qemu": None
+                "qemu": None,
+                "id": None
             }
         self.logger.info(self.device_pool)
 
@@ -125,15 +127,21 @@ class DroidMaster(object):
                        for x in self.device_pool
                        if self.device_pool[x]["qemu"] is not None])
 
+    def get_device_unique_id(self):
+        ret_id = self.device_unique_id
+        self.device_unique_id += 1
+        return ret_id
+
     def start_device(self, device):
-        self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d]" % \
-                         (device["domain"], device["adb_port"], device["qemu_port"]))
-        # 1. new QEMU adapter
+        # 1. Assign unique ID
+        device["id"] = self.get_device_unique_id()
+        # 3. new QEMU adapter
         device["qemu"] = QEMUConn(self.qemu_hda, device["qemu_port"], device["adb_port"])
         device["qemu"].set_up()
         device["qemu"].connect()
-        # 2. new DroidWorker adapter
-        device["droidbot"] = DroidBotConn(app_path=self.app_path,
+        # 3. new DroidWorker adapter
+        device["droidbot"] = DroidBotConn(device["id"],
+                                          app_path=self.app_path,
                                           device_serial=self.device_serial,
                                           is_emulator=self.is_emulator,
                                           output_dir=self.output_dir,
@@ -151,6 +159,9 @@ class DroidMaster(object):
                                           profiling_method=self.profiling_method,
                                           grant_perm=self.grant_perm)
         device["droidbot"].set_up()
+        self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d], ID[%d]" % \
+                         (device["domain"], device["adb_port"],
+                          device["qemu_port"], device["id"]))
 
     def stop_device(self, device):
         device["droidbot"].tear_down()
@@ -218,8 +229,8 @@ class DroidMaster(object):
             proxy = xmlrpclib.ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
             proxy.start_worker()
 
-            # while True:
-            time.sleep(1000)
+            while len(self.get_running_devices()):
+                time.sleep(1)
 
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt.")

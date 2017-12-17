@@ -78,6 +78,7 @@ KEY_SwipeEvent = "swipe"
 KEY_ScrollEvent = "scroll"
 KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
+KEY_SpawnEvent = "spawn"
 
 
 class InvalidEventException(Exception):
@@ -140,6 +141,8 @@ class InputEvent(object):
             return IntentEvent(event_dict=event_dict)
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
+        elif event_type == KEY_SpawnEvent:
+            return SpawnEvent(event_dict=event_dict)
 
     @abstractmethod
     def get_event_str(self, state):
@@ -678,6 +681,27 @@ class IntentEvent(InputEvent):
         return "%s(intent='%s')" % (self.__class__.__name__, self.intent)
 
 
+class SpawnEvent(InputEvent):
+    """
+    An event to spawn then stop testing
+    """
+
+    def __init__(self, event_dict=None):
+        self.event_type = KEY_SpawnEvent
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
+
+    @staticmethod
+    def get_random_instance(device, app):
+        return None
+
+    def send(self, device):
+        print(self.__dict__)
+
+    def get_event_str(self, state):
+        return "%s()" % self.__class__.__name__
+
+
 EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
@@ -685,4 +709,5 @@ EVENT_TYPES = {
     KEY_SwipeEvent: SwipeEvent,
     KEY_ScrollEvent: ScrollEvent,
     KEY_IntentEvent: IntentEvent,
+    KEY_SpawnEvent: SpawnEvent
 }

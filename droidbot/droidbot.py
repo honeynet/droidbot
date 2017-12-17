@@ -39,7 +39,8 @@ class DroidBot(object):
                  cv_mode=False,
                  debug_mode=False,
                  profiling_method=None,
-                 grant_perm=False):
+                 grant_perm=False,
+                 master=None):
         """
         initiate droidbot with configurations
         :return:
@@ -92,7 +93,8 @@ class DroidBot(object):
                                               event_count=event_count,
                                               event_interval=event_interval,
                                               script_path=script_path,
-                                              profiling_method=profiling_method)
+                                              profiling_method=profiling_method,
+                                              master=master)
         except Exception as e:
             self.logger.warning("Something went wrong: " + e.message)
             import traceback

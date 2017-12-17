@@ -421,24 +421,18 @@ class DroidBotOperation(object):
             self.events.append(script_event)
 
 
-class ScriptEvent(InputEvent):
+class ScriptEvent():
     """
     an event defined in DroidBotScript
     the grammar of ScriptEvent is similar with the InputEvent in dict format
+    but must be transformed before being used
     """
 
     def __init__(self, event_dict):
         self.event_dict = event_dict
 
-    @staticmethod
-    def get_random_instance(device, app):
-        pass
-
-    def send(self, device):
-        event = self.get_transformed_event(device)
-        event.send(device)
-
-    def get_transformed_event(self, device):
+    def get_transformed_event(self, input_policy):
+        device = input_policy.device
         event_dict = self.event_dict.copy()
         if 'target_view' in event_dict:
             target_view = event_dict.pop('target_view')
@@ -457,6 +451,8 @@ class ScriptEvent(InputEvent):
                     device.logger.warning("target_view no match: %s" % target_view)
                 else:
                     event_dict['view'] = matched_view
+        if event_dict['event_type'] == 'spawn':
+            event_dict['master'] = input_policy.master
         return InputEvent.from_dict(event_dict)
 
     def to_dict(self):

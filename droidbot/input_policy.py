@@ -109,6 +109,7 @@ class UtgBasedInputPolicy(InputPolicy):
         super(UtgBasedInputPolicy, self).__init__(device, app)
         self.random_input = random_input
         self.script = None
+        self.master = None
         self.script_events = []
         self.last_event = None
         self.last_state = None
@@ -130,7 +131,7 @@ class UtgBasedInputPolicy(InputPolicy):
 
         # if the previous operation is not finished, continue
         if len(self.script_events) > self.script_event_idx:
-            event = self.script_events[self.script_event_idx]
+            event = self.script_events[self.script_event_idx].get_transformed_event(self)
             self.script_event_idx += 1
 
         # First try matching a state defined in the script
@@ -139,11 +140,8 @@ class UtgBasedInputPolicy(InputPolicy):
             if operation is not None:
                 self.script_events = operation.events
                 # restart script
-                event = self.script_events[0]
+                event = self.script_events[0].get_transformed_event(self)
                 self.script_event_idx = 1
-
-        if event:
-            event = event.get_transformed_event(self.device)
 
         if event is None:
             event = self.generate_event_based_on_utg()
@@ -320,7 +318,7 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
 
 class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     """
-    depth-first strategy to explore UFG (new)
+    DFS/BFS (according to search_method) strategy to explore UFG (new)
     """
 
     def __init__(self, device, app, random_input, search_method):

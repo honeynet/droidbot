@@ -48,7 +48,7 @@ class Device(object):
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
         self.grant_perm = grant_perm
 
         # basic device information
@@ -763,7 +763,7 @@ class Device(object):
         tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         local_image_dir = os.path.join(self.output_dir, "temp")
         if not os.path.exists(local_image_dir):
-            os.mkdir(local_image_dir)
+            os.makedirs(local_image_dir)
 
         if self.adapters[self.minicap] and self.minicap.last_screen:
             # minicap use jpg format
@@ -886,7 +886,7 @@ class Device(object):
         self.pause_sending_event = True
         if self.minicap.check_connectivity():
             self.minicap.disconnect()
-            self.minicap.connect()        
+            self.minicap.connect()
 
         if self.minicap.check_connectivity():
             print "[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__

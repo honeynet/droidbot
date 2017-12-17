@@ -52,7 +52,7 @@ class DroidBot(object):
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
             stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")

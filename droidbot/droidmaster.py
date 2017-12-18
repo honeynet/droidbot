@@ -46,7 +46,8 @@ class DroidMaster(object):
                  debug_mode=False,
                  profiling_method=None,
                  grant_perm=False,
-                 qemu_hda=None):
+                 qemu_hda=None,
+                 qemu_no_graphic=False):
         """
         initiate droidmaster, and
         initiate droidbot's with configurations
@@ -87,6 +88,7 @@ class DroidMaster(object):
         self.rpc_port = 6666
 
         self.qemu_hda = qemu_hda
+        self.qemu_no_graphic = qemu_no_graphic
 
         self.device_pool_capacity = 3
         self.device_pool = {}
@@ -136,7 +138,8 @@ class DroidMaster(object):
         # 1. get device ID
         device["id"] = self.device_unique_id
         # 2. new QEMU adapter
-        device["qemu"] = QEMUConn(hda_path, device["qemu_port"], device["adb_port"])
+        device["qemu"] = QEMUConn(hda_path, device["qemu_port"], device["adb_port"],
+                                  self.qemu_no_graphic)
         device["qemu"].set_up()
         device["qemu"].connect(from_snapshot)
         # 3. new DroidWorker adapter

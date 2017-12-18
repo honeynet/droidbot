@@ -50,10 +50,12 @@ def parse_args():
     parser.add_argument("-distributed", action="store", dest="distributed",
                         choices=["master", "worker"],
                         help="Start DroidBot in distributed mode.")
-    parser.add_argument("-qemu_hda", action="store", dest="qemu_hda",
-                        help="The QEMU's hda image")
     parser.add_argument("-master", action="store", dest="master",
                         help="DroidMaster's RPC address")
+    parser.add_argument("-qemu_hda", action="store", dest="qemu_hda",
+                        help="The QEMU's hda image")
+    parser.add_argument("-qemu_no_graphic", action="store_true", dest="qemu_no_graphic",
+                        help="Run QEMU with -nograpihc parameter")
 
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
@@ -128,7 +130,8 @@ def main():
                                   keep_env=opts.keep_env,
                                   profiling_method=opts.profiling_method,
                                   grant_perm=opts.grant_perm,
-                                  qemu_hda=opts.qemu_hda)
+                                  qemu_hda=opts.qemu_hda,
+                                  qemu_no_graphic=opts.qemu_no_graphic)
         droidmaster.start()
     else:
         droidbot = DroidBot(app_path=opts.apk_path,

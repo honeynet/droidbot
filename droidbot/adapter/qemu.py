@@ -26,7 +26,7 @@ class QEMUConn(Adapter):
     """
     a connection with QEMU.
     """
-    def __init__(self, hda_path, telnet_port, hostfwd_port):
+    def __init__(self, hda_path, telnet_port, hostfwd_port, qemu_no_graphic):
         """
         initiate a QEMU connection
         :return:
@@ -38,21 +38,25 @@ class QEMUConn(Adapter):
         self.domain = "localhost"
         self.telnet_port = telnet_port
         self.hostfwd_port = hostfwd_port
+        self.qemu_no_graphic = qemu_no_graphic
         self.connected = False
 
     def set_up(self):
         # start qemu instance
-        self.qemu_p = subprocess.Popen(["qemu-system-i386",
-                                        "-hda", self.hda_path,
-                                        "-smp", "cpus=4",
-                                        "-m", "2048",
-                                        "-machine", "q35",
-                                        "-monitor", "telnet:%s:%d,server,nowait" % \
-                                        (self.domain, self.telnet_port),
-                                        "-net", "nic",
-                                        "-net", "user,hostfwd=tcp::%d-:5555" % \
-                                        self.hostfwd_port,
-                                        "-enable-kvm"])
+        qemu_cmd = ["qemu-system-i386",
+                    "-hda", self.hda_path,
+                    "-smp", "cpus=2",
+                    "-m", "2048",
+                    "-machine", "q35",
+                    "-monitor", "telnet:%s:%d,server,nowait" % \
+                    (self.domain, self.telnet_port),
+                    "-net", "nic",
+                    "-net", "user,hostfwd=tcp::%d-:5555" % \
+                    self.hostfwd_port,
+                    "-enable-kvm"]
+        if self.qemu_no_graphic:
+            qemu_cmd.append("-nographic")
+        self.qemu_p = subprocess.Popen(qemu_cmd)
         self.pid = self.qemu_p.pid
         time.sleep(QEMU_START_DELAY)
 
@@ -120,9 +124,9 @@ class QEMUConn(Adapter):
 
 if __name__ == "__main__":
     qemu_conn = QEMUConn("/mnt/EXT_volume/lab_data/android_x86_qemu/droidmaster/android.img",
-                         8002, 4444)
+                         8002, 4444, False)
     qemu_conn.set_up()
-    qemu_conn.connect()
+    qemu_conn.connect(from_snapshot=False)
     time.sleep(5)
     print("Start saving")
     qemu_conn.send_command("stop")

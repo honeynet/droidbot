@@ -42,7 +42,8 @@
                 "target_view": "frm_settings"
             },
             {
-                "event_type": "exit"
+                "event_type": "touch",
+                "target_view": "frm_map"
             }
         ]
     },

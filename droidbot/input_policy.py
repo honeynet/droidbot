@@ -42,6 +42,7 @@ class InputPolicy(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
+        self.master = None
 
     def start(self, input_manager):
         """
@@ -53,9 +54,9 @@ class InputPolicy(object):
             try:
                 # make sure the first event is go to HOME screen
                 # the second event is to start the app
-                if count == 0:
+                if count == 0 and self.master is None:
                     event = KeyEvent(name="HOME")
-                elif count == 1:
+                elif count == 1 and self.master is None:
                     event = IntentEvent(self.app.get_start_intent())
                 else:
                     event = self.generate_event()

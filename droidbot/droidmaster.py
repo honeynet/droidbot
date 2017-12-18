@@ -7,6 +7,7 @@ import os
 import sys
 import pkg_resources
 import shutil
+import subprocess
 import xmlrpclib
 from threading import Timer
 from SimpleXMLRPCServer import SimpleXMLRPCServer
@@ -112,6 +113,7 @@ class DroidMaster(object):
         # 2. This Server's Parameter
         self.timer = None
         self.enabled = True
+        self.successful_spawn_events = set()
 
     @staticmethod
     def get_instance():
@@ -179,11 +181,15 @@ class DroidMaster(object):
           A worker requests to spawn a new worker
           based on its current state
         """
+        if init_script_json in self.successful_spawn_events:
+            self.logger.warning("Event spawned already")
+            return False
+
         device = self.device_pool[adb_target]
         device["qemu"].send_command("stop")
         device["qemu"].send_command("savevm spawn")
 
-        # copy qemu image file
+        # copy qemu image file (almost RAM image size only)
         new_hda_path = "%s.%d" % (device["qemu"].hda_path, \
                                   self.device_unique_id)
         shutil.copyfile(device["qemu"].hda_path, new_hda_path)
@@ -202,8 +208,10 @@ class DroidMaster(object):
         self.start_device(available_devices[0], new_hda_path,
                           from_snapshot=True, init_script_path=init_script_path)
 
-        device["qemu"].send_command("delvm test1")
+        device["qemu"].send_command("delvm spawn")
         device["qemu"].send_command("cont")
+
+        self.successful_spawn_events.add(init_script_json)
         self.logger.info("Spawning worker")
         return True
 
@@ -214,7 +222,10 @@ class DroidMaster(object):
         # copy qemu image file
         new_hda_path = "%s.%d" % (self.qemu_hda, \
                                   self.device_unique_id)
-        shutil.copyfile(self.qemu_hda, new_hda_path)
+        # generate incremental snapshot only
+        p = subprocess.Popen(["qemu-img", "create", "-f", "qcow2", new_hda_path,
+                              "-o", "backing_file=%s" % self.qemu_hda, "8G"])
+        p.wait()
 
         available_devices = self.get_available_devices()
         if not len(available_devices):

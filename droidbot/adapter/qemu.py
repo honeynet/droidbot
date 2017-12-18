@@ -62,7 +62,9 @@ class QEMUConn(Adapter):
         self.logger.info(self.qemu_tel.read_until("\r\n"))
         # 2. Recover adbd if from_snapshot
         if from_snapshot:
+            self.send_command("stop")
             self.send_command("loadvm spawn")
+            self.send_command("cont")
 
             self.send_keystrokes(["alt-f1"])
             self.send_keystrokes("killall")
@@ -75,9 +77,14 @@ class QEMUConn(Adapter):
             self.send_keystrokes(["kp_enter"])
             self.send_keystrokes(["alt-f7"])
 
+            self.send_command("stop")
+            self.send_command("delvm spawn")
+            self.send_command("cont")
+
         # 3. Connect to ADB
         print(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
-        r = subprocess.Popen(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
+        p = subprocess.Popen(["adb", "connect", "%s:%s" % (self.domain, self.hostfwd_port)])
+        p.wait()
         self.connected = True
 
     def send_command(self, command_str):

@@ -1,11 +1,12 @@
 # set up basic requirements for droidbot
 __author__ = 'liyc'
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, findall
+import os
 
 setup(
     name='droidbot',
-    packages=find_packages(exclude=['droidbot/tests', 'resources',
+    packages=find_packages(exclude=['droidbot.tests', 'resources',
                                     'droidbot_out', 'evaluation_reports']),
     # this must be the same as the name above
     version='1.0.2b3',
@@ -35,9 +36,12 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     entry_points={
-        "console_scripts": [
+        'console_scripts': [
             'droidbot=droidbot:start',
         ],
+    },
+    package_data={
+        'droidbot': map(lambda x: os.path.relpath(x, 'droidbot'), findall('droidbot/resources/'))
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install
     install_requires=['androguard', 'networkx', 'Pillow'],

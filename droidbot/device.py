@@ -704,7 +704,7 @@ class Device(object):
             package = app
 
         name2pid = {}
-        ps_out = self.adb.shell(["ps", "-t"])
+        ps_out = self.adb.shell(["ps"])
         ps_out_lines = ps_out.splitlines()
         ps_out_head = ps_out_lines[0].split()
         if ps_out_head[1] != "PID" or ps_out_head[-1] != "NAME":

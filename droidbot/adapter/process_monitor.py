@@ -66,9 +66,9 @@ class ProcessMonitor(Adapter):
         """
         while self.enabled:
             if self.device is not None:
-                ps_cmd = ["adb", "-s", self.device.serial, "shell", "ps", "-t"]
+                ps_cmd = ["adb", "-s", self.device.serial, "shell", "ps"]
             else:
-                ps_cmd = ["adb", "shell", "ps", "-t"]
+                ps_cmd = ["adb", "shell", "ps"]
 
             try:
                 ps_out = subprocess.check_output(ps_cmd)
@@ -81,6 +81,7 @@ class ProcessMonitor(Adapter):
             if ps_out_head[0] != "USER" or ps_out_head[1] != "PID" \
                     or ps_out_head[2] != "PPID" or ps_out_head[-1] != "NAME":
                 self.device.logger.warning("ps command output format error: %s" % ps_out_head)
+
             for ps_out_line in ps_out_lines[1:]:
                 segs = ps_out_line.split()
                 if len(segs) < 4:

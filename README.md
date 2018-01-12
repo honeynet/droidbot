@@ -29,6 +29,10 @@ DroidBot has the following advantages as compared with other input generators:
 
 ## How to install
 
+### Installation from Package
+Archlinux (AUR): https://aur.archlinux.org/packages/droidbot-git/
+
+### Installation from Source
 Clone this repo and intall with `pip`:
 
 ```shell
@@ -36,7 +40,7 @@ git clone https://github.com/honeynet/droidbot.git
 pip install -e droidbot
 ```
 
-If successfully installed, you should be able to execute `droidbot -h`.
+If successfully installed, you should be able to execute `droidbot -h`. 
 
 ## How to use
 

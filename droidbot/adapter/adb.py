@@ -243,7 +243,7 @@ class ADB(Adapter):
         :return: a dict, each key is a package name of an app and each value is the file path to the apk
         """
         app_lines = self.shell("pm list packages -f").splitlines()
-        app_line_re = re.compile('package:(?P<apk_path>[^=]+)=(?P<package>[^=]+)')
+        app_line_re = re.compile('package:(?P<apk_path>.+)=(?P<package>[^=]+)')
         package_to_path = {}
         for app_line in app_lines:
             m = app_line_re.match(app_line)

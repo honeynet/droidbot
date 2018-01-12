@@ -886,7 +886,7 @@ class Device(object):
         self.pause_sending_event = True
         if self.minicap.check_connectivity():
             self.minicap.disconnect()
-            self.minicap.connect()        
+            self.minicap.connect()
 
         if self.minicap.check_connectivity():
             print "[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__

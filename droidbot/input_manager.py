@@ -131,7 +131,7 @@ class InputManager(object):
             elif self.policy_name == POLICY_MANUAL:
                 self.device.start_app(self.app)
                 while self.enabled:
-                    keyboard_input = raw_input("press ENTER to save current state, type q to exit...")
+                    keyboard_input = input("press ENTER to save current state, type q to exit...")
                     if keyboard_input.startswith('q'):
                         break
                     state = self.device.get_current_state()

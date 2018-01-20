@@ -85,10 +85,10 @@ def main():
     opts = parse_args()
     import os
     if not os.path.exists(opts.apk_path):
-        print "APK does not exist."
+        print("APK does not exist.")
         return
     if not opts.output_dir and opts.cv_mode:
-        print "To run in CV mode, you need to specify an output dir (using -o option)."
+        print("To run in CV mode, you need to specify an output dir (using -o option).")
 
     droidbot = DroidBot(app_path=opts.apk_path,
                         device_serial=opts.device_serial,

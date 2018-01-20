@@ -5,16 +5,16 @@ import subprocess
 import sys
 import time
 
-from adapter.adb import ADB
-from adapter.droidbot_app import DroidBotAppConn
-from adapter.logcat import Logcat
-from adapter.minicap import Minicap
-from adapter.process_monitor import ProcessMonitor
-from adapter.telnet import TelnetConsole
-from adapter.user_input_monitor import UserInputMonitor
-from adapter.droidbot_ime import DroidBotIme
-from app import App
-from intent import Intent
+from .adapter.adb import ADB
+from .adapter.droidbot_app import DroidBotAppConn
+from .adapter.logcat import Logcat
+from .adapter.minicap import Minicap
+from .adapter.process_monitor import ProcessMonitor
+from .adapter.telnet import TelnetConsole
+from .adapter.user_input_monitor import UserInputMonitor
+from .adapter.droidbot_ime import DroidBotIme
+from .app import App
+from .intent import Intent
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'

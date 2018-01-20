@@ -3,7 +3,7 @@
 import logging
 import time
 
-from adapter import Adapter
+from .adapter import Adapter
 
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
 IME_SERVICE = DROIDBOT_APP_PACKAGE + "/.DroidBotIME"

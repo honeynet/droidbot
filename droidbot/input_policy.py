@@ -2,8 +2,8 @@ import logging
 import random
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
-from utg import UTG
+from .input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
+from .utg import UTG
 
 # Max number of restarts
 MAX_NUM_RESTARTS = 5

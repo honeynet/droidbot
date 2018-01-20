@@ -2,7 +2,7 @@ import threading
 import logging
 import time
 import subprocess
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class ProcessMonitor(Adapter):

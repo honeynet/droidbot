@@ -4,8 +4,8 @@ import random
 import time
 from abc import abstractmethod
 
-import utils
-from intent import Intent
+from . import utils
+from .intent import Intent
 
 POSSIBLE_KEYS = [
     "BACK",

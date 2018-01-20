@@ -1,6 +1,6 @@
 import logging
 import threading
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class TelnetException(Exception):

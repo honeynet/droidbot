@@ -4,7 +4,7 @@ import subprocess
 import time
 import json
 import struct
-from adapter import Adapter
+from .adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"

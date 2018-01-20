@@ -1,7 +1,7 @@
 import logging
 import os
 import hashlib
-from intent import Intent
+from .intent import Intent
 
 
 class App(object):

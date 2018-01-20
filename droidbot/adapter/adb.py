@@ -2,7 +2,7 @@
 import subprocess
 import logging
 import re
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class ADBException(Exception):

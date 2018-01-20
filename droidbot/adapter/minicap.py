@@ -3,7 +3,7 @@ import socket
 import subprocess
 import time
 from datetime import datetime
-from adapter import Adapter
+from .adapter import Adapter
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
 ROTATION_CHECK_INTERVAL_S = 1 # Check rotation once per second

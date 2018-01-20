@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class JDWPException(Exception):

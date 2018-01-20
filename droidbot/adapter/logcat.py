@@ -1,6 +1,6 @@
 import subprocess
 import logging
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class Logcat(Adapter):

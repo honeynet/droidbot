@@ -1,4 +1,4 @@
 __author__ = 'liyc'
 
-import start
+from . import start
 start = start.main

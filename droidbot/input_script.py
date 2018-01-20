@@ -4,9 +4,9 @@
 import logging
 import re
 
-from input_event import InputEvent
-from droidbot import DroidBotException
-from utils import safe_re_match
+from .input_event import InputEvent
+from .droidbot import DroidBotException
+from .utils import safe_re_match
 
 VIEW_ID = '<view_id>'
 STATE_ID = '<state_id>'

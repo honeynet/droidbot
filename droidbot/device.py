@@ -822,13 +822,15 @@ class Device(object):
         """
         self.adb.long_touch(x, y, duration)
 
-    def view_drag(self, (x0, y0), (x1, y1), duration):
+    def view_drag(self, start_point, end_point, duration):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in PX
-        @param (x1, y1): ending point in PX
+        @param start_point: starting point in PX
+        @param end_point: ending point in PX
         @param duration: duration of the event in ms
         """
+        (x0, y0) = start_point
+        (x1, y1) = end_point
         self.adb.drag((x0, y0), (x1, y1), duration)
 
     def view_append_text(self, text):

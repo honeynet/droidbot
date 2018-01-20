@@ -160,12 +160,12 @@ class DroidBotAppConn(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print(e.message)
+                print(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception as e:
-            print(e.message)
+            print(e)
         self.__can_wait = False
 
     def __view_tree_to_list(self, view_tree, view_list):

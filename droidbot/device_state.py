@@ -1,6 +1,6 @@
 import math
 import os
-import utils
+from . import utils
 from .input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent
 
 

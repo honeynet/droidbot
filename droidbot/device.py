@@ -36,7 +36,7 @@ class Device(object):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if device_serial is None:
-            import utils
+            from . import utils
             all_devices = utils.get_available_devices()
             if len(all_devices) == 0:
                 self.logger.warning("ERROR: No device connected.")

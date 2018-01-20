@@ -94,7 +94,7 @@ class DroidBot(object):
                                               script_path=script_path,
                                               profiling_method=profiling_method)
         except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+            self.logger.warning("Something went wrong: {0}".format(e))
             import traceback
             traceback.print_exc()
             self.stop()
@@ -148,7 +148,7 @@ class DroidBot(object):
             self.logger.info("Keyboard interrupt.")
             pass
         except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+            self.logger.warning("Something went wrong: {0}".format(e))
             import traceback
             traceback.print_exc()
             self.stop()

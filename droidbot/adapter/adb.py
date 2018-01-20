@@ -60,7 +60,7 @@ class ADB(Adapter):
 
         self.logger.debug('command:')
         self.logger.debug(args)
-        r = subprocess.check_output(args).strip()
+        r = subprocess.check_output(args).strip().decode()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r

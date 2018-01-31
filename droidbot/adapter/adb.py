@@ -215,7 +215,8 @@ class ADB(Adapter):
         :return: the enabled service names, each service name is in <package_name>/<service_name> format
         """
         r = self.shell("settings get secure enabled_accessibility_services")
-        return r.strip().split(":")
+        r = re.sub(r'(?m)^WARNING:.*\n?', '', r)
+        return r.strip().split(":") if r.strip() != '' else []
 
     def disable_accessibility_service(self, service_name):
         """

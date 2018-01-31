@@ -48,6 +48,7 @@ class DroidBotAppConn(Adapter):
 
         self.sock = None
         self.last_acc_event = None
+        self.enable_accessibility_hard = device.enable_accessibility_hard
 
     def set_up(self):
         device = self.device
@@ -67,6 +68,13 @@ class DroidBotAppConn(Adapter):
 
         # device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
+
+        if  ACCESSIBILITY_SERVICE not in device.get_service_names() and \
+                   self.device.get_sdk_version() < 23 and self.enable_accessibility_hard:
+            device.adb.enable_accessibility_service_db(ACCESSIBILITY_SERVICE)
+            while ACCESSIBILITY_SERVICE not in device.get_service_names():
+                print "Restarting device..."
+                time.sleep(1)
 
         # device.start_app(droidbot_app)
         while ACCESSIBILITY_SERVICE not in device.get_service_names() and self.__can_wait:

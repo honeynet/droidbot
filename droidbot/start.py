@@ -72,6 +72,8 @@ def parse_args():
                         help="Grant all permissions while installing. Useful for Android 6.0+.")
     parser.add_argument("-is_emulator", action="store_true", dest="is_emulator",
                         help="Declare the target device to be an emulator, which would be treated specially by DroidBot.")
+    parser.add_argument("-accessibility_auto", action="store_true", dest="enable_accessibility_hard",
+                        help="Enable the accessibility service automatically even though it might require device restart\n(can be useful for Android API level < 23).")
     options = parser.parse_args()
     # print options
     return options
@@ -107,7 +109,8 @@ def main():
                         keep_app=opts.keep_app,
                         keep_env=opts.keep_env,
                         profiling_method=opts.profiling_method,
-                        grant_perm=opts.grant_perm)
+                        grant_perm=opts.grant_perm,
+                        enable_accessibility_hard=opts.enable_accessibility_hard)
     droidbot.start()
     return
 

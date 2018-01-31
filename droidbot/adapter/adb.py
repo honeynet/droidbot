@@ -3,6 +3,7 @@ import subprocess
 import logging
 import re
 from adapter import Adapter
+import time
 
 
 class ADBException(Exception):
@@ -238,6 +239,16 @@ class ADB(Adapter):
             service_names.append(service_name)
             self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
         self.shell("settings put secure accessibility_enabled 1")
+
+    def enable_accessibility_service_db(self, service_name):
+        """
+        Enable an accessibility service
+        :param service_name: the service to enable, in <package_name>/<service_name> format
+        """
+        subprocess.check_output("adb shell \"sqlite3 -batch /data/data/com.android.providers.settings/databases/settings.db \\\"DELETE FROM secure WHERE name='enabled_accessibility_services' OR name='accessibility_enabled' OR name='touch_exploration_granted_accessibility_services' OR name='touch_exploration_enabled'; INSERT INTO secure (name, value) VALUES ('enabled_accessibility_services','" + service_name + "'), ('accessibility_enabled','1'), ('touch_exploration_granted_accessibility_services','" + service_name + "'), ('touch_exploration_enabled','1')\\\";\"", shell=True)
+        self.shell("stop")
+        time.sleep(1)
+        self.shell("start")
 
 
     def get_installed_apps(self):

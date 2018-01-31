@@ -163,7 +163,9 @@ class DroidBotAppConn(Adapter):
                 print e.message
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
-            subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            out, err = p.communicate()
+
         except Exception as e:
             print e.message
         self.__can_wait = False

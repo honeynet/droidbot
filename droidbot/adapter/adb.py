@@ -236,6 +236,8 @@ class ADB(Adapter):
         if service_name not in service_names:
             service_names.append(service_name)
             self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+        self.shell("settings put secure accessibility_enabled 1")
+
 
     def get_installed_apps(self):
         """

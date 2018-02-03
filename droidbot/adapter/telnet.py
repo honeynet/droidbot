@@ -1,6 +1,7 @@
 import logging
 import threading
-from .adapter import Adapter
+
+from droidbot.adapter.adapter import Adapter
 
 
 class TelnetException(Exception):

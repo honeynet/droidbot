@@ -6,7 +6,7 @@ import random
 
 import networkx as nx
 
-from . import utils
+from droidbot import utils
 
 
 class UTG(object):

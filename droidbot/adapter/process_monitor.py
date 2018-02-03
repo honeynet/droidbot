@@ -1,8 +1,9 @@
-import threading
 import logging
-import time
 import subprocess
-from .adapter import Adapter
+import threading
+import time
+
+from droidbot.adapter.adapter import Adapter
 
 
 class ProcessMonitor(Adapter):
@@ -71,7 +72,7 @@ class ProcessMonitor(Adapter):
                 ps_cmd = ["adb", "shell", "ps"]
 
             try:
-                ps_out = subprocess.check_output(ps_cmd)
+                ps_out = subprocess.check_output(ps_cmd).decode()
             except subprocess.CalledProcessError:
                 continue
 

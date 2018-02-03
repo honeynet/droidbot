@@ -1,8 +1,10 @@
 # This is the interface for adb
-import subprocess
+
 import logging
 import re
-from .adapter import Adapter
+import subprocess
+
+from droidbot.adapter.adapter import Adapter
 
 
 class ADBException(Exception):

@@ -1,6 +1,7 @@
-import subprocess
 import logging
-from .adapter import Adapter
+import subprocess
+
+from droidbot.adapter.adapter import Adapter
 
 
 class Logcat(Adapter):

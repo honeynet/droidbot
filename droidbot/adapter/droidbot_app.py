@@ -1,10 +1,11 @@
+import json
 import logging
 import socket
+import struct
 import subprocess
 import time
-import json
-import struct
-from .adapter import Adapter
+
+from droidbot.adapter.adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
@@ -14,17 +15,20 @@ ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.access
 MAX_NUM_GET_VIEWS = 5
 GET_VIEW_WAIT_TIME = 1
 
+
 class DroidBotAppConnException(Exception):
     """
     Exception in telnet connection
     """
     pass
 
+
 class EOF(Exception):
     """
     Exception in telnet connection
     """
     pass
+
 
 class DroidBotAppConn(Adapter):
     """
@@ -62,7 +66,7 @@ class DroidBotAppConn(Adapter):
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
             except Exception as e:
-                self.logger.warning(e.message)
+                self.logger.warning(e)
                 self.logger.warning("Failed to install DroidBotApp.")
 
         # device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
@@ -93,10 +97,11 @@ class DroidBotAppConn(Adapter):
             raise DroidBotAppConnException()
 
     def sock_read(self, rest_len):
-        buf = ''
+        buf = b''
         while rest_len:
             pkt = self.sock.recv(rest_len)
-            if not pkt: raise EOF()
+            if not pkt:
+                raise EOF()
             buf += pkt
             rest_len -= len(pkt)
         return buf
@@ -113,7 +118,7 @@ class DroidBotAppConn(Adapter):
         try:
             while self.connected:
                 _, _, message_len = self.read_head()
-                message = self.sock_read(message_len)
+                message = self.sock_read(message_len).decode()
                 self.handle_message(message)
             print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
         except Exception as ex:

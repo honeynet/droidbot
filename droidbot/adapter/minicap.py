@@ -3,10 +3,11 @@ import socket
 import subprocess
 import time
 from datetime import datetime
-from .adapter import Adapter
+
+from droidbot.adapter.adapter import Adapter
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
-ROTATION_CHECK_INTERVAL_S = 1 # Check rotation once per second
+ROTATION_CHECK_INTERVAL_S = 1  # Check rotation once per second
 
 
 class MinicapException(Exception):
@@ -248,17 +249,17 @@ class Minicap(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print(e.message)
+                print(e)
         if self.minicap_process is not None:
             try:
                 self.minicap_process.terminate()
             except Exception as e:
-                print(e.message)
+                print(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         except Exception as e:
-            print(e.message)
+            print(e)
 
     def get_views(self):
         """

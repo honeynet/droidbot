@@ -85,7 +85,8 @@ class Minicap(Adapter):
     def tear_down(self):
         try:
             delete_minicap_cmd = "adb -s %s shell rm -r %s" % (self.device.serial, self.remote_minicap_path)
-            subprocess.check_call(delete_minicap_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(delete_minicap_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            out, err = p.communicate()
         except Exception:
             pass
 
@@ -112,8 +113,10 @@ class Minicap(Adapter):
         start_minicap_cmd = "adb -s %s shell LD_LIBRARY_PATH=%s %s/minicap -P %s" % \
                             (device.serial, self.remote_minicap_path, self.remote_minicap_path, size_opt)
         self.logger.debug("starting minicap: " + start_minicap_cmd)
-        subprocess.check_call(grant_minicap_perm_cmd.split(),
-                              stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        p = subprocess.Popen(grant_minicap_perm_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        out, err = p.communicate()
+
         self.minicap_process = subprocess.Popen(start_minicap_cmd.split(),
                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         # Wait 2 seconds for starting minicap
@@ -257,7 +260,8 @@ class Minicap(Adapter):
                 print(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
-            subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            out, err = p.communicate()
         except Exception as e:
             print(e)
 

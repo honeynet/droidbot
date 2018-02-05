@@ -33,16 +33,18 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
     ],
     entry_points={
         'console_scripts': [
-            'droidbot=droidbot:start',
+            'droidbot=droidbot.start:main',
         ],
     },
     package_data={
-        'droidbot': map(lambda x: os.path.relpath(x, 'droidbot'), findall('droidbot/resources/'))
+        'droidbot': list(map(lambda x: os.path.relpath(x, 'droidbot'), findall('droidbot/resources/')))
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install
-    install_requires=['androguard', 'networkx', 'Pillow'],
+    install_requires=['androguard==3.1.0', 'networkx', 'Pillow'],
+    # Install with --process-dependency-links flag
+    dependency_links=['https://github.com/androguard/androguard/archive/v3.1.0-pre.2.tar.gz#egg=androguard-3.1.0']
 )

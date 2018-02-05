@@ -2,17 +2,18 @@
 # It can be used after AVD was started, app was installed, and adb had been set up properly
 # By configuring and creating a droidbot instance,
 # droidbot will start interacting with Android in AVD like a human
+
 import logging
 import os
-import sys
-import pkg_resources
 import shutil
+import sys
 from threading import Timer
 
-from device import Device
-from app import App
-from env_manager import AppEnvManager
-from input_manager import InputManager
+import pkg_resources
+
+from droidbot.app import App
+from droidbot.device import Device
+from droidbot.env_manager import AppEnvManager
 
 
 class DroidBot(object):
@@ -88,6 +89,9 @@ class DroidBot(object):
             self.env_manager = AppEnvManager(device=self.device,
                                              app=self.app,
                                              env_policy=env_policy)
+
+            # This import has to be here and not at the top of the file to avoid a circular dependency error.
+            from droidbot.input_manager import InputManager
             self.input_manager = InputManager(device=self.device,
                                               app=self.app,
                                               policy_name=policy_name,
@@ -97,7 +101,7 @@ class DroidBot(object):
                                               script_path=script_path,
                                               profiling_method=profiling_method)
         except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+            self.logger.warning("Something went wrong: {0}".format(e))
             import traceback
             traceback.print_exc()
             self.stop()
@@ -106,7 +110,7 @@ class DroidBot(object):
     @staticmethod
     def get_instance():
         if DroidBot.instance is None:
-            print "Error: DroidBot is not initiated!"
+            print("Error: DroidBot is not initiated!")
             sys.exit(-1)
         return DroidBot.instance
 
@@ -151,7 +155,7 @@ class DroidBot(object):
             self.logger.info("Keyboard interrupt.")
             pass
         except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+            self.logger.warning("Something went wrong: {0}".format(e))
             import traceback
             traceback.print_exc()
             self.stop()

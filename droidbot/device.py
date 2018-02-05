@@ -5,16 +5,18 @@ import subprocess
 import sys
 import time
 
-from adapter.adb import ADB
-from adapter.droidbot_app import DroidBotAppConn
-from adapter.logcat import Logcat
-from adapter.minicap import Minicap
-from adapter.process_monitor import ProcessMonitor
-from adapter.telnet import TelnetConsole
-from adapter.user_input_monitor import UserInputMonitor
-from adapter.droidbot_ime import DroidBotIme
-from app import App
-from intent import Intent
+from droidbot import utils
+from droidbot.adapter.adb import ADB
+from droidbot.adapter.droidbot_app import DroidBotAppConn
+from droidbot.adapter.droidbot_ime import DroidBotIme
+from droidbot.adapter.logcat import Logcat
+from droidbot.adapter.minicap import Minicap
+from droidbot.adapter.process_monitor import ProcessMonitor
+from droidbot.adapter.telnet import TelnetConsole
+from droidbot.adapter.user_input_monitor import UserInputMonitor
+from droidbot.app import App
+from droidbot.device_state import DeviceState
+from droidbot.intent import Intent
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -36,7 +38,6 @@ class Device(object):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if device_serial is None:
-            import utils
             all_devices = utils.get_available_devices()
             if len(all_devices) == 0:
                 self.logger.warning("ERROR: No device connected.")
@@ -99,12 +100,12 @@ class Device(object):
             adapter_name = adapter.__class__.__name__
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
-                print "[CONNECTION] %s is not enabled." % adapter_name
+                print("[CONNECTION] %s is not enabled." % adapter_name)
             else:
                 if adapter.check_connectivity():
-                    print "[CONNECTION] %s is enabled and connected." % adapter_name
+                    print("[CONNECTION] %s is enabled and connected." % adapter_name)
                 else:
-                    print "[CONNECTION] %s is enabled but not connected." % adapter_name
+                    print("[CONNECTION] %s is enabled but not connected." % adapter_name)
 
     def wait_for_device(self):
         """
@@ -608,7 +609,7 @@ class Device(object):
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
             while self.connected and package_name not in self.adb.get_installed_apps():
-                print "Please wait while installing the app..."
+                print("Please wait while installing the app...")
                 time.sleep(2)
             if not self.connected:
                 install_p.terminate()
@@ -647,7 +648,7 @@ class Device(object):
         cur_categories = []
 
         for line in lines:
-            line = line.strip()
+            line = line.strip().decode()
             m = activity_line_re.match(line)
             if m:
                 activities[cur_activity] = {
@@ -694,7 +695,7 @@ class Device(object):
             uninstall_cmd = ["adb", "-s", self.serial, "uninstall", package_name]
             uninstall_p = subprocess.Popen(uninstall_cmd, stdout=subprocess.PIPE)
             while package_name in self.adb.get_installed_apps():
-                print "Please wait while uninstalling the app..."
+                print("Please wait while uninstalling the app...")
                 time.sleep(2)
             uninstall_p.terminate()
 
@@ -705,7 +706,7 @@ class Device(object):
             package = app
 
         name2pid = {}
-        ps_out = self.adb.shell(["ps"])
+        ps_out = self.adb.shell(["ps"]).decode()
         ps_out_lines = ps_out.splitlines()
         ps_out_head = ps_out_lines[0].split()
         if ps_out_head[1] != "PID" or ps_out_head[-1] != "NAME":
@@ -792,7 +793,6 @@ class Device(object):
             background_services = self.get_service_names()
             screenshot_path = self.take_screenshot()
             self.logger.debug("finish getting current device state...")
-            from device_state import DeviceState
             current_state = DeviceState(self,
                                         views=views,
                                         foreground_activity=foreground_activity,
@@ -823,13 +823,15 @@ class Device(object):
         """
         self.adb.long_touch(x, y, duration)
 
-    def view_drag(self, (x0, y0), (x1, y1), duration):
+    def view_drag(self, start_point, end_point, duration):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in PX
-        @param (x1, y1): ending point in PX
+        @param start_point: starting point in PX
+        @param end_point: ending point in PX
         @param duration: duration of the event in ms
         """
+        (x0, y0) = start_point
+        (x1, y1) = end_point
         self.adb.drag((x0, y0), (x1, y1), duration)
 
     def view_append_text(self, text):
@@ -890,5 +892,5 @@ class Device(object):
             self.minicap.connect()
 
         if self.minicap.check_connectivity():
-            print "[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__
+            print("[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__)
         self.pause_sending_event = False

@@ -3,7 +3,7 @@
 import logging
 import time
 
-from adapter import Adapter
+from droidbot.adapter.adapter import Adapter
 
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
 IME_SERVICE = DROIDBOT_APP_PACKAGE + "/.DroidBotIME"
@@ -46,7 +46,7 @@ class DroidBotIme(Adapter):
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
             except Exception as e:
-                self.logger.warning(e.message)
+                self.logger.warning(e)
                 self.logger.warning("Failed to install DroidBotApp.")
 
     def tear_down(self):
@@ -76,7 +76,7 @@ class DroidBotIme(Adapter):
         r_disable = self.device.adb.shell("ime disable %s" % IME_SERVICE)
         if r_disable.endswith("now disabled"):
             self.connected = False
-            print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+            print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
             return
         self.logger.warning("Failed to disconnect DroidBotIME!")
 

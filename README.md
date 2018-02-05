@@ -21,7 +21,7 @@ DroidBot has the following advantages as compared with other input generators:
 
 ## Prerequisite
 
-1. `Python` version `2.7`
+1. `Python` version `3.5`
 2. `Java` version `1.7`
 3. `Android SDK`
 4. Add `platform_tools` directory in Android SDK to `PATH`
@@ -29,11 +29,11 @@ DroidBot has the following advantages as compared with other input generators:
 
 ## How to install
 
-Clone this repo and intall with `pip`:
+Clone this repo and install with `pip`:
 
 ```shell
 git clone https://github.com/honeynet/droidbot.git
-pip install -e droidbot
+pip install --process-dependency-links -e droidbot
 ```
 
 If successfully installed, you should be able to execute `droidbot -h`.

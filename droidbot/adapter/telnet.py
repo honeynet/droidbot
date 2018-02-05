@@ -1,6 +1,7 @@
 import logging
 import threading
-from adapter import Adapter
+
+from droidbot.adapter.adapter import Adapter
 
 
 class TelnetException(Exception):
@@ -97,4 +98,4 @@ class TelnetConsole(Adapter):
         """
         if self.console is not None:
             self.console.close()
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)

@@ -1,9 +1,11 @@
 # This is the interface for adb
-import subprocess
+
 import logging
 import re
-from adapter import Adapter
+import subprocess
 import time
+
+from droidbot.adapter.adapter import Adapter
 
 
 class ADBException(Exception):
@@ -49,7 +51,7 @@ class ADB(Adapter):
         :return: output of adb command
         @param extra_args: arguments to run in adb
         """
-        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
+        if isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
             msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
@@ -61,7 +63,7 @@ class ADB(Adapter):
 
         self.logger.debug('command:')
         self.logger.debug(args)
-        r = subprocess.check_output(args).strip()
+        r = subprocess.check_output(args).strip().decode()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
@@ -72,7 +74,7 @@ class ADB(Adapter):
         @param extra_args:
         @return: output of adb shell command
         """
-        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
+        if isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
             msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
@@ -100,7 +102,7 @@ class ADB(Adapter):
         """
         disconnect adb
         """
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def get_property(self, property):
         """
@@ -272,7 +274,8 @@ class ADB(Adapter):
         else:
             return -1.0
 
-    def __transform_point_by_orientation(self, (x, y), orientation_orig, orientation_dest):
+    def __transform_point_by_orientation(self, point, orientation_orig, orientation_dest):
+        (x, y) = point
         if orientation_orig != orientation_dest:
             if orientation_dest == 1:
                 _x = x
@@ -319,14 +322,16 @@ class ADB(Adapter):
         """
         self.drag((x, y), (x, y), duration, orientation)
 
-    def drag(self, (x0, y0), (x1, y1), duration, orientation=-1):
+    def drag(self, start_point, end_point, duration, orientation=-1):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in pixel
-        @param (x1, y1): ending point in pixel
+        @param start_point: starting point in pixel
+        @param end_point: ending point in pixel
         @param duration: duration of the event in ms
         @param orientation: the orientation (-1: undefined)
         """
+        (x0, y0) = start_point
+        (x1, y1) = end_point
         if orientation == -1:
             orientation = self.get_orientation()
         (x0, y0) = self.__transform_point_by_orientation((x0, y0), orientation, self.get_orientation())

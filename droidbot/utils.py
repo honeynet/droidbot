@@ -37,7 +37,7 @@ def get_available_devices():
     :return: list of str, each str is a device serial number
     """
     import subprocess
-    lines = subprocess.check_output(["adb", "devices"]).splitlines()
+    lines = subprocess.check_output(["adb", "devices"]).decode().splitlines()
     devices = []
     for line in lines:
         segs = line.strip().split()

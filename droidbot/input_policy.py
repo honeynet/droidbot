@@ -2,8 +2,8 @@ import logging
 import random
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
-from utg import UTG
+from droidbot.input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
+from droidbot.utg import UTG
 
 # Max number of restarts
 MAX_NUM_RESTARTS = 5
@@ -66,7 +66,7 @@ class InputPolicy(object):
                 self.logger.warning("stop sending events: %s" % e)
                 break
             # except RuntimeError as e:
-            #     self.logger.warning(e.message)
+            #     self.logger.warning(e)
             #     break
             except Exception as e:
                 self.logger.warning("exception during sending events: %s" % e)

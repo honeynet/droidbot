@@ -1,10 +1,12 @@
 # helper file of droidbot
 # it parses command arguments and send the options to droidbot
+
 import argparse
-import input_manager
-import input_policy
-import env_manager
-from droidbot import DroidBot
+
+from droidbot import env_manager
+from droidbot import input_manager
+from droidbot import input_policy
+from droidbot.droidbot import DroidBot
 
 
 def parse_args():
@@ -87,10 +89,10 @@ def main():
     opts = parse_args()
     import os
     if not os.path.exists(opts.apk_path):
-        print "APK does not exist."
+        print("APK does not exist.")
         return
     if not opts.output_dir and opts.cv_mode:
-        print "To run in CV mode, you need to specify an output dir (using -o option)."
+        print("To run in CV mode, you need to specify an output dir (using -o option).")
 
     droidbot = DroidBot(app_path=opts.apk_path,
                         device_serial=opts.device_serial,

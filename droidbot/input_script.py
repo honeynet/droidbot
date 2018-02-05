@@ -1,12 +1,13 @@
 # DroidBotScript
 # This file contains the definition of DroidBotScript
 # DroidBotScript is a domain-specific language, which defines how DroidBot interacts with target app
+
 import logging
 import re
 
-from input_event import InputEvent
-from droidbot import DroidBotException
-from utils import safe_re_match
+from droidbot.droidbot import DroidBotException
+from droidbot.input_event import InputEvent
+from droidbot.utils import safe_re_match
 
 VIEW_ID = '<view_id>'
 STATE_ID = '<state_id>'
@@ -142,7 +143,7 @@ class DroidBotScript(object):
 
     @staticmethod
     def check_grammar_type(value, grammar, tag):
-        if isinstance(value, unicode) and isinstance(grammar, str):
+        if isinstance(value, str) and isinstance(grammar, str):
             return
         if not isinstance(value, type(grammar)):
             msg = '%s: type should be %s, %s given' % (tag, type(grammar), type(value))

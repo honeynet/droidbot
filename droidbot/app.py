@@ -1,7 +1,8 @@
+import hashlib
 import logging
 import os
-import hashlib
-from intent import Intent
+
+from droidbot.intent import Intent
 
 
 class App(object):
@@ -73,7 +74,7 @@ class App(object):
         """
         if self.activities is None:
             self.activities = {}
-            manifest = self.get_androguard_analysis().a.get_AndroidManifest()
+            manifest = self.get_androguard_analysis().a.get_android_manifest_xml()
             for activity_dom in manifest.getElementsByTagName("activity"):
                 activity_name = None
                 activity_attrs = {}

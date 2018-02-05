@@ -1,11 +1,12 @@
-import logging
+import datetime
 import json
+import logging
 import os
 import random
-import utils
-import datetime
 
 import networkx as nx
+
+from droidbot import utils
 
 
 class UTG(object):

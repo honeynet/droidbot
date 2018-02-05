@@ -4,8 +4,8 @@ import random
 import time
 from abc import abstractmethod
 
-import utils
-from intent import Intent
+from droidbot import utils
+from droidbot.intent import Intent
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -202,7 +202,7 @@ class EventLog(object):
             json.dump(self.to_dict(), event_json_file, indent=2)
             event_json_file.close()
         except Exception as e:
-            self.device.logger.warning("Saving event to dir failed: " + e.message)
+            self.device.logger.warning("Saving event to dir failed: " + e)
 
     def save_views(self, output_dir=None):
         # Save views
@@ -225,7 +225,7 @@ class EventLog(object):
         self.from_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.from_state)
-        print "Input: %s" % self.event_str
+        print("Input: %s" % self.event_str)
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -288,7 +288,7 @@ class EventLog(object):
             self.device.pull_file(self.trace_remote_file, event_trace_local_path)
 
         except Exception as e:
-            self.device.logger.warning("profiling event failed: " + e.message)
+            self.device.logger.warning("profiling event failed: " + e)
 
 
 class ManualEvent(InputEvent):
@@ -391,7 +391,8 @@ class UIEvent(InputEvent):
         if x and y:
             return x, y
         if view:
-            from device_state import DeviceState
+            # This import has to be here and not at the top of the file to avoid a circular dependency error.
+            from droidbot.device_state import DeviceState
             return DeviceState.get_view_center(view_dict=view)
         return x, y
 
@@ -563,7 +564,8 @@ class ScrollEvent(UIEvent):
 
     def send(self, device):
         if self.view is not None:
-            from device_state import DeviceState
+            # This import has to be here and not at the top of the file to avoid a circular dependency error.
+            from droidbot.device_state import DeviceState
             width = DeviceState.get_view_width(view_dict=self.view)
             height = DeviceState.get_view_height(view_dict=self.view)
         else:

@@ -1,7 +1,8 @@
 import math
 import os
-import utils
-from input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent
+
+from droidbot import utils
+from droidbot.input_event import TouchEvent, ScrollEvent, LongTouchEvent
 
 
 class DeviceState(object):
@@ -144,7 +145,7 @@ class DeviceState(object):
             # if isinstance(self.screenshot_path, Image):
             #     self.screenshot_path.save(dest_screenshot_path)
         except Exception as e:
-            self.device.logger.warning("saving state to dir failed: " + e.message)
+            self.device.logger.warning("saving state to dir failed: " + e)
 
     def save_view_img(self, view_dict, output_dir=None):
         try:
@@ -173,7 +174,7 @@ class DeviceState(object):
                                           min(original_img.height, max(0, view_bound[1][1]))))
             view_img.save(view_file_path)
         except Exception as e:
-            self.device.logger.warning("saving view to dir failed: " + e.message)
+            self.device.logger.warning("saving view to dir failed: " + e)
 
     def is_different_from(self, another_state):
         """

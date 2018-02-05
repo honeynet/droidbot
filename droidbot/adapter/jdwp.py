@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from adapter import Adapter
+from droidbot.adapter.adapter import Adapter
 
 
 class JDWPException(Exception):
@@ -55,7 +55,7 @@ class JDWP(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print e.message
+                print(e)
         # TODO
 
 

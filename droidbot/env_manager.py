@@ -5,10 +5,11 @@
 # The environment should be determined before app start running.
 # We don't need to set up all environments for one app,
 # instead we select a subset according to static analysis result of app.
-import logging
+
 import json
-import time
+import logging
 import os
+import time
 
 POLICY_NONE = "none"
 POLICY_DUMMY = "dummy"

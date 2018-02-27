@@ -90,7 +90,7 @@ class DroidMaster(object):
         self.qemu_hda = qemu_hda
         self.qemu_no_graphic = qemu_no_graphic
 
-        self.device_pool_capacity = 3
+        self.device_pool_capacity = 6
         self.device_pool = {}
         self.device_unique_id = 0
 

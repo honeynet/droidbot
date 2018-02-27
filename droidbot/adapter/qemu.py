@@ -45,7 +45,7 @@ class QEMUConn(Adapter):
         # start qemu instance
         qemu_cmd = ["qemu-system-i386",
                     "-hda", self.hda_path,
-                    "-smp", "cpus=2",
+                    "-smp", "cpus=4",
                     "-m", "2048",
                     "-machine", "q35",
                     "-monitor", "telnet:%s:%d,server,nowait" % \

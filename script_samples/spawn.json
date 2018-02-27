@@ -39,7 +39,19 @@
             },
             {
                 "event_type": "spawn",
+                "target_view": "frm_mylocation"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_cities"
+            },
+            {
+                "event_type": "spawn",
                 "target_view": "frm_settings"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_about"
             },
             {
                 "event_type": "touch",

@@ -3,6 +3,7 @@ import subprocess
 import logging
 import re
 from adapter import Adapter
+import time
 
 
 class ADBException(Exception):
@@ -215,7 +216,8 @@ class ADB(Adapter):
         :return: the enabled service names, each service name is in <package_name>/<service_name> format
         """
         r = self.shell("settings get secure enabled_accessibility_services")
-        return r.strip().split(":")
+        r = re.sub(r'(?m)^WARNING:.*\n?', '', r)
+        return r.strip().split(":") if r.strip() != '' else []
 
     def disable_accessibility_service(self, service_name):
         """
@@ -236,6 +238,18 @@ class ADB(Adapter):
         if service_name not in service_names:
             service_names.append(service_name)
             self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+        self.shell("settings put secure accessibility_enabled 1")
+
+    def enable_accessibility_service_db(self, service_name):
+        """
+        Enable an accessibility service
+        :param service_name: the service to enable, in <package_name>/<service_name> format
+        """
+        subprocess.check_output("adb shell \"sqlite3 -batch /data/data/com.android.providers.settings/databases/settings.db \\\"DELETE FROM secure WHERE name='enabled_accessibility_services' OR name='accessibility_enabled' OR name='touch_exploration_granted_accessibility_services' OR name='touch_exploration_enabled'; INSERT INTO secure (name, value) VALUES ('enabled_accessibility_services','" + service_name + "'), ('accessibility_enabled','1'), ('touch_exploration_granted_accessibility_services','" + service_name + "'), ('touch_exploration_enabled','1')\\\";\"", shell=True)
+        self.shell("stop")
+        time.sleep(1)
+        self.shell("start")
+
 
     def get_installed_apps(self):
         """
@@ -243,7 +257,7 @@ class ADB(Adapter):
         :return: a dict, each key is a package name of an app and each value is the file path to the apk
         """
         app_lines = self.shell("pm list packages -f").splitlines()
-        app_line_re = re.compile('package:(?P<apk_path>[^=]+)=(?P<package>[^=]+)')
+        app_line_re = re.compile('package:(?P<apk_path>.+)=(?P<package>[^=]+)')
         package_to_path = {}
         for app_line in app_lines:
             m = app_line_re.match(app_line)

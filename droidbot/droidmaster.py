@@ -46,6 +46,7 @@ class DroidMaster(object):
                  debug_mode=False,
                  profiling_method=None,
                  grant_perm=False,
+                 enable_accessibility_hard=False,
                  qemu_hda=None,
                  qemu_no_graphic=False):
         """
@@ -78,6 +79,7 @@ class DroidMaster(object):
         self.debug_mode=debug_mode
         self.profiling_method=profiling_method
         self.grant_perm=grant_perm
+        self.enable_accessibility_hard=enable_accessibility_hard
 
         # 2. Initiate Device Pool
         # {"adb_target": {"pid": pid, }}
@@ -163,6 +165,7 @@ class DroidMaster(object):
                                           debug_mode=self.debug_mode,
                                           profiling_method=self.profiling_method,
                                           grant_perm=self.grant_perm,
+                                          enable_accessibility_hard=self.enable_accessibility_hard,
                                           master="http://%s:%d/" % \
                                           (self.domain, self.rpc_port))
         device["droidbot"].set_up()

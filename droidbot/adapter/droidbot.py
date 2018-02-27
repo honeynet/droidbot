@@ -39,6 +39,7 @@ class DroidBotConn(Adapter):
                  debug_mode=False,
                  profiling_method=None,
                  grant_perm=False,
+                 enable_accessibility_hard=False,
                  master=None):
         """
         initiate a DroidBot connection
@@ -63,6 +64,7 @@ class DroidBotConn(Adapter):
         self.debug_mode = debug_mode
         self.profiling_method = profiling_method
         self.grant_perm = grant_perm
+        self.enable_accessibility_hard = enable_accessibility_hard
         self.master = master
 
     def set_up(self):
@@ -82,6 +84,8 @@ class DroidBotConn(Adapter):
             droidbot_cmd += ["-script", self.script_path]
         if self.master is not None:
             droidbot_cmd += ["-master", self.master]
+        if self.enable_accessibility_hard:
+            droidbot_cmd += ["-accessibility_auto"]
 
         self.droidbot_p = subprocess.Popen(droidbot_cmd)
         self.pid = self.droidbot_p.pid

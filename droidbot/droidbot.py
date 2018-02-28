@@ -40,7 +40,8 @@ class DroidBot(object):
                  debug_mode=False,
                  profiling_method=None,
                  grant_perm=False,
-                 enable_accessibility_hard=False):
+                 enable_accessibility_hard=False,
+                 master=None):
         """
         initiate droidbot with configurations
         :return:
@@ -53,7 +54,7 @@ class DroidBot(object):
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
             stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
@@ -95,7 +96,8 @@ class DroidBot(object):
                                               event_count=event_count,
                                               event_interval=event_interval,
                                               script_path=script_path,
-                                              profiling_method=profiling_method)
+                                              profiling_method=profiling_method,
+                                              master=master)
         except Exception as e:
             self.logger.warning("Something went wrong: " + e.message)
             import traceback

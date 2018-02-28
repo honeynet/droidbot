@@ -48,7 +48,7 @@ class Device(object):
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
         self.grant_perm = grant_perm
         self.enable_accessibility_hard = enable_accessibility_hard
 
@@ -764,7 +764,7 @@ class Device(object):
         tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         local_image_dir = os.path.join(self.output_dir, "temp")
         if not os.path.exists(local_image_dir):
-            os.mkdir(local_image_dir)
+            os.makedirs(local_image_dir)
 
         if self.adapters[self.minicap] and self.minicap.last_screen:
             # minicap use jpg format

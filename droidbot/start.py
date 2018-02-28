@@ -5,6 +5,7 @@ import input_manager
 import input_policy
 import env_manager
 from droidbot import DroidBot
+from droidmaster import DroidMaster
 
 
 def parse_args():
@@ -44,6 +45,18 @@ def parse_args():
                                  input_policy.POLICY_NAIVE_BFS,
                                  input_policy.POLICY_GREEDY_DFS,
                              ))
+
+    # for distributed DroidBot
+    parser.add_argument("-distributed", action="store", dest="distributed",
+                        choices=["master", "worker"],
+                        help="Start DroidBot in distributed mode.")
+    parser.add_argument("-master", action="store", dest="master",
+                        help="DroidMaster's RPC address")
+    parser.add_argument("-qemu_hda", action="store", dest="qemu_hda",
+                        help="The QEMU's hda image")
+    parser.add_argument("-qemu_no_graphic", action="store_true", dest="qemu_no_graphic",
+                        help="Run QEMU with -nograpihc parameter")
+
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="count", default=input_manager.DEFAULT_EVENT_COUNT,
@@ -92,26 +105,59 @@ def main():
     if not opts.output_dir and opts.cv_mode:
         print "To run in CV mode, you need to specify an output dir (using -o option)."
 
-    droidbot = DroidBot(app_path=opts.apk_path,
-                        device_serial=opts.device_serial,
-                        is_emulator=opts.is_emulator,
-                        output_dir=opts.output_dir,
-                        # env_policy=opts.env_policy,
-                        env_policy=env_manager.POLICY_NONE,
-                        policy_name=opts.input_policy,
-                        random_input=opts.random_input,
-                        script_path=opts.script_path,
-                        event_interval=opts.interval,
-                        timeout=opts.timeout,
-                        event_count=opts.count,
-                        cv_mode=opts.cv_mode,
-                        debug_mode=opts.debug_mode,
-                        keep_app=opts.keep_app,
-                        keep_env=opts.keep_env,
-                        profiling_method=opts.profiling_method,
-                        grant_perm=opts.grant_perm,
-                        enable_accessibility_hard=opts.enable_accessibility_hard)
-    droidbot.start()
+    if opts.distributed:
+        if opts.distributed == "master":
+            start_mode = "master"
+        else:
+            start_mode = "worker"
+    else:
+        start_mode = "normal"
+
+    if start_mode == "master":
+        droidmaster = DroidMaster(app_path=opts.apk_path,
+                                  device_serial=opts.device_serial,
+                                  is_emulator=opts.is_emulator,
+                                  output_dir=opts.output_dir,
+                                  # env_policy=opts.env_policy,
+                                  env_policy=env_manager.POLICY_NONE,
+                                  policy_name=opts.input_policy,
+                                  random_input=opts.random_input,
+                                  script_path=opts.script_path,
+                                  event_interval=opts.interval,
+                                  timeout=opts.timeout,
+                                  event_count=opts.count,
+                                  cv_mode=opts.cv_mode,
+                                  debug_mode=opts.debug_mode,
+                                  keep_app=opts.keep_app,
+                                  keep_env=opts.keep_env,
+                                  profiling_method=opts.profiling_method,
+                                  grant_perm=opts.grant_perm,
+                                  enable_accessibility_hard=opts.enable_accessibility_hard,
+                                  qemu_hda=opts.qemu_hda,
+                                  qemu_no_graphic=opts.qemu_no_graphic)
+        droidmaster.start()
+    else:
+        droidbot = DroidBot(app_path=opts.apk_path,
+                            device_serial=opts.device_serial,
+                            is_emulator=opts.is_emulator,
+                            output_dir=opts.output_dir,
+                            # env_policy=opts.env_policy,
+                            env_policy=env_manager.POLICY_NONE,
+                            policy_name=opts.input_policy,
+                            random_input=opts.random_input,
+                            script_path=opts.script_path,
+                            event_interval=opts.interval,
+                            timeout=opts.timeout,
+                            event_count=opts.count,
+                            cv_mode=opts.cv_mode,
+                            debug_mode=opts.debug_mode,
+                            keep_app=opts.keep_app,
+                            keep_env=opts.keep_env,
+                            profiling_method=opts.profiling_method,
+                            grant_perm=opts.grant_perm,
+                            enable_accessibility_hard=opts.enable_accessibility_hard,
+                            master=opts.master)
+        droidbot.start()
     return
 
 

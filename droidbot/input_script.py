@@ -92,7 +92,7 @@ class DroidBotScript(object):
 
     def parse_main(self):
         script_key = 'main'
-        key_tag = "%s.%s" % (self.tag, script_key)
+        key_tag = "{0}.{1}".format(self.tag, script_key)
         script_value = self.check_and_get_script_value(script_key)
         for state_id in script_value:
             self.check_grammar_identifier_is_valid(state_id)
@@ -136,7 +136,7 @@ class DroidBotScript(object):
         self.main[matched_state_selector] = operations
 
         if operation:
-            msg = "matched state: %s, taking operation: %s" % (matched_state_selector.id, operation.id)
+            msg = "matched state: {0}, taking operation: {1}".format(matched_state_selector.id, operation.id)
             self.logger.info(msg)
 
         return operation
@@ -146,46 +146,46 @@ class DroidBotScript(object):
         if isinstance(value, str) and isinstance(grammar, str):
             return
         if not isinstance(value, type(grammar)):
-            msg = '%s: type should be %s, %s given' % (tag, type(grammar), type(value))
+            msg = '{0}: type should be {1}, {2} given'.format(tag, type(grammar), type(value))
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_key_is_valid(value, valid_keys, tag):
         if value not in valid_keys:
-            msg = '%s: key should be %s, %s given' % (tag, list(valid_keys), value)
+            msg = '{0}: key should be {1}, {2} given'.format(tag, list(valid_keys), value)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_has_key(dict_keys, required_key, tag):
         if required_key not in dict_keys:
-            msg = '%s: key required: %s' % (tag, required_key)
+            msg = '{0}: key required: {1}'.format(tag, required_key)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_identifier_is_valid(value):
         m = safe_re_match(IDENTIFIER_RE, value)
         if not m:
-            msg = "invalid identifier: %s" % value
+            msg = "invalid identifier: {0}".format(value)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_is_coordinate(value):
         if not isinstance(value, tuple) or len(value) != 2:
-            msg = "illegal coordinate format: %s, should be 2-tuple" % value
+            msg = "illegal coordinate format: {0}, should be 2-tuple".format(value)
             raise ScriptSyntaxError(msg)
         if not isinstance(value[0], int) or not isinstance(value[1], int):
-            msg = "illegal coordinate value: %s, should be integer" % value
+            msg = "illegal coordinate value: {0}, should be integer".format(value)
             raise ScriptSyntaxError(msg)
 
     @staticmethod
     def check_grammar_is_list(value):
         if not isinstance(value, list):
-            msg = "illegal list: %s" % value
+            msg = "illegal list: {0}".format(value)
             raise ScriptSyntaxError(msg)
 
     def check_and_get_script_value(self, script_key):
         self.check_grammar_has_key(self.script_dict, script_key, self.tag)
-        key_tag = "%s.%s" % (self.tag, script_key)
+        key_tag = "{0}.{1}".format(self.tag, script_key)
         script_value = self.script_dict[script_key]
         grammar_value = self.script_grammar[script_key]
         self.check_grammar_type(script_value, grammar_value, key_tag)
@@ -201,7 +201,7 @@ class DroidBotScript(object):
             msg = "duplicated identifier definition"
             raise ScriptSyntaxError(msg)
         if DEFAULT_ID in all_ids_set:
-            msg = "defining reserved identifier: %s" % DEFAULT_ID
+            msg = "defining reserved identifier: {0}".format(DEFAULT_ID)
             raise ScriptSyntaxError(msg)
 
     def check_id_not_defined(self):
@@ -216,7 +216,7 @@ class DroidBotScript(object):
             used_view_ids.update(operation.get_used_views())
         if not defined_view_ids.issuperset(used_view_ids):
             undefined_view_ids = used_view_ids - defined_view_ids
-            msg = "using undefined views: %s" % list(undefined_view_ids)
+            msg = "using undefined views: {0}".format(list(undefined_view_ids))
             raise ScriptSyntaxError(msg)
 
         defined_state_ids = set()
@@ -225,7 +225,7 @@ class DroidBotScript(object):
         used_state_ids.update(self.main)
         if not defined_state_ids.issuperset(used_state_ids):
             undefined_state_ids = used_state_ids - defined_state_ids
-            msg = "using undefined states: %s" % list(undefined_state_ids)
+            msg = "using undefined states: {0}".format(list(undefined_state_ids))
             raise ScriptSyntaxError(msg)
 
         defined_operation_ids = set()
@@ -238,7 +238,7 @@ class DroidBotScript(object):
             used_operation_ids.update(operation.get_used_operations())
         if not defined_operation_ids.issuperset(used_operation_ids):
             undefined_operation_ids = used_operation_ids - defined_operation_ids
-            msg = "using undefined operations: %s" % list(undefined_operation_ids)
+            msg = "using undefined operations: {0}".format(list(undefined_operation_ids))
             raise ScriptSyntaxError(msg)
 
 
@@ -272,7 +272,7 @@ class ViewSelector(object):
             DroidBotScript.check_grammar_key_is_valid(selector_key, self.selector_grammar, self.tag)
             selector_value = self.selector_dict[selector_key]
             grammar_value = self.selector_grammar[selector_key]
-            key_tag = "%s.%s" % (self.tag, selector_key)
+            key_tag = "{0}.{1}".format(self.tag, selector_key)
             DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
             if selector_key == 'text':
                 self.text_re = re.compile(selector_value)
@@ -346,7 +346,7 @@ class StateSelector(object):
             DroidBotScript.check_grammar_key_is_valid(selector_key, self.selector_grammar, self.tag)
             selector_value = self.selector_dict[selector_key]
             grammar_value = self.selector_grammar[selector_key]
-            key_tag = "%s.%s" % (self.tag, selector_key)
+            key_tag = "{0}.{1}".format(self.tag, selector_key)
             DroidBotScript.check_grammar_type(selector_value, grammar_value, key_tag)
             if selector_key == 'activity':
                 self.activity_re = re.compile(selector_value)
@@ -455,7 +455,7 @@ class ScriptEvent(InputEvent):
                         matched_view = view_dict
                         break
                 if matched_view is None:
-                    device.logger.warning("target_view no match: %s" % target_view)
+                    device.logger.warning("target_view no match: {0}".format(target_view))
                 else:
                     event_dict['view'] = matched_view
         return InputEvent.from_dict(event_dict)

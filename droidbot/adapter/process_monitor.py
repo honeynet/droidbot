@@ -81,7 +81,7 @@ class ProcessMonitor(Adapter):
             ps_out_head = ps_out_lines[0].split()
             if ps_out_head[0] != "USER" or ps_out_head[1] != "PID" \
                     or ps_out_head[2] != "PPID" or ps_out_head[-1] != "NAME":
-                self.device.logger.warning("ps command output format error: %s" % ps_out_head)
+                self.device.logger.warning("ps command output format error: {0}".format(ps_out_head))
 
             for ps_out_line in ps_out_lines[1:]:
                 segs = ps_out_line.split()
@@ -98,7 +98,7 @@ class ProcessMonitor(Adapter):
                 self.lock.release()
 
             time.sleep(1)
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        print("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))
 
     def get_ppids_by_pid(self, pid):
         """

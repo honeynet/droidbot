@@ -42,7 +42,7 @@ class DroidBotIme(Adapter):
             try:
                 import pkg_resources
                 droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
-                install_cmd = "install %s" % droidbot_app_path
+                install_cmd = "install {0}".format(droidbot_app_path)
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
             except Exception as e:
@@ -53,9 +53,9 @@ class DroidBotIme(Adapter):
         self.device.uninstall_app(DROIDBOT_APP_PACKAGE)
 
     def connect(self):
-        r_enable = self.device.adb.shell("ime enable %s" % IME_SERVICE)
+        r_enable = self.device.adb.shell("ime enable {0}".format(IME_SERVICE))
         if r_enable.endswith("now enabled"):
-            r_set = self.device.adb.shell("ime set %s" % IME_SERVICE)
+            r_set = self.device.adb.shell("ime set {0}".format(IME_SERVICE))
             if r_set.endswith("selected"):
                 self.connected = True
                 return
@@ -73,10 +73,10 @@ class DroidBotIme(Adapter):
         disconnect telnet
         """
         self.connected = False
-        r_disable = self.device.adb.shell("ime disable %s" % IME_SERVICE)
+        r_disable = self.device.adb.shell("ime disable {0}".format(IME_SERVICE))
         if r_disable.endswith("now disabled"):
             self.connected = False
-            print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+            print("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))
             return
         self.logger.warning("Failed to disconnect DroidBotIME!")
 
@@ -86,7 +86,7 @@ class DroidBotIme(Adapter):
         :param text: text to input, can be unicode format
         :param mode: 0 - set text; 1 - append text.
         """
-        input_cmd = "am broadcast -a DROIDBOT_INPUT_TEXT --es text \"%s\" --ei mode %d" % (text, mode)
+        input_cmd = "am broadcast -a DROIDBOT_INPUT_TEXT --es text \"{0}\" --ei mode {1}".format(text, mode)
         self.device.adb.shell(input_cmd)
 
 

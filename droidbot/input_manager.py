@@ -99,7 +99,7 @@ class InputManager(object):
         """
         start sending event
         """
-        self.logger.info("start sending events, policy is %s" % self.policy_name)
+        self.logger.info("start sending events, policy is {0}".format(self.policy_name))
 
         try:
             if self.policy is not None:
@@ -112,12 +112,13 @@ class InputManager(object):
                     time.sleep(1)
             elif self.policy_name == POLICY_MONKEY:
                 throttle = self.event_interval * 1000
-                monkey_cmd = "adb -s %s shell monkey %s --ignore-crashes --ignore-security-exceptions" \
-                             " --throttle %d -v %d" % \
-                             (self.device.serial,
-                              "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
-                              throttle,
-                              self.event_count)
+                monkey_cmd = "adb -s {0} shell monkey {1} --ignore-crashes --ignore-security-exceptions" \
+                             " --throttle {2} -v {3}".format(
+                    self.device.serial,
+                    "" if self.app.get_package_name() is None else "-p " + self.app.get_package_name(),
+                    throttle,
+                    self.event_count
+                )
                 self.monkey = subprocess.Popen(monkey_cmd.split(),
                                                stdout=subprocess.PIPE,
                                                stderr=subprocess.PIPE)
@@ -151,5 +152,5 @@ class InputManager(object):
             self.monkey = None
             pid = self.device.get_app_pid("com.android.commands.monkey")
             if pid is not None:
-                self.device.adb.shell("kill -9 %d" % pid)
+                self.device.adb.shell("kill -9 {0}".format(pid))
         self.enabled = False

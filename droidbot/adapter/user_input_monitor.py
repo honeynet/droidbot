@@ -62,7 +62,7 @@ class UserInputMonitor(Adapter):
 
         if f is not None:
             f.close()
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def parse_line(self, getevent_line):
         pass

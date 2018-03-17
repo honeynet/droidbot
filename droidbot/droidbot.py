@@ -110,7 +110,7 @@ class DroidBot(object):
     @staticmethod
     def get_instance():
         if DroidBot.instance is None:
-            print("Error: DroidBot is not initiated!")
+            self.logger.error("Error: DroidBot is not initiated!")
             sys.exit(-1)
         return DroidBot.instance
 

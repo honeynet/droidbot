@@ -55,7 +55,7 @@ class JDWP(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print(e)
+                self.logger.error(e)
         # TODO
 
 

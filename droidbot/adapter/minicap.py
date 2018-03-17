@@ -208,7 +208,7 @@ class Minicap(Adapter):
                         frameBodyLength -= chunk_len - cursor
                         readFrameBytes += chunk_len - cursor
                         cursor = chunk_len
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def handle_image(self, frameBody):
         # Sanity check for JPG header, only here for debugging purposes.
@@ -252,18 +252,18 @@ class Minicap(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print(e)
+                self.logger.error(e)
         if self.minicap_process is not None:
             try:
                 self.minicap_process.terminate()
             except Exception as e:
-                print(e)
+                self.logger.error(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
         except Exception as e:
-            print(e)
+            self.logger.error(e)
 
     def get_views(self):
         """

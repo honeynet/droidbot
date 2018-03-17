@@ -77,12 +77,12 @@ class DroidBotAppConn(Adapter):
                    self.device.get_sdk_version() < 23 and self.enable_accessibility_hard:
             device.adb.enable_accessibility_service_db(ACCESSIBILITY_SERVICE)
             while ACCESSIBILITY_SERVICE not in device.get_service_names():
-                print("Restarting device...")
+                self.logger.info("Restarting device...")
                 time.sleep(1)
 
         # device.start_app(droidbot_app)
         while ACCESSIBILITY_SERVICE not in device.get_service_names() and self.__can_wait:
-            print("Please enable accessibility for DroidBot app manually.")
+            self.logger.warning("Please enable accessibility for DroidBot app manually.")
             time.sleep(1)
 
     def tear_down(self):
@@ -128,7 +128,7 @@ class DroidBotAppConn(Adapter):
                 _, _, message_len = self.read_head()
                 message = self.sock_read(message_len).decode()
                 self.handle_message(message)
-            print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+            self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
         except Exception as ex:
             if self.check_connectivity():
                 # clear self.last_acc_event
@@ -173,14 +173,14 @@ class DroidBotAppConn(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print(e)
+                self.logger.error(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
 
         except Exception as e:
-            print(e)
+            self.logger.error(e)
         self.__can_wait = False
 
     def __view_tree_to_list(self, view_tree, view_list):

@@ -98,4 +98,4 @@ class TelnetConsole(Adapter):
         """
         if self.console is not None:
             self.console.close()
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)

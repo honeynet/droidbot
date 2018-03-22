@@ -54,7 +54,7 @@ class ADB(Adapter):
         if isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
-            msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
+            msg = "invalid arguments: {0}\nshould be list or str, {1} given".format(extra_args, type(extra_args))
             self.logger.warning(msg)
             raise ADBException(msg)
 
@@ -77,7 +77,7 @@ class ADB(Adapter):
         if isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
-            msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
+            msg = "invalid arguments: {0}\nshould be list or str, {1} given".format(extra_args, type(extra_args))
             self.logger.warning(msg)
             raise ADBException(msg)
 
@@ -102,7 +102,7 @@ class ADB(Adapter):
         """
         disconnect adb
         """
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        print("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))
 
     def get_property(self, property):
         """
@@ -208,7 +208,7 @@ class ADB(Adapter):
 
         display_info_keys = {'width', 'height', 'orientation', 'density'}
         if not display_info_keys.issuperset(display_info):
-            self.logger.warning("getDisplayInfo failed to get: %s" % display_info_keys)
+            self.logger.warning("getDisplayInfo failed to get: {0}".format(display_info_keys))
 
         return display_info
 
@@ -229,7 +229,7 @@ class ADB(Adapter):
         service_names = self.get_enabled_accessibility_services()
         if service_name in service_names:
             service_names.remove(service_name)
-            self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+            self.shell("settings put secure enabled_accessibility_services {0}".format(":".join(service_names)))
 
     def enable_accessibility_service(self, service_name):
         """
@@ -239,7 +239,7 @@ class ADB(Adapter):
         service_names = self.get_enabled_accessibility_services()
         if service_name not in service_names:
             service_names.append(service_name)
-            self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+            self.shell("settings put secure enabled_accessibility_services {0}".format(":".join(service_names)))
         self.shell("settings put secure accessibility_enabled 1")
 
     def enable_accessibility_service_db(self, service_name):
@@ -305,13 +305,12 @@ class ADB(Adapter):
         """
         Press a key
         """
-        self.shell("input keyevent %s" % key_code)
+        self.shell("input keyevent {0}".format(key_code))
 
     def touch(self, x, y, orientation=-1, eventType=DOWN_AND_UP):
         if orientation == -1:
             orientation = self.get_orientation()
-        self.shell("input tap %d %d" %
-                   self.__transform_point_by_orientation((x, y), orientation, self.get_orientation()))
+        self.shell("input tap {0} {1}".format(self.__transform_point_by_orientation((x, y), orientation, self.get_orientation())))
 
     def long_touch(self, x, y, duration=2000, orientation=-1):
         """
@@ -339,11 +338,11 @@ class ADB(Adapter):
 
         version = self.get_sdk_version()
         if version <= 15:
-            self.logger.error("drag: API <= 15 not supported (version=%d)" % version)
+            self.logger.error("drag: API <= 15 not supported (version={0})".format(version))
         elif version <= 17:
-            self.shell("input swipe %d %d %d %d" % (x0, y0, x1, y1))
+            self.shell("input swipe {0} {1} {2} {3}".format(x0, y0, x1, y1))
         else:
-            self.shell("input touchscreen swipe %d %d %d %d %d" % (x0, y0, x1, y1, duration))
+            self.shell("input touchscreen swipe {0} {1} {2} {3} {4}".format(x0, y0, x1, y1, duration))
 
     def type(self, text):
         if isinstance(text, str):
@@ -352,4 +351,4 @@ class ADB(Adapter):
         else:
             encoded = str(text)
         # TODO find out which characters can be dangerous, and handle non-English characters
-        self.shell("input text %s" % encoded)
+        self.shell("input text {0}".format(encoded))

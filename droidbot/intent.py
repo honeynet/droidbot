@@ -56,37 +56,37 @@ class Intent(object):
             cmd += " -f " + self.flag
         if self.extra_keys:
             for key in self.extra_keys:
-                cmd += " --esn '%s'" % key
+                cmd += " --esn '{0}'".format(key)
         if self.extra_string:
             for key in self.extra_string.keys():
-                cmd += " -e '%s' '%s'" % (key, self.extra_string[key])
+                cmd += " -e '{0}' '{1}'".format(key, self.extra_string[key])
         if self.extra_boolean:
             for key in self.extra_boolean.keys():
-                cmd += " -ez '%s' %s" % (key, self.extra_boolean[key])
+                cmd += " -ez '{0}' {1}".format(key, self.extra_boolean[key])
         if self.extra_int:
             for key in self.extra_int.keys():
-                cmd += " -ei '%s' %s" % (key, self.extra_int[key])
+                cmd += " -ei '{0}' {1}".format(key, self.extra_int[key])
         if self.extra_long:
             for key in self.extra_long.keys():
-                cmd += " -el '%s' %s" % (key, self.extra_long[key])
+                cmd += " -el '{0}' {1}".format(key, self.extra_long[key])
         if self.extra_float:
             for key in self.extra_float.keys():
-                cmd += " -ef '%s' %s" % (key, self.extra_float[key])
+                cmd += " -ef '{0}' {1}".format(key, self.extra_float[key])
         if self.extra_uri:
             for key in self.extra_uri.keys():
-                cmd += " -eu '%s' '%s'" % (key, self.extra_uri[key])
+                cmd += " -eu '{0}' '{1}'".format(key, self.extra_uri[key])
         if self.extra_component:
             for key in self.extra_component.keys():
-                cmd += " -ecn '%s' %s" % (key, self.extra_component[key])
+                cmd += " -ecn '{0}' {1}".format(key, self.extra_component[key])
         if self.extra_array_int:
             for key in self.extra_array_int.keys():
-                cmd += " -eia '%s' %s" % (key, ",".join(self.extra_array_int[key]))
+                cmd += " -eia '{0}' {1}".format(key, ",".join(self.extra_array_int[key]))
         if self.extra_array_long:
             for key in self.extra_array_long.keys():
-                cmd += " -ela '%s' %s" % (key, ",".join(self.extra_array_long[key]))
+                cmd += " -ela '{0}' {1}".format(key, ",".join(self.extra_array_long[key]))
         if self.extra_array_float:
             for key in self.extra_array_float.keys():
-                cmd += " -efa '%s' %s" % (key, ",".join(self.extra_array_float[key]))
+                cmd += " -efa '{0}' {1}".format(key, ",".join(self.extra_array_float[key]))
         if self.flags:
             cmd += " " + " ".join(self.flags)
         if self.suffix:

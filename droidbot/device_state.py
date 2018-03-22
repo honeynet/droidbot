@@ -87,7 +87,7 @@ class DeviceState(object):
             view_signature = DeviceState.__get_view_signature(view)
             if view_signature:
                 view_signatures.add(view_signature)
-        return "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+        return "{0}{{{1}}".format(self.foreground_activity, ",".join(sorted(view_signatures)))
 
     def __get_content_free_state_str(self):
         view_signatures = set()
@@ -95,7 +95,7 @@ class DeviceState(object):
             view_signature = DeviceState.__get_content_free_view_signature(view)
             if view_signature:
                 view_signatures.add(view_signature)
-        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+        state_str = "{0}{{{1}}".format(self.foreground_activity, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
@@ -130,11 +130,11 @@ class DeviceState(object):
                     output_dir = os.path.join(self.device.output_dir, "states")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            dest_state_json_path = "%s/state_%s.json" % (output_dir, self.tag)
+            dest_state_json_path = "{0}/state_{1}.json".format(output_dir, self.tag)
             if self.device.adapters[self.device.minicap]:
-                dest_screenshot_path = "%s/screen_%s.jpg" % (output_dir, self.tag)
+                dest_screenshot_path = "{0}/screen_{1}.jpg".format(output_dir, self.tag)
             else:
-                dest_screenshot_path = "%s/screen_%s.png" % (output_dir, self.tag)
+                dest_screenshot_path = "{0}/screen_{1}.png".format(output_dir, self.tag)
             state_json_file = open(dest_state_json_path, "w")
             state_json_file.write(self.to_json())
             state_json_file.close()
@@ -158,9 +158,9 @@ class DeviceState(object):
                 os.mkdir(output_dir)
             view_str = view_dict['view_str']
             if self.device.adapters[self.device.minicap]:
-                view_file_path = "%s/view_%s.jpg" % (output_dir, view_str)
+                view_file_path = "{0}/view_{1}.jpg".format(output_dir, view_str)
             else:
-                view_file_path = "%s/view_%s.png" % (output_dir, view_str)
+                view_file_path = "{0}/view_{1}.png".format(view_str)
             if os.path.exists(view_file_path):
                 return
             from PIL import Image
@@ -193,13 +193,14 @@ class DeviceState(object):
         """
         if 'signature' in view_dict:
             return view_dict['signature']
-        signature = "[class]%s[resource_id]%s[text]%s[%s,%s,%s]" % \
-                    (DeviceState.__safe_dict_get(view_dict, 'class', "None"),
-                     DeviceState.__safe_dict_get(view_dict, 'resource_id', "None"),
-                     DeviceState.__safe_dict_get(view_dict, 'text', "None"),
-                     DeviceState.__key_if_true(view_dict, 'enabled'),
-                     DeviceState.__key_if_true(view_dict, 'checked'),
-                     DeviceState.__key_if_true(view_dict, 'selected'))
+        signature = "[class]{0}[resource_id]{1}[text]{2}[{3},{4},{5}]".format(
+            DeviceState.__safe_dict_get(view_dict, 'class', "None"),
+            DeviceState.__safe_dict_get(view_dict, 'resource_id', "None"),
+            DeviceState.__safe_dict_get(view_dict, 'text', "None"),
+            DeviceState.__key_if_true(view_dict, 'enabled'),
+            DeviceState.__key_if_true(view_dict, 'checked'),
+            DeviceState.__key_if_true(view_dict, 'selected')
+        )
         view_dict['signature'] = signature
         return signature
 
@@ -212,9 +213,10 @@ class DeviceState(object):
         """
         if 'content_free_signature' in view_dict:
             return view_dict['content_free_signature']
-        content_free_signature = "[class]%s[resource_id]%s" % \
-                                 (DeviceState.__safe_dict_get(view_dict, 'class', "None"),
-                                  DeviceState.__safe_dict_get(view_dict, 'resource_id', "None"))
+        content_free_signature = "[class]{0}[resource_id]{1}".format(
+            DeviceState.__safe_dict_get(view_dict, 'class', "None"),
+            DeviceState.__safe_dict_get(view_dict, 'resource_id', "None")
+        )
         view_dict['content_free_signature'] = content_free_signature
         return content_free_signature
 
@@ -235,8 +237,12 @@ class DeviceState(object):
         for child_id in self.get_all_children(view_dict):
             child_strs.append(DeviceState.__get_view_signature(self.views[child_id]))
         child_strs.sort()
-        view_str = "Activity:%s\nSelf:%s\nParents:%s\nChildren:%s" % \
-                   (self.foreground_activity, view_signature, "//".join(parent_strs), "||".join(child_strs))
+        view_str = "Activity:{0}\nSelf:{1}\nParents:{2}\nChildren:{3}".format(
+            self.foreground_activity,
+            view_signature,
+            "//".join(parent_strs),
+            "||".join(child_strs)
+        )
         import hashlib
         view_str = hashlib.md5(view_str.encode('utf-8')).hexdigest()
         view_dict['view_str'] = view_str
@@ -265,10 +271,10 @@ class DeviceState(object):
                 child_x = child_view['bounds'][0][0]
                 child_y = child_view['bounds'][0][1]
                 relative_x, relative_y = child_x - root_x, child_y - root_y
-                children["(%d,%d)" % (relative_x, relative_y)] = self.__get_view_structure(child_view)
+                children["({0},{1})".format(relative_x, relative_y)] = self.__get_view_structure(child_view)
 
         view_structure = {
-            "%s(%d*%d)" % (class_name, width, height): children
+            "{0{({1}*{2})".format(class_name, width, height): children
         }
         view_dict['view_structure'] = view_structure
         return view_structure

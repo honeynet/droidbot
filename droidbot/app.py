@@ -120,7 +120,7 @@ class App(object):
         """
         package_name = self.get_package_name()
         if self.get_main_activity():
-            package_name += "/%s" % self.get_main_activity()
+            package_name += "/{0}".format(self.get_main_activity())
         return Intent(suffix=package_name)
 
     def get_start_with_profiling_intent(self, trace_file, sampling=None):
@@ -130,11 +130,11 @@ class App(object):
         """
         package_name = self.get_package_name()
         if self.get_main_activity():
-            package_name += "/%s" % self.get_main_activity()
+            package_name += "/{0}".format(self.get_main_activity())
         if sampling is not None:
-            return Intent(prefix="start --start-profiler %s --sampling %d" % (trace_file, sampling), suffix=package_name)
+            return Intent(prefix="start --start-profiler {0} --sampling {1}".format(trace_file, sampling), suffix=package_name)
         else:
-            return Intent(prefix="start --start-profiler %s" % trace_file, suffix=package_name)
+            return Intent(prefix="start --start-profiler {0}".format(trace_file), suffix=package_name)
 
     def get_stop_intent(self):
         """

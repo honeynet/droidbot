@@ -24,7 +24,7 @@ class Logcat(Adapter):
         if device.output_dir is None:
             self.out_file = None
         else:
-            self.out_file = "%s/logcat.txt" % device.output_dir
+            self.out_file = "{0}/logcat.txt".format(device.output_dir)
 
     def connect(self):
         self.device.adb.run_cmd("logcat -c")
@@ -61,7 +61,7 @@ class Logcat(Adapter):
 
         if f is not None:
             f.close()
-        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        print("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))
 
     def parse_line(self, logcat_line):
         pass

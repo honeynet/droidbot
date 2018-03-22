@@ -100,12 +100,12 @@ class Device(object):
             adapter_name = adapter.__class__.__name__
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
-                print("[CONNECTION] %s is not enabled." % adapter_name)
+                print("[CONNECTION] {0} is not enabled.".format(adapter_name))
             else:
                 if adapter.check_connectivity():
-                    print("[CONNECTION] %s is enabled and connected." % adapter_name)
+                    print("[CONNECTION] {0} is enabled and connected.".format(adapter_name))
                 else:
-                    print("[CONNECTION] %s is enabled but not connected." % adapter_name)
+                    print("[CONNECTION] {0} is enabled but not connected.".format(adapter_name))
 
     def wait_for_device(self):
         """
@@ -285,14 +285,14 @@ class Device(object):
             self.logger.warning("Telnet not connected, so can't shake the device.")
         sensor_xyz = [(-float(v * 10) + 1, float(v) + 9.8, float(v * 2) + 0.5) for v in [1, -1, 1, -1, 1, -1, 0]]
         for (x, y, z) in sensor_xyz:
-            telnet.run_cmd("sensor set acceleration %f:%f:%f" % (x, y, z))
+            telnet.run_cmd("sensor set acceleration {0}:{1}:{2}".format(x, y, z))
 
     def add_env(self, env):
         """
         set env to the device
         :param env: instance of AppEnv
         """
-        self.logger.info("deploying env: %s" % env)
+        self.logger.info("deploying env: {0}".format(env))
         env.deploy(self)
 
     def add_contact(self, contact_data):
@@ -320,7 +320,7 @@ class Device(object):
         :return:
         """
         assert self.telnet is not None
-        return self.telnet.run_cmd("gsm call %s" % phone)
+        return self.telnet.run_cmd("gsm call {0}".format(phone))
 
     def cancel_call(self, phone=DEFAULT_NUM):
         """
@@ -329,7 +329,7 @@ class Device(object):
         :return:
         """
         assert self.telnet is not None
-        return self.telnet.run_cmd("gsm cancel %s" % phone)
+        return self.telnet.run_cmd("gsm cancel {0}".format(phone))
 
     def accept_call(self, phone=DEFAULT_NUM):
         """
@@ -338,7 +338,7 @@ class Device(object):
         :return:
         """
         assert self.telnet is not None
-        return self.telnet.run_cmd("gsm accept %s" % phone)
+        return self.telnet.run_cmd("gsm accept {0}".format(phone))
 
     def call(self, phone=DEFAULT_NUM):
         """
@@ -348,7 +348,7 @@ class Device(object):
         """
         call_intent = Intent(prefix='start',
                              action="android.intent.action.CALL",
-                             data_uri="tel:%s" % phone)
+                             data_uri="tel:{0}".format(phone))
         return self.send_intent(intent=call_intent)
 
     def send_sms(self, phone=DEFAULT_NUM, content=DEFAULT_CONTENT):
@@ -360,7 +360,7 @@ class Device(object):
         """
         send_sms_intent = Intent(prefix='start',
                                  action="android.intent.action.SENDTO",
-                                 data_uri="sms:%s" % phone,
+                                 data_uri="sms:{0}".format(phone),
                                  extra_string={'sms_body': content},
                                  extra_boolean={'exit_on_sent': 'true'})
         self.send_intent(intent=send_sms_intent)
@@ -376,7 +376,7 @@ class Device(object):
         :return:
         """
         assert self.telnet is not None
-        return self.telnet.run_cmd("sms send %s '%s'" % (phone, content))
+        return self.telnet.run_cmd("sms send {0} '{1}'".format(phone, content))
 
     def set_gps(self, x, y):
         """
@@ -385,7 +385,7 @@ class Device(object):
         :param y: float
         :return:
         """
-        return self.telnet.run_cmd("geo fix %s %s" % (x, y))
+        return self.telnet.run_cmd("geo fix {0} {1}".format(x, y))
 
     def set_continuous_gps(self, center_x, center_y, delta_x, delta_y):
         import threading
@@ -418,7 +418,7 @@ class Device(object):
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
         system_settings = {}
-        out = self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "system"))
+        out = self.adb.shell("sqlite3 {0} \"select * from {1}\"".format(db_name, "system"))
         out_lines = out.splitlines()
         for line in out_lines:
             segs = line.split('|')
@@ -427,7 +427,7 @@ class Device(object):
             system_settings[segs[1]] = segs[2]
 
         secure_settings = {}
-        out = self.adb.shell("sqlite3 %s \"select * from %s\"" % (db_name, "secure"))
+        out = self.adb.shell("sqlite3 {0} \"select * from {1}\"".format(db_name, "secure"))
         out_lines = out.splitlines()
         for line in out_lines:
             segs = line.split('|')
@@ -449,8 +449,11 @@ class Device(object):
         """
         db_name = "/data/data/com.android.providers.settings/databases/settings.db"
 
-        self.adb.shell("sqlite3 %s \"update '%s' set value='%s' where name='%s'\""
-                       % (db_name, table_name, value, name))
+        self.adb.shell(
+            "sqlite3 {0} \"update '{1}' set value='{2}' where name='{3}'\"".format(
+                db_name, table_name, value, name
+            )
+        )
         return True
 
     def send_intent(self, intent):
@@ -486,7 +489,7 @@ class Device(object):
         elif isinstance(app, App):
             package_name = app.get_package_name()
             if app.get_main_activity():
-                package_name += "/%s" % app.get_main_activity()
+                package_name += "/{0}".format(app.get_main_activity())
         else:
             self.logger.warning("unsupported param " + app + " with type: ", type(app))
             return
@@ -563,7 +566,7 @@ class Device(object):
             if m:
                 package = m.group(1)
                 service = m.group(2)
-                services.append("%s/%s" % (package, service))
+                services.append("{0}/{1}".format(package, service))
         return services
 
     def get_package_path(self, package_name):
@@ -572,7 +575,7 @@ class Device(object):
         :param package_name:
         :return: package path of app in device
         """
-        dat = self.adb.shell('pm path %s' % package_name)
+        dat = self.adb.shell('pm path {0}'.format(package_name))
         package_path_re = re.compile('^package:(.+)$')
         m = package_path_re.match(dat)
         if m:
@@ -587,7 +590,7 @@ class Device(object):
         """
         cmd = 'monkey'
         if package:
-            cmd += ' -p %s' % package
+            cmd += ' -p {0}'.format(package)
         out = self.adb.shell(cmd)
         if re.search(r"(Error)|(Cannot find 'App')", out, re.IGNORECASE | re.MULTILINE):
             raise RuntimeError(out)
@@ -624,14 +627,14 @@ class Device(object):
                 break
             dumpsys_lines.append(line)
         if self.output_dir is not None:
-            package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
+            package_info_file_name = "{0}/dumpsys_package_{1}.txt".format(self.output_dir, app.get_package_name())
             package_info_file = open(package_info_file_name, "w")
             package_info_file.writelines(dumpsys_lines)
             package_info_file.close()
         app.dumpsys_main_activity = self.__parse_main_activity_from_dumpsys_lines(dumpsys_lines)
 
-        self.logger.info("App installed: %s" % package_name)
-        self.logger.info("Main activity: %s" % app.get_main_activity())
+        self.logger.info("App installed: {0}".format(package_name))
+        self.logger.info("Main activity: {0}".format(app.get_main_activity()))
 
     @staticmethod
     def __parse_main_activity_from_dumpsys_lines(lines):
@@ -710,7 +713,7 @@ class Device(object):
         ps_out_lines = ps_out.splitlines()
         ps_out_head = ps_out_lines[0].split()
         if ps_out_head[1] != "PID" or ps_out_head[-1] != "NAME":
-            self.logger.warning("ps command output format error: %s" % ps_out_head)
+            self.logger.warning("ps command output format error: {0}".format(ps_out_head))
         for ps_out_line in ps_out_lines[1:]:
             segs = ps_out_line.split()
             if len(segs) < 4:
@@ -739,7 +742,7 @@ class Device(object):
         :return:
         """
         if not os.path.exists(local_file):
-            self.logger.warning("push_file file does not exist: %s" % local_file)
+            self.logger.warning("push_file file does not exist: {0}".format(local_file))
         self.adb.run_cmd(["push", local_file, remote_dir])
 
     def pull_file(self, remote_file, local_file):
@@ -756,7 +759,7 @@ class Device(object):
         #     from PIL import Image
         #     image = Image.open(stream)
         # except IOError as e:
-        #     self.logger.warning("exception in take_screenshot: %s" % e)
+        #     self.logger.warning("exception in take_screenshot: {0}".format(e))
         # return image
         if self.output_dir is None:
             return None
@@ -769,17 +772,17 @@ class Device(object):
 
         if self.adapters[self.minicap] and self.minicap.last_screen:
             # minicap use jpg format
-            local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
+            local_image_path = os.path.join(local_image_dir, "screen_{0}.jpg".format(tag))
             with open(local_image_path, 'w') as local_image_file:
                 local_image_file.write(self.minicap.last_screen)
             return local_image_path
         else:
             # screencap use png format
-            local_image_path = os.path.join(local_image_dir, "screen_%s.png" % tag)
-            remote_image_path = "/sdcard/screen_%s.png" % tag
-            self.adb.shell("screencap -p %s" % remote_image_path)
+            local_image_path = os.path.join(local_image_dir, "screen_{0}.png".format(tag))
+            remote_image_path = "/sdcard/screen_{0}.png".format(tag)
+            self.adb.shell("screencap -p {0}".format(remote_image_path))
             self.pull_file(remote_image_path, local_image_path)
-            self.adb.shell("rm %s" % remote_image_path)
+            self.adb.shell("rm {0}".format(remote_image_path))
 
         return local_image_path
 
@@ -800,7 +803,7 @@ class Device(object):
                                         background_services=background_services,
                                         screenshot_path=screenshot_path)
         except Exception as e:
-            self.logger.warning("exception in get_current_state: %s" % e)
+            self.logger.warning("exception in get_current_state: {0}".format(e))
             import traceback
             traceback.print_exc()
         self.logger.debug("finish getting current device state...")
@@ -892,5 +895,5 @@ class Device(object):
             self.minicap.connect()
 
         if self.minicap.check_connectivity():
-            print("[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__)
+            print("[CONNECTION] {0} is reconnected.".format(self.minicap.__class__.__name__))
         self.pause_sending_event = False

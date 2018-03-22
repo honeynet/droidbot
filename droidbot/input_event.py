@@ -197,7 +197,7 @@ class EventLog(object):
         try:
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            event_json_file_path = "%s/event_%s.json" % (output_dir, self.tag)
+            event_json_file_path = "{0}/event_{1}.json".format(output_dir, self.tag)
             event_json_file = open(event_json_file_path, "w")
             json.dump(self.to_dict(), event_json_file, indent=2)
             event_json_file.close()
@@ -225,7 +225,7 @@ class EventLog(object):
         self.from_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.from_state)
-        print("Input: %s" % self.event_str)
+        print("Input: {0}".format(self.event_str))
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -284,7 +284,7 @@ class EventLog(object):
                     output_dir = os.path.join(self.device.output_dir, "events")
             if not os.path.exists(output_dir):
                 os.mkdir(output_dir)
-            event_trace_local_path = "%s/event_trace_%s.trace" % (output_dir, self.tag)
+            event_trace_local_path = "{0}/event_trace_{1}.trace".format(output_dir, self.tag)
             self.device.pull_file(self.trace_remote_file, event_trace_local_path)
 
         except Exception as e:
@@ -311,7 +311,7 @@ class ManualEvent(InputEvent):
         pass
 
     def get_event_str(self, state):
-        return "%s(time=%s)" % (self.__class__.__name__, self.time)
+        return "{0}(time={1})".format(self.__class__.__name__, self.time)
 
 
 class ExitEvent(InputEvent):
@@ -333,7 +333,7 @@ class ExitEvent(InputEvent):
         raise KeyboardInterrupt()
 
     def get_event_str(self, state):
-        return "%s()" % self.__class__.__name__
+        return "{0}()".format(self.__class__.__name__)
 
 
 class KeyEvent(InputEvent):
@@ -357,7 +357,7 @@ class KeyEvent(InputEvent):
         return True
 
     def get_event_str(self, state):
-        return "%s(state=%s, name=%s)" % (self.__class__.__name__, state.state_str, self.name)
+        return "{0}(state={1}, name={2})".format(self.__class__.__name__, state.state_str, self.name)
 
 
 class UIEvent(InputEvent):
@@ -374,7 +374,7 @@ class UIEvent(InputEvent):
             # if current app is in background, bring it to foreground
             component = app.get_package_name()
             if app.get_main_activity():
-                component += "/%s" % app.get_main_activity()
+                component += "/{0}".format(app.get_main_activity())
             return IntentEvent(Intent(suffix=component))
 
         else:
@@ -423,11 +423,11 @@ class TouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'])
+            return "{0}(state={1}, view={2})".format(self.__class__.__name__, state.state_str, self.view['view_str'])
         elif self.x is not None and self.y is not None:
-            return "%s(state=%s, x=%s, y=%s)" % (self.__class__.__name__, state.state_str, self.x, self.y)
+            return "{0}(state={1}, x={2}, y={3})".format(self.__class__.__name__, state.state_str, self.x, self.y)
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
+            msg = "Invalid {0}!".format(self.__class__.__name__)
             raise InvalidEventException(msg)
 
     def get_views(self):
@@ -461,12 +461,17 @@ class LongTouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, duration=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
+            return "{0}(state={1}, view={2}, duration={2})".format(self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
         elif self.x is not None and self.y is not None:
-            return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
-                   (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
+            return "{0}(state={1}, x={2}, y={3}, duration={4})".format(
+                self.__class__.__name__,
+                state.state_str,
+                self.x,
+                self.y,
+                self.duration
+            )
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
+            msg = "Invalid {0}!".format(self.__class__.__name__)
             raise InvalidEventException(msg)
 
     def get_views(self):
@@ -514,22 +519,22 @@ class SwipeEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.start_view is not None:
-            start_view_str = "state=%s, start_view=%s" % (state.state_str, self.start_view['view_str'])
+            start_view_str = "state={0}, start_view={1}".format(state.state_str, self.start_view['view_str'])
         elif self.start_x is not None and self.start_y is not None:
-            start_view_str = "state=%s, start_x=%s, start_y=%s" % (state.state_str, self.start_x, self.start_y)
+            start_view_str = "state={0}, start_x={1}, start_y={2}".format(state.state_str, self.start_x, self.start_y)
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
+            msg = "Invalid {0}!".format(self.__class__.__name__)
             raise InvalidEventException(msg)
 
         if self.end_view is not None:
-            end_view_str = "end_view=%s" % self.end_view['view_str']
+            end_view_str = "end_view={0}".format(self.end_view['view_str'])
         elif self.end_x is not None and self.end_y is not None:
-            end_view_str = "end_x=%s, end_y=%s" % (self.end_x, self.end_y)
+            end_view_str = "end_x={0}, end_y={1}".format(self.end_x, self.end_y)
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
+            msg = "Invalid {0}!".format(self.__class__.__name__)
             raise InvalidEventException(msg)
 
-        return "%s(%s, %s, duration=%s)" % (self.__class__.__name__, start_view_str, end_view_str, self.duration)
+        return "{0}({1}, {2}, duration={3})".format(self.__class__.__name__, start_view_str, end_view_str, self.duration)
 
     def get_views(self):
         views = []
@@ -600,13 +605,22 @@ class ScrollEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, direction=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
+            return "{0}(state={1}, view={2}, direction={3})".format(
+                self.__class__.__name__,
+                state.state_str,
+                self.view['view_str'],
+                self.direction
+            )
         elif self.x is not None and self.y is not None:
-            return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
-                   (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
+            return "{0}(state={1}, x={2}, y={3}, direction={4})".format(
+                self.__class__.__name__,
+                state.state_str,
+                self.x,
+                self.y,
+                self.direction
+            )
         else:
-            return "%s(state=%s, direction=%s)" % \
-                   (self.__class__.__name__, state.state_str, self.direction)
+            return "{0}(state={1}, direction={2})".format(self.__class__.__name__, state.state_str, self.direction)
 
     def get_views(self):
         return [self.view] if self.view else []
@@ -639,12 +653,22 @@ class SetTextEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, text=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
+            return "{0}(state={1}, view={2}, text={3})".format(
+                self.__class__.__name__,
+                state.state_str,
+                self.view['view_str'],
+                self.text
+            )
         elif self.x is not None and self.y is not None:
-            return "%s(state=%s, x=%s, y=%s, text=%s)" %\
-                   (self.__class__.__name__, state.state_str, self.x, self.y, self.text)
+            return "{0}(state={1}, x={2}, y={3}, text={4})".format(
+                self.__class__.__name__,
+                state.state_str,
+                self.x,
+                self.y,
+                self.text
+            )
         else:
-            msg = "Invalid %s!" % self.__class__.__name__
+            msg = "Invalid {0}!".format(self.__class__.__name__)
             raise InvalidEventException(msg)
 
     def get_views(self):
@@ -677,7 +701,7 @@ class IntentEvent(InputEvent):
         return True
 
     def get_event_str(self, state):
-        return "%s(intent='%s')" % (self.__class__.__name__, self.intent)
+        return "{0}(intent='{1}')".format(self.__class__.__name__, self.intent)
 
 
 EVENT_TYPES = {

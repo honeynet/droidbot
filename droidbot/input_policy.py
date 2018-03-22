@@ -407,7 +407,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
-                self.logger.info("Trying a unexplored event.")
+                self.logger.info("Trying an unexplored event.")
                 self.__event_trace += EVENT_FLAG_EXPLORE
                 return input_event
 

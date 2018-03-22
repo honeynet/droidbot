@@ -7,6 +7,7 @@ from droidbot import env_manager
 from droidbot import input_manager
 from droidbot import input_policy
 from droidbot.droidbot import DroidBot
+import logging
 
 
 def parse_args():
@@ -89,10 +90,10 @@ def main():
     opts = parse_args()
     import os
     if not os.path.exists(opts.apk_path):
-        self.logger.error("APK does not exist.")
+        logging.error("APK does not exist.")
         return
     if not opts.output_dir and opts.cv_mode:
-        self.logger.error("To run in CV mode, you need to specify an output dir (using -o option).")
+        logging.error("To run in CV mode, you need to specify an output dir (using -o option).")
 
     droidbot = DroidBot(app_path=opts.apk_path,
                         device_serial=opts.device_serial,

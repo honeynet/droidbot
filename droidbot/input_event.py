@@ -155,6 +155,7 @@ class EventLog(object):
     """
 
     def __init__(self, device, app, event, profiling_method=None, tag=None):
+        self.logger = logging.getLogger('DroidBot')
         self.device = device
         self.app = app
         self.event = event

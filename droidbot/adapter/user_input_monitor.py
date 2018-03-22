@@ -26,7 +26,7 @@ class UserInputMonitor(Adapter):
         if device.output_dir is None:
             self.out_file = None
         else:
-            self.out_file = "%s/user_input.txt" % device.output_dir
+            self.out_file = "{0}/user_input.txt".format(device.output_dir)
 
     def connect(self):
         self.process = subprocess.Popen(["adb", "-s", self.device.serial, "shell", "getevent", "-lt"],
@@ -62,7 +62,7 @@ class UserInputMonitor(Adapter):
 
         if f is not None:
             f.close()
-        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] {0} is disconnected".format(% self.__class__.__name__))
 
     def parse_line(self, getevent_line):
         pass

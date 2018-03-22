@@ -40,9 +40,9 @@ class TelnetConsole(Adapter):
             from telnetlib import Telnet
             self.console = Telnet(host, port)
             if self.auth_token is not None:
-                self.run_cmd("auth %s" % self.auth_token)
+                self.run_cmd("auth {0}".format(self.auth_token))
             if self.check_connectivity():
-                self.logger.debug("telnet successfully initiated, the port is %d" % port)
+                self.logger.debug("telnet successfully initiated, the port is {0}".format(port))
                 return
         raise TelnetException()
 
@@ -98,4 +98,4 @@ class TelnetConsole(Adapter):
         """
         if self.console is not None:
             self.console.close()
-        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))

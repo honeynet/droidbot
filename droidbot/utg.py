@@ -215,7 +215,7 @@ class UTG(object):
         try:
             states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
             if not isinstance(states, list) or len(states) < 2:
-                self.logger.warning("Error getting path from %s to %s" % (current_state.state_str, target_state.state_str))
+                self.logger.warning("Error getting path from {0} to {1}".format(current_state.state_str, target_state.state_str))
             start_state = states[0]
             for state in states[1:]:
                 edge = self.G[start_state][state]
@@ -225,5 +225,5 @@ class UTG(object):
                 path_events.append(edge["events"][edge_event_strs[0]]["event"])
                 start_state = state
         except:
-            self.logger.warning("Cannot find a path from %s to %s" % (current_state.state_str, target_state.state_str))
+            self.logger.warning("Cannot find a path from {0} to {1}".format(current_state.state_str, target_state.state_str))
         return path_events

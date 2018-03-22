@@ -55,7 +55,7 @@ class Minicap(Adapter):
         device = self.device
 
         try:
-            minicap_files = device.adb.shell("ls %s 2>/dev/null" % self.remote_minicap_path).split()
+            minicap_files = device.adb.shell("ls {0} 2>/dev/null".format(self.remote_minicap_path).split())
             if "minicap.so" in minicap_files and ("minicap" in minicap_files or "minicap-nopie" in minicap_files):
                 self.logger.debug("minicap was already installed.")
                 return
@@ -67,7 +67,7 @@ class Minicap(Adapter):
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
             try:
-                device.adb.shell("mkdir %s 2>/dev/null" % self.remote_minicap_path)
+                device.adb.shell("mkdir {0} 2>/dev/null".format(self.remote_minicap_path))
             except Exception:
                 pass
             abi = device.adb.get_property('ro.product.cpu.abi')
@@ -76,15 +76,15 @@ class Minicap(Adapter):
                 minicap_bin = "minicap"
             else:
                 minicap_bin = "minicap-nopie"
-            device.push_file(local_file="%s/libs/%s/%s" % (local_minicap_path, abi, minicap_bin),
+            device.push_file(local_file="{0}/libs/{1}/{2}".format(local_minicap_path, abi, minicap_bin),
                              remote_dir=self.remote_minicap_path)
-            device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
+            device.push_file(local_file="{0}/jni/libs/android-{1}/{2}/minicap.so".format(local_minicap_path, sdk, abi),
                              remote_dir=self.remote_minicap_path)
             self.logger.debug("minicap installed.")
 
     def tear_down(self):
         try:
-            delete_minicap_cmd = "adb -s %s shell rm -r %s" % (self.device.serial, self.remote_minicap_path)
+            delete_minicap_cmd = "adb -s {0} shell rm -r {1}".format(self.device.serial, self.remote_minicap_path)
             p = subprocess.Popen(delete_minicap_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
         except Exception:
@@ -107,11 +107,14 @@ class Minicap(Adapter):
         self.height = h
         self.orientation = o
 
-        size_opt = "%dx%d@%dx%d/%d" % (w, h, w, h, o)
-        grant_minicap_perm_cmd = "adb -s %s shell chmod -R a+x %s" % \
-                                 (device.serial, self.remote_minicap_path)
-        start_minicap_cmd = "adb -s %s shell LD_LIBRARY_PATH=%s %s/minicap -P %s" % \
-                            (device.serial, self.remote_minicap_path, self.remote_minicap_path, size_opt)
+        size_opt = "{0}x{1}@{2}x{3}/{4}".format(w, h, w, h, o)
+        grant_minicap_perm_cmd = "adb -s {0} shell chmod -R a+x {1}".format(device.serial, self.remote_minicap_path)
+        start_minicap_cmd = "adb -s {0} shell LD_LIBRARY_PATH={1} {2}/minicap -P {3}".format(
+            device.serial,
+            self.remote_minicap_path,
+            self.remote_minicap_path,
+            size_opt
+        )
         self.logger.debug("starting minicap: " + start_minicap_cmd)
 
         p = subprocess.Popen(grant_minicap_perm_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -125,7 +128,7 @@ class Minicap(Adapter):
 
         try:
             # forward host port to remote port
-            forward_cmd = "adb -s %s forward tcp:%d %s" % (device.serial, self.port, MINICAP_REMOTE_ADDR)
+            forward_cmd = "adb -s {0} forward tcp:{1} {2}".format(device.serial, self.port, MINICAP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.host, self.port))
@@ -190,7 +193,7 @@ class Minicap(Adapter):
                     readBannerBytes += 1
                     if readBannerBytes == bannerLength:
                         self.banner = banner
-                        self.logger.debug("minicap initialized: %s" % banner)
+                        self.logger.debug("minicap initialized: {0}".format(banner))
 
                 elif readFrameBytes < 4:
                     frameBodyLength += (chunk[cursor] << (readFrameBytes * 8))
@@ -208,7 +211,7 @@ class Minicap(Adapter):
                         frameBodyLength -= chunk_len - cursor
                         readFrameBytes += chunk_len - cursor
                         cursor = chunk_len
-        self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        self.logger.info("[CONNECTION] {0} is disconnected" .format(self.__class__.__name__))
 
     def handle_image(self, frameBody):
         # Sanity check for JPG header, only here for debugging purposes.
@@ -217,7 +220,7 @@ class Minicap(Adapter):
         self.last_screen = frameBody
         self.last_screen_time = datetime.now()
         self.last_views = None
-        self.logger.debug("Received an image at %s" % self.last_screen_time)
+        self.logger.debug("Received an image at {0}".format(self.last_screen_time))
         self.check_rotation()
 
     def check_rotation(self):
@@ -259,7 +262,7 @@ class Minicap(Adapter):
             except Exception as e:
                 self.logger.error(e)
         try:
-            forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
+            forward_remove_cmd = "adb -s {0} forward --remove tcp:{1}".format(self.device.serial, self.port)
             p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
         except Exception as e:

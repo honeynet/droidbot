@@ -31,33 +31,33 @@ def parse_args():
     #                          "<file>\tget environment policy from a json file.\n")
     parser.add_argument("-policy", action="store", dest="input_policy", default=input_manager.DEFAULT_POLICY,
                         help='Policy to use for test input generation. '
-                             'Default: %s.\nSupported policies:\n' % input_manager.DEFAULT_POLICY +
-                             '  \"%s\" -- No event will be sent, user should interact manually with device; \n'
-                             '  \"%s\" -- Use "adb shell monkey" to send events; \n'
-                             '  \"%s\" -- Explore UI using a naive depth-first strategy;\n'
-                             '  \"%s\" -- Explore UI using a greedy depth-first strategy;\n'
-                             '  \"%s\" -- Explore UI using a naive breadth-first strategy;\n'
-                             '  \"%s\" -- Explore UI using a greedy breadth-first strategy;\n'
-                             %
-                             (
+                             'Default: {0}.\nSupported policies:\n'.format(input_manager.DEFAULT_POLICY) +
+                             '  \"{0}\" -- No event will be sent, user should interact manually with device; \n'
+                             '  \"{1}\" -- Use "adb shell monkey" to send events; \n'
+                             '  \"{2}\" -- Explore UI using a naive depth-first strategy;\n'
+                             '  \"{3}\" -- Explore UI using a greedy depth-first strategy;\n'
+                             '  \"{4}\" -- Explore UI using a naive breadth-first strategy;\n'
+                             '  \"{5}\" -- Explore UI using a greedy breadth-first strategy;\n'
+                             .format(
                                  input_policy.POLICY_NONE,
                                  input_policy.POLICY_MONKEY,
                                  input_policy.POLICY_NAIVE_DFS,
                                  input_policy.POLICY_GREEDY_DFS,
                                  input_policy.POLICY_NAIVE_BFS,
                                  input_policy.POLICY_GREEDY_DFS,
-                             ))
+                             )
+                        )
     parser.add_argument("-script", action="store", dest="script_path",
                         help="Use a script to customize input for certain states.")
     parser.add_argument("-count", action="store", dest="count", default=input_manager.DEFAULT_EVENT_COUNT,
                         type=int, help="Number of events to generate in total. "
-                                       "Default: %d" % input_manager.DEFAULT_EVENT_COUNT)
+                                       "Default: {0}".format(input_manager.DEFAULT_EVENT_COUNT))
     parser.add_argument("-interval", action="store", dest="interval", default=input_manager.DEFAULT_EVENT_INTERVAL,
                         type=int, help="Interval in seconds between each two events. "
-                                       "Default: %d" % input_manager.DEFAULT_EVENT_INTERVAL)
+                                       "Default: {0}".format(input_manager.DEFAULT_EVENT_INTERVAL))
     parser.add_argument("-timeout", action="store", dest="timeout", default=input_manager.DEFAULT_TIMEOUT,
                         type=int, help="Timeout in seconds, -1 means unlimited. "
-                                       "Default: %d" % input_manager.DEFAULT_TIMEOUT)
+                                       "Default: {0}".format(input_manager.DEFAULT_TIMEOUT))
     parser.add_argument("-cv", action="store_true", dest="cv_mode",
                         help="Use OpenCV (instead of UIAutomator) to identify UI components. "
                              "CV mode requires opencv-python installed.")

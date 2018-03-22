@@ -63,7 +63,7 @@ class DroidBotAppConn(Adapter):
             try:
                 import pkg_resources
                 droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
-                install_cmd = "install %s" % droidbot_app_path
+                install_cmd = "install {0}".format(droidbot_app_path)
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
             except Exception as e:
@@ -93,7 +93,7 @@ class DroidBotAppConn(Adapter):
         try:
             # forward host port to remote port
             serial_cmd = "" if self.device is None else "-s " + self.device.serial
-            forward_cmd = "adb %s forward tcp:%d %s" % (serial_cmd, self.port, DROIDBOT_APP_REMOTE_ADDR)
+            forward_cmd = "adb {0} forward tcp:{1} {2}".format(serial_cmd, self.port, DROIDBOT_APP_REMOTE_ADDR)
             subprocess.check_call(forward_cmd.split())
             self.sock.connect((self.host, self.port))
             import threading
@@ -128,7 +128,7 @@ class DroidBotAppConn(Adapter):
                 _, _, message_len = self.read_head()
                 message = self.sock_read(message_len).decode()
                 self.handle_message(message)
-            self.logger.info("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+            self.logger.info("[CONNECTION] {0} is disconnected".format(self.__class__.__name__))
         except Exception as ex:
             if self.check_connectivity():
                 # clear self.last_acc_event
@@ -175,7 +175,7 @@ class DroidBotAppConn(Adapter):
             except Exception as e:
                 self.logger.error(e)
         try:
-            forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
+            forward_remove_cmd = "adb -s {0} forward --remove tcp:{1}".format(self.device.serial, self.port)
             p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
 
@@ -194,7 +194,7 @@ class DroidBotAppConn(Adapter):
         bounds[1][1] = view_tree['bounds'][3]
         width = bounds[1][0] - bounds[0][0]
         height = bounds[1][1] - bounds[0][1]
-        view_tree['size'] = "%d*%d" % (width, height)
+        view_tree['size'] = "{0}*{1}".format(width, height)
         view_tree['bounds'] = bounds
 
         view_list.append(view_tree)

@@ -63,13 +63,13 @@ class InputPolicy(object):
             except KeyboardInterrupt:
                 break
             except InputInterruptedException as e:
-                self.logger.warning("stop sending events: %s" % e)
+                self.logger.warning("stop sending events: {0}".format(e))
                 break
             # except RuntimeError as e:
             #     self.logger.warning(e)
             #     break
             except Exception as e:
-                self.logger.warning("exception during sending events: %s" % e)
+                self.logger.warning("exception during sending events: {0}".format(e))
                 import traceback
                 traceback.print_exc()
                 continue
@@ -206,7 +206,7 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
             if self.last_event_flag.endswith(EVENT_FLAG_START_APP):
                 # It seems the app stuck at some state, and cannot be started
                 # just pass to let viewclient deal with this case
-                self.logger.info("The app had been restarted %d times.", number_of_starts)
+                self.logger.info("The app had been restarted {0} times.".format(number_of_starts))
                 self.logger.info("Trying to restart app...")
                 pass
             else:
@@ -252,8 +252,8 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
             random.shuffle(views)
 
         # add a "BACK" view, consider go back first/last according to search policy
-        mock_view_back = {'view_str': 'BACK_%s' % state.foreground_activity,
-                          'text': 'BACK_%s' % state.foreground_activity}
+        mock_view_back = {'view_str': 'BACK_{0}'.format(state.foreground_activity),
+                          'text': 'BACK_{0}'.format(state.foreground_activity)}
         if self.search_method == POLICY_NAIVE_DFS:
             views.append(mock_view_back)
         elif self.search_method == POLICY_NAIVE_BFS:
@@ -265,13 +265,13 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
             view_text = view_text.lower().strip()
             if view_text in self.preferred_buttons \
                     and (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.logger.info("selected an preferred view: %s" % view['view_str'])
+                self.logger.info("selected an preferred view: {0}".format(view['view_str']))
                 return view
 
         # try to find a un-clicked view
         for view in views:
             if (state.foreground_activity, view['view_str']) not in self.explored_views:
-                self.logger.info("selected an un-clicked view: %s" % view['view_str'])
+                self.logger.info("selected an un-clicked view: {0}".format(view['view_str']))
                 return view
 
         # if all enabled views have been clicked, try jump to another activity by clicking one of state transitions
@@ -280,16 +280,16 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
         transition_views = {transition[0] for transition in self.state_transitions}
         for view in views:
             if view['view_str'] in transition_views:
-                self.logger.info("selected a transition view: %s" % view['view_str'])
+                self.logger.info("selected a transition view: {0}".format(view['view_str']))
                 return view
 
         # no window transition found, just return a random view
         # view = views[0]
-        # self.logger.info("selected a random view: %s" % view['view_str'])
+        # self.logger.info("selected a random view: {0}".format(view['view_str']))
         # return view
 
         # DroidBot stuck on current state, return None
-        self.logger.info("no view could be selected in state: %s" % state.tag)
+        self.logger.info("no view could be selected in state: {0}".format(state.tag))
         return None
 
     def save_state_transition(self, event_str, old_state, new_state):
@@ -344,7 +344,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         @return: InputEvent
         """
         current_state = self.current_state
-        self.logger.info("Current state: %s" % current_state.state_str)
+        self.logger.info("Current state: {0}".format(current_state.state_str))
         if current_state.state_str in self.__missed_states:
             self.__missed_states.remove(current_state.state_str)
 
@@ -363,7 +363,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             if self.__event_trace.endswith(EVENT_FLAG_START_APP + EVENT_FLAG_STOP_APP) \
                     or self.__event_trace.endswith(EVENT_FLAG_START_APP):
                 self.__num_restarts += 1
-                self.logger.info("The app had been restarted %d times.", self.__num_restarts)
+                self.logger.info("The app had been restarted {0} times.".format(self.__num_restarts))
             else:
                 self.__num_restarts = 0
 
@@ -416,7 +416,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         if target_state:
             event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
             if event_path and len(event_path) > 0:
-                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
+                self.logger.info("Navigating to {0}, {1} steps left.".format(target_state.state_str, len(event_path)))
                 self.__event_trace += EVENT_FLAG_NAVIGATE
                 return event_path[0]
 

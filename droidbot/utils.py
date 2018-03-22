@@ -25,7 +25,7 @@ def parse_log(log_msg):
     log_dict['level'] = m.group('level')
     log_dict['tag'] = m.group('tag')
     log_dict['content'] = m.group('content')
-    datetime_str = "%s-%s %s" % (datetime.today().year, date, time)
+    datetime_str = "{0}-{1} {2}".format(datetime.today().year, date, time)
     log_dict['datetime'] = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
 
     return log_dict
@@ -84,7 +84,7 @@ def safe_re_match(regex, content):
 def list_to_html_table(dict_data):
     table = "<table class=\"table\">\n"
     for (key, value) in dict_data:
-        table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
+        table += "<tr><th>{0}</th><td>{1}</td></tr>\n".format(key, value)
     table += "</table>"
     return table
 

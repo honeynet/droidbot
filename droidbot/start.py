@@ -142,7 +142,7 @@ def main():
                             is_emulator=opts.is_emulator,
                             output_dir=opts.output_dir,
                             # env_policy=opts.env_policy,
-                            env_policy=env_manager.POLICY_DUMMY,
+                            env_policy=env_manager.POLICY_NONE,
                             policy_name=opts.input_policy,
                             random_input=opts.random_input,
                             script_path=opts.script_path,

@@ -44,5 +44,5 @@ setup(
         'droidbot': map(lambda x: os.path.relpath(x, 'droidbot'), findall('droidbot/resources/'))
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install
-    install_requires=['androguard', 'networkx', 'Pillow'],
+    install_requires=['androguard<=3.0.1', 'networkx', 'Pillow'],
 )

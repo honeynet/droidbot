@@ -42,6 +42,7 @@ class InputPolicy(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
+        self.master = None
 
     def start(self, input_manager):
         """
@@ -53,9 +54,9 @@ class InputPolicy(object):
             try:
                 # make sure the first event is go to HOME screen
                 # the second event is to start the app
-                if count == 0:
+                if count == 0 and self.master is None:
                     event = KeyEvent(name="HOME")
-                elif count == 1:
+                elif count == 1 and self.master is None:
                     event = IntentEvent(self.app.get_start_intent())
                 else:
                     event = self.generate_event()
@@ -109,6 +110,7 @@ class UtgBasedInputPolicy(InputPolicy):
         super(UtgBasedInputPolicy, self).__init__(device, app)
         self.random_input = random_input
         self.script = None
+        self.master = None
         self.script_events = []
         self.last_event = None
         self.last_state = None
@@ -130,7 +132,7 @@ class UtgBasedInputPolicy(InputPolicy):
 
         # if the previous operation is not finished, continue
         if len(self.script_events) > self.script_event_idx:
-            event = self.script_events[self.script_event_idx]
+            event = self.script_events[self.script_event_idx].get_transformed_event(self)
             self.script_event_idx += 1
 
         # First try matching a state defined in the script
@@ -139,11 +141,8 @@ class UtgBasedInputPolicy(InputPolicy):
             if operation is not None:
                 self.script_events = operation.events
                 # restart script
-                event = self.script_events[0]
+                event = self.script_events[0].get_transformed_event(self)
                 self.script_event_idx = 1
-
-        if event:
-            event = event.get_transformed_event(self.device)
 
         if event is None:
             event = self.generate_event_based_on_utg()
@@ -320,7 +319,7 @@ class UtgNaiveSearchPolicy(UtgBasedInputPolicy):
 
 class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     """
-    depth-first strategy to explore UFG (new)
+    DFS/BFS (according to search_method) strategy to explore UFG (new)
     """
 
     def __init__(self, device, app, random_input, search_method):
@@ -408,7 +407,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
-                self.logger.info("Trying a unexplored event.")
+                self.logger.info("Trying an unexplored event.")
                 self.__event_trace += EVENT_FLAG_EXPLORE
                 return input_event
 

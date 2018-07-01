@@ -33,7 +33,8 @@ Clone this repo and intall with `pip`:
 
 ```shell
 git clone https://github.com/honeynet/droidbot.git
-pip install -e droidbot
+cd droidbot/
+pip install -e .
 ```
 
 If successfully installed, you should be able to execute `droidbot -h`.

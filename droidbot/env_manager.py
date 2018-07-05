@@ -351,7 +351,7 @@ class StaticEnvFactory(AppEnvFactory):
         generate app-specific envs
         """
         envs = []
-        permissions = self.app.get_permissions()
+        permissions = self.app.permissions
         if 'android.permission.READ_CONTACTS' in permissions:
             envs.append(ContactAppEnv())
         if 'android.permission.READ_CALL_LOG' in permissions:

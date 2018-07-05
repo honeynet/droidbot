@@ -46,7 +46,7 @@ class DroidBotIme(Adapter):
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
             except Exception as e:
-                self.logger.warning(e.message)
+                self.logger.warning(e)
                 self.logger.warning("Failed to install DroidBotApp.")
 
     def tear_down(self):

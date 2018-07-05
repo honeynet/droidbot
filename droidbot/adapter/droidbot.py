@@ -1,8 +1,6 @@
-import logging
-import socket
 import subprocess
-import time
-from adapter import Adapter
+
+from .adapter import Adapter
 
 
 class DroidBotConnException(Exception):
@@ -11,16 +9,19 @@ class DroidBotConnException(Exception):
     """
     pass
 
+
 class EOF(Exception):
     """
     Exception in telnet connection
     """
     pass
 
+
 class DroidBotConn(Adapter):
     """
     a connection with DroidBot.
     """
+
     def __init__(self, device_unique_id,
                  app_path=None,
                  device_serial=None,
@@ -67,6 +68,9 @@ class DroidBotConn(Adapter):
         self.enable_accessibility_hard = enable_accessibility_hard
         self.master = master
 
+        self.connected = False
+        self.droidbot_p = False
+
     def set_up(self):
         # start droidbot instance
         droidbot_cmd = ["droidbot",
@@ -76,7 +80,7 @@ class DroidBotConn(Adapter):
                         "-count", str(self.event_count),
                         "-policy", "dfs_greedy",
                         "-grant_perm", "-keep_env", "-random",
-                        "-o", "%s_%d" % \
+                        "-o", "%s_%d" %
                         (self.output_dir, self.device_unique_id),
                         "-use_method_profiling", self.profiling_method,
                         "-distributed", "worker"]
@@ -111,6 +115,7 @@ class DroidBotConn(Adapter):
         stop DroidBot instance
         """
         self.droidbot_p.kill()
+
 
 if __name__ == "__main__":
     pass

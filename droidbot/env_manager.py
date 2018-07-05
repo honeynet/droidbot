@@ -342,7 +342,6 @@ class StaticEnvFactory(AppEnvFactory):
     def __init__(self, app):
         """
         create a StaticEnvFactory from app analysis result
-        :param App
         """
         self.app = app
 
@@ -351,7 +350,7 @@ class StaticEnvFactory(AppEnvFactory):
         generate app-specific envs
         """
         envs = []
-        permissions = self.app.get_permissions()
+        permissions = self.app.permissions
         if 'android.permission.READ_CONTACTS' in permissions:
             envs.append(ContactAppEnv())
         if 'android.permission.READ_CALL_LOG' in permissions:

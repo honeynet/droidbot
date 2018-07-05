@@ -205,7 +205,8 @@ class EventLog(object):
             json.dump(self.to_dict(), event_json_file, indent=2)
             event_json_file.close()
         except Exception as e:
-            self.device.logger.warning("Saving event to dir failed: " + e.message)
+            self.device.logger.warning("Saving event to dir failed.")
+            self.device.logger.warning(e)
 
     def save_views(self, output_dir=None):
         # Save views
@@ -228,7 +229,7 @@ class EventLog(object):
         self.from_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.from_state)
-        print "Input: %s" % self.event_str
+        print("Input: %s" % self.event_str)
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -291,7 +292,8 @@ class EventLog(object):
             self.device.pull_file(self.trace_remote_file, event_trace_local_path)
 
         except Exception as e:
-            self.device.logger.warning("profiling event failed: " + e.message)
+            self.device.logger.warning("profiling event failed")
+            self.device.logger.warning(e)
 
 
 class ManualEvent(InputEvent):
@@ -463,7 +465,8 @@ class LongTouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, duration=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
+            return "%s(state=%s, view=%s, duration=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
@@ -601,7 +604,8 @@ class ScrollEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, direction=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
+            return "%s(state=%s, view=%s, direction=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
@@ -640,7 +644,8 @@ class SetTextEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, text=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
+            return "%s(state=%s, view=%s, text=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, text=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.text)
@@ -723,8 +728,8 @@ class SpawnEvent(InputEvent):
             }
         }
         init_script_json = json.dumps(init_script, indent=2)
-        import xmlrpclib
-        proxy = xmlrpclib.ServerProxy(master)
+        import xmlrpc.client
+        proxy = xmlrpc.client.ServerProxy(master)
         proxy.spawn(device.serial, init_script_json)
 
     def get_event_str(self, state):

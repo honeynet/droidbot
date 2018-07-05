@@ -3,7 +3,8 @@ import socket
 import subprocess
 import time
 from datetime import datetime
-from adapter import Adapter
+from .adapter import Adapter
+
 
 MINICAP_REMOTE_ADDR = "localabstract:minicap"
 ROTATION_CHECK_INTERVAL_S = 1 # Check rotation once per second
@@ -131,9 +132,9 @@ class Minicap(Adapter):
             import threading
             listen_thread = threading.Thread(target=self.listen_messages)
             listen_thread.start()
-        except socket.error as ex:
+        except socket.error as e:
             self.connected = False
-            self.logger.warning(ex.message)
+            self.logger.warning(e)
             raise MinicapException()
 
     def listen_messages(self):
@@ -207,7 +208,7 @@ class Minicap(Adapter):
                         frameBodyLength -= chunk_len - cursor
                         readFrameBytes += chunk_len - cursor
                         cursor = chunk_len
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def handle_image(self, frameBody):
         # Sanity check for JPG header, only here for debugging purposes.
@@ -251,18 +252,18 @@ class Minicap(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print e.message
+                print(e)
         if self.minicap_process is not None:
             try:
                 self.minicap_process.terminate()
             except Exception as e:
-                print e.message
+                print(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
             p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             out, err = p.communicate()
         except Exception as e:
-            print e.message
+            print(e)
 
     def get_views(self):
         """
@@ -298,7 +299,7 @@ class Minicap(Adapter):
             }
             views.append(view)
             temp_id += 1
-        root_view["children"] = range(1, temp_id)
+        root_view["children"] = list(range(1, temp_id))
 
         self.last_views = views
         return views

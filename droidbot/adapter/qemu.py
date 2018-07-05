@@ -1,14 +1,12 @@
 import logging
-import socket
 import subprocess
-import time
-import json
 import telnetlib
-import threading
-from adapter import Adapter
+import time
+from .adapter import Adapter
 
 
 QEMU_START_DELAY = 1
+
 
 class QEMUConnException(Exception):
     """
@@ -16,11 +14,13 @@ class QEMUConnException(Exception):
     """
     pass
 
+
 class EOF(Exception):
     """
     Exception in telnet connection
     """
     pass
+
 
 class QEMUConn(Adapter):
     """

@@ -1,6 +1,6 @@
 import subprocess
 import logging
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class Logcat(Adapter):
@@ -54,13 +54,14 @@ class Logcat(Adapter):
             if self.process is None:
                 continue
             line = self.process.stdout.readline()
+            if not isinstance(line, str):
+                line = line.decode()
             self.parse_line(line)
             if f is not None:
                 f.write(line)
-
         if f is not None:
             f.close()
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def parse_line(self, logcat_line):
         pass

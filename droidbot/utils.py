@@ -37,9 +37,11 @@ def get_available_devices():
     :return: list of str, each str is a device serial number
     """
     import subprocess
-    lines = subprocess.check_output(["adb", "devices"]).splitlines()
+    r = subprocess.check_output(["adb", "devices"])
+    if not isinstance(r, str):
+        r = r.decode()
     devices = []
-    for line in lines:
+    for line in r.splitlines():
         segs = line.strip().split()
         if len(segs) == 2 and segs[1] == "device":
             devices.append(segs[0])
@@ -65,10 +67,10 @@ class Timeout:
 
 def weighted_choice(choices):
     import random
-    total = sum(choices[c] for c in choices.keys())
+    total = sum(choices[c] for c in list(choices.keys()))
     r = random.uniform(0, total)
     upto = 0
-    for c in choices.keys():
+    for c in list(choices.keys()):
         if upto + choices[c] > r:
             return c
         upto += choices[c]

@@ -1,5 +1,7 @@
+import json
 import logging
 import random
+import xmlrpclib
 from abc import abstractmethod
 
 from input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
@@ -117,6 +119,9 @@ class UtgBasedInputPolicy(InputPolicy):
         self.current_state = None
         self.utg = UTG(device=device, app=app, random_input=random_input)
         self.script_event_idx = 0
+        if self.device.humanoid is not None:
+            self.humanoid_view_trees = []
+            self.humanoid_events = []
 
     def generate_event(self):
         """
@@ -127,6 +132,12 @@ class UtgBasedInputPolicy(InputPolicy):
         # Get current device state
         self.current_state = self.device.get_current_state()
         self.__update_utg()
+
+        # update last view trees for humanoid
+        if self.device.humanoid is not None:
+            self.humanoid_view_trees = self.humanoid_view_trees + [self.current_state.view_tree]
+            if len(self.humanoid_view_trees) > 4:
+                self.humanoid_view_trees = self.humanoid_view_trees[1:]
 
         event = None
 
@@ -146,6 +157,12 @@ class UtgBasedInputPolicy(InputPolicy):
 
         if event is None:
             event = self.generate_event_based_on_utg()
+
+        # update last events for humanoid
+        if self.device.humanoid is not None:
+            self.humanoid_events = self.humanoid_events + [event]
+            if len(self.humanoid_events) > 3:
+                self.humanoid_events = self.humanoid_events[1:]
 
         self.last_state = self.current_state
         self.last_event = event
@@ -404,6 +421,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         elif self.search_method == POLICY_GREEDY_BFS:
             possible_events.insert(0, KeyEvent(name="BACK"))
 
+        # get humanoid result, use the result to sort possible events
+        # including back events
+        if self.device.humanoid is not None:
+            possible_events = self.__sort_inputs_by_humanoid(possible_events)
+
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
@@ -424,6 +446,21 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         self.logger.info("Cannot find an exploration target. Trying to restart app...")
         self.__event_trace += EVENT_FLAG_STOP_APP
         return IntentEvent(intent=stop_app_intent)
+
+    def __sort_inputs_by_humanoid(self, possible_events):
+        proxy = xmlrpclib.ServerProxy("http://%s:%s/" % tuple(self.device.humanoid.split(":")))
+        request_json = {
+            "history_view_trees": self.humanoid_view_trees,
+            "history_events": [x.__dict__ for x in self.humanoid_events],
+            "possible_events": [x.__dict__ for x in possible_events],
+            "screen_res": [self.device.display_info["width"],
+                           self.device.display_info["height"]]
+        }
+        new_idx = json.loads(proxy.query(json.dumps(request_json)))
+        new_events = []
+        for idx in new_idx:
+            new_events.append(possible_events[idx])
+        return new_events
 
     def __get_nav_target(self, current_state):
         # If last event is a navigation event

@@ -26,7 +26,8 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=False, output_dir=None,
-                 cv_mode=False, grant_perm=False, telnet_auth_token=None, enable_accessibility_hard=False):
+                 cv_mode=False, grant_perm=False, telnet_auth_token=None,
+                 enable_accessibility_hard=False, humanoid=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -53,6 +54,7 @@ class Device(object):
                 os.makedirs(output_dir)
         self.grant_perm = grant_perm
         self.enable_accessibility_hard = enable_accessibility_hard
+        self.humanoid = humanoid
 
         # basic device information
         self.settings = {}

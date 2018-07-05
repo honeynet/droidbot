@@ -119,7 +119,7 @@ class Device(object):
             # while True:
             #     out = subprocess.check_output(
             #         ["adb", "-s", self.serial, "shell", "getprop", "init.svc.bootanim"]).split()[0]
-            #     if isinstance(out, bytes):
+            #     if not isinstance(out, str):
             #         out = out.decode()
             #     if out == "stopped":
             #         break
@@ -630,7 +630,7 @@ class Device(object):
             line = dumpsys_p.stdout.readline()
             if not line:
                 break
-            if isinstance(line, bytes):
+            if not isinstance(line, str):
                 line = line.decode()
             dumpsys_lines.append(line)
         if self.output_dir is not None:

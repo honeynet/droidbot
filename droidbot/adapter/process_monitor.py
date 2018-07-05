@@ -72,7 +72,7 @@ class ProcessMonitor(Adapter):
 
             try:
                 ps_out = subprocess.check_output(ps_cmd)
-                if isinstance(ps_out, bytes):
+                if not isinstance(ps_out, str):
                     ps_out = ps_out.decode()
             except subprocess.CalledProcessError:
                 continue

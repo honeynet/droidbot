@@ -129,7 +129,7 @@ class DroidBotAppConn(Adapter):
             while self.connected:
                 _, _, message_len = self.read_head()
                 message = self.sock_read(message_len)
-                if isinstance(message, bytes):
+                if not isinstance(message, str):
                     message = message.decode()
                 self.handle_message(message)
             print("[CONNECTION] %s is disconnected" % self.__class__.__name__)

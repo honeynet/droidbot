@@ -55,7 +55,7 @@ class UserInputMonitor(Adapter):
             if self.process is None:
                 continue
             line = self.process.stdout.readline()
-            if isinstance(line, bytes):
+            if not isinstance(line, str):
                 line = line.decode()
             self.parse_line(line)
             if f is not None:

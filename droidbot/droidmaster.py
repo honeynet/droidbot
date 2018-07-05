@@ -9,7 +9,6 @@ import subprocess
 import sys
 import xmlrpc.client
 from threading import Timer
-from xmlrpc.server import SimpleXMLRPCServer
 
 from adapter.droidbot import DroidBotConn
 from adapter.qemu import QEMUConn
@@ -231,6 +230,10 @@ class DroidMaster(object):
         return True
 
     def start_daemon(self):
+        if sys.version.startswith("3"):
+            from xmlrpc.server import SimpleXMLRPCServer
+        else:
+            from SimpleXMLRPCServer import SimpleXMLRPCServer
         self.server = SimpleXMLRPCServer((self.domain, self.rpc_port))
         print("Listening on port %s..." % self.rpc_port)
         self.server.register_function(self.spawn, "spawn")

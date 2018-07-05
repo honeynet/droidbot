@@ -38,7 +38,7 @@ def get_available_devices():
     """
     import subprocess
     r = subprocess.check_output(["adb", "devices"])
-    if isinstance(r, bytes):
+    if not isinstance(r, str):
         r = r.decode()
     devices = []
     for line in r.splitlines():

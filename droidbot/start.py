@@ -43,7 +43,7 @@ def parse_args():
                                  input_policy.POLICY_NAIVE_DFS,
                                  input_policy.POLICY_GREEDY_DFS,
                                  input_policy.POLICY_NAIVE_BFS,
-                                 input_policy.POLICY_GREEDY_DFS,
+                                 input_policy.POLICY_GREEDY_BFS,
                              ))
 
     # for distributed DroidBot

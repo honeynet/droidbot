@@ -23,7 +23,7 @@ class App(object):
         self.output_dir = output_dir
         if output_dir is not None:
             if not os.path.isdir(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
 
         from androguard.core.bytecodes.apk import APK
         self.apk = APK(self.app_path)

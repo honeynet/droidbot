@@ -342,7 +342,6 @@ class StaticEnvFactory(AppEnvFactory):
     def __init__(self, app):
         """
         create a StaticEnvFactory from app analysis result
-        :param App
         """
         self.app = app
 

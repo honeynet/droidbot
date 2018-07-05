@@ -1,0 +1,65 @@
+{
+    "views": {
+        "frm_weather": {
+            "resource_id": ".*frm_weather",
+            "class": ".*LinearLayout"
+        },
+        "frm_mylocation": {
+            "resource_id": ".*frm_mylocation",
+            "class": ".*LinearLayout"
+        },
+        "frm_cities": {
+            "resource_id": ".*frm_cities",
+            "class": ".*LinearLayout"
+        },
+        "frm_map": {
+            "resource_id": ".*frm_map",
+            "class": ".*LinearLayout"
+        },
+        "frm_about": {
+            "resource_id": ".*frm_about",
+            "class": ".*LinearLayout"
+        },
+        "frm_settings": {
+            "resource_id": ".*frm_settings",
+            "class": ".*LinearLayout"
+        }
+    },
+    "states": {
+        "home_state": {
+            "views": ["frm_weather", "frm_mylocation", "frm_cities",
+                      "frm_map", "frm_about", "frm_settings"]
+        }
+    },
+    "operations": {
+        "home_spawn_operation": [
+            {
+                "event_type": "spawn",
+                "target_view": "frm_weather"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_mylocation"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_cities"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_settings"
+            },
+            {
+                "event_type": "spawn",
+                "target_view": "frm_about"
+            },
+            {
+                "event_type": "touch",
+                "target_view": "frm_map"
+            }
+        ]
+    },
+    "main": {
+        "home_state": ["home_spawn_operation"]
+    }
+}

@@ -3,7 +3,7 @@
 import logging
 import time
 
-from adapter import Adapter
+from .adapter import Adapter
 
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
 IME_SERVICE = DROIDBOT_APP_PACKAGE + "/.DroidBotIME"
@@ -76,7 +76,7 @@ class DroidBotIme(Adapter):
         r_disable = self.device.adb.shell("ime disable %s" % IME_SERVICE)
         if r_disable.endswith("now disabled"):
             self.connected = False
-            print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+            print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
             return
         self.logger.warning("Failed to disconnect DroidBotIME!")
 
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     droidbot_ime_conn.set_up()
     droidbot_ime_conn.connect()
     droidbot_ime_conn.input_text("hello world!", 0)
-    droidbot_ime_conn.input_text(u"世界你好!", 1)
+    droidbot_ime_conn.input_text("世界你好!", 1)
     time.sleep(2)
-    droidbot_ime_conn.input_text(u"再见。Bye bye.", 0)
+    droidbot_ime_conn.input_text("再见。Bye bye.", 0)
     droidbot_ime_conn.disconnect()
     droidbot_ime_conn.tear_down()

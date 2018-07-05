@@ -78,6 +78,7 @@ KEY_SwipeEvent = "swipe"
 KEY_ScrollEvent = "scroll"
 KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
+KEY_SpawnEvent = "spawn"
 
 
 class InvalidEventException(Exception):
@@ -140,6 +141,8 @@ class InputEvent(object):
             return IntentEvent(event_dict=event_dict)
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
+        elif event_type == KEY_SpawnEvent:
+            return SpawnEvent(event_dict=event_dict)
 
     @abstractmethod
     def get_event_str(self, state):
@@ -196,13 +199,14 @@ class EventLog(object):
                 output_dir = os.path.join(self.device.output_dir, "events")
         try:
             if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             event_json_file_path = "%s/event_%s.json" % (output_dir, self.tag)
             event_json_file = open(event_json_file_path, "w")
             json.dump(self.to_dict(), event_json_file, indent=2)
             event_json_file.close()
         except Exception as e:
-            self.device.logger.warning("Saving event to dir failed: " + e.message)
+            self.device.logger.warning("Saving event to dir failed.")
+            self.device.logger.warning(e)
 
     def save_views(self, output_dir=None):
         # Save views
@@ -225,7 +229,7 @@ class EventLog(object):
         self.from_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.from_state)
-        print "Input: %s" % self.event_str
+        print("Input: %s" % self.event_str)
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -283,12 +287,13 @@ class EventLog(object):
                 else:
                     output_dir = os.path.join(self.device.output_dir, "events")
             if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             event_trace_local_path = "%s/event_trace_%s.trace" % (output_dir, self.tag)
             self.device.pull_file(self.trace_remote_file, event_trace_local_path)
 
         except Exception as e:
-            self.device.logger.warning("profiling event failed: " + e.message)
+            self.device.logger.warning("profiling event failed")
+            self.device.logger.warning(e)
 
 
 class ManualEvent(InputEvent):
@@ -460,7 +465,8 @@ class LongTouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, duration=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
+            return "%s(state=%s, view=%s, duration=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
@@ -598,7 +604,8 @@ class ScrollEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, direction=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
+            return "%s(state=%s, view=%s, direction=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
@@ -637,7 +644,8 @@ class SetTextEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, text=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
+            return "%s(state=%s, view=%s, text=%s)" % \
+                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, text=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.text)
@@ -678,6 +686,56 @@ class IntentEvent(InputEvent):
         return "%s(intent='%s')" % (self.__class__.__name__, self.intent)
 
 
+class SpawnEvent(InputEvent):
+    """
+    An event to spawn then stop testing
+    """
+
+    def __init__(self, event_dict=None):
+        self.event_type = KEY_SpawnEvent
+        if event_dict is not None:
+            self.__dict__.update(event_dict)
+
+    @staticmethod
+    def get_random_instance(device, app):
+        return None
+
+    def send(self, device):
+        master = self.__dict__["master"]
+        # force touch the view
+        init_script = {
+            "views": {
+                "droid_master_view": {
+                    "resource_id": self.__dict__["view"]["resource_id"],
+                    "class": self.__dict__["view"]["class"],
+                }
+            },
+            "states": {
+                "droid_master_state": {
+                    "views": ["droid_master_view"]
+                }
+            },
+            "operations": {
+                "droid_master_operation": [
+                    {
+                        "event_type": "touch",
+                        "target_view": "droid_master_view"
+                    }
+                ]
+            },
+            "main": {
+                "droid_master_state": ["droid_master_operation"]
+            }
+        }
+        init_script_json = json.dumps(init_script, indent=2)
+        import xmlrpc.client
+        proxy = xmlrpc.client.ServerProxy(master)
+        proxy.spawn(device.serial, init_script_json)
+
+    def get_event_str(self, state):
+        return "%s()" % self.__class__.__name__
+
+
 EVENT_TYPES = {
     KEY_KeyEvent: KeyEvent,
     KEY_TouchEvent: TouchEvent,
@@ -685,4 +743,5 @@ EVENT_TYPES = {
     KEY_SwipeEvent: SwipeEvent,
     KEY_ScrollEvent: ScrollEvent,
     KEY_IntentEvent: IntentEvent,
+    KEY_SpawnEvent: SpawnEvent
 }

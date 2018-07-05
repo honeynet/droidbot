@@ -4,15 +4,16 @@ import subprocess
 import time
 import json
 import struct
-from adapter import Adapter
+import traceback
+from .adapter import Adapter
 
 DROIDBOT_APP_REMOTE_ADDR = "tcp:7336"
 DROIDBOT_APP_PACKAGE = "io.github.ylimit.droidbotapp"
 DROIDBOT_APP_PACKET_HEAD_LEN = 6
 ACCESSIBILITY_SERVICE = DROIDBOT_APP_PACKAGE + "/io.github.privacystreams.accessibility.PSAccessibilityService"
-
 MAX_NUM_GET_VIEWS = 5
 GET_VIEW_WAIT_TIME = 1
+
 
 class DroidBotAppConnException(Exception):
     """
@@ -20,16 +21,19 @@ class DroidBotAppConnException(Exception):
     """
     pass
 
+
 class EOF(Exception):
     """
     Exception in telnet connection
     """
     pass
 
+
 class DroidBotAppConn(Adapter):
     """
     a connection with droidbot app.
     """
+
     def __init__(self, device=None):
         """
         initiate a droidbot app connection
@@ -48,6 +52,7 @@ class DroidBotAppConn(Adapter):
 
         self.sock = None
         self.last_acc_event = None
+        self.enable_accessibility_hard = device.enable_accessibility_hard
 
     def set_up(self):
         device = self.device
@@ -61,16 +66,23 @@ class DroidBotAppConn(Adapter):
                 install_cmd = "install %s" % droidbot_app_path
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")
-            except Exception as e:
-                self.logger.warning(e.message)
+            except Exception:
                 self.logger.warning("Failed to install DroidBotApp.")
+                traceback.print_exc()
 
         # device.adb.disable_accessibility_service(ACCESSIBILITY_SERVICE)
         device.adb.enable_accessibility_service(ACCESSIBILITY_SERVICE)
 
+        if ACCESSIBILITY_SERVICE not in device.get_service_names() \
+                and self.device.get_sdk_version() < 23 and self.enable_accessibility_hard:
+            device.adb.enable_accessibility_service_db(ACCESSIBILITY_SERVICE)
+            while ACCESSIBILITY_SERVICE not in device.get_service_names():
+                print("Restarting device...")
+                time.sleep(1)
+
         # device.start_app(droidbot_app)
         while ACCESSIBILITY_SERVICE not in device.get_service_names() and self.__can_wait:
-            print "Please enable accessibility for DroidBot app manually."
+            print("Please enable accessibility for DroidBot app manually.")
             time.sleep(1)
 
     def tear_down(self):
@@ -87,17 +99,21 @@ class DroidBotAppConn(Adapter):
             import threading
             listen_thread = threading.Thread(target=self.listen_messages)
             listen_thread.start()
-        except socket.error as ex:
+        except socket.error:
             self.connected = False
-            self.logger.warning(ex)
+            traceback.print_exc()
             raise DroidBotAppConnException()
 
     def sock_read(self, rest_len):
-        buf = ''
+        buf = None
         while rest_len:
             pkt = self.sock.recv(rest_len)
-            if not pkt: raise EOF()
-            buf += pkt
+            if not pkt:
+                raise EOF()
+            if not buf:
+                buf = pkt
+            else:
+                buf += pkt
             rest_len -= len(pkt)
         return buf
 
@@ -108,18 +124,19 @@ class DroidBotAppConn(Adapter):
 
     def listen_messages(self):
         self.logger.debug("start listening messages")
-        message_len = 0
         self.connected = True
         try:
             while self.connected:
                 _, _, message_len = self.read_head()
                 message = self.sock_read(message_len)
+                if isinstance(message, bytes):
+                    message = message.decode()
                 self.handle_message(message)
-            print "[CONNECTION] %s is disconnected" % self.__class__.__name__
-        except Exception as ex:
+            print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
+        except Exception:
+            traceback.print_exc()
             if self.check_connectivity():
                 # clear self.last_acc_event
-                self.logger.warning(ex)
                 self.logger.warning("Restarting droidbot app")
                 self.last_acc_event = None
                 self.disconnect()
@@ -160,12 +177,13 @@ class DroidBotAppConn(Adapter):
             try:
                 self.sock.close()
             except Exception as e:
-                print e.message
+                print(e)
         try:
             forward_remove_cmd = "adb -s %s forward --remove tcp:%d" % (self.device.serial, self.port)
-            subprocess.check_call(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(forward_remove_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            out, err = p.communicate()
         except Exception as e:
-            print e.message
+            print(e)
         self.__can_wait = False
 
     def __view_tree_to_list(self, view_tree, view_list):

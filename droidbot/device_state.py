@@ -1,7 +1,8 @@
 import math
 import os
+
 import utils
-from input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent
+from input_event import TouchEvent, LongTouchEvent, ScrollEvent
 
 
 class DeviceState(object):
@@ -103,19 +104,18 @@ class DeviceState(object):
         get a text for searching the state
         :return: str
         """
-        words = []
-        words.append(",".join(self.__get_property_from_all_views("resource_id")))
-        words.append(",".join(self.__get_property_from_all_views("text")))
+        words = [",".join(self.__get_property_from_all_views("resource_id")),
+                 ",".join(self.__get_property_from_all_views("text"))]
         return "\n".join(words)
 
-    def __get_property_from_all_views(self, property):
+    def __get_property_from_all_views(self, property_name):
         """
         get the values of a property from all views
         :return: a list of property values
         """
         property_values = set()
         for view in self.views:
-            property_value = DeviceState.__safe_dict_get(view, property, None)
+            property_value = DeviceState.__safe_dict_get(view, property_name, None)
             if property_value:
                 property_values.add(property_value)
         return property_values
@@ -128,7 +128,7 @@ class DeviceState(object):
                 else:
                     output_dir = os.path.join(self.device.output_dir, "states")
             if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             dest_state_json_path = "%s/state_%s.json" % (output_dir, self.tag)
             if self.device.adapters[self.device.minicap]:
                 dest_screenshot_path = "%s/screen_%s.jpg" % (output_dir, self.tag)
@@ -144,7 +144,7 @@ class DeviceState(object):
             # if isinstance(self.screenshot_path, Image):
             #     self.screenshot_path.save(dest_screenshot_path)
         except Exception as e:
-            self.device.logger.warning("saving state to dir failed: " + e.message)
+            self.device.logger.warning(e)
 
     def save_view_img(self, view_dict, output_dir=None):
         try:
@@ -154,7 +154,7 @@ class DeviceState(object):
                 else:
                     output_dir = os.path.join(self.device.output_dir, "views")
             if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
+                os.makedirs(output_dir)
             view_str = view_dict['view_str']
             if self.device.adapters[self.device.minicap]:
                 view_file_path = "%s/view_%s.jpg" % (output_dir, view_str)
@@ -173,7 +173,7 @@ class DeviceState(object):
                                           min(original_img.height, max(0, view_bound[1][1]))))
             view_img.save(view_file_path)
         except Exception as e:
-            self.device.logger.warning("saving view to dir failed: " + e.message)
+            self.device.logger.warning(e)
 
     def is_different_from(self, another_state):
         """

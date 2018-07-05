@@ -2,7 +2,8 @@
 import subprocess
 import logging
 import re
-from adapter import Adapter
+from .adapter import Adapter
+import time
 
 
 class ADBException(Exception):
@@ -48,7 +49,7 @@ class ADB(Adapter):
         :return: output of adb command
         @param extra_args: arguments to run in adb
         """
-        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
+        if isinstance(extra_args, str) or isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
             msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
@@ -61,6 +62,8 @@ class ADB(Adapter):
         self.logger.debug('command:')
         self.logger.debug(args)
         r = subprocess.check_output(args).strip()
+        if isinstance(r, bytes):
+            r = r.decode()
         self.logger.debug('return:')
         self.logger.debug(r)
         return r
@@ -71,7 +74,7 @@ class ADB(Adapter):
         @param extra_args:
         @return: output of adb shell command
         """
-        if isinstance(extra_args, str) or isinstance(extra_args, unicode):
+        if isinstance(extra_args, str) or isinstance(extra_args, str):
             extra_args = extra_args.split()
         if not isinstance(extra_args, list):
             msg = "invalid arguments: %s\nshould be list or str, %s given" % (extra_args, type(extra_args))
@@ -99,15 +102,15 @@ class ADB(Adapter):
         """
         disconnect adb
         """
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
-    def get_property(self, property):
+    def get_property(self, property_name):
         """
         get the value of property
-        @param property:
+        @param property_name:
         @return:
         """
-        return self.shell(["getprop", property])
+        return self.shell(["getprop", property_name])
 
     def get_model_number(self):
         """
@@ -149,7 +152,7 @@ class ADB(Adapter):
         This is a method to obtain display dimensions and density
         """
         display_info = {}
-        logical_display_re = re.compile(".*DisplayViewport\{valid=true, .*orientation=(?P<orientation>\d+),"
+        logical_display_re = re.compile(".*DisplayViewport{valid=true, .*orientation=(?P<orientation>\d+),"
                                         " .*deviceWidth=(?P<width>\d+), deviceHeight=(?P<height>\d+).*")
         dumpsys_display_result = self.shell("dumpsys display")
         if dumpsys_display_result is not None:
@@ -196,8 +199,8 @@ class ADB(Adapter):
             if float_re.match(d):
                 density = float(d)
             else:
-                physicalDensityRE = re.compile('Physical density: (?P<density>[\d.]+)', re.MULTILINE)
-                m = physicalDensityRE.search(self.shell('wm density'))
+                physical_density_re = re.compile('Physical density: (?P<density>[\d.]+)', re.MULTILINE)
+                m = physical_density_re.search(self.shell('wm density'))
                 if m:
                     density = float(m.group('density'))
         if density is not None:
@@ -215,7 +218,8 @@ class ADB(Adapter):
         :return: the enabled service names, each service name is in <package_name>/<service_name> format
         """
         r = self.shell("settings get secure enabled_accessibility_services")
-        return r.strip().split(":")
+        r = re.sub(r'(?m)^WARNING:.*\n?', '', r)
+        return r.strip().split(":") if r.strip() != '' else []
 
     def disable_accessibility_service(self, service_name):
         """
@@ -236,6 +240,26 @@ class ADB(Adapter):
         if service_name not in service_names:
             service_names.append(service_name)
             self.shell("settings put secure enabled_accessibility_services %s" % ":".join(service_names))
+        self.shell("settings put secure accessibility_enabled 1")
+
+    def enable_accessibility_service_db(self, service_name):
+        """
+        Enable an accessibility service
+        :param service_name: the service to enable, in <package_name>/<service_name> format
+        """
+        subprocess.check_call(
+            "adb shell \""
+            "sqlite3 -batch /data/data/com.android.providers.settings/databases/settings.db \\\""
+            "DELETE FROM secure WHERE name='enabled_accessibility_services' OR name='accessibility_enabled' "
+            "OR name='touch_exploration_granted_accessibility_services' OR name='touch_exploration_enabled';"
+            "INSERT INTO secure (name, value) VALUES "
+            "('enabled_accessibility_services','" + service_name + "'), "
+            "('accessibility_enabled','1'), "
+            "('touch_exploration_granted_accessibility_services','" + service_name + "'), "
+            "('touch_exploration_enabled','1')\\\";\"", shell=True)
+        self.shell("stop")
+        time.sleep(1)
+        self.shell("start")
 
     def get_installed_apps(self):
         """
@@ -243,7 +267,7 @@ class ADB(Adapter):
         :return: a dict, each key is a package name of an app and each value is the file path to the apk
         """
         app_lines = self.shell("pm list packages -f").splitlines()
-        app_line_re = re.compile('package:(?P<apk_path>[^=]+)=(?P<package>[^=]+)')
+        app_line_re = re.compile("package:(?P<apk_path>.+)=(?P<package>[^=]+)")
         package_to_path = {}
         for app_line in app_lines:
             m = app_line_re.match(app_line)
@@ -258,7 +282,8 @@ class ADB(Adapter):
         else:
             return -1.0
 
-    def __transform_point_by_orientation(self, (x, y), orientation_orig, orientation_dest):
+    def __transform_point_by_orientation(self, xy, orientation_orig, orientation_dest):
+        (x, y) = xy
         if orientation_orig != orientation_dest:
             if orientation_dest == 1:
                 _x = x
@@ -290,7 +315,7 @@ class ADB(Adapter):
         """
         self.shell("input keyevent %s" % key_code)
 
-    def touch(self, x, y, orientation=-1, eventType=DOWN_AND_UP):
+    def touch(self, x, y, orientation=-1, event_type=DOWN_AND_UP):
         if orientation == -1:
             orientation = self.get_orientation()
         self.shell("input tap %d %d" %
@@ -299,20 +324,19 @@ class ADB(Adapter):
     def long_touch(self, x, y, duration=2000, orientation=-1):
         """
         Long touches at (x, y)
-        @param duration: duration in ms
-        @param orientation: the orientation (-1: undefined)
-        This workaround was suggested by U{HaMi<http://stackoverflow.com/users/2571957/hami>}
         """
         self.drag((x, y), (x, y), duration, orientation)
 
-    def drag(self, (x0, y0), (x1, y1), duration, orientation=-1):
+    def drag(self, start_xy, end_xy, duration, orientation=-1):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in pixel
-        @param (x1, y1): ending point in pixel
+        @param start_xy: starting point in pixel
+        @param end_xy: ending point in pixel
         @param duration: duration of the event in ms
         @param orientation: the orientation (-1: undefined)
         """
+        (x0, y0) = start_xy
+        (x1, y1) = end_xy
         if orientation == -1:
             orientation = self.get_orientation()
         (x0, y0) = self.__transform_point_by_orientation((x0, y0), orientation, self.get_orientation())

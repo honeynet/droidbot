@@ -91,7 +91,7 @@ class UTG(object):
         utg_nodes = []
         utg_edges = []
         for state_str in self.G.nodes():
-            state = self.G.node[state_str]["state"]
+            state = self.G.nodes[state_str]["state"]
             package_name = state.foreground_activity.split("/")[0]
             activity_name = state.foreground_activity.split("/")[1]
             short_activity_name = activity_name.split(".")[-1]
@@ -134,12 +134,14 @@ class UTG(object):
             event_short_descs = []
             event_list = []
 
-            for event_str, event_info in sorted(events.iteritems(), key=lambda x: x[1]["id"]):
+            for event_str, event_info in sorted(iter(events.items()), key=lambda x: x[1]["id"]):
                 event_short_descs.append((event_info["id"], event_str))
                 if self.device.adapters[self.device.minicap]:
-                    view_images = ["views/view_" + view["view_str"] + ".jpg" for view in event_info["event"].get_views()]
+                    view_images = ["views/view_" + view["view_str"] + ".jpg"
+                                   for view in event_info["event"].get_views()]
                 else:
-                    view_images = ["views/view_" + view["view_str"] + ".png" for view in event_info["event"].get_views()]
+                    view_images = ["views/view_" + view["view_str"] + ".png"
+                                   for view in event_info["event"].get_views()]
                 event_list.append({
                     "event_str": event_str,
                     "event_id": event_info["id"],
@@ -205,7 +207,7 @@ class UTG(object):
     def get_reachable_states(self, current_state):
         reachable_states = []
         for target_state_str in nx.descendants(self.G, current_state.state_str):
-            target_state = self.G.node[target_state_str]["state"]
+            target_state = self.G.nodes[target_state_str]["state"]
             reachable_states.append(target_state)
         return reachable_states
 
@@ -214,11 +216,12 @@ class UTG(object):
         try:
             states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
             if not isinstance(states, list) or len(states) < 2:
-                self.logger.warning("Error getting path from %s to %s" % (current_state.state_str, target_state.state_str))
+                self.logger.warning("Error getting path from %s to %s" %
+                                    (current_state.state_str, target_state.state_str))
             start_state = states[0]
             for state in states[1:]:
                 edge = self.G[start_state][state]
-                edge_event_strs = edge["events"].keys()
+                edge_event_strs = list(edge["events"].keys())
                 if self.random_input:
                     random.shuffle(edge_event_strs)
                 path_events.append(edge["events"][edge_event_strs[0]]["event"])

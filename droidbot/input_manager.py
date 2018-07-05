@@ -27,13 +27,12 @@ class InputManager(object):
 
     def __init__(self, device, app, policy_name, random_input,
                  event_count, event_interval,
-                 script_path=None, profiling_method=None):
+                 script_path=None, profiling_method=None, master=None):
         """
         manage input event sent to the target device
         :param device: instance of Device
         :param app: instance of App
         :param policy_name: policy of generating events, string
-        :param cv_mode: whether run in cv mode
         :return:
         """
         self.logger = logging.getLogger('InputEventManager')
@@ -57,11 +56,10 @@ class InputManager(object):
             from input_script import DroidBotScript
             self.script = DroidBotScript(script_dict)
 
-        self.policy = self.get_input_policy(device, app)
+        self.policy = self.get_input_policy(device, app, master)
         self.profiling_method = profiling_method
 
-    def get_input_policy(self, device, app):
-        input_policy = None
+    def get_input_policy(self, device, app, master):
         if self.policy_name == POLICY_NONE:
             input_policy = None
         elif self.policy_name == POLICY_MONKEY:
@@ -77,6 +75,7 @@ class InputManager(object):
             input_policy = None
         if isinstance(input_policy, UtgBasedInputPolicy):
             input_policy.script = self.script
+            input_policy.master = master
         return input_policy
 
     def add_event(self, event):
@@ -124,6 +123,8 @@ class InputManager(object):
                                                stdout=subprocess.PIPE,
                                                stderr=subprocess.PIPE)
                 for monkey_out_line in iter(self.monkey.stdout.readline, ''):
+                    if isinstance(monkey_out_line, bytes):
+                        monkey_out_line = monkey_out_line.decode()
                     self.logger.info(monkey_out_line)
                 # may be disturbed from outside
                 if self.monkey is not None:
@@ -131,7 +132,7 @@ class InputManager(object):
             elif self.policy_name == POLICY_MANUAL:
                 self.device.start_app(self.app)
                 while self.enabled:
-                    keyboard_input = raw_input("press ENTER to save current state, type q to exit...")
+                    keyboard_input = input("press ENTER to save current state, type q to exit...")
                     if keyboard_input.startswith('q'):
                         break
                     state = self.device.get_current_state()

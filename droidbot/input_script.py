@@ -5,7 +5,6 @@ import logging
 import re
 
 from input_event import InputEvent
-from droidbot import DroidBotException
 from utils import safe_re_match
 
 VIEW_ID = '<view_id>'
@@ -142,7 +141,7 @@ class DroidBotScript(object):
 
     @staticmethod
     def check_grammar_type(value, grammar, tag):
-        if isinstance(value, unicode) and isinstance(grammar, str):
+        if isinstance(value, str) and isinstance(grammar, str):
             return
         if not isinstance(value, type(grammar)):
             msg = '%s: type should be %s, %s given' % (tag, type(grammar), type(value))
@@ -462,14 +461,7 @@ class ScriptEvent():
         return event_dict
 
 
-class ScriptException(DroidBotException):
-    """
-    Exception during parsing DroidScript
-    """
-    pass
-
-
-class ScriptSyntaxError(ScriptException):
+class ScriptSyntaxError(RuntimeError):
     """
     syntax error of DroidBotScript
     """

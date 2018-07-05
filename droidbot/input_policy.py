@@ -504,7 +504,7 @@ class ManualPolicy(UtgBasedInputPolicy):
     """
 
     def __init__(self, device, app):
-        super(ManualPolicy, self).__init__(device, app)
+        super(ManualPolicy, self).__init__(device, app, False)
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.__first_event = True

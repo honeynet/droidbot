@@ -4,20 +4,13 @@
 # droidbot will start interacting with Android in AVD like a human
 import logging
 import os
-import sys
-import pkg_resources
 import shutil
 import subprocess
-import xmlrpclib
+import sys
 from threading import Timer
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 
-from device import Device
 from adapter.droidbot import DroidBotConn
 from adapter.qemu import QEMUConn
-from app import App
-from env_manager import AppEnvManager
-from input_manager import InputManager
 
 
 class DroidMaster(object):
@@ -59,27 +52,27 @@ class DroidMaster(object):
         DroidMaster.instance = self
 
         # 1. Save DroidBot Parameters
-        self.app_path=app_path
-        self.device_serial=device_serial
-        self.is_emulator=is_emulator
+        self.app_path = app_path
+        self.device_serial = device_serial
+        self.is_emulator = is_emulator
 
-        self.output_dir=output_dir
+        self.output_dir = output_dir
         os.makedirs(self.output_dir)
 
-        self.env_policy=env_policy
-        self.policy_name=policy_name
-        self.random_input=random_input
-        self.script_path=script_path
-        self.event_count=event_count
-        self.event_interval=event_interval
-        self.timeout=timeout
-        self.keep_app=keep_app
-        self.keep_env=keep_env
-        self.cv_mode=cv_mode
-        self.debug_mode=debug_mode
-        self.profiling_method=profiling_method
-        self.grant_perm=grant_perm
-        self.enable_accessibility_hard=enable_accessibility_hard
+        self.env_policy = env_policy
+        self.policy_name = policy_name
+        self.random_input = random_input
+        self.script_path = script_path
+        self.event_count = event_count
+        self.event_interval = event_interval
+        self.timeout = timeout
+        self.keep_app = keep_app
+        self.keep_env = keep_env
+        self.cv_mode = cv_mode
+        self.debug_mode = debug_mode
+        self.profiling_method = profiling_method
+        self.grant_perm = grant_perm
+        self.enable_accessibility_hard = enable_accessibility_hard
 
         # 2. Initiate Device Pool
         # {"adb_target": {"pid": pid, }}
@@ -122,7 +115,7 @@ class DroidMaster(object):
     @staticmethod
     def get_instance():
         if DroidMaster.instance is None:
-            print "Error: DroidMaster is not initiated!"
+            print("Error: DroidMaster is not initiated!")
             sys.exit(-1)
         return DroidMaster.instance
 
@@ -148,8 +141,7 @@ class DroidMaster(object):
         script_path = init_script_path if init_script_path else self.script_path
         device["droidbot"] = DroidBotConn(device["id"],
                                           app_path=self.app_path,
-                                          device_serial="%s:%d" % \
-                                          (self.domain, device["adb_port"]),
+                                          device_serial="%s:%d" % (self.domain, device["adb_port"]),
                                           is_emulator=self.is_emulator,
                                           output_dir=self.output_dir,
                                           env_policy=self.env_policy,
@@ -166,10 +158,9 @@ class DroidMaster(object):
                                           profiling_method=self.profiling_method,
                                           grant_perm=self.grant_perm,
                                           enable_accessibility_hard=self.enable_accessibility_hard,
-                                          master="http://%s:%d/" % \
-                                          (self.domain, self.rpc_port))
+                                          master="http://%s:%d/" % (self.domain, self.rpc_port))
         device["droidbot"].set_up()
-        self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d], ID[%d]" % \
+        self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d], ID[%d]" %
                          (device["domain"], device["adb_port"],
                           device["qemu_port"], device["id"]))
         self.device_unique_id += 1
@@ -196,12 +187,10 @@ class DroidMaster(object):
         device["qemu"].send_command("savevm spawn")
 
         # copy qemu image file (almost RAM image size only)
-        new_hda_path = "%s.%d" % (device["qemu"].hda_path, \
-                                  self.device_unique_id)
+        new_hda_path = "%s.%d" % (device["qemu"].hda_path, self.device_unique_id)
         shutil.copyfile(device["qemu"].hda_path, new_hda_path)
 
         # prepare init script file
-        import json
         init_script_path = "%s%s%d.json" % (self.output_dir, os.path.sep,
                                             self.device_unique_id)
         with open(init_script_path, "w") as init_script_file:
@@ -226,8 +215,7 @@ class DroidMaster(object):
           Start the first worker, used by DroidMaster itself
         """
         # copy qemu image file
-        new_hda_path = "%s.%d" % (self.qemu_hda, \
-                                  self.device_unique_id)
+        new_hda_path = "%s.%d" % (self.qemu_hda, self.device_unique_id)
         # generate incremental snapshot only
         p = subprocess.Popen(["qemu-img", "create", "-f", "qcow2", new_hda_path,
                               "-o", "backing_file=%s" % self.qemu_hda, "8G"])
@@ -241,14 +229,18 @@ class DroidMaster(object):
         return True
 
     def start_daemon(self):
+        if sys.version.startswith("3"):
+            from xmlrpc.server import SimpleXMLRPCServer
+        else:
+            from SimpleXMLRPCServer import SimpleXMLRPCServer
         self.server = SimpleXMLRPCServer((self.domain, self.rpc_port))
-        print "Listening on port %s..." % self.rpc_port
+        print("Listening on port %s..." % self.rpc_port)
         self.server.register_function(self.spawn, "spawn")
         self.server.register_function(self.start_worker, "start_worker")
         self.server.serve_forever()
 
     def stop_daemon(self):
-        print "Shutting down DroidMaster server..."
+        print("Shutting down DroidMaster server...")
         self.server.shutdown()
         self.server_thread.join(0)
 
@@ -274,10 +266,11 @@ class DroidMaster(object):
             self.server_thread = threading.Thread(target=self.start_daemon)
             self.server_thread.daemon = True
             self.server_thread.start()
-            time.sleep(1) # wait server to start
+            time.sleep(1)  # wait server to start
 
             # create first droidbot instance
-            proxy = xmlrpclib.ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
+            from xmlrpc.client import ServerProxy
+            proxy = ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
             proxy.start_worker()
 
             while len(self.get_running_devices()):
@@ -286,8 +279,7 @@ class DroidMaster(object):
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt.")
             pass
-        except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+        except Exception:
             import traceback
             traceback.print_exc()
             self.stop()

@@ -80,29 +80,31 @@ class DroidBot(object):
         self.enabled = True
 
         try:
-            self.device = Device(device_serial=device_serial,
-                                 is_emulator=is_emulator,
-                                 output_dir=self.output_dir,
-                                 cv_mode=cv_mode,
-                                 grant_perm=grant_perm,
-                                 enable_accessibility_hard=self.enable_accessibility_hard,
-                                 humanoid=self.humanoid)
+            self.device = Device(
+                device_serial=device_serial,
+                is_emulator=is_emulator,
+                output_dir=self.output_dir,
+                cv_mode=cv_mode,
+                grant_perm=grant_perm,
+                enable_accessibility_hard=self.enable_accessibility_hard,
+                humanoid=self.humanoid)
             self.app = App(app_path, output_dir=self.output_dir)
 
-            self.env_manager = AppEnvManager(device=self.device,
-                                             app=self.app,
-                                             env_policy=env_policy)
-            self.input_manager = InputManager(device=self.device,
-                                              app=self.app,
-                                              policy_name=policy_name,
-                                              random_input=random_input,
-                                              event_count=event_count,
-                                              event_interval=event_interval,
-                                              script_path=script_path,
-                                              profiling_method=profiling_method,
-                                              master=master)
-        except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+            self.env_manager = AppEnvManager(
+                device=self.device,
+                app=self.app,
+                env_policy=env_policy)
+            self.input_manager = InputManager(
+                device=self.device,
+                app=self.app,
+                policy_name=policy_name,
+                random_input=random_input,
+                event_count=event_count,
+                event_interval=event_interval,
+                script_path=script_path,
+                profiling_method=profiling_method,
+                master=master)
+        except Exception:
             import traceback
             traceback.print_exc()
             self.stop()
@@ -111,7 +113,7 @@ class DroidBot(object):
     @staticmethod
     def get_instance():
         if DroidBot.instance is None:
-            print "Error: DroidBot is not initiated!"
+            print("Error: DroidBot is not initiated!")
             sys.exit(-1)
         return DroidBot.instance
 
@@ -155,8 +157,7 @@ class DroidBot(object):
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt.")
             pass
-        except Exception as e:
-            self.logger.warning("Something went wrong: " + e.message)
+        except Exception:
             import traceback
             traceback.print_exc()
             self.stop()

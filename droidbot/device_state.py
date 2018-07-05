@@ -1,8 +1,9 @@
 import copy
 import math
 import os
+
 import utils
-from input_event import KeyEvent, TouchEvent, LongTouchEvent, ScrollEvent, SetTextEvent
+from input_event import TouchEvent, LongTouchEvent, ScrollEvent, SetTextEvent
 
 import xmlrpclib
 
@@ -118,19 +119,18 @@ class DeviceState(object):
         get a text for searching the state
         :return: str
         """
-        words = []
-        words.append(",".join(self.__get_property_from_all_views("resource_id")))
-        words.append(",".join(self.__get_property_from_all_views("text")))
+        words = [",".join(self.__get_property_from_all_views("resource_id")),
+                 ",".join(self.__get_property_from_all_views("text"))]
         return "\n".join(words)
 
-    def __get_property_from_all_views(self, property):
+    def __get_property_from_all_views(self, property_name):
         """
         get the values of a property from all views
         :return: a list of property values
         """
         property_values = set()
         for view in self.views:
-            property_value = DeviceState.__safe_dict_get(view, property, None)
+            property_value = DeviceState.__safe_dict_get(view, property_name, None)
             if property_value:
                 property_values.add(property_value)
         return property_values
@@ -159,7 +159,7 @@ class DeviceState(object):
             # if isinstance(self.screenshot_path, Image):
             #     self.screenshot_path.save(dest_screenshot_path)
         except Exception as e:
-            self.device.logger.warning("saving state to dir failed: " + e.message)
+            self.device.logger.warning(e)
 
     def save_view_img(self, view_dict, output_dir=None):
         try:
@@ -188,7 +188,7 @@ class DeviceState(object):
                                           min(original_img.height, max(0, view_bound[1][1]))))
             view_img.save(view_file_path)
         except Exception as e:
-            self.device.logger.warning("saving view to dir failed: " + e.message)
+            self.device.logger.warning(e)
 
     def is_different_from(self, another_state):
         """

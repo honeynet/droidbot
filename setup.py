@@ -9,13 +9,13 @@ setup(
     packages=find_packages(exclude=['droidbot.tests', 'resources',
                                     'droidbot_out', 'evaluation_reports']),
     # this must be the same as the name above
-    version='1.0.2b3',
+    version='1.0.2b4',
     description='A lightweight UI-guided test input generator for Android.',
     author='Yuanchun Li',
     license='MIT',
     author_email='pkulyc@gmail.com',
     url='https://github.com/honeynet/droidbot',  # use the URL to the github repo
-    download_url='https://github.com/honeynet/droidbot/tarball/1.0.2b3',
+    download_url='https://github.com/honeynet/droidbot/tarball/1.0.2b4',
     keywords=['testing', 'monkey', 'exerciser'],  # arbitrary keywords
     classifiers=[
         # How mature is this project? Common values are
@@ -33,7 +33,7 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python',
     ],
     entry_points={
         'console_scripts': [
@@ -41,8 +41,8 @@ setup(
         ],
     },
     package_data={
-        'droidbot': map(lambda x: os.path.relpath(x, 'droidbot'), findall('droidbot/resources/'))
+        'droidbot': [os.path.relpath(x, 'droidbot') for x in findall('droidbot/resources/')]
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install
-    install_requires=['androguard<=3.0.1', 'networkx', 'Pillow'],
+    install_requires=['androguard', 'networkx', 'Pillow'],
 )

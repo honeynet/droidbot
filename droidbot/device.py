@@ -43,6 +43,8 @@ class Device(object):
                 self.logger.warning("ERROR: No device connected.")
                 sys.exit(-1)
             device_serial = all_devices[0]
+        if "emulator" in device_serial and not is_emulator:
+            self.logger.warning("Seems like you are using an emulator. If so, please add is_emulator option.")
         self.serial = device_serial
         self.is_emulator = is_emulator
         self.cv_mode = cv_mode
@@ -101,12 +103,12 @@ class Device(object):
             adapter_name = adapter.__class__.__name__
             adapter_enabled = self.adapters[adapter]
             if not adapter_enabled:
-                print "[CONNECTION] %s is not enabled." % adapter_name
+                print("[CONNECTION] %s is not enabled." % adapter_name)
             else:
                 if adapter.check_connectivity():
-                    print "[CONNECTION] %s is enabled and connected." % adapter_name
+                    print("[CONNECTION] %s is enabled and connected." % adapter_name)
                 else:
-                    print "[CONNECTION] %s is enabled but not connected." % adapter_name
+                    print("[CONNECTION] %s is enabled but not connected." % adapter_name)
 
     def wait_for_device(self):
         """
@@ -117,8 +119,10 @@ class Device(object):
         try:
             subprocess.check_call(["adb", "-s", self.serial, "wait-for-device"])
             # while True:
-            #     out = subprocess.check_output(["adb", "-s", self.serial, "shell",
-            #                                    "getprop", "init.svc.bootanim"]).split()[0]
+            #     out = subprocess.check_output(
+            #         ["adb", "-s", self.serial, "shell", "getprop", "init.svc.bootanim"]).split()[0]
+            #     if not isinstance(out, str):
+            #         out = out.decode()
             #     if out == "stopped":
             #         break
             #     time.sleep(1)
@@ -498,11 +502,16 @@ class Device(object):
         """
         Get current activity
         """
-        data = self.adb.shell("dumpsys activity top").split("\n")
-        regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
-        m = regex.search(data[1])
+        r = self.adb.shell("dumpsys activity activities")
+        activity_line_re = re.compile('\* Hist #\d+: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
+        m = activity_line_re.search(r)
         if m:
-            return m.group(1) + "/" + m.group(2)
+            return m.group(1)
+        # data = self.adb.shell("dumpsys activity top").splitlines()
+        # regex = re.compile("\s*ACTIVITY ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)")
+        # m = regex.search(data[1])
+        # if m:
+        #     return m.group(1) + "/" + m.group(2)
         self.logger.warning("Unable to get top activity name.")
         return None
 
@@ -610,7 +619,7 @@ class Device(object):
             install_cmd.append(app.app_path)
             install_p = subprocess.Popen(install_cmd, stdout=subprocess.PIPE)
             while self.connected and package_name not in self.adb.get_installed_apps():
-                print "Please wait while installing the app..."
+                print("Please wait while installing the app...")
                 time.sleep(2)
             if not self.connected:
                 install_p.terminate()
@@ -623,6 +632,8 @@ class Device(object):
             line = dumpsys_p.stdout.readline()
             if not line:
                 break
+            if not isinstance(line, str):
+                line = line.decode()
             dumpsys_lines.append(line)
         if self.output_dir is not None:
             package_info_file_name = "%s/dumpsys_package_%s.txt" % (self.output_dir, app.get_package_name())
@@ -696,7 +707,7 @@ class Device(object):
             uninstall_cmd = ["adb", "-s", self.serial, "uninstall", package_name]
             uninstall_p = subprocess.Popen(uninstall_cmd, stdout=subprocess.PIPE)
             while package_name in self.adb.get_installed_apps():
-                print "Please wait while uninstalling the app..."
+                print("Please wait while uninstalling the app...")
                 time.sleep(2)
             uninstall_p.terminate()
 
@@ -825,14 +836,11 @@ class Device(object):
         """
         self.adb.long_touch(x, y, duration)
 
-    def view_drag(self, (x0, y0), (x1, y1), duration):
+    def view_drag(self, start_xy, end_xy, duration):
         """
         Sends drag event n PX (actually it's using C{input swipe} command.
-        @param (x0, y0): starting point in PX
-        @param (x1, y1): ending point in PX
-        @param duration: duration of the event in ms
         """
-        self.adb.drag((x0, y0), (x1, y1), duration)
+        self.adb.drag(start_xy, end_xy, duration)
 
     def view_append_text(self, text):
         if self.droidbot_ime.connected:
@@ -892,5 +900,5 @@ class Device(object):
             self.minicap.connect()
 
         if self.minicap.check_connectivity():
-            print "[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__
+            print("[CONNECTION] %s is reconnected." % self.minicap.__class__.__name__)
         self.pause_sending_event = False

@@ -2,7 +2,7 @@ import threading
 import logging
 import time
 import subprocess
-from adapter import Adapter
+from .adapter import Adapter
 
 
 class ProcessMonitor(Adapter):
@@ -72,6 +72,8 @@ class ProcessMonitor(Adapter):
 
             try:
                 ps_out = subprocess.check_output(ps_cmd)
+                if not isinstance(ps_out, str):
+                    ps_out = ps_out.decode()
             except subprocess.CalledProcessError:
                 continue
 
@@ -97,7 +99,7 @@ class ProcessMonitor(Adapter):
                 self.lock.release()
 
             time.sleep(1)
-        print "[CONNECTION] %s is disconnected" % self.__class__.__name__
+        print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def get_ppids_by_pid(self, pid):
         """

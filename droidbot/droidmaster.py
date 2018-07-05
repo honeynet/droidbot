@@ -7,7 +7,6 @@ import os
 import shutil
 import subprocess
 import sys
-import xmlrpc.client
 from threading import Timer
 
 from adapter.droidbot import DroidBotConn
@@ -270,7 +269,8 @@ class DroidMaster(object):
             time.sleep(1)  # wait server to start
 
             # create first droidbot instance
-            proxy = xmlrpc.client.ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
+            from xmlrpc.client import ServerProxy
+            proxy = ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
             proxy.start_worker()
 
             while len(self.get_running_devices()):

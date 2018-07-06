@@ -9,8 +9,8 @@ import subprocess
 import sys
 from threading import Timer
 
-from adapter.droidbot import DroidBotConn
-from adapter.qemu import QEMUConn
+from .adapter.droidbot import DroidBotConn
+from .adapter.qemu import QEMUConn
 
 
 class DroidMaster(object):

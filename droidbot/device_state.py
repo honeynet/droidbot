@@ -2,10 +2,9 @@ import copy
 import math
 import os
 
-import utils
-from input_event import TouchEvent, LongTouchEvent, ScrollEvent, SetTextEvent
+from .utils import md5
+from .input_event import TouchEvent, LongTouchEvent, ScrollEvent, SetTextEvent
 
-import xmlrpclib
 
 class DeviceState(object):
     """
@@ -94,7 +93,7 @@ class DeviceState(object):
 
     def __get_state_str(self):
         state_str_raw = self.__get_state_str_raw()
-        return utils.md5(state_str_raw)
+        return md5(state_str_raw)
 
     def __get_state_str_raw(self):
         view_signatures = set()

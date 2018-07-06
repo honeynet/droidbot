@@ -1,11 +1,11 @@
+import sys
 import json
 import logging
 import random
-import xmlrpclib
 from abc import abstractmethod
 
-from input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
-from utg import UTG
+from .input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
+from .utg import UTG
 
 # Max number of restarts
 MAX_NUM_RESTARTS = 5
@@ -448,7 +448,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         return IntentEvent(intent=stop_app_intent)
 
     def __sort_inputs_by_humanoid(self, possible_events):
-        proxy = xmlrpclib.ServerProxy("http://%s:%s/" % tuple(self.device.humanoid.split(":")))
+        if sys.version.startswith("3"):
+            from xmlrpc.client import ServerProxy
+        else:
+            from xmlrpclib import ServerProxy
+        proxy = ServerProxy("http://%s:%s/" % tuple(self.device.humanoid.split(":")))
         request_json = {
             "history_view_trees": self.humanoid_view_trees,
             "history_events": [x.__dict__ for x in self.humanoid_events],

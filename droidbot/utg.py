@@ -2,10 +2,10 @@ import logging
 import json
 import os
 import random
-import utils
 import datetime
-
 import networkx as nx
+
+from .utils import list_to_html_table
 
 
 class UTG(object):
@@ -96,7 +96,7 @@ class UTG(object):
             activity_name = state.foreground_activity.split("/")[1]
             short_activity_name = activity_name.split(".")[-1]
 
-            state_desc = utils.list_to_html_table([
+            state_desc = list_to_html_table([
                 ("package", package_name),
                 ("activity", activity_name),
                 ("state_str", state.state_str),
@@ -153,7 +153,7 @@ class UTG(object):
                 "from": from_state,
                 "to": to_state,
                 "id": from_state + "-->" + to_state,
-                "title": utils.list_to_html_table(event_short_descs),
+                "title": list_to_html_table(event_short_descs),
                 "label": ", ".join([str(x["event_id"]) for x in event_list]),
                 "events": event_list
             }

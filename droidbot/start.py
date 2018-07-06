@@ -1,11 +1,11 @@
 # helper file of droidbot
 # it parses command arguments and send the options to droidbot
 import argparse
-import input_manager
-import input_policy
-import env_manager
-from droidbot import DroidBot
-from droidmaster import DroidMaster
+from . import input_manager
+from . import input_policy
+from . import env_manager
+from .droidbot import DroidBot
+from .droidmaster import DroidMaster
 
 
 def parse_args():

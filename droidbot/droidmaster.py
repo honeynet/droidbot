@@ -7,11 +7,31 @@ import os
 import shutil
 import subprocess
 import sys
-from threading import Timer
+import time
+import threading
 
-from adapter.droidbot import DroidBotConn
-from adapter.qemu import QEMUConn
+from xmlrpc.client import ServerProxy
+if sys.version.startswith("3"):
+    from xmlrpc.server import SimpleXMLRPCServer
+    from xmlrpc.server import SimpleXMLRPCRequestHandler
+else:
+    from SimpleXMLRPCServer import SimpleXMLRPCServer
+    from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
+from .device import Device
+from .app import App
+
+from .adapter.droidbot import DroidBotConn
+from .adapter.qemu import QEMUConn
+
+class RPCHandler(SimpleXMLRPCRequestHandler):
+    def _dispatch(self, method, params):
+        try:
+            return self.server.funcs[method](*params)
+        except:
+            import traceback
+            traceback.print_exc()
+            raise
 
 class DroidMaster(object):
     """
@@ -20,10 +40,10 @@ class DroidMaster(object):
     """
     # this is a single instance class
     instance = None
+    POLL_INTERVAL = 1
 
     def __init__(self,
                  app_path=None,
-                 device_serial=None,
                  is_emulator=False,
                  output_dir=None,
                  env_policy=None,
@@ -53,11 +73,11 @@ class DroidMaster(object):
 
         # 1. Save DroidBot Parameters
         self.app_path = app_path
-        self.device_serial = device_serial
         self.is_emulator = is_emulator
 
         self.output_dir = output_dir
-        os.makedirs(self.output_dir)
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
         self.env_policy = env_policy
         self.policy_name = policy_name
@@ -75,12 +95,8 @@ class DroidMaster(object):
         self.enable_accessibility_hard = enable_accessibility_hard
 
         # 2. Initiate Device Pool
-        # {"adb_target": {"pid": pid, }}
         self.domain = "localhost"
-
-        self.adb_default_port = 4444
-        self.qemu_default_port = 5555
-        self.rpc_port = 6666
+        self.rpc_port = Device().get_random_port()
 
         self.qemu_hda = qemu_hda
         self.qemu_no_graphic = qemu_no_graphic
@@ -89,21 +105,31 @@ class DroidMaster(object):
         self.device_pool = {}
         self.device_unique_id = 0
 
-        for port_offset in range(self.device_pool_capacity):
-            adb_port = self.adb_default_port + port_offset
-            adb_target = "%s:%s" % (self.domain, adb_port)
+        self.app = App(app_path, output_dir=self.output_dir)
+        self.qemu_app_hda = "%s_%s" % (self.qemu_hda, self.app.get_package_name())
 
-            qemu_port = self.qemu_default_port + port_offset
+        for i in range(self.device_pool_capacity):
+            adb_port = Device().get_random_port()
+            device_serial = "%s:%s" % (self.domain, adb_port)
+            qemu_port = Device().get_random_port()
+            device = Device(
+                device_serial=device_serial,
+                is_emulator=self.is_emulator,
+                output_dir=self.output_dir,
+                cv_mode=self.cv_mode,
+                grant_perm=self.grant_perm,
+                enable_accessibility_hard=self.enable_accessibility_hard)
 
-            self.device_pool[adb_target] = {
+            self.device_pool[device_serial] = {
                 "domain": self.domain,
                 "adb_port": adb_port,
                 "qemu_port": qemu_port,
-                # droidbot is indexed by adb_target
+                # droidbot is indexed by device_serial
                 # qemu is indexed by droidbot
                 "droidbot": None,
                 "qemu": None,
-                "id": None
+                "id": None,
+                "device": device
             }
         self.logger.info(self.device_pool)
 
@@ -122,18 +148,18 @@ class DroidMaster(object):
     def get_available_devices(self):
         return sorted([self.device_pool[x]
                        for x in self.device_pool
-                       if self.device_pool[x]["qemu"] is None])
+                       if self.device_pool[x]["qemu"] is None], key=lambda x: x["adb_port"])
 
     def get_running_devices(self):
         return sorted([self.device_pool[x]
                        for x in self.device_pool
-                       if self.device_pool[x]["qemu"] is not None])
+                       if self.device_pool[x]["qemu"] is not None], key=lambda x: x["adb_port"])
 
-    def start_device(self, device, hda_path, from_snapshot=False, init_script_path=None):
+    def start_device(self, device, hda, from_snapshot=False, init_script_path=None):
         # 1. get device ID
         device["id"] = self.device_unique_id
         # 2. new QEMU adapter
-        device["qemu"] = QEMUConn(hda_path, device["qemu_port"], device["adb_port"],
+        device["qemu"] = QEMUConn(hda, device["qemu_port"], device["adb_port"],
                                   self.qemu_no_graphic)
         device["qemu"].set_up()
         device["qemu"].connect(from_snapshot)
@@ -141,7 +167,7 @@ class DroidMaster(object):
         script_path = init_script_path if init_script_path else self.script_path
         device["droidbot"] = DroidBotConn(device["id"],
                                           app_path=self.app_path,
-                                          device_serial="%s:%d" % (self.domain, device["adb_port"]),
+                                          device_serial=device["device"].serial,
                                           is_emulator=self.is_emulator,
                                           output_dir=self.output_dir,
                                           env_policy=self.env_policy,
@@ -173,7 +199,13 @@ class DroidMaster(object):
         device["qemu"].tear_down()
         device["qemu"] = None
 
-    def spawn(self, adb_target, init_script_json):
+    def qemu_create_img(self, new_hda, back_hda):
+        self.logger.info("%s -> %s" % (back_hda, new_hda))
+        p = subprocess.Popen(["qemu-img", "create", "-f", "qcow2", new_hda,
+                              "-o", "backing_file=%s" % back_hda, "8G"])
+        p.wait()
+
+    def spawn(self, device_serial, init_script_json):
         """
           A worker requests to spawn a new worker
           based on its current state
@@ -182,29 +214,29 @@ class DroidMaster(object):
             self.logger.warning("Event spawned already")
             return False
 
-        device = self.device_pool[adb_target]
-        device["qemu"].send_command("stop")
-        device["qemu"].send_command("savevm spawn")
-
-        # copy qemu image file (almost RAM image size only)
-        new_hda_path = "%s.%d" % (device["qemu"].hda_path, self.device_unique_id)
-        shutil.copyfile(device["qemu"].hda_path, new_hda_path)
-
-        # prepare init script file
-        init_script_path = "%s%s%d.json" % (self.output_dir, os.path.sep,
-                                            self.device_unique_id)
-        with open(init_script_path, "w") as init_script_file:
-            init_script_file.write(init_script_json)
-
         available_devices = self.get_available_devices()
         if not len(available_devices):
             self.logger.warning("No available device slot")
             return False
-        self.start_device(available_devices[0], new_hda_path,
+
+        calling_device = self.device_pool[device_serial]
+        calling_device["qemu"].send_command("stop")
+        calling_device["qemu"].send_command("savevm spawn")
+
+        # copy qemu image file (almost RAM image size only)
+        new_hda = "%s.%d" % (self.qemu_app_hda, self.device_unique_id)
+        shutil.copyfile(calling_device["qemu"].hda, new_hda)
+
+        # prepare init script file
+        init_script_path = os.path.join(self.output_dir, "%d.json" % self.device_unique_id)
+        with open(init_script_path, "w") as init_script_file:
+            init_script_file.write(init_script_json)
+
+        self.start_device(available_devices[0], new_hda,
                           from_snapshot=True, init_script_path=init_script_path)
 
-        device["qemu"].send_command("delvm spawn")
-        device["qemu"].send_command("cont")
+        calling_device["qemu"].send_command("delvm spawn")
+        calling_device["qemu"].send_command("cont")
 
         self.successful_spawn_events.add(init_script_json)
         self.logger.info("Spawning worker")
@@ -212,31 +244,44 @@ class DroidMaster(object):
 
     def start_worker(self):
         """
-          Start the first worker, used by DroidMaster itself
+          Start the first worker (with device 0), used by DroidMaster itself
         """
-        # copy qemu image file
-        new_hda_path = "%s.%d" % (self.qemu_hda, self.device_unique_id)
-        # generate incremental snapshot only
-        p = subprocess.Popen(["qemu-img", "create", "-f", "qcow2", new_hda_path,
-                              "-o", "backing_file=%s" % self.qemu_hda, "8G"])
-        p.wait()
-
         available_devices = self.get_available_devices()
         if not len(available_devices):
             self.logger.warning("No available device slot")
             return False
-        self.start_device(available_devices[0], new_hda_path)
+
+        device = available_devices[0]
+        # if app image doesn't exist, create it first
+        if not os.path.exists(self.qemu_app_hda):
+            self.qemu_create_img(self.qemu_app_hda, self.qemu_hda)
+            app_install_qemu = QEMUConn(self.qemu_app_hda,
+                                        device["qemu_port"],
+                                        device["adb_port"],
+                                        self.qemu_no_graphic)
+            app_install_qemu.set_up()
+            app_install_qemu.connect()
+            device["device"].wait_for_device()
+            device["device"].install_app(self.app)
+            app_install_qemu.disconnect()
+            device["device"].shutdown()
+            app_install_qemu.tear_down()
+
+        new_hda = "%s.%d" % (self.qemu_app_hda, self.device_unique_id)
+        self.qemu_create_img(new_hda, self.qemu_app_hda)
+
+        self.start_device(available_devices[0], new_hda)
         return True
 
+    def stop_worker(self, device_serial):
+        self.stop_device(self.device_pool[device_serial])
+
     def start_daemon(self):
-        if sys.version.startswith("3"):
-            from xmlrpc.server import SimpleXMLRPCServer
-        else:
-            from SimpleXMLRPCServer import SimpleXMLRPCServer
-        self.server = SimpleXMLRPCServer((self.domain, self.rpc_port))
+        self.server = SimpleXMLRPCServer((self.domain, self.rpc_port), RPCHandler)
         print("Listening on port %s..." % self.rpc_port)
         self.server.register_function(self.spawn, "spawn")
         self.server.register_function(self.start_worker, "start_worker")
+        self.server.register_function(self.stop_worker, "stop_worker")
         self.server.serve_forever()
 
     def stop_daemon(self):
@@ -254,27 +299,24 @@ class DroidMaster(object):
         self.logger.info("Starting DroidMaster")
         try:
             if self.timeout > 0:
-                self.timer = Timer(self.timeout, self.stop)
+                self.timer = threading.Timer(self.timeout, self.stop)
                 self.timer.start()
 
             if not self.enabled:
                 return
 
             # enable server listening workers
-            import time
-            import threading
             self.server_thread = threading.Thread(target=self.start_daemon)
             self.server_thread.daemon = True
             self.server_thread.start()
             time.sleep(1)  # wait server to start
 
             # create first droidbot instance
-            from xmlrpc.client import ServerProxy
             proxy = ServerProxy("http://%s:%d/" % (self.domain, self.rpc_port))
             proxy.start_worker()
 
             while len(self.get_running_devices()):
-                time.sleep(1)
+                time.sleep(self.POLL_INTERVAL)
 
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt.")

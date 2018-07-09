@@ -78,12 +78,17 @@ class DroidBotConn(Adapter):
                         "-a", self.app_path,
                         "-interval", str(self.event_interval),
                         "-count", str(self.event_count),
-                        "-policy", "dfs_greedy",
-                        "-grant_perm", "-keep_env", "-random",
+                        "-policy", self.policy_name,
+                        "-grant_perm", "-keep_env",
                         "-o", "%s_%d" %
                         (self.output_dir, self.device_unique_id),
-                        "-use_method_profiling", self.profiling_method,
                         "-distributed", "worker"]
+        if self.is_emulator:
+            droidbot_cmd += ["-is_emulator"]
+        if self.random_input:
+            droidbot_cmd += ["-random"]
+        if self.profiling_method is not None:
+            droidbot_cmd += ["-use_method_profiling", self.profiling_method]
         if self.script_path is not None:
             droidbot_cmd += ["-script", self.script_path]
         if self.master is not None:

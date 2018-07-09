@@ -856,6 +856,9 @@ class Device(object):
     def key_press(self, key_code):
         self.adb.press(key_code)
 
+    def shutdown(self):
+        self.adb.shell("reboot -p")
+
     def get_views(self):
         if self.cv_mode and self.adapters[self.minicap]:
             # Get views using cv module

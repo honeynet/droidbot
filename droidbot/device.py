@@ -5,16 +5,16 @@ import subprocess
 import sys
 import time
 
-from adapter.adb import ADB
-from adapter.droidbot_app import DroidBotAppConn
-from adapter.logcat import Logcat
-from adapter.minicap import Minicap
-from adapter.process_monitor import ProcessMonitor
-from adapter.telnet import TelnetConsole
-from adapter.user_input_monitor import UserInputMonitor
-from adapter.droidbot_ime import DroidBotIme
-from app import App
-from intent import Intent
+from .adapter.adb import ADB
+from .adapter.droidbot_app import DroidBotAppConn
+from .adapter.logcat import Logcat
+from .adapter.minicap import Minicap
+from .adapter.process_monitor import ProcessMonitor
+from .adapter.telnet import TelnetConsole
+from .adapter.user_input_monitor import UserInputMonitor
+from .adapter.droidbot_ime import DroidBotIme
+from .app import App
+from .intent import Intent
 
 DEFAULT_NUM = '1234567890'
 DEFAULT_CONTENT = 'Hello world!'
@@ -26,7 +26,8 @@ class Device(object):
     """
 
     def __init__(self, device_serial=None, is_emulator=False, output_dir=None,
-                 cv_mode=False, grant_perm=False, telnet_auth_token=None, enable_accessibility_hard=False):
+                 cv_mode=False, grant_perm=False, telnet_auth_token=None,
+                 enable_accessibility_hard=False, humanoid=None):
         """
         initialize a device connection
         :param device_serial: serial number of target device
@@ -36,8 +37,8 @@ class Device(object):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if device_serial is None:
-            import utils
-            all_devices = utils.get_available_devices()
+            from .utils import get_available_devices
+            all_devices = get_available_devices()
             if len(all_devices) == 0:
                 self.logger.warning("ERROR: No device connected.")
                 sys.exit(-1)
@@ -53,6 +54,7 @@ class Device(object):
                 os.makedirs(output_dir)
         self.grant_perm = grant_perm
         self.enable_accessibility_hard = enable_accessibility_hard
+        self.humanoid = humanoid
 
         # basic device information
         self.settings = {}
@@ -803,7 +805,7 @@ class Device(object):
             background_services = self.get_service_names()
             screenshot_path = self.take_screenshot()
             self.logger.debug("finish getting current device state...")
-            from device_state import DeviceState
+            from .device_state import DeviceState
             current_state = DeviceState(self,
                                         views=views,
                                         foreground_activity=foreground_activity,

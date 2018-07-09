@@ -1,11 +1,11 @@
 # helper file of droidbot
 # it parses command arguments and send the options to droidbot
 import argparse
-import input_manager
-import input_policy
-import env_manager
-from droidbot import DroidBot
-from droidmaster import DroidMaster
+from . import input_manager
+from . import input_policy
+from . import env_manager
+from .droidbot import DroidBot
+from .droidmaster import DroidMaster
 
 
 def parse_args():
@@ -83,6 +83,8 @@ def parse_args():
                         help="Declare the target device to be an emulator, which would be treated specially by DroidBot.")
     parser.add_argument("-accessibility_auto", action="store_true", dest="enable_accessibility_hard",
                         help="Enable the accessibility service automatically even though it might require device restart\n(can be useful for Android API level < 23).")
+    parser.add_argument("-humanoid", action="store", dest="humanoid",
+                        help="Connect to a Humanoid service (addr:port) for more human-like behaviors.")
     options = parser.parse_args()
     # print options
     return options
@@ -153,7 +155,8 @@ def main():
             profiling_method=opts.profiling_method,
             grant_perm=opts.grant_perm,
             enable_accessibility_hard=opts.enable_accessibility_hard,
-            master=opts.master)
+            master=opts.master,
+            humanoid=opts.humanoid)
         droidbot.start()
     return
 

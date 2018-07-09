@@ -1,13 +1,10 @@
 # set up basic requirements for droidbot
-__author__ = 'liyc'
-
 from setuptools import setup, find_packages, findall
 import os
 
 setup(
     name='droidbot',
-    packages=find_packages(exclude=['droidbot.tests', 'resources',
-                                    'droidbot_out', 'evaluation_reports']),
+    packages=find_packages(include=['droidbot', 'droidbot.adapter']),
     # this must be the same as the name above
     version='1.0.2b4',
     description='A lightweight UI-guided test input generator for Android.',
@@ -37,7 +34,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'droidbot=droidbot:start',
+            'droidbot=droidbot.start:main',
         ],
     },
     package_data={

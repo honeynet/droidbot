@@ -1,8 +1,9 @@
+import copy
 import math
 import os
 
-import utils
-from input_event import TouchEvent, LongTouchEvent, ScrollEvent
+from .utils import md5
+from .input_event import TouchEvent, LongTouchEvent, ScrollEvent, SetTextEvent
 
 
 class DeviceState(object):
@@ -21,7 +22,9 @@ class DeviceState(object):
             tag = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         self.tag = tag
         self.screenshot_path = screenshot_path
-        self.views = DeviceState.__parse_views(views)
+        self.views = self.__parse_views(views)
+        self.view_tree = {}
+        self.__assemble_view_tree(self.view_tree, self.views)
         self.__generate_view_strs()
         self.state_str = self.__get_state_str()
         self.structure_str = self.__get_content_free_state_str()
@@ -42,8 +45,7 @@ class DeviceState(object):
         import json
         return json.dumps(self.to_dict(), indent=2)
 
-    @staticmethod
-    def __parse_views(raw_views):
+    def __parse_views(self, raw_views):
         views = []
         if not raw_views or len(raw_views) == 0:
             return views
@@ -56,6 +58,18 @@ class DeviceState(object):
             #     view_dict['resource_id'] = resource_id
             views.append(view_dict)
         return views
+
+    def __assemble_view_tree(self, root_view, views):
+        if not len(self.view_tree): # bootstrap
+            self.view_tree = copy.deepcopy(views[0])
+            self.__assemble_view_tree(self.view_tree, views)
+        else:
+            children = list(enumerate(root_view["children"]))
+            if not len(children):
+                return
+            for i, j in children:
+                root_view["children"][i] = copy.deepcopy(self.views[j])
+                self.__assemble_view_tree(root_view["children"][i], views)
 
     def __generate_view_strs(self):
         for view_dict in self.views:
@@ -79,7 +93,7 @@ class DeviceState(object):
 
     def __get_state_str(self):
         state_str_raw = self.__get_state_str_raw()
-        return utils.md5(state_str_raw)
+        return md5(state_str_raw)
 
     def __get_state_str_raw(self):
         view_signatures = set()
@@ -362,7 +376,9 @@ class DeviceState(object):
         enabled_view_ids = []
         touch_exclude_view_ids = set()
         for view_dict in self.views:
-            if self.__safe_dict_get(view_dict, 'enabled'):
+            # exclude navigation bar if exists
+            if self.__safe_dict_get(view_dict, 'enabled') and \
+               self.__safe_dict_get(view_dict, 'resource_id') != 'android:id/navigationBarBackground':
                 enabled_view_ids.append(view_dict['temp_id'])
         enabled_view_ids.reverse()
 
@@ -391,6 +407,7 @@ class DeviceState(object):
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'editable'):
+                possible_events.append(SetTextEvent(view=self.views[view_id], text="HelloWorld"))
                 touch_exclude_view_ids.add(view_id)
                 # TODO figure out what event can be sent to editable views
                 pass

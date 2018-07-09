@@ -3,8 +3,8 @@ import logging
 import subprocess
 import time
 
-from input_event import EventLog
-from input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySearchPolicy, \
+from .input_event import EventLog
+from .input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySearchPolicy, \
                          ManualPolicy, \
                          POLICY_NAIVE_DFS, POLICY_GREEDY_DFS, \
                          POLICY_NAIVE_BFS, POLICY_GREEDY_BFS, \
@@ -53,7 +53,7 @@ class InputManager(object):
         if script_path is not None:
             f = open(script_path, 'r')
             script_dict = json.load(f)
-            from input_script import DroidBotScript
+            from .input_script import DroidBotScript
             self.script = DroidBotScript(script_dict)
 
         self.policy = self.get_input_policy(device, app, master)

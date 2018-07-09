@@ -4,8 +4,8 @@ import random
 import time
 from abc import abstractmethod
 
-import utils
-from intent import Intent
+from . import utils
+from .intent import Intent
 
 POSSIBLE_KEYS = [
     "BACK",
@@ -396,7 +396,7 @@ class UIEvent(InputEvent):
         if x and y:
             return x, y
         if view:
-            from device_state import DeviceState
+            from .device_state import DeviceState
             return DeviceState.get_view_center(view_dict=view)
         return x, y
 
@@ -569,7 +569,7 @@ class ScrollEvent(UIEvent):
 
     def send(self, device):
         if self.view is not None:
-            from device_state import DeviceState
+            from .device_state import DeviceState
             width = DeviceState.get_view_width(view_dict=self.view)
             height = DeviceState.get_view_height(view_dict=self.view)
         else:

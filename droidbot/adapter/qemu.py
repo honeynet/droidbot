@@ -26,7 +26,7 @@ class QEMUConn(Adapter):
     """
     a connection with QEMU.
     """
-    def __init__(self, hda_path, telnet_port, hostfwd_port, qemu_no_graphic):
+    def __init__(self, hda, telnet_port, hostfwd_port, qemu_no_graphic):
         """
         initiate a QEMU connection
         :return:
@@ -34,7 +34,7 @@ class QEMUConn(Adapter):
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger('QEMU')
 
-        self.hda_path = hda_path
+        self.hda = hda
         self.domain = "localhost"
         self.telnet_port = telnet_port
         self.hostfwd_port = hostfwd_port
@@ -44,8 +44,8 @@ class QEMUConn(Adapter):
     def set_up(self):
         # start qemu instance
         qemu_cmd = ["qemu-system-i386",
-                    "-hda", self.hda_path,
-                    "-smp", "cpus=4",
+                    "-hda", self.hda,
+                    "-smp", "cpus=2",
                     "-m", "2048",
                     "-machine", "q35",
                     "-monitor", "telnet:%s:%d,server,nowait" % \
@@ -56,14 +56,18 @@ class QEMUConn(Adapter):
                     "-enable-kvm"]
         if self.qemu_no_graphic:
             qemu_cmd.append("-nographic")
+        self.logger.info(qemu_cmd)
         self.qemu_p = subprocess.Popen(qemu_cmd)
         self.pid = self.qemu_p.pid
         time.sleep(QEMU_START_DELAY)
 
-    def connect(self, from_snapshot):
+    def utf8bytes(self, string):
+        return bytes(string, encoding="utf-8")
+
+    def connect(self, from_snapshot=False):
         # 1. Connect to QMP
         self.qemu_tel = telnetlib.Telnet(host=self.domain, port=self.telnet_port)
-        self.logger.info(self.qemu_tel.read_until("\r\n"))
+        self.logger.info(self.qemu_tel.read_until(self.utf8bytes("\r\n")))
         # 2. Recover adbd if from_snapshot
         if from_snapshot:
             self.send_command("stop")
@@ -95,9 +99,9 @@ class QEMUConn(Adapter):
         """
         send command, then read result
         """
-        self.qemu_tel.write(command_str + "\r\n")
-        self.qemu_tel.read_until("\r\n")
-        self.qemu_tel.read_until("\r\n")
+        self.qemu_tel.write(self.utf8bytes(command_str + "\r\n"))
+        self.qemu_tel.read_until(self.utf8bytes("\r\n"))
+        self.qemu_tel.read_until(self.utf8bytes("\r\n"))
 
     def send_keystrokes(self, keystrokes):
         for keystroke in keystrokes:

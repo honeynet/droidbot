@@ -114,7 +114,6 @@ def main():
     if start_mode == "master":
         droidmaster = DroidMaster(
             app_path=opts.apk_path,
-            device_serial=opts.device_serial,
             is_emulator=opts.is_emulator,
             output_dir=opts.output_dir,
             # env_policy=opts.env_policy,

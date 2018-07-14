@@ -50,7 +50,7 @@ class QEMUConn(Adapter):
                     "-machine", "q35",
                     "-monitor", "telnet:%s:%d,server,nowait" % \
                     (self.domain, self.telnet_port),
-                    "-net", "nic",
+                    "-net", "nic,model=e1000",
                     "-net", "user,hostfwd=tcp::%d-:5555" % \
                     self.hostfwd_port,
                     "-enable-kvm"]

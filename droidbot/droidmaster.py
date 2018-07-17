@@ -96,7 +96,7 @@ class DroidMaster(object):
 
         # 2. Initiate Device Pool
         self.domain = "localhost"
-        self.rpc_port = Device().get_random_port()
+        self.rpc_port = Device(device_serial="").get_random_port()
 
         self.qemu_hda = qemu_hda
         self.qemu_no_graphic = qemu_no_graphic
@@ -109,9 +109,9 @@ class DroidMaster(object):
         self.qemu_app_hda = "%s_%s" % (self.qemu_hda, self.app.get_package_name())
 
         for i in range(self.device_pool_capacity):
-            adb_port = Device().get_random_port()
+            adb_port = Device(device_serial="").get_random_port()
             device_serial = "%s:%s" % (self.domain, adb_port)
-            qemu_port = Device().get_random_port()
+            qemu_port = Device(device_serial="").get_random_port()
             device = Device(
                 device_serial=device_serial,
                 is_emulator=self.is_emulator,

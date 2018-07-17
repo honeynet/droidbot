@@ -4,7 +4,7 @@ import logging
 import random
 from abc import abstractmethod
 
-from .input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent
+from .input_event import KeyEvent, IntentEvent, TouchEvent, ManualEvent, SetTextEvent
 from .utg import UTG
 
 # Max number of restarts
@@ -460,9 +460,13 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             "screen_res": [self.device.display_info["width"],
                            self.device.display_info["height"]]
         }
-        new_idx = json.loads(proxy.query(json.dumps(request_json)))
+        result = json.loads(proxy.query(json.dumps(request_json)))
+        new_idx = result["indices"]
+        text = result["text"]
         new_events = []
         for idx in new_idx:
+            if isinstance(possible_events[idx], SetTextEvent):
+                possible_events[idx].text = text
             new_events.append(possible_events[idx])
         return new_events
 

@@ -5,7 +5,7 @@ import time
 from .adapter import Adapter
 
 
-QEMU_START_DELAY = 1
+QEMU_START_DELAY = 60
 
 
 class QEMUConnException(Exception):

@@ -782,7 +782,7 @@ class Device(object):
         if self.adapters[self.minicap] and self.minicap.last_screen:
             # minicap use jpg format
             local_image_path = os.path.join(local_image_dir, "screen_%s.jpg" % tag)
-            with open(local_image_path, 'w') as local_image_file:
+            with open(local_image_path, 'wb') as local_image_file:
                 local_image_file.write(self.minicap.last_screen)
             return local_image_path
         else:

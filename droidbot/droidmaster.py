@@ -148,12 +148,14 @@ class DroidMaster(object):
     def get_available_devices(self):
         return sorted([self.device_pool[x]
                        for x in self.device_pool
-                       if self.device_pool[x]["qemu"] is None], key=lambda x: x["adb_port"])
+                       if self.device_pool[x]["droidbot"] is None and \
+                          self.device_pool[x]["qemu"] is None], key=lambda x: x["adb_port"])
 
     def get_running_devices(self):
         return sorted([self.device_pool[x]
                        for x in self.device_pool
-                       if self.device_pool[x]["qemu"] is not None], key=lambda x: x["adb_port"])
+                       if self.device_pool[x]["droidbot"] is not None and \
+                          self.device_pool[x]["qemu"] is not None], key=lambda x: x["adb_port"])
 
     def start_device(self, device, hda, from_snapshot=False, init_script_path=None):
         # 1. get device ID

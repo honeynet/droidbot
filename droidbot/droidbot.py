@@ -182,6 +182,11 @@ class DroidBot(object):
             self.device.tear_down()
         if not self.keep_app:
             self.device.uninstall_app(self.app)
+        if hasattr(self.input_manager.policy, "master") and \
+           self.input_manager.policy.master:
+            import xmlrpc.client
+            proxy = xmlrpc.client.ServerProxy(self.input_manager.policy.master)
+            proxy.stop_worker(self.device.serial)
 
 
 class DroidBotException(Exception):

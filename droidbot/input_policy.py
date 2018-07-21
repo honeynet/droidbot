@@ -131,6 +131,11 @@ class UtgBasedInputPolicy(InputPolicy):
 
         # Get current device state
         self.current_state = self.device.get_current_state()
+        if self.current_state is None:
+            import time
+            time.sleep(5)
+            return KeyEvent(name="BACK")
+
         self.__update_utg()
 
         # update last view trees for humanoid

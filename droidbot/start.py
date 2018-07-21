@@ -132,7 +132,8 @@ def main():
             grant_perm=opts.grant_perm,
             enable_accessibility_hard=opts.enable_accessibility_hard,
             qemu_hda=opts.qemu_hda,
-            qemu_no_graphic=opts.qemu_no_graphic)
+            qemu_no_graphic=opts.qemu_no_graphic,
+            humanoid=opts.humanoid)
         droidmaster.start()
     else:
         droidbot = DroidBot(

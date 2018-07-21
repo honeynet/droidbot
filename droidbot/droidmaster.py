@@ -61,7 +61,8 @@ class DroidMaster(object):
                  grant_perm=False,
                  enable_accessibility_hard=False,
                  qemu_hda=None,
-                 qemu_no_graphic=False):
+                 qemu_no_graphic=False,
+                 humanoid=None):
         """
         initiate droidmaster, and
         initiate droidbot's with configurations
@@ -93,6 +94,7 @@ class DroidMaster(object):
         self.profiling_method = profiling_method
         self.grant_perm = grant_perm
         self.enable_accessibility_hard = enable_accessibility_hard
+        self.humanoid = humanoid
 
         # 2. Initiate Device Pool
         self.domain = "localhost"
@@ -186,7 +188,8 @@ class DroidMaster(object):
                                           profiling_method=self.profiling_method,
                                           grant_perm=self.grant_perm,
                                           enable_accessibility_hard=self.enable_accessibility_hard,
-                                          master="http://%s:%d/" % (self.domain, self.rpc_port))
+                                          master="http://%s:%d/" % (self.domain, self.rpc_port),
+                                          humanoid=self.humanoid)
         device["droidbot"].set_up()
         self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d], ID[%d]" %
                          (device["domain"], device["adb_port"],

@@ -1,3 +1,4 @@
+import logging
 import subprocess
 
 from .adapter import Adapter
@@ -41,11 +42,15 @@ class DroidBotConn(Adapter):
                  profiling_method=None,
                  grant_perm=False,
                  enable_accessibility_hard=False,
-                 master=None):
+                 master=None,
+                 humanoid=None):
         """
         initiate a DroidBot connection
         :return:
         """
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger('DroidBot')
+
         self.device_unique_id = device_unique_id
 
         self.app_path = app_path
@@ -67,6 +72,7 @@ class DroidBotConn(Adapter):
         self.grant_perm = grant_perm
         self.enable_accessibility_hard = enable_accessibility_hard
         self.master = master
+        self.humanoid = humanoid
 
         self.connected = False
         self.droidbot_p = False
@@ -95,7 +101,9 @@ class DroidBotConn(Adapter):
             droidbot_cmd += ["-master", self.master]
         if self.enable_accessibility_hard:
             droidbot_cmd += ["-accessibility_auto"]
-
+        if self.humanoid is not None:
+            droidbot_cmd += ["-humanoid", self.humanoid]
+        self.logger.info(droidbot_cmd)
         self.droidbot_p = subprocess.Popen(droidbot_cmd)
         self.pid = self.droidbot_p.pid
 

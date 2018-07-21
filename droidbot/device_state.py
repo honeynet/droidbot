@@ -96,20 +96,40 @@ class DeviceState(object):
         return md5(state_str_raw)
 
     def __get_state_str_raw(self):
-        view_signatures = set()
-        for view in self.views:
-            view_signature = DeviceState.__get_view_signature(view)
-            if view_signature:
-                view_signatures.add(view_signature)
-        return "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+        if self.device.humanoid is not None:
+            import json
+            from xmlrpc.client import ServerProxy
+            proxy = ServerProxy("http://%s/" % self.device.humanoid)
+            return proxy.render_view_tree(json.dumps({
+                "view_tree": self.view_tree,
+                "screen_res": [self.device.display_info["width"],
+                               self.device.display_info["height"]]
+            }))
+        else:
+            view_signatures = set()
+            for view in self.views:
+                view_signature = DeviceState.__get_view_signature(view)
+                if view_signature:
+                    view_signatures.add(view_signature)
+            return "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
 
     def __get_content_free_state_str(self):
-        view_signatures = set()
-        for view in self.views:
-            view_signature = DeviceState.__get_content_free_view_signature(view)
-            if view_signature:
-                view_signatures.add(view_signature)
-        state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
+        if self.device.humanoid is not None:
+            import json
+            from xmlrpc.client import ServerProxy
+            proxy = ServerProxy("http://%s/" % self.device.humanoid)
+            state_str = proxy.render_content_free_view_tree(json.dumps({
+                "view_tree": self.view_tree,
+                "screen_res": [self.device.display_info["width"],
+                               self.device.display_info["height"]]
+            }))
+        else:
+            view_signatures = set()
+            for view in self.views:
+                view_signature = DeviceState.__get_content_free_view_signature(view)
+                if view_signature:
+                    view_signatures.add(view_signature)
+            state_str = "%s{%s}" % (self.foreground_activity, ",".join(sorted(view_signatures)))
         import hashlib
         return hashlib.md5(state_str.encode('utf-8')).hexdigest()
 

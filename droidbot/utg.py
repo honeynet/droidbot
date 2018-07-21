@@ -24,6 +24,7 @@ class UTG(object):
         self.effective_event_strs = set()
         self.ineffective_event_strs = set()
         self.explored_state_strs = set()
+        self.reached_state_strs = set()
         self.reached_activities = set()
 
         self.first_state_str = None
@@ -203,6 +204,12 @@ class UTG(object):
                 return False
         self.explored_state_strs.add(state.state_str)
         return True
+
+    def is_state_reached(self, state):
+        if state.state_str in self.reached_state_strs:
+            return True
+        self.reached_state_strs.add(state.state_str)
+        return False
 
     def get_reachable_states(self, current_state):
         reachable_states = []

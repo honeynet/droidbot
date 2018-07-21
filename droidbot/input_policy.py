@@ -457,7 +457,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             from xmlrpc.client import ServerProxy
         else:
             from xmlrpclib import ServerProxy
-        proxy = ServerProxy("http://%s:%s/" % tuple(self.device.humanoid.split(":")))
+        proxy = ServerProxy("http://%s/" % self.device.humanoid)
         request_json = {
             "history_view_trees": self.humanoid_view_trees,
             "history_events": [x.__dict__ for x in self.humanoid_events],
@@ -465,10 +465,16 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             "screen_res": [self.device.display_info["width"],
                            self.device.display_info["height"]]
         }
-        result = json.loads(proxy.query(json.dumps(request_json)))
+        result = json.loads(proxy.predict(json.dumps(request_json)))
         new_idx = result["indices"]
         text = result["text"]
         new_events = []
+
+        # get rid of infinite recursive by randomizing first event
+        if not self.utg.is_state_reached(self.current_state):
+            new_first = random.randint(0, len(new_idx) - 1)
+            new_idx[0], new_idx[new_first] = new_idx[new_first], new_idx[0]
+
         for idx in new_idx:
             if isinstance(possible_events[idx], SetTextEvent):
                 possible_events[idx].text = text

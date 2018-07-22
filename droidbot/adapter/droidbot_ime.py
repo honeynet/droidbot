@@ -87,7 +87,7 @@ class DroidBotIme(Adapter):
         :param mode: 0 - set text; 1 - append text.
         """
         input_cmd = "am broadcast -a DROIDBOT_INPUT_TEXT --es text \"%s\" --ei mode %d" % (text, mode)
-        self.device.adb.shell(input_cmd)
+        self.device.adb.shell(str(input_cmd))
 
 
 if __name__ == "__main__":

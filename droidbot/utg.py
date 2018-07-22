@@ -233,6 +233,7 @@ class UTG(object):
                     random.shuffle(edge_event_strs)
                 path_events.append(edge["events"][edge_event_strs[0]]["event"])
                 start_state = state
-        except:
+        except Exception as e:
+            print(e)
             self.logger.warning("Cannot find a path from %s to %s" % (current_state.state_str, target_state.state_str))
         return path_events

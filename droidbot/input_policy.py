@@ -11,6 +11,7 @@ from .utg import UTG
 MAX_NUM_RESTARTS = 5
 # Max number of steps outside the app
 MAX_NUM_STEPS_OUTSIDE = 5
+MAX_NUM_STEPS_OUTSIDE_KILL = 10
 
 # Some input event flags
 EVENT_FLAG_STARTED = "+started"
@@ -407,7 +408,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
 
             if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE:
                 # If the app has not been in foreground for too long, try to go back
-                go_back_event = KeyEvent(name="BACK")
+                if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE_KILL:
+                    stop_app_intent = self.app.get_stop_intent()
+                    go_back_event = IntentEvent(stop_app_intent)
+                else:
+                    go_back_event = KeyEvent(name="BACK")
                 self.__event_trace += EVENT_FLAG_NAVIGATE
                 self.logger.info("Going back to the app...")
                 return go_back_event
@@ -509,8 +514,9 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
                 continue
             self.__nav_target = state
             event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
-            self.__nav_num_steps = len(event_path)
-            return state
+            if len(event_path) > 0:
+                self.__nav_num_steps = len(event_path)
+                return state
 
         self.__nav_target = None
         self.__nav_num_steps = -1

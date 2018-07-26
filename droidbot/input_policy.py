@@ -359,6 +359,7 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         self.__num_steps_outside = 0
         self.__event_trace = ""
         self.__missed_states = set()
+        self.__random_explore = False
 
     def generate_event_based_on_utg(self):
         """
@@ -392,10 +393,10 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             # pass (START) through
             if not self.__event_trace.endswith(EVENT_FLAG_START_APP):
                 if self.__num_restarts > MAX_NUM_RESTARTS:
-                    # If the app had been restarted too many times, abort
-                    msg = "The app had been restarted too many times."
+                    # If the app had been restarted too many times, enter random mode
+                    msg = "The app had been restarted too many times. Entering random mode."
                     self.logger.info(msg)
-                    raise InputInterruptedException(msg)
+                    self.__random_explore = True
                 else:
                     # Start the app
                     self.__event_trace += EVENT_FLAG_START_APP
@@ -450,6 +451,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
                 self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
                 self.__event_trace += EVENT_FLAG_NAVIGATE
                 return event_path[0]
+
+        if self.__random_explore:
+            self.logger.info("Trying random event.")
+            random.shuffle(possible_events)
+            return possible_events[0]
 
         # If couldn't find a exploration target, stop the app
         stop_app_intent = self.app.get_stop_intent()

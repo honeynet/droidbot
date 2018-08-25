@@ -58,6 +58,7 @@ If successfully installed, you should be able to execute `droidbot -h`.
     + If you want to test a large scale of apps, you may want to add `-keep_env` option to avoid re-installing the test environment every time.
     + You can also use a json-format script to customize input for certain states. Here are some [script samples](script_samples/). Simply use `-script <path_to_script.json>` to use DroidBot with a script.
     + If your apps do not support getting views through Accessibility (e.g., most games based on Cocos2d, Unity3d), you may find `-cv` option helpful.
+    + You can use `-humanoid` option to let DroidBot communicate with [Humanoid](https://github.com/yzygitzh/Humanoid) in order to generate human-like test inputs.
     + You may find other useful features in `droidbot -h`.
 
 ## Evaluation

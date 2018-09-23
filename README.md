@@ -21,8 +21,8 @@ DroidBot has the following advantages as compared with other input generators:
 
 ## Prerequisite
 
-1. `Python` version `2.7`
-2. `Java` version `1.7`
+1. `Python` (both 2 and 3 are supported)
+2. `Java`
 3. `Android SDK`
 4. Add `platform_tools` directory in Android SDK to `PATH`
 5. (Optional) `OpenCV-Python` if you want to run DroidBot in cv mode.

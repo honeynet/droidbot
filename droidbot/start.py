@@ -85,6 +85,8 @@ def parse_args():
                         help="Enable the accessibility service automatically even though it might require device restart\n(can be useful for Android API level < 23).")
     parser.add_argument("-humanoid", action="store", dest="humanoid",
                         help="Connect to a Humanoid service (addr:port) for more human-like behaviors.")
+    parser.add_argument("-ignore_ad", action="store_true", dest="ignore_ad",
+                        help="Ignore Ad views by checking resource_id")
     options = parser.parse_args()
     # print options
     return options
@@ -133,7 +135,8 @@ def main():
             enable_accessibility_hard=opts.enable_accessibility_hard,
             qemu_hda=opts.qemu_hda,
             qemu_no_graphic=opts.qemu_no_graphic,
-            humanoid=opts.humanoid)
+            humanoid=opts.humanoid,
+            ignore_ad=opts.ignore_ad)
         droidmaster.start()
     else:
         droidbot = DroidBot(
@@ -157,7 +160,8 @@ def main():
             grant_perm=opts.grant_perm,
             enable_accessibility_hard=opts.enable_accessibility_hard,
             master=opts.master,
-            humanoid=opts.humanoid)
+            humanoid=opts.humanoid,
+            ignore_ad=opts.ignore_ad)
         droidbot.start()
     return
 

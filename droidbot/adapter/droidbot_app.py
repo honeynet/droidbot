@@ -53,6 +53,16 @@ class DroidBotAppConn(Adapter):
         self.sock = None
         self.last_acc_event = None
         self.enable_accessibility_hard = device.enable_accessibility_hard
+        self.ignore_ad = device.ignore_ad
+        if self.ignore_ad:
+            import re
+            self.__first_cap_re = re.compile("(.)([A-Z][a-z]+)")
+            self.__all_cap_re = re.compile("([a-z0-9])([A-Z])")
+
+    def __id_convert(self, name):
+        name = name.replace(".", "_").replace(":", "_").replace("/", "_")
+        s1 = self.__first_cap_re.sub(r"\1_\2", name)
+        return self.__all_cap_re.sub(r"\1_\2", s1).lower()
 
     def set_up(self):
         device = self.device
@@ -134,8 +144,8 @@ class DroidBotAppConn(Adapter):
                 self.handle_message(message)
             print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
         except Exception:
-            traceback.print_exc()
             if self.check_connectivity():
+                traceback.print_exc()
                 # clear self.last_acc_event
                 self.logger.warning("Restarting droidbot app")
                 self.last_acc_event = None
@@ -203,6 +213,11 @@ class DroidBotAppConn(Adapter):
         view_list.append(view_tree)
         children_ids = []
         for child_tree in view_tree['children']:
+            if self.ignore_ad and child_tree['resource_id'] is not None:
+                id_word_list = self.__id_convert(child_tree['resource_id']).split('_')
+                if "ad" in id_word_list or \
+                   "banner" in id_word_list:
+                    continue
             child_tree['parent'] = tree_id
             self.__view_tree_to_list(child_tree, view_list)
             children_ids.append(child_tree['temp_id'])

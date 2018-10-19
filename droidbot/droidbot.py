@@ -42,7 +42,8 @@ class DroidBot(object):
                  grant_perm=False,
                  enable_accessibility_hard=False,
                  master=None,
-                 humanoid=None):
+                 humanoid=None,
+                 ignore_ad=False):
         """
         initiate droidbot with configurations
         :return:
@@ -76,6 +77,7 @@ class DroidBot(object):
         self.input_manager = None
         self.enable_accessibility_hard = enable_accessibility_hard
         self.humanoid = humanoid
+        self.ignore_ad = ignore_ad
 
         self.enabled = True
 
@@ -87,7 +89,8 @@ class DroidBot(object):
                 cv_mode=cv_mode,
                 grant_perm=grant_perm,
                 enable_accessibility_hard=self.enable_accessibility_hard,
-                humanoid=self.humanoid)
+                humanoid=self.humanoid,
+                ignore_ad=ignore_ad)
             self.app = App(app_path, output_dir=self.output_dir)
 
             self.env_manager = AppEnvManager(

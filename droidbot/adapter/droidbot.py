@@ -44,7 +44,8 @@ class DroidBotConn(Adapter):
                  enable_accessibility_hard=False,
                  master=None,
                  humanoid=None,
-                 ignore_ad=False):
+                 ignore_ad=False,
+                 replay_output=None):
         """
         initiate a DroidBot connection
         :return:
@@ -75,6 +76,7 @@ class DroidBotConn(Adapter):
         self.master = master
         self.humanoid = humanoid
         self.ignore_ad = ignore_ad
+        self.replay_output = replay_output
 
         self.connected = False
         self.droidbot_p = False
@@ -107,6 +109,8 @@ class DroidBotConn(Adapter):
             droidbot_cmd += ["-humanoid", self.humanoid]
         if self.ignore_ad:
             droidbot_cmd += ["-ignore_ad", self.ignore_ad]
+        if self.replay_output:
+            droidbot_cmd += ["-replay_output", self.replay_output]
         self.logger.info(droidbot_cmd)
         self.droidbot_p = subprocess.Popen(droidbot_cmd)
         self.pid = self.droidbot_p.pid

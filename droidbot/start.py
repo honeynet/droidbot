@@ -86,7 +86,9 @@ def parse_args():
     parser.add_argument("-humanoid", action="store", dest="humanoid",
                         help="Connect to a Humanoid service (addr:port) for more human-like behaviors.")
     parser.add_argument("-ignore_ad", action="store_true", dest="ignore_ad",
-                        help="Ignore Ad views by checking resource_id")
+                        help="Ignore Ad views by checking resource_id.")
+    parser.add_argument("-replay_output", action="store", dest="replay_output",
+                        help="The droidbot output directory being replayed.")
     options = parser.parse_args()
     # print options
     return options
@@ -136,7 +138,8 @@ def main():
             qemu_hda=opts.qemu_hda,
             qemu_no_graphic=opts.qemu_no_graphic,
             humanoid=opts.humanoid,
-            ignore_ad=opts.ignore_ad)
+            ignore_ad=opts.ignore_ad,
+            replay_output=opts.replay_output)
         droidmaster.start()
     else:
         droidbot = DroidBot(
@@ -161,7 +164,8 @@ def main():
             enable_accessibility_hard=opts.enable_accessibility_hard,
             master=opts.master,
             humanoid=opts.humanoid,
-            ignore_ad=opts.ignore_ad)
+            ignore_ad=opts.ignore_ad,
+            replay_output=opts.replay_output)
         droidbot.start()
     return
 

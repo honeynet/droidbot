@@ -43,7 +43,8 @@ class DroidBot(object):
                  enable_accessibility_hard=False,
                  master=None,
                  humanoid=None,
-                 ignore_ad=False):
+                 ignore_ad=False,
+                 replay_output=None):
         """
         initiate droidbot with configurations
         :return:
@@ -78,6 +79,7 @@ class DroidBot(object):
         self.enable_accessibility_hard = enable_accessibility_hard
         self.humanoid = humanoid
         self.ignore_ad = ignore_ad
+        self.replay_output = replay_output
 
         self.enabled = True
 
@@ -106,7 +108,8 @@ class DroidBot(object):
                 event_interval=event_interval,
                 script_path=script_path,
                 profiling_method=profiling_method,
-                master=master)
+                master=master,
+                replay_output=replay_output)
         except Exception:
             import traceback
             traceback.print_exc()

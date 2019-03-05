@@ -277,7 +277,7 @@ class Minicap(Adapter):
         if self.last_views:
             return self.last_views
 
-        import cv
+        from . import cv
         img = cv.load_image_from_buf(self.last_screen)
         view_bounds = cv.find_views(img)
         root_view = {
@@ -295,7 +295,8 @@ class Minicap(Adapter):
                 "enabled": True,
                 "temp_id": temp_id,
                 "signature": cv.calculate_dhash(img[y:y+h, x:x+w]),
-                "parent": 0
+                "parent": 0,
+                "children": []
             }
             views.append(view)
             temp_id += 1

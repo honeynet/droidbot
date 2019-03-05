@@ -71,7 +71,7 @@ def find_views(img):
     # Join edges back into image
     edges = blue_edges | green_edges | red_edges
     # find contour
-    _, contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     rectangle_list = []
     for index, cnt in enumerate(contours):
         contour_area = cv2.contourArea(cnt)

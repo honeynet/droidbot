@@ -48,7 +48,7 @@ class Logcat(Adapter):
 
         f = None
         if self.out_file is not None:
-            f = open(self.out_file, 'w')
+            f = open(self.out_file, 'w', encoding='utf-8')
 
         while self.connected:
             if self.process is None:

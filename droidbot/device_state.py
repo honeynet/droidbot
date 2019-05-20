@@ -403,7 +403,9 @@ class DeviceState(object):
         for view_dict in self.views:
             # exclude navigation bar if exists
             if self.__safe_dict_get(view_dict, 'enabled') and \
-               self.__safe_dict_get(view_dict, 'resource_id') != 'android:id/navigationBarBackground':
+               self.__safe_dict_get(view_dict, 'resource_id') not in \
+               ['android:id/navigationBarBackground',
+                'android:id/statusBarBackground']:
                 enabled_view_ids.append(view_dict['temp_id'])
         enabled_view_ids.reverse()
 

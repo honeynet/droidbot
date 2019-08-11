@@ -138,7 +138,7 @@ class InputEvent(object):
         elif event_type == KEY_SetTextEvent:
             return SetTextEvent(event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
-            return IntentEvent(event_dict=event_dict)
+            return IntentEvent(intent=event_dict['intent'], event_dict=event_dict)
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
         elif event_type == KEY_SpawnEvent:

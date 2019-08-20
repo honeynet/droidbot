@@ -168,7 +168,7 @@ class DroidBotScript(object):
 
     @staticmethod
     def check_grammar_is_coordinate(value):
-        if not isinstance(value, tuple) or len(value) != 2:
+        if not isinstance(value, list) or len(value) != 2:
             msg = "illegal coordinate format: %s, should be 2-tuple" % value
             raise ScriptSyntaxError(msg)
         if not isinstance(value[0], int) or not isinstance(value[1], int):
@@ -248,8 +248,8 @@ class ViewSelector(object):
         'text': REGEX_VAL,
         'resource_id': REGEX_VAL,
         'class': REGEX_VAL,
-        'out_coordinates': [(INTEGER_VAL, INTEGER_VAL)],
-        'in_coordinates': [(INTEGER_VAL, INTEGER_VAL)]
+        'out_coordinates': [[INTEGER_VAL, INTEGER_VAL]],
+        'in_coordinates': [[INTEGER_VAL, INTEGER_VAL]]
     }
 
     def __init__(self, view_selector_id, selector_dict, script):
@@ -279,11 +279,11 @@ class ViewSelector(object):
             elif selector_key == 'class':
                 self.class_re = re.compile(selector_value)
             elif selector_key == 'out_coordinates':
-                for out_coordinate in grammar_value:
+                for out_coordinate in selector_value:
                     DroidBotScript.check_grammar_is_coordinate(out_coordinate)
                     self.out_coordinates.append(out_coordinate)
             elif selector_key == 'in_coordinates':
-                for in_coordinate in grammar_value:
+                for in_coordinate in selector_value:
                     DroidBotScript.check_grammar_is_coordinate(in_coordinate)
                     self.in_coordinates.append(in_coordinate)
 
@@ -309,10 +309,10 @@ class ViewSelector(object):
         bound_x_max = bounds[1][0]
         bound_y_min = bounds[0][1]
         bound_y_max = bounds[1][1]
-        for (x, y) in self.in_coordinates:
+        for [x, y] in self.in_coordinates:
             if x < bound_x_min or x > bound_x_max or y < bound_y_min or y > bound_y_max:
                 return False
-        for (x, y) in self.out_coordinates:
+        for [x, y] in self.out_coordinates:
             if bound_x_min < x < bound_x_max and bound_y_min < y < bound_y_max:
                 return False
         return True

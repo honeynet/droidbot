@@ -138,7 +138,7 @@ class InputEvent(object):
         elif event_type == KEY_SetTextEvent:
             return SetTextEvent(event_dict=event_dict)
         elif event_type == KEY_IntentEvent:
-            return IntentEvent(intent=event_dict['intent'], event_dict=event_dict)
+            return IntentEvent(event_dict=event_dict)
         elif event_type == KEY_ExitEvent:
             return ExitEvent(event_dict=event_dict)
         elif event_type == KEY_SpawnEvent:
@@ -664,6 +664,8 @@ class IntentEvent(InputEvent):
 
     def __init__(self, intent=None, event_dict=None):
         self.event_type = KEY_IntentEvent
+        if event_dict is not None:
+            intent = event_dict['intent']
         if isinstance(intent, Intent):
             self.intent = intent.get_cmd()
         elif isinstance(intent, str):

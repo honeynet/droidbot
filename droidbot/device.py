@@ -567,7 +567,7 @@ class Device(object):
         services = []
         dat = self.adb.shell('dumpsys activity services')
         lines = dat.splitlines()
-        service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)}')
+        service_re = re.compile('^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/([A-Za-z0-9_.]+)')
 
         for line in lines:
             m = service_re.search(line)

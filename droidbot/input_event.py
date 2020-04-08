@@ -664,6 +664,8 @@ class IntentEvent(InputEvent):
 
     def __init__(self, intent=None, event_dict=None):
         self.event_type = KEY_IntentEvent
+        if event_dict is not None:
+            intent = event_dict['intent']
         if isinstance(intent, Intent):
             self.intent = intent.get_cmd()
         elif isinstance(intent, str):

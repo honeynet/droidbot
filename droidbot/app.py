@@ -11,7 +11,7 @@ class App(object):
 
     def __init__(self, app_path, output_dir=None):
         """
-        create a App instance
+        create an App instance
         :param app_path: local file path of app
         :return:
         """

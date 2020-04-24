@@ -7,12 +7,20 @@ Java.perform(function() {
    if (location) {
        //hook getLatitude
        location.getLatitude.overload().implemention = function() {
-           send("call " + location + "->getLatitude");
+           var myArray=new Array()
+           myArray[0] = ""  //INTERESTED & SENSITIVE
+           myArray[1] = cn + "." + "getLatitude";
+           myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
+           send(myArray);
            return this.getLatitude.overload().apply(this, arguments);
        };
        //hook getLongitude
        location.getLongitude.overload().implemention = function() {
-           send("call " + location + "->getLongitude");
+           var myArray=new Array()
+           myArray[0] = ""  //INTERESTED & SENSITIVE
+           myArray[1] = cn + "." + "getLongitude";
+           myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
+           send(myArray);
            return this.getLongitude.overload().apply(this, arguments);
        };
    }

@@ -100,6 +100,7 @@ class TestEnv(gym.Env):
 
         # start the current app on the device
         self.device.start_app(self.current_app)
+        self.device.droidbot_app.connect()
 
         # get current observation
         return Observation.observe(self)
@@ -109,7 +110,8 @@ class TestEnv(gym.Env):
             from gym.envs.classic_control import rendering
             if self.viewer is None:
                 self.viewer = rendering.SimpleImageViewer()
-            self.viewer.imshow(self.device.get_current_state())
+                print(self.device.get_current_state().to_dict())
+            #self.viewer.imshow(self.device.get_current_state())
             return self.viewer.isopen
 
     def step(self, action):
@@ -160,9 +162,9 @@ class TestEnv(gym.Env):
         self.monitor.set_up()
         while self.running:
             self.monitor.check_env()
-            time.sleep(1)
-            self.sensitive_behaviors += self.monitor.get_api_state()
-            print(self.monitor.get_api_state())
+            time.sleep(5)
+            self.sensitive_behaviors += self.monitor.get_sensitive_api()
+            print(self.monitor.get_sensitive_api())
             pass
 
         self.monitor.stop()

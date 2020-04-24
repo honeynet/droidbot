@@ -1,41 +1,44 @@
+/**
+ * Created by maomao on 2020/4/20.
+ */
 Java.perform(function() {
-    var cn = "java.net.URL";
-    var url = Java.use(cn);
-    if (url) {
-        //hook openConnection
-        url.openConnection.overloads[0].implementation = function () {
+    var cn = "android.app.Service";
+    var target = Java.use(cn);
+    if (target) {
+        target.onConfigurationChanged.implementation = function(dest) {
             var myArray=new Array()
             myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
-            myArray[1] = cn + "." + "openConnection";
+            myArray[1] = cn + "." + "onConfigurationChanged";
             myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
             send(myArray);
-            return this.openConnection.overloads[0].apply(this, arguments);
-        };
-        url.openConnection.overloads[1].implementation = function () {
-            var myArray=new Array()
-            myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
-            myArray[1] = cn + "." + "openConnection";
-            myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
-            send(myArray);
-            return this.openConnection.overloads[1].apply(this, arguments);
-        };
-        //hook openStream
-        url.openStream.implementation = function() {
-            var myArray=new Array()
-            myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
-            myArray[1] = cn + "." + "openStream";
-            myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
-            send(myArray);
-            return this.openStream.apply(this, arguments);
+            return this.onConfigurationChanged.apply(this, arguments);
         };
 
-        url.getDefaultPort.implementation = function() {
+        target.onLowMemory.implementation = function(dest) {
             var myArray=new Array()
             myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
-            myArray[1] = cn + "." + "getDefaultPort";
+            myArray[1] = cn + "." + "onLowMemory";
             myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
             send(myArray);
-            return this.getDefaultPort.apply(this, arguments);
+            return this.onLowMemory.apply(this, arguments);
+        };
+
+        target.onStart.implementation = function(dest) {
+            var myArray=new Array()
+            myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
+            myArray[1] = cn + "." + "onStart";
+            myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
+            send(myArray);
+            return this.onStart.apply(this, arguments);
+        };
+
+        target.onStartCommand.implementation = function(dest) {
+            var myArray=new Array()
+            myArray[0] = "INTERESTED"  //INTERESTED & SENSITIVE
+            myArray[1] = cn + "." + "onStartCommand";
+            myArray[2] = Java.use("android.util.Log").getStackTraceString(Java.use("java.lang.Exception").$new()).split('\n\tat');
+            send(myArray);
+            return this.onStartCommand.apply(this, arguments);
         };
     }
 });

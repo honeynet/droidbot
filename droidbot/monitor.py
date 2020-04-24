@@ -13,12 +13,18 @@ class Monitor(object):
     def __init__(self):
         self.packageName = None
         self.device = None
-        self.api_state = list()
+        self.sensitive_api = list()
+        self.interested_api = list()
+        self.method_stack = list()
         self.attached = False
         self.pid = None
         self.logger = logging.getLogger("APIMonitor")
         self.session = None
         self.serial = None
+        self.first_trigger = None
+        self.first_trigger_time = 0
+        self.trigger_number = 0
+
     def set_up(self):
         self._setLogPath()
         if self.serial is not None:
@@ -50,9 +56,17 @@ class Monitor(object):
 
     def _on_message(self, message):
         if message['type'] == 'send':
-            logging.info(message['payload'])
             msg = message['payload']
-            self.api_state.append(msg)
+            if msg[0] == "SENSITIVE":
+                if self.first_trigger is None:
+                    self.first_trigger_time = time.clock - self.start_time
+                    self.first_trigger = True
+                self.sensitive_api.append(msg[1])
+                self.trigger_number += 1
+            else:
+                self.interested_api.append(msg[1])
+            self.method_stack.append(msg[2])
+            # logging.info(message['payload'])
         elif message['type'] == 'error':
             logging.info(message['stack'])
 
@@ -93,6 +107,7 @@ class Monitor(object):
             script.on("message", self._on_message)
             script.load()
             self.device.resume(pid)
+            self.start_time = time.clock()
 
     def _getPid(self):
         cmd = "adb shell ps | grep " + self.packageName
@@ -151,10 +166,26 @@ class Monitor(object):
                 self._load_script(self.session, self.pid)
             return
 
-    def get_api_state(self):
-        temp_state = self.api_state
-        self.api_state = list()
+    def get_sensitive_api(self):
+        temp_state = self.sensitive_api
+        self.sensitive_api = list()
         return temp_state
+
+    def get_interested_api(self):
+        temp_state = self.interested_api
+        self.interested_api = list()
+        return temp_state
+
+    def get_method_stack_api(self):
+        temp_state = self.method_stack
+        self.method_stack = list()
+        return temp_state
+
+    def get_first_trigger_time(self):
+        return self.first_trigger_time
+
+    def get_trigger_number(self):
+        return self.trigger_number
 
     def stop(self):
         self.detach(self.session)

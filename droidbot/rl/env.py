@@ -13,6 +13,7 @@ from droidbot import Device, App
 from droidbot.rl.observation import Observation
 from droidbot.rl.action import Action
 from droidbot import monitor
+from droidbot.rl.RL_test import DQN
 
 class TestEnv(gym.Env):
     """
@@ -45,7 +46,7 @@ class TestEnv(gym.Env):
     """
 
     metadata = {
-        'episode.step_limit': 100,          # maximum number of steps in an episode
+        'episode.step_limit': 200,          # maximum number of steps in an episode
         'episode.timeout': 600,             # maximum duration of an episode
         'step.n_events': 1,                 # number of events per step
         'step.wait': 0,                     # time in seconds to wait after each input event
@@ -89,6 +90,7 @@ class TestEnv(gym.Env):
         self.n_steps = 0
         self.start_time = datetime.now()
         self.running = True
+        self.observation = Observation(self.device, self.current_app)
 
         #wsh
         # install the current app
@@ -100,10 +102,11 @@ class TestEnv(gym.Env):
 
         # start the current app on the device
         self.device.start_app(self.current_app)
+        time.sleep(3)
         self.device.droidbot_app.connect()
 
         # get current observation
-        return Observation.observe(self)
+        return self.observation.observe(self)
 
     def render(self, mode='human'):
         if mode == 'human':
@@ -122,7 +125,9 @@ class TestEnv(gym.Env):
             event = event_generator.gen_event()
             self.device.send_event(event)
             time.sleep(self.metadata['step.wait'])
-        observation = Observation.observe(self)
+        obs = self.observation.observe(self)
+        self.executed_APIs = [] # reset interested_apis list
+        time.sleep(2) #wait for monitor
         reward = len(self.sensitive_behaviors) - n_existing_sensitive_behaviors
         done = False
         if self.n_steps > self.metadata['episode.step_limit']:
@@ -130,7 +135,7 @@ class TestEnv(gym.Env):
         elif (datetime.now() - self.start_time).total_seconds() > self.metadata['episode.timeout']:
             done = True
         info = {}   # put any useful information in this dict
-        return observation, reward, done, info
+        return obs, reward, done, info
 
     def close(self):
         self.reset()
@@ -164,7 +169,7 @@ class TestEnv(gym.Env):
             self.monitor.check_env()
             time.sleep(5)
             self.sensitive_behaviors += self.monitor.get_sensitive_api()
-            print(self.monitor.get_sensitive_api())
+            self.executed_APIs = self.monitor.get_interested_api()
             pass
 
         self.monitor.stop()
@@ -193,9 +198,11 @@ def main():
     env = TestEnv(apk_dir=args.apk_dir, device_serial=args.device_serial)
     env.reset()
     for _ in range(100):
-        env.render()
+        # env.render()
         env.step(env.action_space.sample())  # take a random action
     env.close()
+    # dqn_agent = DQN(env, time_steps=4)
+    # dqn_agent.train(max_episodes=50)
 
 
 if __name__ == '__main__':

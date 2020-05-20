@@ -1,3 +1,6 @@
+/**
+ * Created by maomao on 2020/4/24.
+ */
 Java.perform(function() {
     var cn = "android.content.ContentResolver";
     var contentResolver = Java.use(cn);

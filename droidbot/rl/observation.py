@@ -1,6 +1,7 @@
 import numpy as np
 from .configs import *
-
+import cv2, os
+from PIL import Image
 
 class Observation:
     """
@@ -12,10 +13,12 @@ class Observation:
         APIs            The APIs that the app executed since last action (one-hot encoding)
     """
     def __init__(self, device, app):
-        self.screen_img = device.take_screenshot()
-        self.ui_state = device.get_current_state()
-        self.listening_broadcasts = app.possible_broadcasts
-        self.requested_permissions = app.permissions
+        # self.screen_img = device.take_screenshot()
+        # self.ui_state = device.get_current_state()
+        self.listening_broadcasts = self._encode_receivers(app.possible_broadcasts)
+        self.requested_permissions = self._encode_permissions(app.permissions)
+
+
 
     @staticmethod
     def get_space():
@@ -30,26 +33,49 @@ class Observation:
     @staticmethod
     def observe(env):
         # TODO implement this
-        return Observation.get_space().sample()
-        # return {
-        #     'UI': self._encode_UI(),
-        #     'permissions': self._encode_permissions(),
-        #     'receivers': self._encode_receivers(),
-        #     'APIs': self._encode_APIs()
-        # }
+        Observation.screen_img = env.device.take_screenshot()
+        return {
+            'UI': Observation._encode_UI(Observation),
+            'permissions': env.observation.requested_permissions,
+            'receivers': env.observation.listening_broadcasts,
+            'APIs': Observation._encode_APIs(Observation, env)
+        }
 
     def _encode_UI(self):
         # return the h*w*c representation of the current user interface
-        return None
+        img = cv2.imread(self.screen_img)
+        return img
 
-    def _encode_permissions(self):
+    def _encode_permissions(self, permissions):
         # return the 1-D vector representation of app permissions
-        return None
+        perms = np.zeros(len(INTERESTED_PERMISSIONS))
+        for p in permissions:
+            p_temp = p.split('.')[-1]
+            if p_temp in INTERESTED_PERMISSIONS:
+                index = INTERESTED_PERMISSIONS.index(p_temp)
+                perms[index] = 1
+        # self.requested_permissions =
+        return perms
 
-    def _encode_receivers(self):
+    def _encode_receivers(self, broadcast_receivers):
         # return the 1-D vector representation of app permissions
-        return None
+        receivers = np.zeros(len(INTERESTED_BROADCASTS))
+        for r in broadcast_receivers:
+            r_temp = r.action.split('.')[-1]
+            if r_temp in INTERESTED_BROADCASTS:
+                index = INTERESTED_BROADCASTS.index(r_temp)
+                receivers[index] = 1
+        # self.listening_broadcasts = receivers
+        return receivers
 
-    def _encode_APIs(self):
+    def _encode_APIs(self, env):
         # return the 1-D vector representation of recently invoked APIs
-        return None
+        apis = np.zeros(len(INTERESTED_APIS))
+        for a in env.executed_APIs:
+            if a in INTERESTED_APIS:
+                index = INTERESTED_APIS.index(a)
+                apis[index] = 1
+        return apis
+
+
+

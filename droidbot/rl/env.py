@@ -10,9 +10,9 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 from droidbot import Device, App
-from .observation import Observation
-from .action import Action
-
+from droidbot.rl.observation import Observation
+from droidbot.rl.action import Action
+from droidbot import monitor
 
 class TestEnv(gym.Env):
     """
@@ -58,6 +58,9 @@ class TestEnv(gym.Env):
 
         self.seed_ = self.seed()
         self.viewer = None
+        # add by wangsonghe
+        self.current_app = None
+        self.monitor_thread = None
 
         self.device = Device(device_serial=device_serial, output_dir=output_dir)
         self.apk_files = self._get_apk_files(apk_dir)
@@ -86,6 +89,10 @@ class TestEnv(gym.Env):
         self.n_steps = 0
         self.start_time = datetime.now()
         self.running = True
+
+        #wsh
+        # install the current app
+        self.device.install_app(self.current_app)
 
         import threading
         self.monitor_thread = threading.Thread(target=self._monitor_APIs)
@@ -147,9 +154,18 @@ class TestEnv(gym.Env):
 
     def _monitor_APIs(self):
         # TODO @Songhe monitor the app and maintain self.executed_APIs and self.sensitive_behaviors
+        self.monitor = monitor.Monitor()
+        self.monitor.serial = self.device.serial
+        self.monitor.packageName = self.current_app.get_package_name()
+        self.monitor.set_up()
         while self.running:
+            self.monitor.check_env()
             time.sleep(1)
+            self.sensitive_behaviors += self.monitor.get_api_state()
+            print(self.monitor.get_api_state())
             pass
+
+        self.monitor.stop()
 
 
 def parse_args():

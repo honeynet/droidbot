@@ -4,6 +4,10 @@ import logging
 import re
 from .adapter import Adapter
 import time
+try:
+    from shlex import quote # Python 3
+except ImportError:
+    from pipes import quote # Python 2
 
 
 class ADBException(Exception):
@@ -81,7 +85,7 @@ class ADB(Adapter):
             self.logger.warning(msg)
             raise ADBException(msg)
 
-        shell_extra_args = ['shell'] + extra_args
+        shell_extra_args = ['shell'] + [ quote(arg) for arg in extra_args ]
         return self.run_cmd(shell_extra_args)
 
     def check_connectivity(self):

@@ -29,7 +29,7 @@ DroidBot has the following advantages as compared with other input generators:
 
 ## How to install
 
-Clone this repo and intall with `pip`:
+Clone this repo and install with `pip`:
 
 ```shell
 git clone https://github.com/honeynet/droidbot.git

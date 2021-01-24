@@ -205,7 +205,7 @@ class DeviceState(object):
                                           min(original_img.height - 1, max(0, view_bound[0][1])),
                                           min(original_img.width, max(0, view_bound[1][0])),
                                           min(original_img.height, max(0, view_bound[1][1]))))
-            view_img.save(view_file_path)
+            view_img.convert("RGB").save(view_file_path)
         except Exception as e:
             self.device.logger.warning(e)
 

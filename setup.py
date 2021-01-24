@@ -34,7 +34,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'droidbot=droidbot.start:main',
+            'droidbot=start:main',
         ],
     },
     package_data={

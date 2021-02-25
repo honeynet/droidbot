@@ -29,17 +29,35 @@ EVENT_FLAG_TOUCH = "+touch"
 POLICY_MEMORY_GUIDED = "memory_guided"
 
 
+class Memory:
+    def __init__(self, utg):
+        self.utg = utg
+        self.model = None
+
+    def train_model(self):
+        pass
+
+    def get_unexplored_actions(self):
+        pass
+
+    def get_action_novelty(self):
+        pass
+
+
 class MemoryGuidedPolicy(UtgBasedInputPolicy):
     def __init__(self, device, app, random_input):
         super(MemoryGuidedPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        self.n_episodes = 0
+        self.n_steps = 0
 
         self.__nav_target = None
         self.__nav_num_steps = -1
         self.__num_restarts = 0
         self.__num_steps_outside = 0
         self.__event_trace = ""
-        self.__missed_states = set()
+        self.__missing_states = set()
         self.__random_explore = False
 
     def generate_event_based_on_utg(self):
@@ -49,8 +67,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         """
         current_state = self.current_state
         self.logger.info("Current state: %s" % current_state.state_str)
-        if current_state.state_str in self.__missed_states:
-            self.__missed_states.remove(current_state.state_str)
+        if current_state.state_str in self.__missing_states:
+            self.__missing_states.remove(current_state.state_str)
 
         if current_state.get_app_activity_depth(self.app) < 0:
             # If the app is not in the activity stack
@@ -110,11 +128,6 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
 
         possible_events.append(KeyEvent(name="BACK"))
 
-        # get humanoid result, use the result to sort possible events
-        # including back events
-        if self.device.humanoid is not None:
-            possible_events = self.__sort_inputs_by_humanoid(possible_events)
-
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
@@ -141,35 +154,6 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         self.__event_trace += EVENT_FLAG_STOP_APP
         return IntentEvent(intent=stop_app_intent)
 
-    def __sort_inputs_by_humanoid(self, possible_events):
-        if sys.version.startswith("3"):
-            from xmlrpc.client import ServerProxy
-        else:
-            from xmlrpclib import ServerProxy
-        proxy = ServerProxy("http://%s/" % self.device.humanoid)
-        request_json = {
-            "history_view_trees": self.humanoid_view_trees,
-            "history_events": [x.__dict__ for x in self.humanoid_events],
-            "possible_events": [x.__dict__ for x in possible_events],
-            "screen_res": [self.device.display_info["width"],
-                           self.device.display_info["height"]]
-        }
-        result = json.loads(proxy.predict(json.dumps(request_json)))
-        new_idx = result["indices"]
-        text = result["text"]
-        new_events = []
-
-        # get rid of infinite recursive by randomizing first event
-        if not self.utg.is_state_reached(self.current_state):
-            new_first = random.randint(0, len(new_idx) - 1)
-            new_idx[0], new_idx[new_first] = new_idx[new_first], new_idx[0]
-
-        for idx in new_idx:
-            if isinstance(possible_events[idx], SetTextEvent):
-                possible_events[idx].text = text
-            new_events.append(possible_events[idx])
-        return new_events
-
     def __get_nav_target(self, current_state):
         # If last event is a navigation event
         if self.__nav_target and self.__event_trace.endswith(EVENT_FLAG_NAVIGATE):
@@ -180,7 +164,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
                 return self.__nav_target
             else:
                 # If last navigation was failed, add nav target to missing states
-                self.__missed_states.add(self.__nav_target.state_str)
+                self.__missing_states.add(self.__nav_target.state_str)
 
         reachable_states = self.utg.get_reachable_states(current_state)
         if self.random_input:
@@ -190,8 +174,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             # Only consider foreground states
             if state.get_app_activity_depth(self.app) != 0:
                 continue
-            # Do not consider missed states
-            if state.state_str in self.__missed_states:
+            # Do not consider missing states
+            if state.state_str in self.__missing_states:
                 continue
             # Do not consider explored states
             if self.utg.is_state_explored(state):

@@ -9,24 +9,66 @@ from .input_policy import UtgBasedInputPolicy
 from .utg import UTG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
-# Max number of restarts
-MAX_NUM_RESTARTS = 5
-# Max number of steps outside the app
-MAX_NUM_STEPS_OUTSIDE = 5
-MAX_NUM_STEPS_OUTSIDE_KILL = 10
-# Max number of replay tries
-MAX_REPLY_TRIES = 5
-
-# Some input event flags
-EVENT_FLAG_STARTED = "+started"
-EVENT_FLAG_START_APP = "+start_app"
-EVENT_FLAG_STOP_APP = "+stop_app"
-EVENT_FLAG_EXPLORE = "+explore"
-EVENT_FLAG_NAVIGATE = "+navigate"
-EVENT_FLAG_TOUCH = "+touch"
 
 # Policy taxanomy
 POLICY_MEMORY_GUIDED = "memory_guided"
+
+
+class InputPolicy2(object):
+    """
+    This class is responsible for generating events to stimulate more app behaviour
+    """
+
+    def __init__(self, device, app, random_input=True):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.device = device
+        self.app = app
+        self.random_input = random_input
+        self.utg = UTG(device=device, app=app, random_input=random_input)
+        self.input_manager = None
+        self.action_count = 0
+        self.state = None
+
+    @property
+    def enabled(self):
+        if self.input_manager is None:
+            return False
+        return self.input_manager.enabled and self.action_count < self.input_manager.event_count
+
+    def perform_action(self, action):
+        if not self.enabled:
+            continue
+        self.input_manager.add_event(action)
+        self.action_count += 1
+
+    def start(self, input_manager):
+        """
+        start producing actions
+        :param input_manager: instance of InputManager
+        """
+        self.input_manager = input_manager
+        self.action_count = 0
+        
+        episode_i = 0
+        while self.enabled:
+            try:
+                episode_i += 1
+                self.device.send_intent(self.app.get_stop_intent())
+                self.device.key_press('HOME')
+                self.device.send_intent(self.app.get_start_intent())
+                self.state = self.device.current_state()
+                self.start_episode()
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.logger.warning(f"exception during episode {episode_i}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
+
+    @abstractmethod
+    def start_episode(self):
+        pass
 
 
 class Memory:

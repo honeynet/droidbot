@@ -1,5 +1,6 @@
 import subprocess
 import logging
+import copy
 from .adapter import Adapter
 
 
@@ -20,6 +21,8 @@ class Logcat(Adapter):
         self.device = device
         self.connected = False
         self.process = None
+        self.parsers = []
+        self.recent_lines = []
         if device.output_dir is None:
             self.out_file = None
         else:
@@ -27,7 +30,7 @@ class Logcat(Adapter):
 
     def connect(self):
         self.device.adb.run_cmd("logcat -c")
-        self.process = subprocess.Popen(["adb", "-s", self.device.serial, "logcat", "-v", "threadtime"],
+        self.process = subprocess.Popen(["adb", "-s", self.device.serial, "logcat", "-v", "threadtime", "*:I"],
                                         stdin=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         stdout=subprocess.PIPE)
@@ -43,6 +46,11 @@ class Logcat(Adapter):
     def check_connectivity(self):
         return self.connected
 
+    def get_recent_lines(self):
+        lines = self.recent_lines
+        self.recent_lines = []
+        return lines
+
     def handle_output(self):
         self.connected = True
 
@@ -56,6 +64,7 @@ class Logcat(Adapter):
             line = self.process.stdout.readline()
             if not isinstance(line, str):
                 line = line.decode()
+            self.recent_lines.append(line)
             self.parse_line(line)
             if f is not None:
                 f.write(line)
@@ -64,4 +73,6 @@ class Logcat(Adapter):
         print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
 
     def parse_line(self, logcat_line):
-        pass
+        for parser in self.parsers:
+            parser.parse(logcat_line)
+

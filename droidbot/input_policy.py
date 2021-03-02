@@ -48,6 +48,7 @@ class InputPolicy(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device = device
         self.app = app
+        self.action_count = 0
         self.master = None
 
     def start(self, input_manager):
@@ -55,14 +56,14 @@ class InputPolicy(object):
         start producing events
         :param input_manager: instance of InputManager
         """
-        count = 0
-        while input_manager.enabled and count < input_manager.event_count:
+        self.action_count = 0
+        while input_manager.enabled and self.action_count < input_manager.event_count:
             try:
                 # make sure the first event is go to HOME screen
                 # the second event is to start the app
-                if count == 0 and self.master is None:
+                if self.action_count == 0 and self.master is None:
                     event = KeyEvent(name="HOME")
-                elif count == 1 and self.master is None:
+                elif self.action_count == 1 and self.master is None:
                     event = IntentEvent(self.app.get_start_intent())
                 else:
                     event = self.generate_event()
@@ -80,7 +81,7 @@ class InputPolicy(object):
                 import traceback
                 traceback.print_exc()
                 continue
-            count += 1
+            self.action_count += 1
 
     @abstractmethod
     def generate_event(self):

@@ -11,7 +11,7 @@ from .input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySe
                          POLICY_NAIVE_BFS, POLICY_GREEDY_BFS, \
                          POLICY_REPLAY, \
                          POLICY_MANUAL, POLICY_MONKEY, POLICY_NONE
-from .input_policy_memory import MemoryGuidedPolicy, POLICY_MEMORY_GUIDED
+from .input_policy2 import MemoryGuidedPolicy, POLICY_MEMORY_GUIDED
 
 DEFAULT_POLICY = POLICY_GREEDY_DFS
 DEFAULT_EVENT_INTERVAL = 1

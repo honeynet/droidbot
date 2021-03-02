@@ -89,6 +89,9 @@ class InputEvent(object):
     """
     The base class of all events
     """
+    def __init__(self):
+        self.event_type = None
+        self.log_lines = None
 
     def to_dict(self):
         return self.__dict__

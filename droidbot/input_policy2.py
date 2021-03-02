@@ -2,11 +2,13 @@ import sys
 import json
 import logging
 import random
+import numpy as np
 from abc import abstractmethod
 
 from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEvent, SetTextEvent
 from .input_policy import UtgBasedInputPolicy
 from .utg import UTG
+from .monitor import Monitor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
 
@@ -36,8 +38,6 @@ class InputPolicy2(object):
         return self.input_manager.enabled and self.action_count < self.input_manager.event_count
 
     def perform_action(self, action):
-        if not self.enabled:
-            continue
         self.input_manager.add_event(action)
         self.action_count += 1
 
@@ -86,21 +86,27 @@ class Memory:
         pass
 
 
+# Max number of steps outside the app
+MAX_NUM_STEPS_OUTSIDE = 3
+MAX_NUM_STEPS_OUTSIDE_KILL = 5
+
+
 class MemoryGuidedPolicy(UtgBasedInputPolicy):
     def __init__(self, device, app, random_input):
         super(MemoryGuidedPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.n_episodes = 0
-        self.n_steps = 0
-
+        self.random_explore_prob = 1.0
         self.__nav_target = None
         self.__nav_num_steps = -1
-        self.__num_restarts = 0
+
         self.__num_steps_outside = 0
-        self.__event_trace = ""
         self.__missing_states = set()
-        self.__random_explore = False
+
+        # self.monitor = Monitor()
+        # self.monitor.serial = self.device.serial
+        # self.monitor.packageName = self.app.get_package_name()
+        # self.monitor.set_up()
 
     def generate_event_based_on_utg(self):
         """
@@ -108,6 +114,10 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         @return: InputEvent
         """
         current_state = self.current_state
+        if self.last_event is not None:
+            self.last_event.log_lines = self.parse_log_lines()
+        # interested_apis = self.monitor.get_interested_api()
+        # self.monitor.check_env()
         self.logger.info("Current state: %s" % current_state.state_str)
         if current_state.state_str in self.__missing_states:
             self.__missing_states.remove(current_state.state_str)
@@ -115,66 +125,58 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         if current_state.get_app_activity_depth(self.app) < 0:
             # If the app is not in the activity stack
             start_app_intent = self.app.get_start_intent()
-
-            # It seems the app stucks at some state, has been
-            # 1) force stopped (START, STOP)
-            #    just start the app again by increasing self.__num_restarts
-            # 2) started at least once and cannot be started (START)
-            #    pass to let viewclient deal with this case
-            # 3) nothing
-            #    a normal start. clear self.__num_restarts.
-
-            if self.__event_trace.endswith(EVENT_FLAG_START_APP + EVENT_FLAG_STOP_APP) \
-                    or self.__event_trace.endswith(EVENT_FLAG_START_APP):
-                self.__num_restarts += 1
-                self.logger.info("The app had been restarted %d times.", self.__num_restarts)
-            else:
-                self.__num_restarts = 0
-
-            # pass (START) through
-            if not self.__event_trace.endswith(EVENT_FLAG_START_APP):
-                if self.__num_restarts > MAX_NUM_RESTARTS:
-                    # If the app had been restarted too many times, enter random mode
-                    msg = "The app had been restarted too many times. Entering random mode."
-                    self.logger.info(msg)
-                    self.__random_explore = True
-                else:
-                    # Start the app
-                    self.__event_trace += EVENT_FLAG_START_APP
-                    self.logger.info("Trying to start the app...")
-                    return IntentEvent(intent=start_app_intent)
-
+            self.logger.info("Starting app")
+            return IntentEvent(intent=start_app_intent)
         elif current_state.get_app_activity_depth(self.app) > 0:
             # If the app is in activity stack but is not in foreground
             self.__num_steps_outside += 1
-
             if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE:
                 # If the app has not been in foreground for too long, try to go back
                 if self.__num_steps_outside > MAX_NUM_STEPS_OUTSIDE_KILL:
                     stop_app_intent = self.app.get_stop_intent()
                     go_back_event = IntentEvent(stop_app_intent)
                 else:
-                    go_back_event = KeyEvent(name="BACK")
-                self.__event_trace += EVENT_FLAG_NAVIGATE
-                self.logger.info("Going back to the app...")
+                    start_app_intent = self.app.get_start_intent()
+                    go_back_event = IntentEvent(intent=start_app_intent)
+                self.logger.info("Going back to the app")
                 return go_back_event
         else:
             # If the app is in foreground
             self.__num_steps_outside = 0
 
-        # Get all possible input events
+        if np.random.uniform() > self.random_explore_prob:
+            target_action = self.pick_interesting_action(current_state)
+
+        self.logger.info("Trying random action")
         possible_events = current_state.get_possible_input()
-
-        if self.random_input:
-            random.shuffle(possible_events)
-
         possible_events.append(KeyEvent(name="BACK"))
+        random.shuffle(possible_events)
+        return possible_events[0]
+
+    def parse_log_lines(self):
+        log_lines = self.device.logcat.get_recent_lines()
+        filtered_lines = []
+        app_pid = self.device.get_app_pid(self.app)
+        # print(f'current app_pid: {app_pid}')
+        for line in log_lines:
+            try:
+                seps = line.split()
+                if int(seps[2]) == app_pid:
+                    filtered_lines.append(line)
+                    print(f'    {line}')
+            except:
+                pass
+        return filtered_lines
+
+    def pick_interesting_action(self, current_state):
+        state_action_pairs = []
+        possible_events = current_state.get_possible_input()
+        random.shuffle(possible_events)
 
         # If there is an unexplored event, try the event first
         for input_event in possible_events:
             if not self.utg.is_event_explored(event=input_event, state=current_state):
                 self.logger.info("Trying an unexplored event.")
-                self.__event_trace += EVENT_FLAG_EXPLORE
                 return input_event
 
         target_state = self.__get_nav_target(current_state)
@@ -182,19 +184,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
             if event_path and len(event_path) > 0:
                 self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
-                self.__event_trace += EVENT_FLAG_NAVIGATE
                 return event_path[0]
-
-        if self.__random_explore:
-            self.logger.info("Trying random event.")
-            random.shuffle(possible_events)
-            return possible_events[0]
-
-        # If couldn't find a exploration target, stop the app
-        stop_app_intent = self.app.get_stop_intent()
-        self.logger.info("Cannot find an exploration target. Trying to restart app...")
-        self.__event_trace += EVENT_FLAG_STOP_APP
-        return IntentEvent(intent=stop_app_intent)
 
     def __get_nav_target(self, current_state):
         # If last event is a navigation event

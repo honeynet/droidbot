@@ -79,10 +79,33 @@ class Memory:
     def train_model(self):
         pass
 
-    def get_unexplored_actions(self):
-        pass
+    def get_unexplored_state_actions(self):
+        state_action_pairs = []
+        action_strs = []
+        for action in current_state.get_possible_input():
+            if not isinstance(action, TouchEvent):
+                continue
+            action_str = action.get_event_str(state=current_state)
+            if action_str in action_strs:
+                continue
+            if self.utg.is_event_explored(action, current_state):
+                continue
+            action_strs.append(action_str)
+            state_action_pairs.append((current_state, action))
+        for state, action in self.utg.iter_state_events():
+            if not isinstance(action, TouchEvent):
+                continue
+            action_str = action.get_event_str(state=state)
+            if action_str in action_strs:
+                continue
+            if self.utg.is_event_explored(action, state):
+                continue
+            action_strs.append(action_str)
+            state_action_pairs.append((state, action))
+        return state_action_pairs
 
-    def get_action_novelty(self):
+    def get_action_scores(self, state_action_pairs):
+        # compute action scores with the model
         pass
 
 
@@ -97,6 +120,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.random_explore_prob = 1.0
+        self.memory = Memory(utg=self.utg)
+
         self.__nav_target = None
         self.__nav_num_steps = -1
 
@@ -163,28 +188,14 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
                 seps = line.split()
                 if int(seps[2]) == app_pid:
                     filtered_lines.append(line)
-                    print(f'    {line}')
             except:
                 pass
         return filtered_lines
 
     def pick_interesting_action(self, current_state):
-        state_action_pairs = []
-        possible_events = current_state.get_possible_input()
-        random.shuffle(possible_events)
-
-        # If there is an unexplored event, try the event first
-        for input_event in possible_events:
-            if not self.utg.is_event_explored(event=input_event, state=current_state):
-                self.logger.info("Trying an unexplored event.")
-                return input_event
-
-        target_state = self.__get_nav_target(current_state)
-        if target_state:
-            event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
-            if event_path and len(event_path) > 0:
-                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
-                return event_path[0]
+        state_action_pairs = self.memory.get_unexplored_state_actions(current_state)
+        scores = self.memory.get_action_scores(state_action_pairs)
+        # TODO pick a target action based on the scores
 
     def __get_nav_target(self, current_state):
         # If last event is a navigation event

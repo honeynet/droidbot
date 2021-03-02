@@ -205,6 +205,12 @@ class UTG(object):
         self.explored_state_strs.add(state.state_str)
         return True
 
+    def iter_state_events(self):
+        for n in reversed(self.G.nodes()):
+            state = self.G.nodes[n]['state']
+            for event in state.get_possible_input():
+                yield (state, event)
+
     def is_state_reached(self, state):
         if state.state_str in self.reached_state_strs:
             return True

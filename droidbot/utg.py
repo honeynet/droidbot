@@ -211,6 +211,14 @@ class UTG(object):
             for event in state.get_possible_input():
                 yield (state, event)
 
+    def iter_transitions(self):
+        for from_state_str, to_state_str in self.G.edges():
+            events = self.G[from_state_str][to_state_str]
+            from_state = self.G.nodes[from_state_str]
+            to_state = self.G.nodes[to_state_str]
+            for event in events:
+                yield (from_state, event, to_state)
+
     def is_state_reached(self, state):
         if state.state_str in self.reached_state_strs:
             return True

@@ -6,6 +6,19 @@ LOGCAT_THREADTIME_RE = re.compile('^(?P<date>\S+)\s+(?P<time>\S+)\s+(?P<pid>[0-9
                                   '(?P<level>[VDIWEFS])\s+(?P<tag>[^:]*):\s+(?P<content>.*)$')
 
 
+def lazy_property(func):
+    attribute = '_lazy_' + func.__name__
+
+    @property
+    @functools.wraps(func)
+    def wrapper(self):
+        if not hasattr(self, attribute):
+            setattr(self, attribute, func(self))
+        return getattr(self, attribute)
+
+    return wrapper
+
+
 def parse_log(log_msg):
     """
     parse a logcat message
@@ -76,3 +89,4 @@ def list_to_html_table(dict_data):
 def md5(input_str):
     import hashlib
     return hashlib.md5(input_str.encode('utf-8')).hexdigest()
+

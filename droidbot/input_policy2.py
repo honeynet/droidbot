@@ -10,7 +10,6 @@ from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEv
 from .input_policy import UtgBasedInputPolicy
 from .device_state import DeviceState
 from .utg import UTG
-from .monitor import Monitor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
 
@@ -81,7 +80,7 @@ class Memory:
         self.known_transitions = collections.OrderedDict()
         self.known_similar_actions = []
         import spacy
-        self.nlp = spacy.load("en_core_web_lg")
+        self.nlp = spacy.load("en_core_web_md")
 
     def _build_model(self, embed_size=200):
         import torch
@@ -164,6 +163,7 @@ class Memory:
         return actions_emb
 
     def train_model(self):
+        self._update_known_transitions()
         embedder = self.model
         optimizer = torch.optim.Adam(embedder.parameters(), lr=1e-3)
         log_per_batch = 10
@@ -182,8 +182,6 @@ class Memory:
             # print(f'{emb_u.size()} {emb_v.size()} {ele_embed.size()}')
 
             emb_all = ele_embed.reshape((-1, embed_size))
-            # emb_all = emb_all[(emb_all != 0).sum(axis=1) > 0]
-            # print(f'{emb_u.size()} {emb_v.size()} {ele_embed.size()} {emb_all.size()}')
 
             n_nodes = emb_all.size(0)
             neg_u = torch.LongTensor(np.random.choice(n_nodes, emb_u.size(0)))
@@ -230,9 +228,10 @@ class Memory:
             elapsed = time.time() - epoch_start_time
             print(f'| epoch: {epoch:3d} | time: {elapsed:8.2f}s | #pairs: {total_pairs:6d} | loss: {avg_loss:8.4f}')
         
-    def get_unexplored_actions(self):
+    def get_unexplored_actions(self, current_state):
         state_action_pairs = []
         action_strs = []
+        self._memorize_state(current_state)
         for action in current_state.get_possible_input():
             if not isinstance(action, TouchEvent):
                 continue
@@ -255,12 +254,12 @@ class Memory:
             state_action_pairs.append((state, action))
         return state_action_pairs
 
-    def get_action_scores(self, state_action_pairs):
-        # compute action scores with the model
-        action_embs = self.compute_embs(state_action_pairs)
-        scores = []
-        for i, action_emb in enumerate(action_embs):
-
+    def get_action_emb(self, state, action):
+        state_str = state.state_str
+        view_str = action.view['view_str']
+        view_idx = self.known_states[state_str]['views_str'].index(view_str)
+        action_emb = self.known_states[state_str]['views_emb'][view_idx]
+        return action_emb
 
 
 # Max number of steps outside the app

@@ -79,6 +79,7 @@ KEY_ScrollEvent = "scroll"
 KEY_SetTextEvent = "set_text"
 KEY_IntentEvent = "intent"
 KEY_SpawnEvent = "spawn"
+KEY_KillAppEvent = "kill_app"
 
 
 class InvalidEventException(Exception):
@@ -232,7 +233,7 @@ class EventLog(object):
         self.from_state = self.device.get_current_state()
         self.start_profiling()
         self.event_str = self.event.get_event_str(self.from_state)
-        print("Input: %s" % self.event_str)
+        print("Action: %s" % self.event_str)
         self.device.send_event(self.event)
 
     def start_profiling(self):
@@ -305,6 +306,7 @@ class ManualEvent(InputEvent):
     """
 
     def __init__(self, event_dict=None):
+        super().__init__()
         self.event_type = KEY_ManualEvent
         self.time = time.time()
         if event_dict is not None:
@@ -328,6 +330,7 @@ class ExitEvent(InputEvent):
     """
 
     def __init__(self, event_dict=None):
+        super().__init__()
         self.event_type = KEY_ExitEvent
         if event_dict is not None:
             self.__dict__.update(event_dict)
@@ -344,12 +347,40 @@ class ExitEvent(InputEvent):
         return "%s()" % self.__class__.__name__
 
 
+class KillAppEvent(InputEvent):
+    """
+    an event to stop testing
+    """
+
+    def __init__(self, app=None, event_dict=None):
+        super().__init__()
+        self.event_type = KEY_KillAppEvent
+        self.stop_intent = None
+        if app:
+            self.stop_intent = app.get_stop_intent().get_cmd()
+        elif event_dict is not None:
+            self.__dict__.update(event_dict)
+
+    @staticmethod
+    def get_random_instance(device, app):
+        return None
+
+    def send(self, device):
+        if self.stop_intent:
+            device.send_intent(self.stop_intent)
+        device.key_press('HOME')
+
+    def get_event_str(self, state):
+        return "%s()" % self.__class__.__name__
+
+
 class KeyEvent(InputEvent):
     """
     a key pressing event
     """
 
     def __init__(self, name=None, event_dict=None):
+        super().__init__()
         self.event_type = KEY_KeyEvent
         self.name = name
         if event_dict is not None:
@@ -372,6 +403,8 @@ class UIEvent(InputEvent):
     """
     This class describes a UI event of app, such as touch, click, etc
     """
+    def __init__(self):
+        super().__init__()
 
     def send(self, device):
         raise NotImplementedError
@@ -410,6 +443,7 @@ class TouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, event_dict=None):
+        super().__init__()
         self.event_type = KEY_TouchEvent
         self.x = x
         self.y = y
@@ -447,6 +481,7 @@ class LongTouchEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, duration=2000, event_dict=None):
+        super().__init__()
         self.event_type = KEY_LongTouchEvent
         self.x = x
         self.y = y
@@ -486,10 +521,9 @@ class SwipeEvent(UIEvent):
     a drag gesture on screen
     """
 
-    def __init__(self,
-                 start_x=None, start_y=None, start_view=None,
-                 end_x=None, end_y=None, end_view=None,
+    def __init__(self, start_x=None, start_y=None, start_view=None, end_x=None, end_y=None, end_view=None,
                  duration=1000, event_dict=None):
+        super().__init__()
         self.event_type = KEY_SwipeEvent
 
         self.start_x = start_x
@@ -554,6 +588,7 @@ class ScrollEvent(UIEvent):
     """
 
     def __init__(self, x=None, y=None, view=None, direction="DOWN", event_dict=None):
+        super().__init__()
         self.event_type = KEY_ScrollEvent
         self.x = x
         self.y = y
@@ -630,6 +665,7 @@ class SetTextEvent(UIEvent):
         pass
 
     def __init__(self, x=None, y=None, view=None, text=None, event_dict=None):
+        super().__init__()
         self.event_type = KEY_SetTextEvent
         self.x = x
         self.y = y
@@ -666,6 +702,7 @@ class IntentEvent(InputEvent):
     """
 
     def __init__(self, intent=None, event_dict=None):
+        super().__init__()
         self.event_type = KEY_IntentEvent
         if event_dict is not None:
             intent = event_dict['intent']
@@ -697,6 +734,7 @@ class SpawnEvent(InputEvent):
     """
 
     def __init__(self, event_dict=None):
+        super().__init__()
         self.event_type = KEY_SpawnEvent
         if event_dict is not None:
             self.__dict__.update(event_dict)

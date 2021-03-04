@@ -5,7 +5,7 @@ import random
 import datetime
 import networkx as nx
 
-from .utils import list_to_html_table
+from .utils import list_to_html_table, lazy_property
 
 
 class UTG(object):
@@ -21,12 +21,14 @@ class UTG(object):
 
         self.G = nx.DiGraph()
 
+        self.transitions = []
         self.effective_event_strs = set()
         self.ineffective_event_strs = set()
         self.explored_state_strs = set()
         self.reached_state_strs = set()
         self.reached_activities = set()
 
+        self.restart_state = None
         self.first_state_str = None
         self.last_state_str = None
         self.last_transition = None
@@ -45,6 +47,7 @@ class UTG(object):
 
         event_str = event.get_event_str(old_state)
         self.input_event_count += 1
+        self.transitions.append((old_state, event, new_state))
 
         if old_state.state_str == new_state.state_str:
             self.ineffective_event_strs.add(event_str)
@@ -78,6 +81,7 @@ class UTG(object):
             self.G.add_node(state.state_str, state=state)
             if self.first_state_str is None:
                 self.first_state_str = state.state_str
+                self.retart_state = state
         if state.foreground_activity.startswith(self.app.package_name):
             self.reached_activities.add(state.foreground_activity)
 
@@ -205,20 +209,6 @@ class UTG(object):
         self.explored_state_strs.add(state.state_str)
         return True
 
-    def iter_state_events(self):
-        for n in reversed(self.G.nodes()):
-            state = self.G.nodes[n]['state']
-            for event in state.get_possible_input():
-                yield (state, event)
-
-    def iter_transitions(self):
-        for from_state_str, to_state_str in self.G.edges():
-            events = self.G[from_state_str][to_state_str]
-            from_state = self.G.nodes[from_state_str]
-            to_state = self.G.nodes[to_state_str]
-            for event in events:
-                yield (from_state, event, to_state)
-
     def is_state_reached(self, state):
         if state.state_str in self.reached_state_strs:
             return True
@@ -232,23 +222,31 @@ class UTG(object):
             reachable_states.append(target_state)
         return reachable_states
 
-    def get_event_path(self, current_state, target_state):
-        path_events = []
+    @property
+    def first_state(self):
+        return self.G.nodes[self.first_state_str]['state']
+
+    def get_navigation_steps(self, from_state, to_state):
         try:
-            states = nx.shortest_path(G=self.G, source=current_state.state_str, target=target_state.state_str)
-            if not isinstance(states, list) or len(states) < 2:
-                self.logger.warning("Error getting path from %s to %s" %
-                                    (current_state.state_str, target_state.state_str))
-            start_state = states[0]
-            for state in states[1:]:
-                edge = self.G[start_state][state]
+            steps = []
+            from_state_str = from_state.state_str
+            to_state_str = to_state.state_str
+            state_strs = nx.shortest_path(G=self.G, source=from_state_str, target=to_state_str)
+            if not isinstance(state_strs, list) or len(state_strs) < 2:
+                self.logger.warning(f"Error getting path from {from_state_str} to {to_state_str}")
+            start_state_str = state_strs[0]
+            for state_str in state_strs[1:]:
+                edge = self.G[start_state_str][state_str]
                 edge_event_strs = list(edge["events"].keys())
                 if self.random_input:
                     random.shuffle(edge_event_strs)
-                path_events.append(edge["events"][edge_event_strs[0]]["event"])
-                start_state = state
+                start_state = self.G.nodes[start_state_str]['state']
+                event = edge["events"][edge_event_strs[0]]["event"]
+                steps.append((start_state, event))
+                start_state_str = state_str
+            return steps
         except Exception as e:
             print(e)
-            self.logger.warning("Cannot find a path from %s to %s" % (current_state.state_str, target_state.state_str))
-        return path_events
+            self.logger.warning(f"Cannot find a path from {from_state} to {to_state}")
+            return None
 

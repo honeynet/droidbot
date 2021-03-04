@@ -4,7 +4,7 @@ import logging
 import random
 from abc import abstractmethod
 
-from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEvent, SetTextEvent
+from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEvent, SetTextEvent, KillAppEvent
 from .utg import UTG
 
 # Max number of restarts
@@ -32,6 +32,7 @@ POLICY_REPLAY = "replay"
 POLICY_MANUAL = "manual"
 POLICY_MONKEY = "monkey"
 POLICY_NONE = "none"
+POLICY_MEMORY_GUIDED = "memory_guided"  # implemented in input_policy2
 
 
 class InputInterruptedException(Exception):
@@ -59,12 +60,14 @@ class InputPolicy(object):
         self.action_count = 0
         while input_manager.enabled and self.action_count < input_manager.event_count:
             try:
-                # make sure the first event is go to HOME screen
-                # the second event is to start the app
+                # # make sure the first event is go to HOME screen
+                # # the second event is to start the app
+                # if self.action_count == 0 and self.master is None:
+                #     event = KeyEvent(name="HOME")
+                # elif self.action_count == 1 and self.master is None:
+                #     event = IntentEvent(self.app.get_start_intent())
                 if self.action_count == 0 and self.master is None:
-                    event = KeyEvent(name="HOME")
-                elif self.action_count == 1 and self.master is None:
-                    event = IntentEvent(self.app.get_start_intent())
+                    event = KillAppEvent(app=self.app)
                 else:
                     event = self.generate_event()
                 input_manager.add_event(event)
@@ -450,11 +453,11 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
 
         target_state = self.__get_nav_target(current_state)
         if target_state:
-            event_path = self.utg.get_event_path(current_state=current_state, target_state=target_state)
-            if event_path and len(event_path) > 0:
-                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(event_path)))
+            navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=target_state)
+            if navigation_steps and len(navigation_steps) > 0:
+                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(navigation_steps)))
                 self.__event_trace += EVENT_FLAG_NAVIGATE
-                return event_path[0]
+                return navigation_steps[0][1]
 
         if self.__random_explore:
             self.logger.info("Trying random event.")
@@ -499,10 +502,10 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     def __get_nav_target(self, current_state):
         # If last event is a navigation event
         if self.__nav_target and self.__event_trace.endswith(EVENT_FLAG_NAVIGATE):
-            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
-            if event_path and 0 < len(event_path) <= self.__nav_num_steps:
+            navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=self.__nav_target)
+            if navigation_steps and 0 < len(navigation_steps) <= self.__nav_num_steps:
                 # If last navigation was successful, use current nav target
-                self.__nav_num_steps = len(event_path)
+                self.__nav_num_steps = len(navigation_steps)
                 return self.__nav_target
             else:
                 # If last navigation was failed, add nav target to missing states
@@ -523,9 +526,9 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             if self.utg.is_state_explored(state):
                 continue
             self.__nav_target = state
-            event_path = self.utg.get_event_path(current_state=current_state, target_state=self.__nav_target)
-            if len(event_path) > 0:
-                self.__nav_num_steps = len(event_path)
+            navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=self.__nav_target)
+            if len(navigation_steps) > 0:
+                self.__nav_num_steps = len(navigation_steps)
                 return state
 
         self.__nav_target = None

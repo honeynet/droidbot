@@ -73,6 +73,16 @@ class UTG(object):
         self.last_transition = (old_state.state_str, new_state.state_str)
         self.__output_utg()
 
+    def remove_transition(self, event, old_state, new_state):
+        event_str = event.get_event_str(old_state)
+        if (old_state.state_str, new_state.state_str) not in self.G.edges():
+            return
+        events = self.G[old_state.state_str][new_state.state_str]["events"]
+        if event_str in events.keys():
+            events.pop(event_str)
+        if len(events) == 0:
+            self.G.remove_edge(old_state.state_str, new_state.state_str)
+
     def add_node(self, state):
         if not state:
             return
@@ -247,6 +257,17 @@ class UTG(object):
             return steps
         except Exception as e:
             print(e)
-            self.logger.warning(f"Cannot find a path from {from_state} to {to_state}")
+            self.logger.warning(f"Cannot find a path from {from_state.state_str} to {to_state.state_str}")
             return None
+
+    def get_simplified_nav_steps(self, from_state, to_state):
+        nav_steps = self.get_navigation_steps(from_state, to_state)
+        if nav_steps is None:
+            return None
+        simple_nav_steps = []
+        for state, action in reversed(nav_steps):
+            simple_nav_steps.append((state, action))
+            if state.structure_str == from_state.structure_str:
+                break
+        return list(reversed(simple_nav_steps))
 

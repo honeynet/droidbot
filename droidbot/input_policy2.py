@@ -14,7 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
 
-from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEvent, SetTextEvent, KillAppEvent
+from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, UIEvent, KillAppEvent
 from .input_policy import UtgBasedInputPolicy
 from .device_state import DeviceState
 from .utg import UTG
@@ -28,8 +28,9 @@ ACTION_INEFFECTIVE = 'ineffective'
 class UIEmbedModel(nn.Module):
     def __init__(self):
         super().__init__()
-        input_size = 64
+        input_size = 68
         embed_size = 100
+        output_size = 50
         self.lstm = nn.LSTM(
             input_size=input_size,
             hidden_size=int(embed_size/2),
@@ -37,11 +38,13 @@ class UIEmbedModel(nn.Module):
             batch_first=True,
             bidirectional=True
         )
-        self.fc = nn.Linear(embed_size, embed_size)
+        self.fc = nn.Linear(embed_size, output_size)
+        # self.fc = nn.Linear(input_size, output_size)
 
     def forward(self, x):
         emb, _ = self.lstm(x)
-        return self.fc(emb)
+        return F.normalize(self.fc(emb))
+        # return F.normalize(self.fc(x))
 
 
 class Memory:
@@ -93,14 +96,16 @@ class Memory:
         screen_w = state.width
         screen_h = state.height
         [[l,t], [r,b]] = view['bounds'] if 'bounds' in view else [[0,0], [0,0]]
-        view_w = int(abs(l - r))
-        view_h = int(abs(t - b))
-        size = view_w * view_h / screen_w * screen_h
+        l, r, t, b = l/screen_w, r/screen_w, t/screen_h, b/screen_h
+        view_w = abs(l - r)
+        view_h = abs(t - b)
+        size = view_w * view_h
         wh_ratio = view_w / (view_h + 0.0001)
         wh_ratio = min(wh_ratio, 10)
         text_emb = self.nlp(text=view_text).vector[:50] if view_text else np.zeros(50)
         encoding = np.concatenate([np.array([
-            is_parent, is_text, is_password, visible, size, wh_ratio,
+            is_parent, is_text, is_password, visible,
+            l, r, t, b, size, wh_ratio,
             enabled, checked, selected,
             clickable, long_clickable, checkable, editable, scrollable
         ]), text_emb])
@@ -121,9 +126,12 @@ class Memory:
             return
         view = action.view
         view_idx = state_info['views_str'].index(view['view_str'])
-        action_effect = f'{from_state.structure_str}->{to_state.structure_str}'
-        if from_state.structure_str == to_state.structure_str:
-            action_effect = ACTION_INEFFECTIVE
+        action_target = ACTION_INEFFECTIVE \
+            if from_state.structure_str == to_state.structure_str \
+            else to_state.structure_str
+        # TODO decide how to represent the effect of an action
+        # action_effect = f'{from_state.structure_str}->{action_target}'
+        action_effect = action_target
         self.known_transitions[action_str] = {
             'from_state': from_state,
             'to_state': to_state,
@@ -151,8 +159,8 @@ class Memory:
                 view_idx2 = self.known_transitions[action_str2]['view_idx']
                 action_effect1 = self.known_transitions[action_str1]['action_effect']
                 action_effect2 = self.known_transitions[action_str2]['action_effect']
-                if action_effect1 == ACTION_INEFFECTIVE and action_effect2 == ACTION_INEFFECTIVE:
-                    continue
+                # if action_effect1 == ACTION_INEFFECTIVE and action_effect2 == ACTION_INEFFECTIVE:
+                #     continue
                 effect_same = 1 if action_effect1 == action_effect2 else 0
                 action_pairs.append((state_idx1, view_idx1, state_idx2, view_idx2, effect_same))
         return state_encs, action_pairs
@@ -295,6 +303,11 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         # self.monitor.check_env()
         self.logger.debug("Current state: %s" % current_state.state_str)
 
+        nav_action = self.navigate(current_state)
+        if nav_action:
+            return nav_action
+        self._nav_steps = []  # if navigation fails, stop navigating
+
         if current_state.get_app_activity_depth(self.app) < 0:
             # If the app is not in the activity stack
             start_app_intent = self.app.get_start_intent()
@@ -326,16 +339,9 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
                 self.logger.info(f"executing selected action")
                 return target_action
             self._nav_steps = self.get_shortest_nav_steps(current_state, target_state, target_action)
-
-        if self._nav_steps and len(self._nav_steps) > 0:
-            nav_state, nav_action = self._nav_steps[0]
-            self._nav_steps = self._nav_steps[1:]
-            nav_action = self._get_nav_action(current_state, nav_state, nav_action)
+            nav_action = self.navigate(current_state)
             if nav_action:
-                self.logger.info(f"navigating, {len(self._nav_steps)} steps left")
                 return nav_action
-            else:
-                self.logger.warning(f"navigating failed")
         self._nav_steps = []  # if navigation fails, stop navigating
 
         self.logger.info("trying random action")
@@ -367,11 +373,25 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
                 best_target = state, action
         return best_target
 
+    def navigate(self, current_state):
+        if self._nav_steps and len(self._nav_steps) > 0:
+            nav_state, nav_action = self._nav_steps[0]
+            self._nav_steps = self._nav_steps[1:]
+            nav_action = self._get_nav_action(current_state, nav_state, nav_action)
+            if nav_action:
+                self.logger.info(f"navigating, {len(self._nav_steps)} steps left")
+                return nav_action
+            else:
+                self.logger.warning(f"navigating failed")
+                self.utg.remove_transition(self.last_event, self.last_state, nav_state)
+
     def _get_nav_action(self, current_state, nav_state, nav_action):
         # get the action similar to nav_action in current state
         try:
             if current_state.structure_str != nav_state.structure_str:
                 return None
+            if not isinstance(nav_action, UIEvent):
+                return nav_action
             nav_view = nav_action.view
             nav_view_idx = nav_state.views.index(nav_view)
             new_view = current_state.views[nav_view_idx]
@@ -397,8 +417,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         return filtered_lines
 
     def get_shortest_nav_steps(self, current_state, target_state, target_action):
-        normal_nav_steps = self.utg.get_navigation_steps(current_state, target_state)
-        restart_nav_steps = self.utg.get_navigation_steps(self.utg.first_state, target_state)
+        normal_nav_steps = self.utg.get_simplified_nav_steps(current_state, target_state)
+        restart_nav_steps = self.utg.get_simplified_nav_steps(self.utg.first_state, target_state)
         normal_nav_steps_len = len(normal_nav_steps) if normal_nav_steps else MAX_NAV_STEPS
         restart_nav_steps_len = len(restart_nav_steps) + 1 if restart_nav_steps else MAX_NAV_STEPS
         if normal_nav_steps_len >= MAX_NAV_STEPS and restart_nav_steps_len >= MAX_NAV_STEPS:

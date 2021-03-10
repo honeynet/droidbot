@@ -18,27 +18,40 @@ from .input_event import InputEvent, KeyEvent, IntentEvent, TouchEvent, ManualEv
 from .input_policy import UtgBasedInputPolicy
 from .device_state import DeviceState
 from .utg import UTG
+from .utils import lazy_property
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
+DEBUG = True
+ACTION_INEFFECTIVE = 'ineffective'
+
+
+class UIEmbedModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        input_size = 64
+        embed_size = 100
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=int(embed_size/2),
+            num_layers=2,
+            batch_first=True,
+            bidirectional=True
+        )
+        self.fc = nn.Linear(embed_size, embed_size)
+
+    def forward(self, x):
+        emb, _ = self.lstm(x)
+        return self.fc(emb)
 
 
 class Memory:
     def __init__(self, utg, app):
         self.utg = utg
         self.app = app
-        self.model = self._build_model()
         self.known_states = collections.OrderedDict()
         self.known_transitions = collections.OrderedDict()
         self.nlp = spacy.load("en_core_web_md")
-
-    def _build_model(self, embed_size=200):
-        return torch.nn.LSTM(
-            input_size=300,
-            hidden_size=int(embed_size/2),
-            num_layers=1,
-            batch_first=True,
-            bidirectional=True
-        )
+        self.model = UIEmbedModel()
 
     def _memorize_state(self, state):
         if state.get_app_activity_depth(self.app) != 0:
@@ -46,11 +59,11 @@ class Memory:
         if state.state_str not in self.known_states:
             views = state.views
             views_str = [view['view_str'] for view in views]
-            views_enc = torch.stack([self._encode_view(view) for view in views])
+            views_enc = torch.stack([self._encode_view(view, state) for view in views])
             embedder = self.model
             embedder.eval()
             with torch.no_grad():
-                views_emb, _ = self.model(views_enc.unsqueeze(0))
+                views_emb = self.model(views_enc.unsqueeze(0))
                 views_emb = views_emb.detach().cpu()[0]
             self.known_states[state.state_str] = {
                 'state': state,
@@ -61,44 +74,63 @@ class Memory:
             }
         return self.known_states[state.state_str]
 
-    def _encode_view(self, view):
+    def _encode_view(self, view, state):
         # print(view)
-        return torch.zeros(300)
-        # is_parent
-        # is_image
-        # is_text
-        # clickable
-        # long_clickable
-        # checkable
-        # editable
-        # scrollable
-        # size
-        # wh_ratio
-        # text
-        # encoding = [is_parent, is_image, is_text, clickable, long_clickable, checkable, editable, scrollable, size, wh_ratio]
-    
-    def _update_known_transitions(self):
-        for from_state, action, to_state in self.utg.transitions:
-            if not isinstance(action, TouchEvent):
-                continue
-            if action.view is None:
-                continue
-            action_str = action.get_event_str(state=from_state)
-            if action_str in self.known_transitions and self.known_transitions[action_str]['to_state'] == to_state:
-                continue
-            state_info = self._memorize_state(from_state)
-            if state_info is None:
-                continue
-            view = action.view
-            view_idx = state_info['views_str'].index(view['view_str'])
-            action_effect = f'{from_state.structure_str}->{to_state.structure_str}'
-            self.known_transitions[action_str] = {
-                'from_state': from_state,
-                'to_state': to_state,
-                'action': action,
-                'view_idx': view_idx,
-                'action_effect': action_effect
-            }
+        view_children = view['children'] if 'children' in view else []
+        is_parent = 1 if len(view_children) > 0 else -1
+        view_text = view['text'] if 'text' in view else None
+        is_text = 1 if view_text and len(view_text) > 0 else -1
+        enabled = 1 if 'enabled' in view and view['enabled'] else -1
+        visible = 1 if 'visible' in view and view['visible'] else -1
+        clickable = 1 if 'clickable' in view and view['clickable'] else -1
+        long_clickable = 1 if 'long_clickable' in view and view['long_clickable'] else -1
+        checkable = 1 if 'checkable' in view and view['checkable'] else -1
+        checked = 1 if 'checked' in view and view['checked'] else -1
+        selected = 1 if 'selected' in view and view['selected'] else -1
+        editable = 1 if 'editable' in view and view['editable'] else -1
+        is_password = 1 if 'is_password' in view and view['is_password'] else -1
+        scrollable = 1 if 'scrollable' in view and view['scrollable'] else -1
+        screen_w = state.width
+        screen_h = state.height
+        [[l,t], [r,b]] = view['bounds'] if 'bounds' in view else [[0,0], [0,0]]
+        view_w = int(abs(l - r))
+        view_h = int(abs(t - b))
+        size = view_w * view_h / screen_w * screen_h
+        wh_ratio = view_w / (view_h + 0.0001)
+        wh_ratio = min(wh_ratio, 10)
+        text_emb = self.nlp(text=view_text).vector[:50] if view_text else np.zeros(50)
+        encoding = np.concatenate([np.array([
+            is_parent, is_text, is_password, visible, size, wh_ratio,
+            enabled, checked, selected,
+            clickable, long_clickable, checkable, editable, scrollable
+        ]), text_emb])
+        return torch.Tensor(encoding)
+
+    def save_transition(self, action, from_state, to_state):
+        if not from_state or not to_state:
+            return
+        if not isinstance(action, TouchEvent):
+            return
+        if action.view is None:
+            return
+        action_str = action.get_event_str(state=from_state)
+        if action_str in self.known_transitions and self.known_transitions[action_str]['to_state'] == to_state:
+            return
+        state_info = self._memorize_state(from_state)
+        if state_info is None:
+            return
+        view = action.view
+        view_idx = state_info['views_str'].index(view['view_str'])
+        action_effect = f'{from_state.structure_str}->{to_state.structure_str}'
+        if from_state.structure_str == to_state.structure_str:
+            action_effect = ACTION_INEFFECTIVE
+        self.known_transitions[action_str] = {
+            'from_state': from_state,
+            'to_state': to_state,
+            'action': action,
+            'view_idx': view_idx,
+            'action_effect': action_effect
+        }
 
     def encode_action_pairs(self, action_strs=None):
         if action_strs is None:
@@ -119,6 +151,8 @@ class Memory:
                 view_idx2 = self.known_transitions[action_str2]['view_idx']
                 action_effect1 = self.known_transitions[action_str1]['action_effect']
                 action_effect2 = self.known_transitions[action_str2]['action_effect']
+                if action_effect1 == ACTION_INEFFECTIVE and action_effect2 == ACTION_INEFFECTIVE:
+                    continue
                 effect_same = 1 if action_effect1 == action_effect2 else 0
                 action_pairs.append((state_idx1, view_idx1, state_idx2, view_idx2, effect_same))
         return state_encs, action_pairs
@@ -133,13 +167,17 @@ class Memory:
             actions_emb.append(action_emb)
         return torch.stack(actions_emb)
 
-    def train_model(self):
-        self._update_known_transitions()
-        # print(self.known_transitions)
+    @staticmethod
+    def action_info_str(action_info):
+        state_activity = action_info['from_state'].foreground_activity
+        view_sig = action_info['action'].view['signature']
+        action_effect = action_info['action_effect']
+        return f'{state_activity}-{view_sig}-{action_effect}'
 
+    def train_model(self):
         embedder = self.model
-        optimizer = torch.optim.Adam(embedder.parameters(), lr=1e-3)
-        n_iterations = 5
+        optimizer = torch.optim.Adam(embedder.parameters(), lr=1e-2)
+        n_iterations = 10
 
         def compute_loss(ele_embed, action_pairs):
             pos_emb_u = []
@@ -155,18 +193,19 @@ class Memory:
                 else:
                     neg_emb_u.append(emb_u)
                     neg_emb_v.append(emb_v)
-            pos_emb_u = torch.stack(pos_emb_u)
-            pos_emb_v = torch.stack(pos_emb_v)
-            neg_emb_u = torch.stack(neg_emb_u)
-            neg_emb_v = torch.stack(neg_emb_v)
-            # print(f'{emb_u.size()} {emb_v.size()} {ele_embed.size()}')
 
-            pos_score = torch.cosine_similarity(pos_emb_u, pos_emb_v)
-            pos_score = F.logsigmoid(pos_score).mean()
-
-            neg_score = torch.cosine_similarity(neg_emb_u, neg_emb_v)
-            neg_score = F.logsigmoid(-neg_score).mean()
-
+            pos_score = 0
+            neg_score = 0
+            if len(pos_emb_u) > 0 and len(pos_emb_v) > 0:
+                pos_emb_u = torch.stack(pos_emb_u)
+                pos_emb_v = torch.stack(pos_emb_v)
+                pos_score = torch.cosine_similarity(pos_emb_u, pos_emb_v)
+                pos_score = F.logsigmoid(pos_score).mean()
+            if len(neg_emb_u) > 0 and len(neg_emb_v) > 0:
+                neg_emb_u = torch.stack(neg_emb_u)
+                neg_emb_v = torch.stack(neg_emb_v)
+                neg_score = torch.cosine_similarity(neg_emb_u, neg_emb_v)
+                neg_score = F.logsigmoid(-neg_score).mean()
             loss = -pos_score - neg_score
             return loss
 
@@ -174,7 +213,7 @@ class Memory:
             embedder.train()
             state_encs, action_pairs = self.encode_action_pairs()
             state_encs = pad_sequence(state_encs, batch_first=True)
-            ele_embed, _ = embedder(state_encs)
+            ele_embed = embedder(state_encs)
 
             loss = compute_loss(ele_embed, action_pairs)
             optimizer.zero_grad()
@@ -187,7 +226,17 @@ class Memory:
             loss, n_pairs = train()
             elapsed = time.time() - epoch_start_time
             print(f'| iter: {i:3d} | time: {elapsed:8.2f}s | #pairs: {n_pairs:6d} | loss: {loss:8.4f}')
-        
+
+        # update embedding
+        with torch.no_grad():
+            embedder.eval()
+            state_encs = [v['views_enc'] for k,v in self.known_states.items()]
+            state_encs_pad = pad_sequence(state_encs, batch_first=True)
+            ele_embed = embedder(state_encs_pad)
+            ele_embed = ele_embed.detach().cpu()
+            for i, (k,v) in enumerate(self.known_states.items()):
+                self.known_states[k]['views_emb'] = ele_embed[i]
+
     def get_unexplored_actions(self, current_state):
         action_strs = set()
         self._memorize_state(current_state)
@@ -235,6 +284,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         generate an event based on current UTG
         @return: InputEvent
         """
+        self.memory.save_transition(self.last_event, self.last_state, self.current_state)
         if self.action_count % self.num_actions_train == 0:
             self.memory.train_model()
 
@@ -280,8 +330,12 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         if self._nav_steps and len(self._nav_steps) > 0:
             nav_state, nav_action = self._nav_steps[0]
             self._nav_steps = self._nav_steps[1:]
-            self.logger.info(f"navigating, {len(self._nav_steps)} steps left")
-            return nav_action
+            nav_action = self._get_nav_action(current_state, nav_state, nav_action)
+            if nav_action:
+                self.logger.info(f"navigating, {len(self._nav_steps)} steps left")
+                return nav_action
+            else:
+                self.logger.warning(f"navigating failed")
         self._nav_steps = []  # if navigation fails, stop navigating
 
         self.logger.info("trying random action")
@@ -291,17 +345,23 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         return possible_events[0]
 
     def pick_target(self, current_state):
-        state_action_pairs = self.memory.get_unexplored_actions(current_state)
+        state_action_pairs = list(self.memory.get_unexplored_actions(current_state))
         best_target = None, None
         best_score = -np.inf
         known_actions_emb = self.memory.get_known_actions_emb()
-        for state, action in state_action_pairs:
+        if DEBUG:
+            known_actions_str = [Memory.action_info_str(v) for k, v in self.memory.known_transitions.items()]
+        scores = []
+        for i, (state, action) in enumerate(state_action_pairs):
             action_emb = self.memory.get_action_emb(state, action)
             similarities = torch.cosine_similarity(action_emb.repeat((known_actions_emb.size(0), 1)), known_actions_emb)
             max_sim, max_sim_idx = similarities.max(0)
             score = -max_sim
             if state.state_str == current_state.state_str:
-                score += 0.1        # encourage actions in current state
+                score += 0.01        # encourage actions in current state
+            if DEBUG:
+                action_info_str = f'{state.foreground_activity}-{action.view["signature"]}'
+                scores.append((i, score, action_info_str, similarities, action_emb))
             if score > best_score:
                 best_score = score
                 best_target = state, action

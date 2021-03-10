@@ -30,6 +30,8 @@ class DeviceState(object):
         self.structure_str = self.__get_content_free_state_str()
         self.search_content = self.__get_search_content()
         self.possible_events = None
+        self.width = device.get_width(refresh=True)
+        self.height = device.get_height(refresh=True)
 
     def to_dict(self):
         state = {'tag': self.tag,
@@ -38,6 +40,8 @@ class DeviceState(object):
                  'foreground_activity': self.foreground_activity,
                  'activity_stack': self.activity_stack,
                  'background_services': self.background_services,
+                 'width': self.width,
+                 'height': self.height,
                  'views': self.views}
         return state
 
@@ -407,7 +411,7 @@ class DeviceState(object):
                ['android:id/navigationBarBackground',
                 'android:id/statusBarBackground']:
                 enabled_view_ids.append(view_dict['temp_id'])
-        enabled_view_ids.reverse()
+        # enabled_view_ids.reverse()
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'clickable'):

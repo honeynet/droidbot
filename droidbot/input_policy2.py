@@ -23,6 +23,7 @@ from .utils import lazy_property
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
 DEBUG = True
 ACTION_INEFFECTIVE = 'ineffective'
+CLOSER_ACTION_ENCOURAGEMENT = 0.1
 
 
 class UIEmbedModel(nn.Module):
@@ -364,7 +365,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             max_sim, max_sim_idx = similarities.max(0)
             score = -max_sim
             if state.state_str == current_state.state_str:
-                score += 0.01        # encourage actions in current state
+                score += CLOSER_ACTION_ENCOURAGEMENT        # encourage actions in current state
             if DEBUG:
                 action_info_str = f'{state.foreground_activity}-{action.view["signature"]}'
                 scores.append((i, score, action_info_str, similarities, action_emb))

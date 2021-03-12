@@ -23,7 +23,14 @@ from .utils import lazy_property
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
 DEBUG = True
 ACTION_INEFFECTIVE = 'ineffective'
+
 CLOSER_ACTION_ENCOURAGEMENT = 0.1
+RANDOM_EXPLORE_PROB = 0.4
+N_ACTIONS_TRAINING = 32
+
+MAX_NUM_STEPS_OUTSIDE = 3
+MAX_NUM_STEPS_OUTSIDE_KILL = 5
+MAX_NAV_STEPS = 10
 
 
 class UIEmbedModel(nn.Module):
@@ -141,6 +148,27 @@ class Memory:
             'action_effect': action_effect
         }
 
+    def _select_transitions_for_training(self, size):
+        if len(self.known_transitions) <= size:
+            return list(self.known_transitions.keys())
+        effect2actions = {}
+        for k,v in self.known_transitions.items():
+            action_effect = v['action_effect']
+            if action_effect not in effect2actions:
+                effect2actions[action_effect] = []
+            effect2actions[action_effect].append(k)
+        action_strs = []
+        action_probs = []
+        prob_per_effect = 1.0 / len(effect2actions)
+        for effect in effect2actions:
+            prob_per_action = prob_per_effect / len(effect2actions[effect])
+            for action_str in effect2actions[effect]:
+                action_strs.append(action_str)
+                action_probs.append(prob_per_action)
+        action_probs = np.array(action_probs) / sum(action_probs)
+        selected_actions = np.random.choice(action_strs, size=size, replace=False, p=action_probs)
+        return selected_actions
+
     def encode_action_pairs(self, action_strs=None):
         if action_strs is None:
             action_strs = list(self.known_transitions.keys())
@@ -220,7 +248,8 @@ class Memory:
 
         def train():
             embedder.train()
-            state_encs, action_pairs = self.encode_action_pairs()
+            action_strs = self._select_transitions_for_training(size=N_ACTIONS_TRAINING)
+            state_encs, action_pairs = self.encode_action_pairs(action_strs)
             state_encs = pad_sequence(state_encs, batch_first=True)
             ele_embed = embedder(state_encs)
 
@@ -234,7 +263,7 @@ class Memory:
             epoch_start_time = time.time()
             loss, n_pairs = train()
             elapsed = time.time() - epoch_start_time
-            print(f'| iter: {i:3d} | time: {elapsed:8.2f}s | #pairs: {n_pairs:6d} | loss: {loss:8.4f}')
+            print(f'| iter: {i:3d} | time: {elapsed:6.2f}s | #pairs: {n_pairs:6d} | loss: {loss:8.4f}')
 
         # update embedding
         with torch.no_grad():
@@ -248,9 +277,13 @@ class Memory:
 
     def get_unexplored_actions(self, current_state):
         action_strs = set()
+        structure_strs = set()
         self._memorize_state(current_state)
         for state_str, state_info in reversed(self.known_states.items()):
             state = state_info['state']
+            if state.structure_str in structure_strs:
+                continue
+            structure_strs.add(state.structure_str)
             for action in state.get_possible_input():
                 if not isinstance(action, TouchEvent):
                     continue
@@ -270,18 +303,11 @@ class Memory:
         return action_emb
 
 
-# Max number of steps outside the app
-MAX_NUM_STEPS_OUTSIDE = 3
-MAX_NUM_STEPS_OUTSIDE_KILL = 5
-MAX_NAV_STEPS = 10
-
-
 class MemoryGuidedPolicy(UtgBasedInputPolicy):
     def __init__(self, device, app, random_input):
         super(MemoryGuidedPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.random_explore_prob = 0.2
         self.memory = Memory(utg=self.utg, app=self.app)
         self.num_actions_train = 10
 
@@ -293,9 +319,13 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         generate an event based on current UTG
         @return: InputEvent
         """
-        self.memory.save_transition(self.last_event, self.last_state, self.current_state)
+        try:
+            self.memory.save_transition(self.last_event, self.last_state, self.current_state)
+        except Exception as e:
+            self.logger.warning(f'failed to save transition: {e}')
         if self.action_count % self.num_actions_train == 0:
             self.memory.train_model()
+        # self.logger.info(f'we have {len(self.memory.known_transitions)} transitions now')
 
         current_state = self.current_state
         if self.last_event is not None:
@@ -333,11 +363,11 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
 
         if self.action_count >= self.num_actions_train \
                 and len(self._nav_steps) == 0 \
-                and np.random.uniform() > self.random_explore_prob:
-            target_state, target_action = self.pick_target(current_state)
+                and np.random.uniform() > RANDOM_EXPLORE_PROB:
+            (target_state, target_action), candidates = self.pick_target(current_state)
             # perform target action or navigate to target action
             if target_state.state_str == current_state.state_str:
-                self.logger.info(f"executing selected action")
+                self.logger.info(f"executing action selected from {len(candidates)} candidates")
                 return target_action
             self._nav_steps = self.get_shortest_nav_steps(current_state, target_state, target_action)
             nav_action = self.navigate(current_state)
@@ -372,7 +402,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             if score > best_score:
                 best_score = score
                 best_target = state, action
-        return best_target
+        return best_target, state_action_pairs
 
     def navigate(self, current_state):
         if self._nav_steps and len(self._nav_steps) > 0:
@@ -418,11 +448,12 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         return filtered_lines
 
     def get_shortest_nav_steps(self, current_state, target_state, target_action):
-        normal_nav_steps = self.utg.get_simplified_nav_steps(current_state, target_state)
-        restart_nav_steps = self.utg.get_simplified_nav_steps(self.utg.first_state, target_state)
+        normal_nav_steps = self.utg.get_G2_nav_steps(current_state, target_state)
+        restart_nav_steps = self.utg.get_G2_nav_steps(self.utg.first_state, target_state)
         normal_nav_steps_len = len(normal_nav_steps) if normal_nav_steps else MAX_NAV_STEPS
         restart_nav_steps_len = len(restart_nav_steps) + 1 if restart_nav_steps else MAX_NAV_STEPS
         if normal_nav_steps_len >= MAX_NAV_STEPS and restart_nav_steps_len >= MAX_NAV_STEPS:
+            self.logger.warning(f'cannot find a path to {target_state.structure_str} {target_state.foreground_activity}')
             return None
         elif normal_nav_steps_len > restart_nav_steps_len:
             nav_steps = [(current_state, KillAppEvent(app=self.app))] + restart_nav_steps

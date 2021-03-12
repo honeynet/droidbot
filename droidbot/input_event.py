@@ -436,6 +436,14 @@ class UIEvent(InputEvent):
             return DeviceState.get_view_center(view_dict=view)
         return x, y
 
+    @staticmethod
+    def view_str(state, view):
+        view_class = view['class'].split('.')[-1]
+        view_text = view['text'].replace('\n', '\\n') if 'text' in view and view['text'] else ''
+        view_text = view_text[:10] if len(view_text) > 10 else view_text
+        view_short_sig = f'{state.activity_short_name}/{view_class}-{view_text}'
+        return f"state={state.state_str}, view={view['view_str']}({view_short_sig})"
+
 
 class TouchEvent(UIEvent):
     """
@@ -464,7 +472,7 @@ class TouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s)" % (self.__class__.__name__, state.state_str, self.view['view_str'])
+            return f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)})"
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s)" % (self.__class__.__name__, state.state_str, self.x, self.y)
         else:
@@ -503,11 +511,10 @@ class LongTouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, duration=%s)" % \
-                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.duration)
+            f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)})"
         elif self.x is not None and self.y is not None:
-            return "%s(state=%s, x=%s, y=%s, duration=%s)" %\
-                   (self.__class__.__name__, state.state_str, self.x, self.y, self.duration)
+            return "%s(state=%s, x=%s, y=%s)" %\
+                   (self.__class__.__name__, state.state_str, self.x, self.y)
         else:
             msg = "Invalid %s!" % self.__class__.__name__
             raise InvalidEventException(msg)
@@ -556,7 +563,7 @@ class SwipeEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.start_view is not None:
-            start_view_str = "state=%s, start_view=%s" % (state.state_str, self.start_view['view_str'])
+            start_view_str = UIEvent.view_str(state, self.start_view)
         elif self.start_x is not None and self.start_y is not None:
             start_view_str = "state=%s, start_x=%s, start_y=%s" % (state.state_str, self.start_x, self.start_y)
         else:
@@ -642,8 +649,8 @@ class ScrollEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, direction=%s)" % \
-                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.direction)
+            return \
+                f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)}, direction={self.direction})"
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, direction=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.direction)
@@ -683,8 +690,7 @@ class SetTextEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            return "%s(state=%s, view=%s, text=%s)" % \
-                   (self.__class__.__name__, state.state_str, self.view['view_str'], self.text)
+            return f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)}, text={self.text})"
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s, text=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y, self.text)

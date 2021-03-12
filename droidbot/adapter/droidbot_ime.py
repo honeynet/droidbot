@@ -54,9 +54,9 @@ class DroidBotIme(Adapter):
 
     def connect(self):
         r_enable = self.device.adb.shell("ime enable %s" % IME_SERVICE)
-        if r_enable.endswith("now enabled") or r_enable.endswith("already enabled"):
+        if "now enabled" in r_enable or "already enabled" in r_enable:
             r_set = self.device.adb.shell("ime set %s" % IME_SERVICE)
-            if r_set.endswith("selected"):
+            if f"{IME_SERVICE} selected" in r_set:
                 self.connected = True
                 return
         self.logger.warning("Failed to connect DroidBotIME!")

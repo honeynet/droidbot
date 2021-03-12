@@ -5,8 +5,6 @@ import random
 import datetime
 import networkx as nx
 
-from .utils import list_to_html_table, lazy_property
-
 
 class UTG(object):
     """
@@ -20,6 +18,7 @@ class UTG(object):
         self.random_input = random_input
 
         self.G = nx.DiGraph()
+        self.G2 = nx.DiGraph()  # graph with same-structure states clustered
 
         self.transitions = []
         self.effective_event_strs = set()
@@ -28,14 +27,26 @@ class UTG(object):
         self.reached_state_strs = set()
         self.reached_activities = set()
 
-        self.restart_state = None
-        self.first_state_str = None
-        self.last_state_str = None
-        self.last_transition = None
-        self.effective_event_count = 0
-        self.input_event_count = 0
+        self.first_state = None
+        self.last_state = None
 
         self.start_time = datetime.datetime.now()
+
+    @property
+    def first_state_str(self):
+        return self.first_state.state_str if self.first_state else None
+
+    @property
+    def last_state_str(self):
+        return self.last_state.state_str if self.last_state else None
+
+    @property
+    def effective_event_count(self):
+        return len(self.effective_event_strs)
+
+    @property
+    def num_transitions(self):
+        return len(self.transitions)
 
     def add_transition(self, event, old_state, new_state):
         self.add_node(old_state)
@@ -46,7 +57,6 @@ class UTG(object):
             return
 
         event_str = event.get_event_str(old_state)
-        self.input_event_count += 1
         self.transitions.append((old_state, event, new_state))
 
         if old_state.state_str == new_state.state_str:
@@ -60,28 +70,38 @@ class UTG(object):
             return
 
         self.effective_event_strs.add(event_str)
-        self.effective_event_count += 1
 
         if (old_state.state_str, new_state.state_str) not in self.G.edges():
             self.G.add_edge(old_state.state_str, new_state.state_str, events={})
-
         self.G[old_state.state_str][new_state.state_str]["events"][event_str] = {
             "event": event,
             "id": self.effective_event_count
         }
-        self.last_state_str = new_state.state_str
-        self.last_transition = (old_state.state_str, new_state.state_str)
+
+        if (old_state.structure_str, new_state.structure_str) not in self.G2.edges():
+            self.G2.add_edge(old_state.structure_str, new_state.structure_str, events={})
+        self.G2[old_state.structure_str][new_state.structure_str]["events"][event_str] = {
+            "event": event,
+            "id": self.effective_event_count
+        }
+
+        self.last_state = new_state
         self.__output_utg()
 
     def remove_transition(self, event, old_state, new_state):
         event_str = event.get_event_str(old_state)
-        if (old_state.state_str, new_state.state_str) not in self.G.edges():
-            return
-        events = self.G[old_state.state_str][new_state.state_str]["events"]
-        if event_str in events.keys():
-            events.pop(event_str)
-        if len(events) == 0:
-            self.G.remove_edge(old_state.state_str, new_state.state_str)
+        if (old_state.state_str, new_state.state_str) in self.G.edges():
+            events = self.G[old_state.state_str][new_state.state_str]["events"]
+            if event_str in events.keys():
+                events.pop(event_str)
+            if len(events) == 0:
+                self.G.remove_edge(old_state.state_str, new_state.state_str)
+        if (old_state.structure_str, new_state.structure_str) in self.G.edges():
+            events = self.G[old_state.structure_str][new_state.structure_str]["events"]
+            if event_str in events.keys():
+                events.pop(event_str)
+            if len(events) == 0:
+                self.G.remove_edge(old_state.structure_str, new_state.structure_str)
 
     def add_node(self, state):
         if not state:
@@ -89,9 +109,13 @@ class UTG(object):
         if state.state_str not in self.G.nodes():
             state.save2dir()
             self.G.add_node(state.state_str, state=state)
-            if self.first_state_str is None:
-                self.first_state_str = state.state_str
-                self.retart_state = state
+            if self.first_state is None:
+                self.first_state = state
+
+        if state.structure_str not in self.G2.nodes():
+            self.G2.add_node(state.structure_str, states=[])
+        self.G2.nodes[state.structure_str]['states'].append(state)
+
         if state.foreground_activity.startswith(self.app.package_name):
             self.reached_activities.add(state.foreground_activity)
 
@@ -101,6 +125,14 @@ class UTG(object):
         """
         if not self.device.output_dir:
             return
+
+        def list_to_html_table(dict_data):
+            table = "<table class=\"table\">\n"
+            for (key, value) in dict_data:
+                table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
+            table += "</table>"
+            return table
+
         utg_file_path = os.path.join(self.device.output_dir, "utg.js")
         utg_file = open(utg_file_path, "w")
         utg_nodes = []
@@ -189,7 +221,7 @@ class UTG(object):
             "num_reached_activities": len(self.reached_activities),
             "test_date": self.start_time.strftime("%Y-%m-%d %H:%M:%S"),
             "time_spent": (datetime.datetime.now() - self.start_time).total_seconds(),
-            "num_input_events": self.input_event_count,
+            "num_transitions": self.num_transitions,
 
             "device_serial": self.device.serial,
             "device_model_number": self.device.get_model_number(),
@@ -232,11 +264,9 @@ class UTG(object):
             reachable_states.append(target_state)
         return reachable_states
 
-    @property
-    def first_state(self):
-        return self.G.nodes[self.first_state_str]['state']
-
     def get_navigation_steps(self, from_state, to_state):
+        if from_state is None or to_state is None:
+            return None
         try:
             steps = []
             from_state_str = from_state.state_str
@@ -260,14 +290,40 @@ class UTG(object):
             self.logger.warning(f"Cannot find a path from {from_state.state_str} to {to_state.state_str}")
             return None
 
-    def get_simplified_nav_steps(self, from_state, to_state):
-        nav_steps = self.get_navigation_steps(from_state, to_state)
-        if nav_steps is None:
+    # def get_simplified_nav_steps(self, from_state, to_state):
+    #     nav_steps = self.get_navigation_steps(from_state, to_state)
+    #     if nav_steps is None:
+    #         return None
+    #     simple_nav_steps = []
+    #     last_state, last_action = nav_steps[-1]
+    #     for state, action in nav_steps:
+    #         if state.structure_str == last_state.structure_str:
+    #             simple_nav_steps.append((state, last_action))
+    #             break
+    #         simple_nav_steps.append((state, action))
+    #     return simple_nav_steps
+
+    def get_G2_nav_steps(self, from_state, to_state):
+        if from_state is None or to_state is None:
             return None
-        simple_nav_steps = []
-        for state, action in reversed(nav_steps):
-            simple_nav_steps.append((state, action))
-            if state.structure_str == from_state.structure_str:
-                break
-        return list(reversed(simple_nav_steps))
+        from_state_str = from_state.structure_str
+        to_state_str = to_state.structure_str
+        try:
+            steps = []
+            state_strs = nx.shortest_path(G=self.G2, source=from_state_str, target=to_state_str)
+            if not isinstance(state_strs, list) or len(state_strs) < 2:
+                return None
+            start_state_str = state_strs[0]
+            for state_str in state_strs[1:]:
+                edge = self.G2[start_state_str][state_str]
+                edge_event_strs = list(edge["events"].keys())
+                start_state = random.choice(self.G2.nodes[start_state_str]['states'])
+                event_str = random.choice(edge_event_strs)
+                event = edge["events"][event_str]["event"]
+                steps.append((start_state, event))
+                start_state_str = state_str
+            return steps
+        except Exception as e:
+            print(e)
+            return None
 

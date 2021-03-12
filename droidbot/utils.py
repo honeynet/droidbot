@@ -79,14 +79,6 @@ def safe_re_match(regex, content):
         return regex.match(content)
 
 
-def list_to_html_table(dict_data):
-    table = "<table class=\"table\">\n"
-    for (key, value) in dict_data:
-        table += "<tr><th>%s</th><td>%s</td></tr>\n" % (key, value)
-    table += "</table>"
-    return table
-
-
 def md5(input_str):
     import hashlib
     return hashlib.md5(input_str.encode('utf-8')).hexdigest()

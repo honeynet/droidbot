@@ -33,6 +33,10 @@ class DeviceState(object):
         self.width = device.get_width(refresh=True)
         self.height = device.get_height(refresh=True)
 
+    @property
+    def activity_short_name(self):
+        return self.foreground_activity.split('.')[-1]
+
     def to_dict(self):
         state = {'tag': self.tag,
                  'state_str': self.state_str,

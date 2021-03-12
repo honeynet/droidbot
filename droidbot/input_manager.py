@@ -165,3 +165,4 @@ class InputManager(object):
             if pid is not None:
                 self.device.adb.shell("kill -9 %d" % pid)
         self.enabled = False
+

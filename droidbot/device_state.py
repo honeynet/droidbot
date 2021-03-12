@@ -31,7 +31,7 @@ class DeviceState(object):
         self.search_content = self.__get_search_content()
         self.possible_events = None
         self.width = device.get_width(refresh=True)
-        self.height = device.get_height(refresh=True)
+        self.height = device.get_height(refresh=False)
 
     @property
     def activity_short_name(self):

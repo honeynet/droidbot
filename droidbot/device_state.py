@@ -456,7 +456,7 @@ class DeviceState(object):
             possible_events.append(TouchEvent(view=self.views[view_id]))
 
         # For old Android navigation bars
-        possible_events.append(KeyEvent(name="MENU"))
+        # possible_events.append(KeyEvent(name="MENU"))
 
         self.possible_events = possible_events
         return [] + possible_events

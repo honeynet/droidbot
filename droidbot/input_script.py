@@ -405,14 +405,18 @@ class StateSelector(object):
 
 
 class DroidBotAction():
-
+    """
+    an action is what DroidBot would do on device at specific states
+    """
     @abstractmethod
     def get_next_operation(self):
         pass
 
 
 class RoundRobinDroidBotAction(DroidBotAction):
-
+    """
+    this action execute its operations round-robin
+    """
     def __init__(self, action, script, key_tag):
         self.operations = []
         for operation_id in action:
@@ -431,7 +435,9 @@ class RoundRobinDroidBotAction(DroidBotAction):
 
 
 class ProbalisticDroidBotAction(DroidBotAction):
-
+    """
+    this action execute its operations probalistically according to the probability
+    """
     def __init__(self, action, script, key_tag):
         prob_sum = 0
         self.prob_operations = []
@@ -446,8 +452,15 @@ class ProbalisticDroidBotAction(DroidBotAction):
             }
             self.prob_operations.append(operation)
             prob_sum = tmp_prob_sum
-        if abs(prob_sum - 1) > 1e-5:
-            msg = '%s: sum of probability must be 1, %f is given' % (key_tag, prob_sum)
+        if 1 - prob_sum > 1e-5:  # less than 1
+            # append a None operation to indicate the caller that
+            # the operation should not be executed
+            self.prob_operations.append({
+                'operation': None,
+                'prob_range': [prob_sum, 1]
+            })
+        elif prob_sum - 1> 1e-5:  # greater than 1
+            msg = '%s: sum of probability must <=1, %f is given' % (key_tag, prob_sum)
             raise ScriptSyntaxError(msg)
 
     def get_next_operation(self):
@@ -563,13 +576,18 @@ if __name__ == '__main__':
             }
         ]
     })
-    swipe, skip, total = 0, 0, 10000
+    swipe, skip, none, total = 0, 0, 0, 10000
     for i in range(total):
         operation = script.get_operation_based_on_state(welcome_state)
-        print('%s: %s' % (operation.id, operation.events))
-        if operation.id == 'swipe_operation':
-            swipe += 1
-        elif operation.id == 'skip_operation':
-            skip += 1
+        if not operation:
+            none += 1
+            print('None')
+        else:
+            print('%s: %s' % (operation.id, operation.events))
+            if operation.id == 'swipe_operation':
+                swipe += 1
+            elif operation.id == 'skip_operation':
+                skip += 1
     print('swipe_operation: %f/%f (%f)' % (swipe, total, swipe / total))
     print('skip_operation: %f/%f (%f)' % (skip, total, skip / total))
+    print('none_operation: %f/%f (%f)' % (none, total, none / total))

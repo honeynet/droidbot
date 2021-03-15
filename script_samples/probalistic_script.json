@@ -36,7 +36,7 @@
         "welcome_state": [
             {
                 "op_id": "swipe_operation",
-                "prob": 0.8
+                "prob": 0.6
             },
             {
                 "op_id": "skip_operation",

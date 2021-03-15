@@ -105,7 +105,7 @@ class DroidBotScript(object):
             if isinstance(action[0], str):
                 self.main[state_selector] = RoundRobinDroidBotAction(action, self, state_key_tag)
             else:
-                self.main[state_selector] = ProbalisticDroidBotAction(action, self, state_key_tag)
+                self.main[state_selector] = ProbabilisticDroidBotAction(action, self, state_key_tag)
 
     def get_operation_based_on_state(self, state):
         """
@@ -187,7 +187,7 @@ class DroidBotScript(object):
     @staticmethod
     def check_grammar_prob_operation_is_valid(value, key_tag):
         if not isinstance(value, dict):
-            msg = '%s: probalistic operation must be a dict' % key_tag
+            msg = '%s: probabilistic operation must be a dict' % key_tag
             raise ScriptSyntaxError(msg)
         for key in ['op_id', 'prob']:
             DroidBotScript.check_grammar_has_key(value.keys(), key, key_tag)
@@ -258,6 +258,7 @@ class ViewSelector(object):
     selector_grammar = {
         'text': REGEX_VAL,
         'resource_id': REGEX_VAL,
+        'content_desc': REGEX_VAL,
         'class': REGEX_VAL,
         'out_coordinates': [[INTEGER_VAL, INTEGER_VAL]],
         'in_coordinates': [[INTEGER_VAL, INTEGER_VAL]]
@@ -270,6 +271,7 @@ class ViewSelector(object):
         self.text_re = None
         self.resource_id_re = None
         self.class_re = None
+        self.content_desc_re = None
         self.script = script
         self.out_coordinates = []
         self.in_coordinates = []
@@ -287,6 +289,8 @@ class ViewSelector(object):
                 self.text_re = re.compile(selector_value)
             elif selector_key == 'resource_id':
                 self.resource_id_re = re.compile(selector_value)
+            elif selector_key == 'content_desc':
+                self.content_desc_re = re.compile(selector_value)
             elif selector_key == 'class':
                 self.class_re = re.compile(selector_value)
             elif selector_key == 'out_coordinates':
@@ -312,6 +316,8 @@ class ViewSelector(object):
         if self.text_re and not safe_re_match(self.text_re, view_dict['text']):
             return False
         if self.resource_id_re and not safe_re_match(self.resource_id_re, view_dict['resource_id']):
+            return False
+        if self.content_desc_re and not safe_re_match(self.content_desc_re, view_dict['content_description']):
             return False
         if self.class_re and not safe_re_match(self.class_re, view_dict['class']):
             return False
@@ -404,7 +410,7 @@ class StateSelector(object):
         return True
 
 
-class DroidBotAction():
+class DroidBotAction:
     """
     an action is what DroidBot would do on device at specific states
     """
@@ -418,11 +424,17 @@ class RoundRobinDroidBotAction(DroidBotAction):
     this action execute its operations round-robin
     """
     def __init__(self, action, script, key_tag):
+        self.action = action
+        self.script = script
+        self.key_tag = key_tag
         self.operations = []
-        for operation_id in action:
-            script.check_grammar_identifier_is_valid(operation_id)
-            script.check_grammar_key_is_valid(operation_id, script.operations, key_tag)
-            operation = script.operations[operation_id]
+        self.parse()
+
+    def parse(self):
+        for operation_id in self.action:
+            self.script.check_grammar_identifier_is_valid(operation_id)
+            self.script.check_grammar_key_is_valid(operation_id, self.script.operations, self.key_tag)
+            operation = self.script.operations[operation_id]
             self.operations.append(operation)
 
     def get_next_operation(self):
@@ -434,20 +446,26 @@ class RoundRobinDroidBotAction(DroidBotAction):
         return operation
 
 
-class ProbalisticDroidBotAction(DroidBotAction):
+class ProbabilisticDroidBotAction(DroidBotAction):
     """
-    this action execute its operations probalistically according to the probability
+    this action execute its operations probabilistically according to the probability
     """
     def __init__(self, action, script, key_tag):
-        prob_sum = 0
         self.prob_operations = []
-        for prob_operation in action:
-            script.check_grammar_prob_operation_is_valid(prob_operation, key_tag)
-            script.check_grammar_identifier_is_valid(prob_operation['op_id'])
-            script.check_grammar_key_is_valid(prob_operation['op_id'], script.operations, key_tag)
+        self.action = action
+        self.script = script
+        self.key_tag = key_tag
+        self.parse()
+
+    def parse(self):
+        prob_sum = 0
+        for prob_operation in self.action:
+            self.script.check_grammar_prob_operation_is_valid(prob_operation, self.key_tag)
+            self.script.check_grammar_identifier_is_valid(prob_operation['op_id'])
+            self.script.check_grammar_key_is_valid(prob_operation['op_id'], self.script.operations, self.key_tag)
             tmp_prob_sum = prob_sum + prob_operation['prob']
             operation = {
-                'operation': script.operations[prob_operation['op_id']],
+                'operation': self.script.operations[prob_operation['op_id']],
                 'prob_range': [prob_sum, tmp_prob_sum]
             }
             self.prob_operations.append(operation)
@@ -459,8 +477,8 @@ class ProbalisticDroidBotAction(DroidBotAction):
                 'operation': None,
                 'prob_range': [prob_sum, 1]
             })
-        elif prob_sum - 1> 1e-5:  # greater than 1
-            msg = '%s: sum of probability must <=1, %f is given' % (key_tag, prob_sum)
+        elif prob_sum - 1 > 1e-5:  # greater than 1
+            msg = '%s: sum of probability must <=1, %f is given' % (self.key_tag, prob_sum)
             raise ScriptSyntaxError(msg)
 
     def get_next_operation(self):
@@ -498,7 +516,7 @@ class DroidBotOperation(object):
             self.events.append(script_event)
 
 
-class ScriptEvent():
+class ScriptEvent:
     """
     an event defined in DroidBotScript
     the grammar of ScriptEvent is similar with the InputEvent in dict format
@@ -553,7 +571,7 @@ if __name__ == '__main__':
         def __init__(self, state_dict):
             self.__dict__.update(state_dict)
 
-    script = DroidBotScript(json.load(open("script_samples/probalistic_script.json", "r")))
+    test_script = DroidBotScript(json.load(open("script_samples/probabilistic_script.json", "r")))
     welcome_state = MockObject({
         'views': [
             {
@@ -578,15 +596,15 @@ if __name__ == '__main__':
     })
     swipe, skip, none, total = 0, 0, 0, 10000
     for i in range(total):
-        operation = script.get_operation_based_on_state(welcome_state)
-        if not operation:
+        test_operation = test_script.get_operation_based_on_state(welcome_state)
+        if not test_operation:
             none += 1
             print('None')
         else:
-            print('%s: %s' % (operation.id, operation.events))
-            if operation.id == 'swipe_operation':
+            print('%s: %s' % (test_operation.id, test_operation.events))
+            if test_operation.id == 'swipe_operation':
                 swipe += 1
-            elif operation.id == 'skip_operation':
+            elif test_operation.id == 'skip_operation':
                 skip += 1
     print('swipe_operation: %f/%f (%f)' % (swipe, total, swipe / total))
     print('skip_operation: %f/%f (%f)' % (skip, total, skip / total))

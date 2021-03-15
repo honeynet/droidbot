@@ -147,7 +147,7 @@ class UIEmbedTransformer(nn.Module):
         self.y_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.h_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.w_position_embeddings = nn.Embedding(self.pos_max, nhid)
-        dim_feedforward = 512
+        dim_feedforward = 256
         encoder_layers = TransformerEncoderLayer(nhid, nhead, dim_feedforward, dropout)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
         self.meta2hid = nn.Linear(12, nhid)
@@ -181,8 +181,8 @@ class UIEmbedTransformer(nn.Module):
             h_emb = self.h_position_embeddings(pos_enc[:, 5])
             pos_emb = l_emb + r_emb + t_emb + b_emb + w_emb + h_emb
             text_emb = self.text2hid(text_enc)
-            emb = torch.cat([meta_emb, pos_emb, text_emb], dim=1)
-            # emb = meta_emb + pos_emb + text_emb
+            # emb = torch.cat([meta_emb, pos_emb, text_emb], dim=1)
+            emb = meta_emb + pos_emb + text_emb
             emb = self.layer_norm(emb)
             emb = self.dropout(emb)
             embs.append(emb)

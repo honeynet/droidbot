@@ -7,7 +7,6 @@ import time
 import math
 
 import numpy as np
-import spacy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,7 +31,7 @@ MAX_NAV_STEPS = 10
 class UIEmbedLSTM(nn.Module):
     def __init__(self):
         super().__init__()
-        self.text_encoder = TextEncoder(method='spacy')
+        self.text_encoder = TextEncoder(method='bert')
         input_size = 18 + self.text_encoder.embed_size
         embed_size = 100
         output_size = 50
@@ -95,6 +94,7 @@ class TextEncoder:
         self.method = method
         self.embed_size = -1
         if method == 'spacy':
+            import spacy
             self.nlp = spacy.load("en_core_web_md")
             self.embed_size = 300
         if method == 'bert':
@@ -142,7 +142,7 @@ class UIEmbedTransformer(nn.Module):
         self.model_type = 'Transformer'
         from torch.nn import TransformerEncoder, TransformerEncoderLayer
         self.pos_max = 100
-        self.text_encoder = TextEncoder(method='spacy')
+        self.text_encoder = TextEncoder(method='bert')
         self.x_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.y_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.h_position_embeddings = nn.Embedding(self.pos_max, nhid)
@@ -181,8 +181,8 @@ class UIEmbedTransformer(nn.Module):
             h_emb = self.h_position_embeddings(pos_enc[:, 5])
             pos_emb = l_emb + r_emb + t_emb + b_emb + w_emb + h_emb
             text_emb = self.text2hid(text_enc)
-            emb = torch.cat([meta_emb, pos_emb, text_emb], dim=1)
-            # emb = meta_emb + pos_emb + text_emb
+            # emb = torch.cat([meta_emb, pos_emb, text_emb], dim=1)
+            emb = meta_emb + pos_emb + text_emb
             emb = self.layer_norm(emb)
             emb = self.dropout(emb)
             embs.append(emb)
@@ -247,6 +247,7 @@ class Memory:
         self.app = app
         self.known_states = collections.OrderedDict()
         self.known_transitions = collections.OrderedDict()
+        self.known_structures = collections.OrderedDict()
         self.model = UIEmbedTransformer()
 
     def _memorize_state(self, state):
@@ -274,6 +275,8 @@ class Memory:
     def save_transition(self, action, from_state, to_state):
         if not from_state or not to_state:
             return
+        from_state_info = self._memorize_state(from_state)
+        to_state_info = self._memorize_state(to_state)
         if not isinstance(action, TouchEvent):
             return
         if action.view is None:
@@ -281,11 +284,10 @@ class Memory:
         action_str = action.get_event_str(state=from_state)
         if action_str in self.known_transitions and self.known_transitions[action_str]['to_state'] == to_state:
             return
-        state_info = self._memorize_state(from_state)
-        if state_info is None:
+        if from_state_info is None:
             return
         view = action.view
-        view_idx = state_info['views_str'].index(view['view_str'])
+        view_idx = from_state_info['views_str'].index(view['view_str'])
         action_target = ACTION_INEFFECTIVE \
             if from_state.structure_str == to_state.structure_str \
             else to_state.structure_str
@@ -299,6 +301,15 @@ class Memory:
             'view_idx': view_idx,
             'action_effect': action_effect
         }
+
+    def save_structure(self, state):
+        structure_str = state.structure_str
+        is_new_structure = False
+        if structure_str not in self.known_structures:
+            self.known_structures[structure_str] = []
+            is_new_structure = True
+        self.known_structures[structure_str].append(state)
+        return is_new_structure
 
     def _select_transitions_for_training(self, size):
         if len(self.known_transitions) <= size:
@@ -470,8 +481,9 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         generate an event based on current UTG
         @return: InputEvent
         """
+        current_state = self.current_state
         try:
-            self.memory.save_transition(self.last_event, self.last_state, self.current_state)
+            self.memory.save_transition(self.last_event, self.last_state, current_state)
         except Exception as e:
             self.logger.warning(f'failed to save transition: {e}')
             import traceback
@@ -480,7 +492,6 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             self.memory.train_model()
         # self.logger.info(f'we have {len(self.memory.known_transitions)} transitions now')
 
-        current_state = self.current_state
         if self.last_event is not None:
             self.last_event.log_lines = self.parse_log_lines()
         # interested_apis = self.monitor.get_interested_api()
@@ -514,18 +525,25 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             # If the app is in foreground
             self._num_steps_outside = 0
 
+        # if it is a new structure, try to go back first
+        is_structure_new = self.memory.save_structure(current_state)
+        if is_structure_new:
+            self.logger.info("it is a new structure, going back")
+            return KeyEvent(name="BACK")
+
         if self.action_count >= self.num_actions_train \
                 and len(self._nav_steps) == 0 \
                 and np.random.uniform() > RANDOM_EXPLORE_PROB:
             (target_state, target_action), candidates = self.pick_target(current_state)
-            # perform target action or navigate to target action
-            if target_state.state_str == current_state.state_str:
-                self.logger.info(f"executing action selected from {len(candidates)} candidates")
-                return target_action
-            self._nav_steps = self.get_shortest_nav_steps(current_state, target_state, target_action)
-            nav_action = self.navigate(current_state)
-            if nav_action:
-                return nav_action
+            if target_state:
+                # perform target action or navigate to target action
+                if target_state.state_str == current_state.state_str:
+                    self.logger.info(f"executing action selected from {len(candidates)} candidates")
+                    return target_action
+                self._nav_steps = self.get_shortest_nav_steps(current_state, target_state, target_action)
+                nav_action = self.navigate(current_state)
+                if nav_action:
+                    return nav_action
         self._nav_steps = []  # if navigation fails, stop navigating
 
         self.logger.info("trying random action")

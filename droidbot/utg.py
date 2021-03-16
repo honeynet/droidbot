@@ -309,7 +309,7 @@ class UTG(object):
         from_state_str = from_state.structure_str
         to_state_str = to_state.structure_str
         try:
-            steps = []
+            nav_steps = []
             state_strs = nx.shortest_path(G=self.G2, source=from_state_str, target=to_state_str)
             if not isinstance(state_strs, list) or len(state_strs) < 2:
                 return None
@@ -320,9 +320,20 @@ class UTG(object):
                 start_state = random.choice(self.G2.nodes[start_state_str]['states'])
                 event_str = random.choice(edge_event_strs)
                 event = edge["events"][event_str]["event"]
-                steps.append((start_state, event))
+                nav_steps.append((start_state, event))
                 start_state_str = state_str
-            return steps
+            if nav_steps is None:
+                return None
+            # return nav_steps
+            # simplify the path
+            simple_nav_steps = []
+            last_state, last_action = nav_steps[-1]
+            for state, action in nav_steps:
+                if state.structure_str == last_state.structure_str:
+                    simple_nav_steps.append((state, last_action))
+                    break
+                simple_nav_steps.append((state, action))
+            return simple_nav_steps
         except Exception as e:
             print(e)
             return None

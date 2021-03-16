@@ -2,7 +2,7 @@
 
 # DroidBot
 
-## News
+## New!
 
 We added a new policy named `memory_guided`, which uses machine learning to automatically identify similar views and avoid redundant explorations.
 Please give it a try!

@@ -96,12 +96,12 @@ class UTG(object):
                 events.pop(event_str)
             if len(events) == 0:
                 self.G.remove_edge(old_state.state_str, new_state.state_str)
-        if (old_state.structure_str, new_state.structure_str) in self.G.edges():
-            events = self.G[old_state.structure_str][new_state.structure_str]["events"]
+        if (old_state.structure_str, new_state.structure_str) in self.G2.edges():
+            events = self.G2[old_state.structure_str][new_state.structure_str]["events"]
             if event_str in events.keys():
                 events.pop(event_str)
             if len(events) == 0:
-                self.G.remove_edge(old_state.structure_str, new_state.structure_str)
+                self.G2.remove_edge(old_state.structure_str, new_state.structure_str)
 
     def add_node(self, state):
         if not state:

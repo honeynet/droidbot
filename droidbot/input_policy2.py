@@ -579,12 +579,12 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         if self._nav_steps and len(self._nav_steps) > 0:
             nav_state, nav_action = self._nav_steps[0]
             self._nav_steps = self._nav_steps[1:]
-            nav_action = self._get_nav_action(current_state, nav_state, nav_action)
-            if nav_action:
+            nav_action_ = self._get_nav_action(current_state, nav_state, nav_action)
+            if nav_action_:
                 self.logger.info(f"navigating, {len(self._nav_steps)} steps left")
-                return nav_action
+                return nav_action_
             else:
-                self.logger.warning(f"navigating failed")
+                self.logger.warning(f"navigation failed")
                 self.utg.remove_transition(self.last_event, self.last_state, nav_state)
 
     def _get_nav_action(self, current_state, nav_state, nav_action):
@@ -625,6 +625,7 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         restart_nav_steps_len = len(restart_nav_steps) + 1 if restart_nav_steps else MAX_NAV_STEPS
         if normal_nav_steps_len >= MAX_NAV_STEPS and restart_nav_steps_len >= MAX_NAV_STEPS:
             self.logger.warning(f'cannot find a path to {target_state.structure_str} {target_state.foreground_activity}')
+            self.memory.known_states.pop(target_state.state_str)  # remove the unavailable state
             return None
         elif normal_nav_steps_len > restart_nav_steps_len:
             nav_steps = [(current_state, KillAppEvent(app=self.app))] + restart_nav_steps

@@ -147,7 +147,7 @@ class UIEmbedTransformer(nn.Module):
         self.y_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.h_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.w_position_embeddings = nn.Embedding(self.pos_max, nhid)
-        dim_feedforward = 512
+        dim_feedforward = 256
         encoder_layers = TransformerEncoderLayer(nhid, nhead, dim_feedforward, dropout)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
         self.meta2hid = nn.Linear(12, nhid)

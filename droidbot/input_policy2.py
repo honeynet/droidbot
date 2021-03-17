@@ -185,7 +185,7 @@ class AbsolutePositionalEncoding(nn.Module):
 
 class UIEmbedTransformer(nn.Module):
 
-    def __init__(self, nhid=128, nhead=2, nlayers=2, dropout=0.8):
+    def __init__(self, nhid=64, nhead=2, nlayers=2, dropout=0.8):
         super().__init__()
         self.model_type = 'Transformer'
         # nhid must be divided by 8 if using sinusoidal positional encoding

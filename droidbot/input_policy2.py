@@ -135,23 +135,69 @@ class BertLayerNorm(nn.Module):
         return self.weight * x + self.bias
 
 
-class UIEmbedTransformer(nn.Module):
+class SinusoidalPositionalEncoding(nn.Module):
 
-    def __init__(self, nhid=50, nhead=2, nlayers=2, dropout=0.8):
+    def __init__(self, d_model, pos_max=128):
         super().__init__()
-        self.model_type = 'Transformer'
-        from torch.nn import TransformerEncoder, TransformerEncoderLayer
-        self.pos_max = 100
-        self.text_encoder = TextEncoder(method='bert')
+        self.d_model = d_model
+        self.pos_max = pos_max
+        d_model = int(d_model / 4)
+        pe = torch.zeros(pos_max, d_model)
+        position = torch.arange(0, pos_max).unsqueeze(1)
+        div_term = torch.exp((torch.arange(0, d_model, 2, dtype=torch.float) *
+                              -(math.log(10000.0) / d_model)))
+        pe[:, 0::2] = torch.sin(position.float() * div_term)
+        pe[:, 1::2] = torch.cos(position.float() * div_term)
+        self.pe = pe
+
+    def forward(self, pos_enc):
+        l = pos_enc[:, 0]
+        r = pos_enc[:, 1]
+        t = pos_enc[:, 2]
+        b = pos_enc[:, 3]
+        l_emb, r_emb, t_emb, b_emb = self.pe[l], self.pe[r], self.pe[t], self.pe[b]
+        pos_emb = torch.cat([l_emb, r_emb, t_emb, b_emb], dim=1)
+        # print(f'pos_enc for {i},{j}: wh={w},{h}')
+        return pos_emb
+
+
+class AbsolutePositionalEncoding(nn.Module):
+    def __init__(self, d_model, pos_max=128):
+        super().__init__()
+        self.pos_max = pos_max
+        self.d_model = d_model
+        nhid = d_model
         self.x_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.y_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.h_position_embeddings = nn.Embedding(self.pos_max, nhid)
         self.w_position_embeddings = nn.Embedding(self.pos_max, nhid)
+
+    def forward(self, pos_enc):
+        l_emb = self.x_position_embeddings(pos_enc[:, 0])
+        r_emb = self.x_position_embeddings(pos_enc[:, 1])
+        t_emb = self.y_position_embeddings(pos_enc[:, 2])
+        b_emb = self.y_position_embeddings(pos_enc[:, 3])
+        w_emb = self.w_position_embeddings(pos_enc[:, 4])
+        h_emb = self.h_position_embeddings(pos_enc[:, 5])
+        pos_emb = l_emb + r_emb + t_emb + b_emb + w_emb + h_emb
+        return pos_emb
+
+
+class UIEmbedTransformer(nn.Module):
+
+    def __init__(self, nhid=128, nhead=2, nlayers=2, dropout=0.8):
+        super().__init__()
+        self.model_type = 'Transformer'
+        # nhid must be divided by 8 if using sinusoidal positional encoding
+        from torch.nn import TransformerEncoder, TransformerEncoderLayer
+        self.pos_max = 128
+        self.text_encoder = TextEncoder(method='bert')
         dim_feedforward = 256
         encoder_layers = TransformerEncoderLayer(nhid, nhead, dim_feedforward, dropout)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
         self.meta2hid = nn.Linear(12, nhid)
         self.text2hid = nn.Linear(self.text_encoder.embed_size, nhid)
+        self.pos2hid = AbsolutePositionalEncoding(d_model=nhid, pos_max=self.pos_max)
         self.layer_norm = BertLayerNorm(nhid)
         self.dropout = nn.Dropout(dropout)
 
@@ -173,13 +219,7 @@ class UIEmbedTransformer(nn.Module):
             meta_enc, pos_enc, text_enc = state_enc
             # pos_enc = self.pos_encoder(src)
             meta_emb = self.meta2hid(meta_enc)
-            l_emb = self.x_position_embeddings(pos_enc[:, 0])
-            r_emb = self.x_position_embeddings(pos_enc[:, 1])
-            t_emb = self.y_position_embeddings(pos_enc[:, 2])
-            b_emb = self.y_position_embeddings(pos_enc[:, 3])
-            w_emb = self.w_position_embeddings(pos_enc[:, 4])
-            h_emb = self.h_position_embeddings(pos_enc[:, 5])
-            pos_emb = l_emb + r_emb + t_emb + b_emb + w_emb + h_emb
+            pos_emb = self.pos2hid(pos_enc)
             text_emb = self.text2hid(text_enc)
             # emb = torch.cat([meta_emb, pos_emb, text_emb], dim=1)
             emb = meta_emb + pos_emb + text_emb
@@ -217,8 +257,7 @@ class UIEmbedTransformer(nn.Module):
         screen_w = state.width
         screen_h = state.height
         [[l,t], [r,b]] = view['bounds'] if 'bounds' in view else [[0,0], [0,0]]
-        pos_max = self.pos_max - 1
-        l, r, t, b = int(pos_max*l/screen_w), int(pos_max*r/screen_w), int(pos_max*t/screen_h), int(pos_max*b/screen_h)
+        l, r, t, b = l/screen_w, r/screen_w, t/screen_h, b/screen_h
         if l > r:
             tmp = l
             l = r
@@ -227,10 +266,13 @@ class UIEmbedTransformer(nn.Module):
             tmp = t
             t = b
             b = tmp
-        l = max(0, min(pos_max, l))
-        r = max(0, min(pos_max, r))
-        t = max(0, min(pos_max, t))
-        b = max(0, min(pos_max, b))
+        l = max(0, min(1, l))
+        r = max(0, min(1, r))
+        t = max(0, min(1, t))
+        b = max(0, min(1, b))
+
+        pos_max = self.pos_max - 1
+        l, r, t, b = int(pos_max*l), int(pos_max*r), int(pos_max*t), int(pos_max*b)
         w = abs(l - r)
         h = abs(t - b)
         return torch.LongTensor(np.array([l, r, t, b, w, h]))
@@ -335,8 +377,6 @@ class Memory:
     def encode_action_pairs(self, action_strs=None):
         if action_strs is None:
             action_strs = list(self.known_transitions.keys())
-        if len(action_strs) < 2:
-            return
 
         state_strs = [self.known_transitions[action_str]['from_state'].state_str for action_str in action_strs]
         state_encs = [self.known_states[state_str]['state_enc'] for state_str in state_strs]
@@ -363,6 +403,8 @@ class Memory:
             action_info = self.known_transitions[action_str]
             state_str = action_info['from_state'].state_str
             view_idx = action_info['view_idx']
+            if state_str not in self.known_states:
+                continue
             action_emb = self.known_states[state_str]['views_emb'][view_idx]
             actions_emb.append(action_emb)
         return torch.stack(actions_emb)
@@ -375,6 +417,9 @@ class Memory:
         return f'{state_activity}-{view_sig}-{action_effect}'
 
     def train_model(self):
+        if len(self.known_transitions.keys()) < 2:
+            return
+
         embedder = self.model
         optimizer = torch.optim.Adam(embedder.parameters(), lr=1e-3)
         n_iterations = 10
@@ -625,7 +670,17 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         restart_nav_steps_len = len(restart_nav_steps) + 1 if restart_nav_steps else MAX_NAV_STEPS
         if normal_nav_steps_len >= MAX_NAV_STEPS and restart_nav_steps_len >= MAX_NAV_STEPS:
             self.logger.warning(f'cannot find a path to {target_state.structure_str} {target_state.foreground_activity}')
-            self.memory.known_states.pop(target_state.state_str)  # remove the unavailable state
+            target_state_str = target_state.state_str
+            # forget the unavailable state
+            self.memory.known_states.pop(target_state_str)
+            action_strs_to_remove = []
+            for action_str in self.memory.known_transitions:
+                action_from_state = self.memory.known_transitions[action_str]['from_state']
+                action_to_state = self.memory.known_transitions[action_str]['to_state']
+                if action_from_state.state_str == target_state_str or action_to_state.state_str == target_state_str:
+                    action_strs_to_remove.append(action_str)
+            for action_str in action_strs_to_remove:
+                self.memory.known_transitions.pop(action_str)
             return None
         elif normal_nav_steps_len > restart_nav_steps_len:
             nav_steps = [(current_state, KillAppEvent(app=self.app))] + restart_nav_steps

@@ -2,6 +2,23 @@
 
 # DroidBot
 
+## New!
+
+We added a new policy named `memory_guided`, which uses machine learning to automatically identify similar views and avoid redundant explorations.
+Please give it a try!
+
+To use the `memory_guided` policy, you need [pytorch](https://pytorch.org/) and [transformers](https://huggingface.co/transformers/) installed. Use the command lines below:
+
+```bash
+pip install torch transformers
+```
+
+Then, start droidbot with the `-policy memory_guided``:
+
+```bash
+python start.py -a <xxx.apk> -o <output_dir> -policy memory_guided -grant_perm -random
+```
+
 ## About
 DroidBot is a lightweight test input generator for Android.
 It can send random or scripted input events to an Android app, achieve higher test coverage more quickly, and generate a UI transition graph (UTG) after testing.

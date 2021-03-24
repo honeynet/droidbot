@@ -511,7 +511,7 @@ class LongTouchEvent(UIEvent):
 
     def get_event_str(self, state):
         if self.view is not None:
-            f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)})"
+            return f"{self.__class__.__name__}({UIEvent.view_str(state, self.view)})"
         elif self.x is not None and self.y is not None:
             return "%s(state=%s, x=%s, y=%s)" %\
                    (self.__class__.__name__, state.state_str, self.x, self.y)

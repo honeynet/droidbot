@@ -407,7 +407,7 @@ class Memory:
                 continue
             action_emb = self.known_states[state_str]['views_emb'][view_idx]
             actions_emb.append(action_emb)
-        return torch.stack(actions_emb)
+        return torch.stack(actions_emb) if len(actions_emb) > 0 else None
 
     @staticmethod
     def action_info_str(action_info):
@@ -602,6 +602,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
         best_target = None, None
         best_score = -np.inf
         known_actions_emb = self.memory.get_known_actions_emb()
+        if known_actions_emb is None:
+            return best_target, state_action_pairs
         if DEBUG:
             known_actions_str = [Memory.action_info_str(v) for k, v in self.memory.known_transitions.items()]
         scores = []

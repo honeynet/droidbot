@@ -682,7 +682,8 @@ class MemoryGuidedPolicy(UtgBasedInputPolicy):
             for action_str in action_strs_to_remove:
                 self.memory.known_transitions.pop(action_str)
             return None
-        elif normal_nav_steps_len > restart_nav_steps_len:
+        # elif normal_nav_steps_len > restart_nav_steps_len:  # prefer shortest path
+        elif normal_nav_steps_len >= MAX_NAV_STEPS:  # prefer normal navigation
             nav_steps = [(current_state, KillAppEvent(app=self.app))] + restart_nav_steps
         else:
             nav_steps = normal_nav_steps

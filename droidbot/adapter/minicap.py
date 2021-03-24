@@ -2,6 +2,7 @@ import logging
 import socket
 import subprocess
 import time
+import os
 from datetime import datetime
 from .adapter import Adapter
 
@@ -67,7 +68,7 @@ class Minicap(Adapter):
             import pkg_resources
             local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
             try:
-                device.adb.shell("mkdir %s 2>/dev/null" % self.remote_minicap_path)
+                device.adb.shell("mkdir %s" % self.remote_minicap_path)
             except Exception:
                 pass
             abi = device.adb.get_property('ro.product.cpu.abi')
@@ -76,10 +77,10 @@ class Minicap(Adapter):
                 minicap_bin = "minicap"
             else:
                 minicap_bin = "minicap-nopie"
-            device.push_file(local_file="%s/libs/%s/%s" % (local_minicap_path, abi, minicap_bin),
-                             remote_dir=self.remote_minicap_path)
-            device.push_file(local_file="%s/jni/libs/android-%s/%s/minicap.so" % (local_minicap_path, sdk, abi),
-                             remote_dir=self.remote_minicap_path)
+            minicap_bin_path = os.path.join(local_minicap_path, 'libs', abi, minicap_bin)
+            device.push_file(local_file=minicap_bin_path, remote_dir=self.remote_minicap_path)
+            minicap_so_path = os.path.join(local_minicap_path, 'jni', 'libs', f'android-{sdk}', abi, 'minicap.so')
+            device.push_file(local_file=minicap_so_path, remote_dir=self.remote_minicap_path)
             self.logger.debug("minicap installed.")
 
     def tear_down(self):

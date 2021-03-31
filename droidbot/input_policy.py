@@ -551,8 +551,14 @@ class UtgReplayPolicy(InputPolicy):
                                    next(os.walk(event_dir))[2]
                                    if x.endswith(".json")])
         # skip HOME and start app intent
+        self.device = device
+        self.app = app
         self.event_idx = 2
         self.num_replay_tries = 0
+        self.utg = UTG(device=device, app=app, random_input=None)
+        self.last_event = None
+        self.last_state = None
+        self.current_state = None
 
     def generate_event(self):
         """
@@ -570,6 +576,7 @@ class UtgReplayPolicy(InputPolicy):
                 return KeyEvent(name="BACK")
 
             curr_event_idx = self.event_idx
+            self.__update_utg()
             while curr_event_idx < len(self.event_paths):
                 event_path = self.event_paths[curr_event_idx]
                 with open(event_path, "r") as f:
@@ -583,15 +590,27 @@ class UtgReplayPolicy(InputPolicy):
 
                     if event_dict["start_state"] != current_state.state_str:
                         continue
-
+                    if not self.device.is_foreground(self.app):
+                        # if current app is in background, bring it to foreground
+                        component = self.app.get_package_name()
+                        if self.app.get_main_activity():
+                            component += "/%s" % self.app.get_main_activity()
+                        return IntentEvent(Intent(suffix=component))
+                    
                     self.logger.info("Replaying %s" % event_path)
                     self.event_idx = curr_event_idx
                     self.num_replay_tries = 0
-                    return InputEvent.from_dict(event_dict["event"])
+                    # return InputEvent.from_dict(event_dict["event"])
+                    event = InputEvent.from_dict(event_dict["event"])
+                    self.last_state = self.current_state
+                    self.last_event = event
+                    return event                    
 
             time.sleep(5)
 
-        raise InputInterruptedException("No more record can be replayed.")
+        # raise InputInterruptedException("No more record can be replayed.")
+    def __update_utg(self):
+        self.utg.add_transition(self.last_event, self.last_state, self.current_state)
 
 
 class ManualPolicy(UtgBasedInputPolicy):

@@ -174,7 +174,7 @@ class DroidBot(object):
 
     def stop(self):
         self.enabled = False
-        if self.timer and self.timer.isAlive():
+        if self.timer and self.timer.is_alive():
             self.timer.cancel()
         if self.env_manager:
             self.env_manager.stop()

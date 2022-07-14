@@ -1,0 +1,47 @@
+{
+    "views": {
+        "first_time_use_carousel": {
+            "resource_id": ".*first_time_use_carousel"
+        },
+        "skip_welcome_button": {
+            "resource_id": ".*skip_welcome"
+        }
+    },
+    "states": {
+        "welcome_state": {
+            "views": ["first_time_use_carousel", "skip_welcome_button"]
+        }
+    },
+    "operations": {
+        "swipe_operation": [
+            {
+                "event_type": "scroll",
+                "target_view": "first_time_use_carousel",
+                "direction": "RIGHT"
+            },
+            {
+                "event_type": "scroll",
+                "target_view": "first_time_use_carousel",
+                "direction": "RIGHT"
+            }
+        ],
+        "skip_operation": [
+            {
+                "event_type": "touch",
+                "target_view": "skip_welcome_button"
+            }
+        ]
+    },
+    "main": {
+        "welcome_state": [
+            {
+                "op_id": "swipe_operation",
+                "prob": 0.6
+            },
+            {
+                "op_id": "skip_operation",
+                "prob": 0.2
+            }
+        ]
+    }
+}

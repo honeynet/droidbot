@@ -2,8 +2,10 @@
 # This file contains the definition of DroidBotScript
 # DroidBotScript is a domain-specific language, which defines how DroidBot interacts with target app
 import logging
+import random
 import re
 
+from abc import abstractmethod
 from .input_event import InputEvent
 from .utils import safe_re_match
 
@@ -20,6 +22,7 @@ IDENTIFIER_RE = re.compile(r'^[^\d\W]\w*\Z', re.UNICODE)
 ViewSelector_VAL = 'ViewSelector'
 StateSelector_VAL = 'StateSelector'
 DroidBotOperation_VAL = 'DroidBotOperation'
+DroidBotAction_VAL = 'DroidBotAction'
 ScriptEvent_VAL = 'ScriptEvent'
 
 
@@ -38,7 +41,7 @@ class DroidBotScript(object):
             OPERATION_ID: DroidBotOperation_VAL
         },
         'main': {
-            STATE_ID: [OPERATION_ID]
+            STATE_ID: DroidBotAction_VAL
         }
     }
 
@@ -96,13 +99,13 @@ class DroidBotScript(object):
             self.check_grammar_identifier_is_valid(state_id)
             self.check_grammar_key_is_valid(state_id, self.states, key_tag)
             state_selector = self.states[state_id]
-            self.main[state_selector] = []
-            operation_ids = script_value[state_id]
-            for operation_id in operation_ids:
-                self.check_grammar_identifier_is_valid(operation_id)
-                self.check_grammar_key_is_valid(operation_id, self.operations, key_tag)
-                operation = self.operations[operation_id]
-                self.main[state_selector].append(operation)
+            action = script_value[state_id]
+            state_key_tag = "%s.%s" % (key_tag, state_id)
+            self.check_grammar_action_is_valid(action, state_id, key_tag)
+            if isinstance(action[0], str):
+                self.main[state_selector] = RoundRobinDroidBotAction(action, self, state_key_tag)
+            else:
+                self.main[state_selector] = ProbabilisticDroidBotAction(action, self, state_key_tag)
 
     def get_operation_based_on_state(self, state):
         """
@@ -113,7 +116,6 @@ class DroidBotScript(object):
         if not state:
             return None
 
-        operation = None
         matched_state_selector = None
 
         # find the state that matches current DeviceState
@@ -124,14 +126,9 @@ class DroidBotScript(object):
         if not matched_state_selector:
             return None
 
-        # get the operation corresponding to the matched state
-        operations = self.main[matched_state_selector]
-        if len(operations) > 0:
-            operation = operations[0]
-
-        # rotate operations
-        operations = operations[1:] + operations[:1]
-        self.main[matched_state_selector] = operations
+        # get the action corresponding to the matched state
+        action = self.main[matched_state_selector]
+        operation = action.get_next_operation()
 
         if operation:
             msg = "matched state: %s, taking operation: %s" % (matched_state_selector.id, operation.id)
@@ -180,6 +177,20 @@ class DroidBotScript(object):
         if not isinstance(value, list):
             msg = "illegal list: %s" % value
             raise ScriptSyntaxError(msg)
+
+    @staticmethod
+    def check_grammar_action_is_valid(value, state, key_tag):
+        if not isinstance(value, list) or len(value) <= 0:
+            msg = '%s: no action is given for state %s' % (key_tag, state)
+            raise ScriptSyntaxError(msg)
+
+    @staticmethod
+    def check_grammar_prob_operation_is_valid(value, key_tag):
+        if not isinstance(value, dict):
+            msg = '%s: probabilistic operation must be a dict' % key_tag
+            raise ScriptSyntaxError(msg)
+        for key in ['op_id', 'prob']:
+            DroidBotScript.check_grammar_has_key(value.keys(), key, key_tag)
 
     def check_and_get_script_value(self, script_key):
         self.check_grammar_has_key(self.script_dict, script_key, self.tag)
@@ -247,6 +258,7 @@ class ViewSelector(object):
     selector_grammar = {
         'text': REGEX_VAL,
         'resource_id': REGEX_VAL,
+        'content_desc': REGEX_VAL,
         'class': REGEX_VAL,
         'out_coordinates': [[INTEGER_VAL, INTEGER_VAL]],
         'in_coordinates': [[INTEGER_VAL, INTEGER_VAL]]
@@ -259,6 +271,7 @@ class ViewSelector(object):
         self.text_re = None
         self.resource_id_re = None
         self.class_re = None
+        self.content_desc_re = None
         self.script = script
         self.out_coordinates = []
         self.in_coordinates = []
@@ -276,6 +289,8 @@ class ViewSelector(object):
                 self.text_re = re.compile(selector_value)
             elif selector_key == 'resource_id':
                 self.resource_id_re = re.compile(selector_value)
+            elif selector_key == 'content_desc':
+                self.content_desc_re = re.compile(selector_value)
             elif selector_key == 'class':
                 self.class_re = re.compile(selector_value)
             elif selector_key == 'out_coordinates':
@@ -301,6 +316,8 @@ class ViewSelector(object):
         if self.text_re and not safe_re_match(self.text_re, view_dict['text']):
             return False
         if self.resource_id_re and not safe_re_match(self.resource_id_re, view_dict['resource_id']):
+            return False
+        if self.content_desc_re and not safe_re_match(self.content_desc_re, view_dict['content_description']):
             return False
         if self.class_re and not safe_re_match(self.class_re, view_dict['class']):
             return False
@@ -393,6 +410,85 @@ class StateSelector(object):
         return True
 
 
+class DroidBotAction:
+    """
+    an action is what DroidBot would do on device at specific states
+    """
+    @abstractmethod
+    def get_next_operation(self):
+        pass
+
+
+class RoundRobinDroidBotAction(DroidBotAction):
+    """
+    this action execute its operations round-robin
+    """
+    def __init__(self, action, script, key_tag):
+        self.action = action
+        self.script = script
+        self.key_tag = key_tag
+        self.operations = []
+        self.parse()
+
+    def parse(self):
+        for operation_id in self.action:
+            self.script.check_grammar_identifier_is_valid(operation_id)
+            self.script.check_grammar_key_is_valid(operation_id, self.script.operations, self.key_tag)
+            operation = self.script.operations[operation_id]
+            self.operations.append(operation)
+
+    def get_next_operation(self):
+        operation = None
+        if len(self.operations) > 0:
+            operation = self.operations[0]
+        # rotate operations
+        self.operations = self.operations[1:] + self.operations[:1]
+        return operation
+
+
+class ProbabilisticDroidBotAction(DroidBotAction):
+    """
+    this action execute its operations probabilistically according to the probability
+    """
+    def __init__(self, action, script, key_tag):
+        self.prob_operations = []
+        self.action = action
+        self.script = script
+        self.key_tag = key_tag
+        self.parse()
+
+    def parse(self):
+        prob_sum = 0
+        for prob_operation in self.action:
+            self.script.check_grammar_prob_operation_is_valid(prob_operation, self.key_tag)
+            self.script.check_grammar_identifier_is_valid(prob_operation['op_id'])
+            self.script.check_grammar_key_is_valid(prob_operation['op_id'], self.script.operations, self.key_tag)
+            tmp_prob_sum = prob_sum + prob_operation['prob']
+            operation = {
+                'operation': self.script.operations[prob_operation['op_id']],
+                'prob_range': [prob_sum, tmp_prob_sum]
+            }
+            self.prob_operations.append(operation)
+            prob_sum = tmp_prob_sum
+        if 1 - prob_sum > 1e-5:  # less than 1
+            # append a None operation to indicate the caller that
+            # the operation should not be executed
+            self.prob_operations.append({
+                'operation': None,
+                'prob_range': [prob_sum, 1]
+            })
+        elif prob_sum - 1 > 1e-5:  # greater than 1
+            msg = '%s: sum of probability must <=1, %f is given' % (self.key_tag, prob_sum)
+            raise ScriptSyntaxError(msg)
+
+    def get_next_operation(self):
+        prob = random.random()
+        for prob_operation in self.prob_operations:
+            if prob_operation['prob_range'][0] <= prob <= prob_operation['prob_range'][1]:
+                return prob_operation['operation']
+        return None
+
+
 class DroidBotOperation(object):
     """
     an operation is what DroidBot do to target device
@@ -420,7 +516,7 @@ class DroidBotOperation(object):
             self.events.append(script_event)
 
 
-class ScriptEvent():
+class ScriptEvent:
     """
     an event defined in DroidBotScript
     the grammar of ScriptEvent is similar with the InputEvent in dict format
@@ -466,3 +562,50 @@ class ScriptSyntaxError(RuntimeError):
     syntax error of DroidBotScript
     """
     pass
+
+
+if __name__ == '__main__':
+    import json
+
+    class MockObject:
+        def __init__(self, state_dict):
+            self.__dict__.update(state_dict)
+
+    test_script = DroidBotScript(json.load(open("script_samples/probabilistic_script.json", "r")))
+    welcome_state = MockObject({
+        'views': [
+            {
+                'text': '',
+                'bounds': [
+                    [1, 2],
+                    [3, 4]
+                ],
+                'resource_id': 'com.example:id/first_time_use_carousel',
+                'class': 'android.view.ListView'
+            },
+            {
+                'text': 'Skip Welcome',
+                'bounds': [
+                    [1, 2],
+                    [3, 4]
+                ],
+                'resource_id': 'com.example:id/skip_welcome',
+                'class': 'android.view.Button'
+            }
+        ]
+    })
+    swipe, skip, none, total = 0, 0, 0, 10000
+    for i in range(total):
+        test_operation = test_script.get_operation_based_on_state(welcome_state)
+        if not test_operation:
+            none += 1
+            print('None')
+        else:
+            print('%s: %s' % (test_operation.id, test_operation.events))
+            if test_operation.id == 'swipe_operation':
+                swipe += 1
+            elif test_operation.id == 'skip_operation':
+                skip += 1
+    print('swipe_operation: %f/%f (%f)' % (swipe, total, swipe / total))
+    print('skip_operation: %f/%f (%f)' % (skip, total, skip / total))
+    print('none_operation: %f/%f (%f)' % (none, total, none / total))

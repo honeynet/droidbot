@@ -4,20 +4,8 @@
 
 ## New!
 
-We added a new policy named `memory_guided`, which uses machine learning to automatically identify similar views and avoid redundant explorations.
-Please give it a try!
+:fire: We recently integrated ChatGPT into DroidBot to support automating any app with a simple text prompt. [Take a look!](https://github.com/GAIR-team/DroidBot-GPT)
 
-To use the `memory_guided` policy, you need [pytorch](https://pytorch.org/) and [transformers](https://huggingface.co/transformers/) installed. Use the command lines below:
-
-```bash
-pip install torch transformers
-```
-
-Then, start droidbot with the `-policy memory_guided``:
-
-```bash
-python start.py -a <xxx.apk> -o <output_dir> -policy memory_guided -grant_perm -random
-```
 
 ## About
 DroidBot is a lightweight test input generator for Android.

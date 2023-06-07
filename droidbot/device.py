@@ -504,7 +504,7 @@ class Device(object):
         Get current activity
         """
         r = self.adb.shell("dumpsys activity activities")
-        activity_line_re = re.compile('\* Hist #\d+: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
+        activity_line_re = re.compile(r'\*\s*Hist\s*#\d+:\s*ActivityRecord\{[^ ]+\s*[^ ]+\s*([^ ]+)\s*t(\d+)}')
         m = activity_line_re.search(r)
         if m:
             return m.group(1)
@@ -541,14 +541,19 @@ class Device(object):
         task_to_activities = {}
 
         lines = self.adb.shell("dumpsys activity activities").splitlines()
-        activity_line_re = re.compile('\* Hist #\d+: ActivityRecord{[^ ]+ [^ ]+ ([^ ]+) t(\d+)}')
+        activity_line_re = re.compile(r'\*\s*Hist\s*#\d+:\s*ActivityRecord\{[^ ]+\s*[^ ]+\s*([^ ]+)\s*t(\d+)}')
 
         for line in lines:
             line = line.strip()
-            if line.startswith("Task id #"):
-                task_id = line[9:]
+            activity_line_task_re = re.compile(r'^\s*Task\s*id\s*#(\d+)|^\s*Task\{\w+\s*#(\d+)')
+            activity_line_task_m = activity_line_task_re.match(line)
+            if activity_line_task_m:
+                if activity_line_task_m.group(1):
+                    task_id = activity_line_task_m.group(1)
+                else:
+                    task_id = activity_line_task_m.group(2)
                 task_to_activities[task_id] = []
-            elif line.startswith("* Hist #"):
+            elif re.match(r'\*\s*Hist\s*#', line):
                 m = activity_line_re.match(line)
                 if m:
                     activity = m.group(1)

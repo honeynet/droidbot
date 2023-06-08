@@ -74,7 +74,7 @@ class DroidBotIme(Adapter):
         """
         self.connected = False
         r_disable = self.device.adb.shell("ime disable %s" % IME_SERVICE)
-        if r_disable.endswith("now disabled"):
+        if "now disabled" in r_disable:
             self.connected = False
             print("[CONNECTION] %s is disconnected" % self.__class__.__name__)
             return

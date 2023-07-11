@@ -69,6 +69,8 @@ class DeviceState(object):
 
     def __assemble_view_tree(self, root_view, views):
         if not len(self.view_tree): # bootstrap
+            if not len(views): # to fix if views is empty
+                return
             self.view_tree = copy.deepcopy(views[0])
             self.__assemble_view_tree(self.view_tree, views)
         else:

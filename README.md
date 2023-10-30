@@ -4,8 +4,7 @@
 
 ## New!
 
-:fire: We recently integrated ChatGPT into DroidBot to support automating any app with a simple text prompt. [Take a look!](https://github.com/GAIR-team/DroidBot-GPT)
-
+:fire: Check out our recent work on integrated LLM with DroidBot to support intelligent task automation on smartphones! [AutoDroid](https://github.com/MobileLLM/AutoDroid)
 
 ## About
 DroidBot is a lightweight test input generator for Android.

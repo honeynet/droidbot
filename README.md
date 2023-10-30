@@ -2,7 +2,7 @@
 
 # DroidBot
 
-## New!
+## News
 
 :fire: Check out our recent work on integrating LLM with DroidBot to support intelligent task automation on smartphones! [AutoDroid](https://github.com/MobileLLM/AutoDroid)
 

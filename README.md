@@ -4,7 +4,7 @@
 
 ## New!
 
-:fire: Check out our recent work on integrated LLM with DroidBot to support intelligent task automation on smartphones! [AutoDroid](https://github.com/MobileLLM/AutoDroid)
+:fire: Check out our recent work on integrating LLM with DroidBot to support intelligent task automation on smartphones! [AutoDroid](https://github.com/MobileLLM/AutoDroid)
 
 ## About
 DroidBot is a lightweight test input generator for Android.

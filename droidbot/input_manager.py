@@ -9,7 +9,7 @@ from .input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySe
                          ManualPolicy, \
                          POLICY_NAIVE_DFS, POLICY_GREEDY_DFS, \
                          POLICY_NAIVE_BFS, POLICY_GREEDY_BFS, \
-                         POLICY_REPLAY, POLICY_MEMORY_GUIDED, \
+                         POLICY_REPLAY, POLICY_MEMORY_GUIDED, POLICY_LLM_GUIDED, \
                          POLICY_MANUAL, POLICY_MONKEY, POLICY_NONE
 
 DEFAULT_POLICY = POLICY_GREEDY_DFS
@@ -75,6 +75,9 @@ class InputManager(object):
         elif self.policy_name == POLICY_MEMORY_GUIDED:
             from .input_policy2 import MemoryGuidedPolicy
             input_policy = MemoryGuidedPolicy(device, app, self.random_input)
+        elif self.policy_name == POLICY_LLM_GUIDED:
+            from .input_policy3 import LLM_Guided_Policy
+            input_policy = LLM_Guided_Policy(device, app, self.random_input)
         elif self.policy_name == POLICY_REPLAY:
             input_policy = UtgReplayPolicy(device, app, self.replay_output)
         elif self.policy_name == POLICY_MANUAL:

@@ -29,6 +29,7 @@ class DeviceState(object):
         self.state_str = self.__get_state_str()
         self.structure_str = self.__get_content_free_state_str()
         self.search_content = self.__get_search_content()
+        self.text_representation = self.get_text_representation()
         self.possible_events = None
         self.width = device.get_width(refresh=True)
         self.height = device.get_height(refresh=False)
@@ -327,7 +328,8 @@ class DeviceState(object):
 
     @staticmethod
     def __safe_dict_get(view_dict, key, default=None):
-        return view_dict[key] if (key in view_dict) else default
+        value = view_dict[key] if key in view_dict else None
+        return value if value is not None else default
 
     @staticmethod
     def get_view_center(view_dict):
@@ -428,10 +430,10 @@ class DeviceState(object):
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'scrollable'):
-                possible_events.append(ScrollEvent(view=self.views[view_id], direction="UP"))
-                possible_events.append(ScrollEvent(view=self.views[view_id], direction="DOWN"))
-                possible_events.append(ScrollEvent(view=self.views[view_id], direction="LEFT"))
-                possible_events.append(ScrollEvent(view=self.views[view_id], direction="RIGHT"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="up"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="down"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="left"))
+                possible_events.append(ScrollEvent(view=self.views[view_id], direction="right"))
 
         for view_id in enabled_view_ids:
             if self.__safe_dict_get(self.views[view_id], 'checkable'):
@@ -463,3 +465,171 @@ class DeviceState(object):
 
         self.possible_events = possible_events
         return [] + possible_events
+
+    def get_text_representation(self, merge_buttons=False):
+        """
+        Get a text representation of current state
+        """
+        enabled_view_ids = []
+        for view_dict in self.views:
+            # exclude navigation bar if exists
+            if self.__safe_dict_get(view_dict, 'visible') and \
+                self.__safe_dict_get(view_dict, 'resource_id') not in \
+               ['android:id/navigationBarBackground',
+                'android:id/statusBarBackground']:
+                enabled_view_ids.append(view_dict['temp_id'])
+        
+        text_frame = "<p id=@ text='&' attr=null bounds=null>#</p>"
+        btn_frame = "<button id=@ text='&' attr=null bounds=null>#</button>"
+        checkbox_frame = "<checkbox id=@ text='&' attr=null bounds=null>#</checkbox>"
+        input_frame = "<input id=@ text='&' attr=null bounds=null>#</input>"
+        scroll_frame = "<scrollbar id=@ attr=null bounds=null></scrollbar>"
+
+        view_descs = []
+        indexed_views = []
+        # available_actions = []
+        removed_view_ids = []
+
+        for view_id in enabled_view_ids:
+            if view_id in removed_view_ids:
+                continue
+            # print(view_id)
+            view = self.views[view_id]
+            clickable = self._get_self_ancestors_property(view, 'clickable')
+            scrollable = self.__safe_dict_get(view, 'scrollable')
+            checkable = self._get_self_ancestors_property(view, 'checkable')
+            long_clickable = self._get_self_ancestors_property(view, 'long_clickable')
+            editable = self.__safe_dict_get(view, 'editable')
+            actionable = clickable or scrollable or checkable or long_clickable or editable
+            checked = self.__safe_dict_get(view, 'checked', default=False)
+            selected = self.__safe_dict_get(view, 'selected', default=False)
+            content_description = self.__safe_dict_get(view, 'content_description', default='')
+            view_text = self.__safe_dict_get(view, 'text', default='')
+            view_class = self.__safe_dict_get(view, 'class').split('.')[-1]
+            bounds = self.__safe_dict_get(view, 'bounds')
+            view_bounds = f'{bounds[0][0]},{bounds[0][1]},{bounds[1][0]},{bounds[1][1]}'
+            if not content_description and not view_text and not scrollable:  # actionable?
+                continue
+
+            # text = self._merge_text(view_text, content_description)
+            # view_status = ''
+            view_local_id = str(len(view_descs))
+            if editable:
+                view_desc = input_frame.replace('@', view_local_id).replace('#', view_text)
+                if content_description:
+                    view_desc = view_desc.replace('&', content_description)
+                else:
+                    view_desc = view_desc.replace(" text='&'", "")
+                # available_actions.append(SetTextEvent(view=view, text='HelloWorld'))
+            elif checkable:
+                view_desc = checkbox_frame.replace('@', view_local_id).replace('#', view_text)
+                if content_description:
+                    view_desc = view_desc.replace('&', content_description)
+                else:
+                    view_desc = view_desc.replace(" text='&'", "")
+                # available_actions.append(TouchEvent(view=view))
+            elif clickable:  # or long_clickable
+                if merge_buttons:
+                    # below is to merge buttons, led to bugs
+                    clickable_ancestor_id = self._get_ancestor_id(view=view, key='clickable')
+                    if not clickable_ancestor_id:
+                        clickable_ancestor_id = self._get_ancestor_id(view=view, key='checkable')
+                    clickable_children_ids = self._extract_all_children(id=clickable_ancestor_id)
+                    if view_id not in clickable_children_ids:
+                        clickable_children_ids.append(view_id)
+                    view_text, content_description = self._merge_text(clickable_children_ids)
+                    checked = self._get_children_checked(clickable_children_ids)
+                    # end of merging buttons
+                view_desc = btn_frame.replace('@', view_local_id).replace('#', view_text)
+                if content_description:
+                    view_desc = view_desc.replace('&', content_description)
+                else:
+                    view_desc = view_desc.replace(" text='&'", "")
+                # available_actions.append(TouchEvent(view=view))
+                if merge_buttons:
+                    for clickable_child in clickable_children_ids:
+                        if clickable_child in enabled_view_ids and clickable_child != view_id:
+                            removed_view_ids.append(clickable_child)
+            elif scrollable:
+                # print(view_id, 'continued')
+                view_desc = scroll_frame.replace('@', view_local_id)
+                # available_actions.append(ScrollEvent(view=view, direction='DOWN'))
+                # available_actions.append(ScrollEvent(view=view, direction='UP'))
+            else:
+                view_desc = text_frame.replace('@', view_local_id).replace('#', view_text)
+                if content_description:
+                    view_desc = view_desc.replace('&', content_description)
+                else:
+                    view_desc = view_desc.replace(" text='&'", "")
+                # available_actions.append(TouchEvent(view=view))
+
+            allowed_actions = ['touch']
+            special_attrs = []
+            if editable:
+                allowed_actions.append('set_text')
+            if checkable:
+                allowed_actions.extend(['select', 'unselect'])
+                allowed_actions.remove('touch')
+            if scrollable:
+                allowed_actions.extend(['scroll up', 'scroll down'])
+                allowed_actions.remove('touch')
+            if long_clickable:
+                allowed_actions.append('long_touch')
+            if checked or selected:
+                special_attrs.append('selected')
+            view['allowed_actions'] = allowed_actions
+            view['special_attrs'] = special_attrs
+            view['local_id'] = view_local_id
+            if len(special_attrs) > 0:
+                special_attrs = ','.join(special_attrs)
+                view_desc = view_desc.replace("attr=null", f"attr={special_attrs}")
+            else:
+                view_desc = view_desc.replace(" attr=null", "")
+            view_desc = view_desc.replace("bounds=null", f"bound_box={view_bounds}")
+            view_descs.append(view_desc)
+            view['desc'] = view_desc.replace(f' id={view_local_id}', '').replace(f' attr={special_attrs}', '')
+            indexed_views.append(view)
+
+        # prefix = 'The current state has the following UI elements: \n' #views and corresponding actions, with action id in parentheses:\n '
+        state_desc = '\n'.join(view_descs)
+        activity = self.foreground_activity.split('/')[-1]
+        # print(views_without_id)
+        return state_desc, activity, indexed_views
+
+    def _get_self_ancestors_property(self, view, key, default=None):
+        all_views = [view] + [self.views[i] for i in self.get_all_ancestors(view)]
+        for v in all_views:
+            value = self.__safe_dict_get(v, key)
+            if value:
+                return value
+        return default
+
+    def _merge_text(self, children_ids):
+        texts, content_descriptions = [], []
+        for childid in children_ids:
+            if not self.__safe_dict_get(self.views[childid], 'visible') or \
+                self.__safe_dict_get(self.views[childid], 'resource_id') in \
+               ['android:id/navigationBarBackground',
+                'android:id/statusBarBackground']:
+                # if the successor is not visible, then ignore it!
+                continue          
+
+            text = self.__safe_dict_get(self.views[childid], 'text', default='')
+            if len(text) > 50:
+                text = text[:50]
+
+            if text != '':
+                # text = text + '  {'+ str(childid)+ '}'
+                texts.append(text)
+
+            content_description = self.__safe_dict_get(self.views[childid], 'content_description', default='')
+            if len(content_description) > 50:
+                content_description = content_description[:50]
+
+            if content_description != '':
+                content_descriptions.append(content_description)
+
+        merged_text = '<br>'.join(texts) if len(texts) > 0 else ''
+        merged_desc = '<br>'.join(content_descriptions) if len(content_descriptions) > 0 else ''
+        return merged_text, merged_desc
+

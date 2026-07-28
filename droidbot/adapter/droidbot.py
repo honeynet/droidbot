@@ -2,6 +2,7 @@ import logging
 import subprocess
 
 from .adapter import Adapter
+from ..input_policy import DEFAULT_NAVIGATION_STAGNATION_LIMIT
 
 
 class DroidBotConnException(Exception):
@@ -45,7 +46,8 @@ class DroidBotConn(Adapter):
                  master=None,
                  humanoid=None,
                  ignore_ad=False,
-                 replay_output=None):
+                 replay_output=None,
+                 navigation_stagnation_limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT):
         """
         initiate a DroidBot connection
         :return:
@@ -77,6 +79,7 @@ class DroidBotConn(Adapter):
         self.humanoid = humanoid
         self.ignore_ad = ignore_ad
         self.replay_output = replay_output
+        self.navigation_stagnation_limit = navigation_stagnation_limit
 
         self.connected = False
         self.droidbot_p = False
@@ -88,6 +91,7 @@ class DroidBotConn(Adapter):
                         "-a", self.app_path,
                         "-interval", str(self.event_interval),
                         "-count", str(self.event_count),
+                        "--nav-stagnation-limit", str(self.navigation_stagnation_limit),
                         "-policy", self.policy_name,
                         "-grant_perm", "-keep_env",
                         "-o", "%s_%d" %

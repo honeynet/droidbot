@@ -7,6 +7,7 @@ from .input_event import EventLog
 from .input_policy import UtgBasedInputPolicy, UtgNaiveSearchPolicy, UtgGreedySearchPolicy, \
                          UtgReplayPolicy, \
                          ManualPolicy, \
+                         DEFAULT_NAVIGATION_STAGNATION_LIMIT, \
                          POLICY_NAIVE_DFS, POLICY_GREEDY_DFS, \
                          POLICY_NAIVE_BFS, POLICY_GREEDY_BFS, \
                          POLICY_REPLAY, POLICY_MEMORY_GUIDED, POLICY_LLM_GUIDED, \
@@ -30,7 +31,8 @@ class InputManager(object):
     def __init__(self, device, app, policy_name, random_input,
                  event_count, event_interval,
                  script_path=None, profiling_method=None, master=None,
-                 replay_output=None):
+                 replay_output=None,
+                 navigation_stagnation_limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT):
         """
         manage input event sent to the target device
         :param device: instance of Device
@@ -51,6 +53,7 @@ class InputManager(object):
         self.event_count = event_count
         self.event_interval = event_interval
         self.replay_output = replay_output
+        self.navigation_stagnation_limit = navigation_stagnation_limit
 
         self.monkey = None
 
@@ -71,7 +74,13 @@ class InputManager(object):
         elif self.policy_name in [POLICY_NAIVE_DFS, POLICY_NAIVE_BFS]:
             input_policy = UtgNaiveSearchPolicy(device, app, self.random_input, self.policy_name)
         elif self.policy_name in [POLICY_GREEDY_DFS, POLICY_GREEDY_BFS]:
-            input_policy = UtgGreedySearchPolicy(device, app, self.random_input, self.policy_name)
+            input_policy = UtgGreedySearchPolicy(
+                device,
+                app,
+                self.random_input,
+                self.policy_name,
+                navigation_stagnation_limit=self.navigation_stagnation_limit,
+            )
         elif self.policy_name == POLICY_MEMORY_GUIDED:
             from .input_policy2 import MemoryGuidedPolicy
             input_policy = MemoryGuidedPolicy(device, app, self.random_input)

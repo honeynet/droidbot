@@ -8,6 +8,14 @@ from .droidbot import DroidBot
 from .droidmaster import DroidMaster
 
 
+def positive_int(value):
+    """Parse a strictly positive command-line integer."""
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def parse_args():
     """
     parse command line input
@@ -65,6 +73,18 @@ def parse_args():
                         help="Interval in seconds between each two events. Default: %d" % input_manager.DEFAULT_EVENT_INTERVAL)
     parser.add_argument("-timeout", action="store", dest="timeout", default=input_manager.DEFAULT_TIMEOUT, type=int,
                         help="Timeout in seconds, -1 means unlimited. Default: %d" % input_manager.DEFAULT_TIMEOUT)
+    parser.add_argument(
+        "--nav-stagnation-limit",
+        action="store",
+        dest="navigation_stagnation_limit",
+        default=input_manager.DEFAULT_NAVIGATION_STAGNATION_LIMIT,
+        type=positive_int,
+        help=(
+            "Number of identical navigation-step attempts before choosing "
+            "another target. Default: %d"
+            % input_manager.DEFAULT_NAVIGATION_STAGNATION_LIMIT
+        ),
+    )
     parser.add_argument("-cv", action="store_true", dest="cv_mode",
                         help="Use OpenCV (instead of UIAutomator) to identify UI components. CV mode requires opencv-python installed.")
     parser.add_argument("-debug", action="store_true", dest="debug_mode",
@@ -139,7 +159,8 @@ def main():
             qemu_no_graphic=opts.qemu_no_graphic,
             humanoid=opts.humanoid,
             ignore_ad=opts.ignore_ad,
-            replay_output=opts.replay_output)
+            replay_output=opts.replay_output,
+            navigation_stagnation_limit=opts.navigation_stagnation_limit)
         droidmaster.start()
     else:
         droidbot = DroidBot(
@@ -165,7 +186,8 @@ def main():
             master=opts.master,
             humanoid=opts.humanoid,
             ignore_ad=opts.ignore_ad,
-            replay_output=opts.replay_output)
+            replay_output=opts.replay_output,
+            navigation_stagnation_limit=opts.navigation_stagnation_limit)
         droidbot.start()
     return
 

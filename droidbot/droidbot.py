@@ -12,7 +12,7 @@ from threading import Timer
 from .device import Device
 from .app import App
 from .env_manager import AppEnvManager
-from .input_manager import InputManager
+from .input_manager import InputManager, DEFAULT_NAVIGATION_STAGNATION_LIMIT
 
 
 class DroidBot(object):
@@ -44,7 +44,8 @@ class DroidBot(object):
                  master=None,
                  humanoid=None,
                  ignore_ad=False,
-                 replay_output=None):
+                 replay_output=None,
+                 navigation_stagnation_limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT):
         """
         initiate droidbot with configurations
         :return:
@@ -109,7 +110,8 @@ class DroidBot(object):
                 script_path=script_path,
                 profiling_method=profiling_method,
                 master=master,
-                replay_output=replay_output)
+                replay_output=replay_output,
+                navigation_stagnation_limit=navigation_stagnation_limit)
         except Exception:
             import traceback
             traceback.print_exc()

@@ -20,6 +20,7 @@ else:
 
 from .device import Device
 from .app import App
+from .input_policy import DEFAULT_NAVIGATION_STAGNATION_LIMIT
 
 from .adapter.droidbot import DroidBotConn
 from .adapter.qemu import QEMUConn
@@ -64,7 +65,8 @@ class DroidMaster(object):
                  qemu_no_graphic=False,
                  humanoid=None,
                  ignore_ad=False,
-                 replay_output=None):
+                 replay_output=None,
+                 navigation_stagnation_limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT):
         """
         initiate droidmaster, and
         initiate droidbot's with configurations
@@ -99,6 +101,7 @@ class DroidMaster(object):
         self.humanoid = humanoid
         self.ignore_ad = ignore_ad
         self.replay_output = replay_output
+        self.navigation_stagnation_limit = navigation_stagnation_limit
 
         # 2. Initiate Device Pool
         self.domain = "localhost"
@@ -195,7 +198,8 @@ class DroidMaster(object):
                                           master="http://%s:%d/" % (self.domain, self.rpc_port),
                                           humanoid=self.humanoid,
                                           ignore_ad=self.ignore_ad,
-                                          replay_output=self.replay_output)
+                                          replay_output=self.replay_output,
+                                          navigation_stagnation_limit=self.navigation_stagnation_limit)
         device["droidbot"].set_up()
         self.logger.info("Worker: DOMAIN[%s], ADB[%s], QEMU[%d], ID[%d]" %
                          (device["domain"], device["adb_port"],

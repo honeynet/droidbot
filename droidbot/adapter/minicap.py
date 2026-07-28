@@ -4,6 +4,7 @@ import subprocess
 import time
 import os
 from datetime import datetime
+from pathlib import Path
 from .adapter import Adapter
 
 
@@ -65,8 +66,9 @@ class Minicap(Adapter):
 
         if device is not None:
             # install minicap
-            import pkg_resources
-            local_minicap_path = pkg_resources.resource_filename("droidbot", "resources/minicap")
+            local_minicap_path = (
+                Path(__file__).resolve().parent.parent / "resources" / "minicap"
+            )
             try:
                 device.adb.shell("mkdir %s" % self.remote_minicap_path)
             except Exception:
@@ -77,9 +79,9 @@ class Minicap(Adapter):
                 minicap_bin = "minicap"
             else:
                 minicap_bin = "minicap-nopie"
-            minicap_bin_path = os.path.join(local_minicap_path, 'libs', abi, minicap_bin)
+            minicap_bin_path = os.path.join(str(local_minicap_path), 'libs', abi, minicap_bin)
             device.push_file(local_file=minicap_bin_path, remote_dir=self.remote_minicap_path)
-            minicap_so_path = os.path.join(local_minicap_path, 'jni', 'libs', f'android-{sdk}', abi, 'minicap.so')
+            minicap_so_path = os.path.join(str(local_minicap_path), 'jni', 'libs', f'android-{sdk}', abi, 'minicap.so')
             device.push_file(local_file=minicap_so_path, remote_dir=self.remote_minicap_path)
             self.logger.debug("minicap installed.")
 

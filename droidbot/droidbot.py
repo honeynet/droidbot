@@ -5,8 +5,8 @@
 import logging
 import os
 import sys
-import pkg_resources
 import shutil
+from pathlib import Path
 from threading import Timer
 
 from .device import Device
@@ -58,8 +58,9 @@ class DroidBot(object):
         if output_dir is not None:
             if not os.path.isdir(output_dir):
                 os.makedirs(output_dir)
-            html_index_path = pkg_resources.resource_filename("droidbot", "resources/index.html")
-            stylesheets_path = pkg_resources.resource_filename("droidbot", "resources/stylesheets")
+            resources_path = Path(__file__).resolve().parent / "resources"
+            html_index_path = resources_path / "index.html"
+            stylesheets_path = resources_path / "stylesheets"
             target_stylesheets_dir = os.path.join(output_dir, "stylesheets")
             if os.path.exists(target_stylesheets_dir):
                 shutil.rmtree(target_stylesheets_dir)
@@ -176,19 +177,34 @@ class DroidBot(object):
         self.enabled = False
         if self.timer and self.timer.is_alive():
             self.timer.cancel()
-        if self.env_manager:
-            self.env_manager.stop()
-        if self.input_manager:
-            self.input_manager.stop()
-        if self.droidbox:
-            self.droidbox.stop()
-        if self.device:
-            self.device.disconnect()
-        if not self.keep_env:
-            self.device.tear_down()
-        if not self.keep_app:
-            self.device.uninstall_app(self.app)
-        if hasattr(self.input_manager.policy, "master") and \
+        cleanup_actions = (
+            ("environment", self.env_manager.stop if self.env_manager else None),
+            ("input manager", self.input_manager.stop if self.input_manager else None),
+            ("droidbox", self.droidbox.stop if self.droidbox else None),
+            ("device connection", self.device.disconnect if self.device else None),
+            (
+                "device environment",
+                self.device.tear_down
+                if self.device and not self.keep_env
+                else None,
+            ),
+            (
+                "app installation",
+                (lambda: self.device.uninstall_app(self.app))
+                if self.device and self.app and not self.keep_app
+                else None,
+            ),
+        )
+        for label, action in cleanup_actions:
+            if action is None:
+                continue
+            try:
+                action()
+            except Exception as error:
+                self.logger.warning("Failed to clean up %s: %s", label, error)
+        if self.input_manager and \
+           self.input_manager.policy and \
+           hasattr(self.input_manager.policy, "master") and \
            self.input_manager.policy.master:
             import xmlrpc.client
             proxy = xmlrpc.client.ServerProxy(self.input_manager.policy.master)

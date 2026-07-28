@@ -2,6 +2,7 @@
 
 import logging
 import time
+from pathlib import Path
 
 from .adapter import Adapter
 
@@ -40,8 +41,9 @@ class DroidBotIme(Adapter):
         else:
             # install droidbot app
             try:
-                import pkg_resources
-                droidbot_app_path = pkg_resources.resource_filename("droidbot", "resources/droidbotApp.apk")
+                droidbot_app_path = str(
+                    Path(__file__).resolve().parent.parent / "resources" / "droidbotApp.apk"
+                )
                 install_cmd = ["install", droidbot_app_path]
                 self.device.adb.run_cmd(install_cmd)
                 self.logger.debug("DroidBot app installed.")

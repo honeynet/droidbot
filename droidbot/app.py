@@ -25,16 +25,29 @@ class App(object):
             if not os.path.isdir(output_dir):
                 os.makedirs(output_dir)
 
-        from androguard.core.bytecodes.apk import APK
+        from androguard.core.apk import APK
         self.apk = APK(self.app_path)
         self.package_name = self.apk.get_package()
         self.app_name = self.apk.get_app_name()
-        self.main_activity = self.apk.get_main_activity()
+        self.main_activity = self._get_main_activity()
         self.permissions = self.apk.get_permissions()
         self.activities = self.apk.get_activities()
         self.possible_broadcasts = self.get_possible_broadcasts()
         self.dumpsys_main_activity = None
         self.hashes = self.get_hashes()
+
+    def _get_main_activity(self):
+        """Prefer a launcher owned by the target package when several exist."""
+        main_activities = self.apk.get_main_activities()
+        package_prefix = "%s." % self.package_name
+        package_activities = sorted(
+            activity
+            for activity in main_activities
+            if activity == self.package_name or activity.startswith(package_prefix)
+        )
+        if package_activities:
+            return package_activities[0]
+        return self.apk.get_main_activity()
 
     def get_package_name(self):
         """

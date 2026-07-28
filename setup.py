@@ -31,7 +31,9 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
     ],
+    python_requires='>=3.9,<3.13',
     entry_points={
         'console_scripts': [
             'droidbot=start:main',
@@ -41,5 +43,5 @@ setup(
         'droidbot': [os.path.relpath(x, 'droidbot') for x in findall('droidbot/resources/')]
     },
     # androidviewclient doesnot support pip install, thus you should install it with easy_install
-    install_requires=['androguard>=3.4.0a1', 'networkx', 'Pillow'],
+    install_requires=['androguard>=4.1.4', 'networkx', 'Pillow'],
 )

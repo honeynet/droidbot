@@ -63,3 +63,5 @@ Gemfile.lock
 documents
 temp
 venv
+.venv/
+compatibility_runs/

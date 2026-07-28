@@ -110,7 +110,7 @@ class Monitor(object):
             self.start_time = time.clock()
 
     def _getPid(self):
-        cmd = "adb shell ps | grep " + self.packageName
+        cmd = f"adb -s {self.serial} shell ps | grep {self.packageName}"
         result = os.popen(cmd)
         if result is not None:
             return self.pid

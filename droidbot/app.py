@@ -25,7 +25,10 @@ class App(object):
             if not os.path.isdir(output_dir):
                 os.makedirs(output_dir)
 
-        from androguard.core.bytecodes.apk import APK
+        try:
+            from androguard.core.bytecodes.apk import APK
+        except ImportError:
+            from androguard.core.apk import APK
         self.apk = APK(self.app_path)
         self.package_name = self.apk.get_package()
         self.app_name = self.apk.get_app_name()

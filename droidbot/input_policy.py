@@ -14,6 +14,8 @@ MAX_NUM_STEPS_OUTSIDE = 5
 MAX_NUM_STEPS_OUTSIDE_KILL = 10
 # Max number of replay tries
 MAX_REPLY_TRIES = 5
+# Number of times one unchanged navigation step may be attempted.
+DEFAULT_NAVIGATION_STAGNATION_LIMIT = 8
 
 # Some input event flags
 EVENT_FLAG_STARTED = "+started"
@@ -38,6 +40,28 @@ POLICY_LLM_GUIDED = "llm_guided"  # implemented in input_policy3
 
 class InputInterruptedException(Exception):
     pass
+
+
+class NavigationStagnationTracker(object):
+    """Count repeated navigation attempts for one active target."""
+
+    def __init__(self, limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT):
+        if limit <= 0:
+            raise ValueError("Navigation stagnation limit must be positive.")
+        self.limit = limit
+        self.attempt_counts = {}
+
+    def reset(self):
+        """Forget attempts after real progress or a target change."""
+        self.attempt_counts.clear()
+
+    def is_stale(self, signature):
+        """Return True after ``limit`` prior attempts of this exact step."""
+        attempt_count = self.attempt_counts.get(signature, 0)
+        if attempt_count >= self.limit:
+            return True
+        self.attempt_counts[signature] = attempt_count + 1
+        return False
 
 
 class InputPolicy(object):
@@ -353,7 +377,14 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
     DFS/BFS (according to search_method) strategy to explore UFG (new)
     """
 
-    def __init__(self, device, app, random_input, search_method):
+    def __init__(
+        self,
+        device,
+        app,
+        random_input,
+        search_method,
+        navigation_stagnation_limit=DEFAULT_NAVIGATION_STAGNATION_LIMIT,
+    ):
         super(UtgGreedySearchPolicy, self).__init__(device, app, random_input)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.search_method = search_method
@@ -368,6 +399,9 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
         self.__event_trace = ""
         self.__missed_states = set()
         self.__random_explore = False
+        self.__navigation_stagnation = NavigationStagnationTracker(
+            navigation_stagnation_limit
+        )
 
     def generate_event_based_on_utg(self):
         """
@@ -452,13 +486,42 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
                 self.__event_trace += EVENT_FLAG_EXPLORE
                 return input_event
 
-        target_state = self.__get_nav_target(current_state)
-        if target_state:
+        # Search through candidate targets.
+        # Skip stale or unreachable targets and try another target in the same
+        # cycle instead of falling through to random exploration or app restart.
+        while True:
+            target_state = self.__get_nav_target(current_state)
+            if not target_state:
+                break
             navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=target_state)
-            if navigation_steps and len(navigation_steps) > 0:
-                self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(navigation_steps)))
-                self.__event_trace += EVENT_FLAG_NAVIGATE
-                return navigation_steps[0][1]
+            if not navigation_steps:
+                self.__missed_states.add(target_state.state_str)
+                self.__nav_target = None
+                self.__nav_num_steps = -1
+                self.__navigation_stagnation.reset()
+                continue
+            next_event = navigation_steps[0][1]
+            signature = (
+                current_state.state_str,
+                target_state.state_str,
+                next_event.get_event_str(current_state),
+                len(navigation_steps),
+            )
+            if self.__navigation_stagnation.is_stale(signature):
+                self.logger.warning(
+                    "Navigation to %s stagnated after %d identical attempts; "
+                    "marking the target as missed.",
+                    target_state.state_str,
+                    self.__navigation_stagnation.limit,
+                )
+                self.__missed_states.add(target_state.state_str)
+                self.__nav_target = None
+                self.__nav_num_steps = -1
+                self.__navigation_stagnation.reset()
+                continue
+            self.logger.info("Navigating to %s, %d steps left." % (target_state.state_str, len(navigation_steps)))
+            self.__event_trace += EVENT_FLAG_NAVIGATE
+            return next_event
 
         if self.__random_explore:
             self.logger.info("Trying random event.")
@@ -506,11 +569,14 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=self.__nav_target)
             if navigation_steps and 0 < len(navigation_steps) <= self.__nav_num_steps:
                 # If last navigation was successful, use current nav target
+                if len(navigation_steps) < self.__nav_num_steps:
+                    self.__navigation_stagnation.reset()
                 self.__nav_num_steps = len(navigation_steps)
                 return self.__nav_target
             else:
                 # If last navigation was failed, add nav target to missing states
                 self.__missed_states.add(self.__nav_target.state_str)
+                self.__navigation_stagnation.reset()
 
         reachable_states = self.utg.get_reachable_states(current_state)
         if self.random_input:
@@ -530,10 +596,12 @@ class UtgGreedySearchPolicy(UtgBasedInputPolicy):
             navigation_steps = self.utg.get_navigation_steps(from_state=current_state, to_state=self.__nav_target)
             if len(navigation_steps) > 0:
                 self.__nav_num_steps = len(navigation_steps)
+                self.__navigation_stagnation.reset()
                 return state
 
         self.__nav_target = None
         self.__nav_num_steps = -1
+        self.__navigation_stagnation.reset()
         return None
 
 class UtgReplayPolicy(InputPolicy):

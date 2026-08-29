@@ -386,7 +386,7 @@ class DeviceState(object):
         children = set(children)
         for child in children:
             children_of_child = self.get_all_children(self.views[child])
-            children.union(children_of_child)
+            children = children.union(children_of_child)
         return children
 
     def get_app_activity_depth(self, app):
